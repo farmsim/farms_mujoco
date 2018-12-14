@@ -1,0 +1,1 @@
+mpirun --app dispatcher.mpi

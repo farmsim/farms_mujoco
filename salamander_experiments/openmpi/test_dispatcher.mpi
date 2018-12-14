@@ -1,0 +1,8 @@
+# Writers
+-np 1 python3 evolver.py
+# Readers
+-np 3 python3 test_evolver.py
+
+# Gazebo islands
+# -x GAZEBO_MASTER_URI=localhost:11345 -np 1 sh gazebo.sh
+# -x GAZEBO_MASTER_URI=localhost:11346 -np 1 gazebo --verbose

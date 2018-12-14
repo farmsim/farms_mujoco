@@ -1,0 +1,25 @@
+<sdf version='1.5'>
+  <world name='default'>
+    <!-- Models -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <name>salamander_swimming</name>
+      <uri>model://biorob_salamander_swimming</uri>
+      <pose>0 0 -0.03 0 0 0</pose>
+    </include>
+
+    <!-- GUI -->
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>5 -5 2 0 0.275643 2.35619</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+  </world>
+</sdf>

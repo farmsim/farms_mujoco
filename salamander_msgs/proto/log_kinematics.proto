@@ -1,0 +1,33 @@
+syntax = "proto2";
+
+package nemesim;
+
+message LinksKinematics {
+  repeated LinkKinematics links = 1;
+}
+
+message LinkKinematics {
+  required string name = 1;
+  repeated Kinematic link_kinematics = 2;
+}
+
+message Kinematic {
+  optional int32 sec = 1;
+  optional int32 nsec = 2;
+  optional Vector3 pos = 3;
+  optional Rotation rot = 4;
+  optional Vector3 linvel = 5;
+  optional Vector3 angvel = 6;
+}
+
+message Vector3 {
+  required double x = 1;
+  required double y = 2;
+  required double z = 3;
+}
+
+message Rotation {
+  required Vector3 x = 1;
+  required Vector3 y = 2;
+  required Vector3 z = 3;
+}

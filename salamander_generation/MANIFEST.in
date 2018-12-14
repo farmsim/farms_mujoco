@@ -1,0 +1,13 @@
+include salamander_generation/templates/control.yaml
+include salamander_generation/templates/model.config
+include salamander_generation/templates/package.yaml
+include salamander_generation/templates/parameters.xml
+include salamander_generation/templates/plugin.xml
+include salamander_generation/templates/plugin.yaml
+include salamander_generation/templates/salamander.sdf
+
+include salamander_generation/config/config_log_kinematics.yaml
+include salamander_generation/config/control.yaml
+include salamander_generation/config/log_kinematics.yaml
+include salamander_generation/config/package.yaml
+include salamander_generation/config/swim.yaml

@@ -1,0 +1,43 @@
+<sdf version='1.5'>
+  <world name='default'>
+    <!-- Models -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <plugin filename="libbiorob_salamander_sand_plugin.so" name="sand">
+      <option1>
+        <option2>hello</option2>
+      </option1>
+    </plugin>
+
+    <!-- <population name="sand_population1"> -->
+    <!--   <model name="sand1"> -->
+    <!--     <include> -->
+    <!--       <static>false</static> -->
+    <!--       <uri>model://sand</uri> -->
+    <!--     </include> -->
+    <!--   </model> -->
+    <!--   <pose>0 0 1 0 0 0</pose> -->
+    <!--   <box> -->
+    <!--     <size>0.03 0.03 2</size> -->
+    <!--   </box> -->
+    <!--   <model_count>100</model_count> -->
+    <!--   <distribution> -->
+    <!--     <type>random</type> -->
+    <!--   </distribution> -->
+    <!-- </population> -->
+
+    <!-- GUI -->
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>5 -5 2 0 0.275643 2.35619</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+  </world>
+</sdf>

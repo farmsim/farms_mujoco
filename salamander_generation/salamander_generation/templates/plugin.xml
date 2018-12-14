@@ -1,0 +1,4 @@
+<plugin filename="{{plugin_filename}}" name="{{plugin_name}}">
+  <!-- Parameters -->
+  {{parameters|indent(2)}}
+</plugin>
