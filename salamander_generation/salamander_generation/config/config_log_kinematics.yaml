@@ -1,0 +1,6 @@
+filename: logs/links_kinematics.pbdat
+links:
+  link_body_0:
+    frequency: 100
+  link_body_1:
+    frequency: 10

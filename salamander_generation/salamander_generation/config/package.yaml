@@ -1,0 +1,29 @@
+# Package configuration
+creator:
+  author: "Jonathan Arreguit"
+  email: "jonathan.arreguitoneill@epfl.ch"
+gazebo:
+  models_path: ".gazebo/models/"
+model:
+  name: "salamander_swimming"
+  model_name: "biorob_salamander_swimming"
+  base_model: "biorob_salamander_slip"
+  sdf_name: "biorob_salamander_swimming.sdf"
+  config_name: "model.config"
+  plugins:
+    control:
+      name: "biorob_salamander_swimming_controller"
+      filename: "libbiorob_salamander_control_plugin.so"
+      config: "control.yaml"
+      config_file: ""
+    viscous_swimming:
+      name: "viscous_swimming"
+      filename: "libbiorob_salamander_viscous_swimming_plugin.so"
+      config: "swim.yaml"
+      config_file: ""
+    log_kinematics:
+      name: "log_kinematics"
+      filename: "libbiorob_salamander_log_kinematics_plugin.so"
+      config: "log_kinematics.yaml"
+      config_file: "config_log_kinematics.yaml"
+  version: "0.1"
