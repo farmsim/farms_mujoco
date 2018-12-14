@@ -26,6 +26,10 @@ add_library(
 target_link_libraries(
   biorob_salamander_control_plugin
   ${GAZEBO_libraries})
+set_target_properties(
+  biorob_salamander_control_plugin
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
 
 # Library version
 set_target_properties(

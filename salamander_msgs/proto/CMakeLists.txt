@@ -23,7 +23,7 @@ set_target_properties(
 set_target_properties(
   salamander_msg_log_kinematics
   PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY ../bin/)
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
 
 # Install
 include(GNUInstallDirs)
