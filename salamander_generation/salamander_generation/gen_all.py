@@ -23,9 +23,9 @@ def generate_swimming(name, base_model, frequency):
         name=name,
         model_name="biorob_"+name,
         base_model=base_model,
-        gait="walking"
+        gait="swimming"
     )
-    generate_plugins(gait="walking", frequency=frequency)
+    generate_plugins(gait="swimming", frequency=frequency)
     generate_model()
 
 
@@ -41,7 +41,7 @@ def generate_all():
     # Swimming
     name = "salamander_swimming"
     base_model = "biorob_salamander_slip"
-    generate_walking(name, base_model=base_model, frequency=2) # Fast
+    generate_swimming(name, base_model=base_model, frequency=2) # Fast
 
 
 if __name__ == '__main__':
