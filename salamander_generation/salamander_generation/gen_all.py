@@ -5,54 +5,43 @@ from .gen_plugins import generate_plugins
 from .gen_model import generate_model
 
 
+def generate_walking(name, base_model, frequency):
+    """ Generate walking salamander """
+    generate_package(
+        name=name,
+        model_name="biorob_"+name,
+        base_model=base_model,
+        gait="walking"
+    )
+    generate_plugins(gait="walking", frequency=frequency)
+    generate_model()
+
+
+def generate_swimming(name, base_model, frequency):
+    """ Generate walking salamander """
+    generate_package(
+        name=name,
+        model_name="biorob_"+name,
+        base_model=base_model,
+        gait="walking"
+    )
+    generate_plugins(gait="walking", frequency=frequency)
+    generate_model()
+
+
 def generate_all():
     """ Main """
-    base_model = "biorob_salamander"
-
-    # Normal walking
+    # Walking
     name = "salamander_walking"
-    generate_package(
-        name=name,
-        model_name="biorob_"+name,
-        base_model=base_model,
-        gait="walking"
-    )
-    generate_plugins(gait="walking")
-    generate_model()
-
-    # Slow walking
-    name = "salamander_walking_slow"
-    generate_package(
-        name=name,
-        model_name="biorob_"+name,
-        base_model=base_model,
-        gait="walking"
-    )
-    generate_plugins(gait="walking", frequency=0.5)
-    generate_model()
-
-    # Fast walking
-    name = "salamander_walking_fast"
-    generate_package(
-        name=name,
-        model_name="biorob_"+name,
-        base_model=base_model,
-        gait="walking"
-    )
-    generate_plugins(gait="walking", frequency=2)
-    generate_model()
+    base_model = "biorob_salamander"
+    generate_walking(name, base_model, frequency=1)
+    generate_walking(name+"_slow", base_model, frequency=0.5)
+    generate_walking(name+"_fast", base_model, frequency=2)
 
     # Swimming
-    base_model = "biorob_salamander_slip"
     name = "salamander_swimming"
-    generate_package(
-        name=name,
-        model_name="biorob_"+name,
-        base_model=base_model,
-        gait="swimming"
-    )
-    generate_plugins(gait="swimming", frequency=2)
-    generate_model()
+    base_model = "biorob_salamander_slip"
+    generate_walking(name, base_model=base_model, frequency=2) # Fast
 
 
 if __name__ == '__main__':
