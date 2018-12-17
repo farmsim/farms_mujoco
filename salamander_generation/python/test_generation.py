@@ -5,7 +5,8 @@ import salamander_generation as sg
 
 def main():
     """ Main """
-    sg.generate_all()
+    # sg.generate_all()
+    sg.test_entity()
 
 
 if __name__ == '__main__':

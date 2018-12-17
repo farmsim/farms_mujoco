@@ -7,3 +7,4 @@ __all__ = ["generate_all"]
 
 
 from .gen_all import generate_all
+from .gen_entity import test_entity

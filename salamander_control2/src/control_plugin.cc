@@ -10,6 +10,8 @@
 
 #include <math.h>
 
+#include "parameters.hh"
+
 
 class JointOscillatorOptions : public std::unordered_map<std::string, double>
 {
@@ -201,16 +203,6 @@ public: gazebo::physics::JointWrench wrench()
 };
 
 
-class ExperimentLogger
-{
-public:
-    ExperimentLogger();
-    virtual ~ExperimentLogger();
-
-    std::vector<gazebo::physics::JointWrench> wrench;
-};
-
-
 namespace gazebo
 {
 
@@ -231,22 +223,30 @@ namespace gazebo
                 return;
             }
 
+    private:
+        // Parameters
+        std::string config_filename;
+        PluginParameters plugin_parameters;
+
+    private:
         // Model information
-    private: physics::ModelPtr model;
-    private: std::vector<std::string> joints_names;
-    private: std::unordered_map<std::string, std::shared_ptr<Joint>> joints;
-    private: std::vector<std::string> ft_sensors_names;
-    private: std::vector<FT_Sensor> ft_sensors;
-    private: physics::WorldPtr world_;
-    private: std::vector<std::string> frame_name_;
+        physics::ModelPtr model;
+        std::vector<std::string> joints_names;
+        std::unordered_map<std::string, std::shared_ptr<Joint>> joints;
+        std::vector<std::string> ft_sensors_names;
+        std::vector<FT_Sensor> ft_sensors;
+        physics::WorldPtr world_;
+        std::vector<std::string> frame_name_;
 
+    private:
         // Additional information
-    private: long step = 0;
-    private: bool verbose = false;
-    private: common::Time prevUpdateTime;
+        long step = 0;
+        bool verbose = false;
+        common::Time prevUpdateTime;
 
+    private:
         // Pointer to the update event connection
-    private: event::ConnectionPtr updateConnection;
+        event::ConnectionPtr updateConnection;
 
         /// \brief The load function is called by Gazebo when the plugin is
         /// inserted into simulation
@@ -281,6 +281,24 @@ namespace gazebo
                     << "]"
                     << std::endl;
 
+                // Parameters
+                if (_sdf->HasElement("config"))
+                {
+                    this->config_filename = _sdf->Get<std::string>("config");
+                    std::cout
+                        << "    Config found: "
+                        << this->config_filename
+                        << std::endl;
+                    std::cout << "Loading parameters from " << this->config_filename << std::endl;
+                    plugin_parameters.load(this->config_filename);
+                }
+                else
+                {
+                    std::cerr
+                        << "ERROR: config not found in control plugin"
+                        << std::endl;
+                }
+
                 // Joints
                 int joints_n = this->model->GetJointCount();
                 std::vector<physics::JointPtr> joints_all = this->model->GetJoints();
@@ -311,88 +329,88 @@ namespace gazebo
                     {
                         // Revolute joint
 
-                        // PID position
-                        name = "joints_" + joints_names[i] + "_pid_position_p";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->pid_position.SetPGain(value);
-                        }
-                        name = "joints_" + joints_names[i] + "_pid_position_i";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->pid_position.SetIGain(value);
-                        }
-                        name = "joints_" + joints_names[i] + "_pid_position_d";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->pid_position.SetDGain(value);
-                        }
+                        // // PID position
+                        // name = "joints_" + joints_names[i] + "_pid_position_p";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->pid_position.SetPGain(value);
+                        // }
+                        // name = "joints_" + joints_names[i] + "_pid_position_i";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->pid_position.SetIGain(value);
+                        // }
+                        // name = "joints_" + joints_names[i] + "_pid_position_d";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->pid_position.SetDGain(value);
+                        // }
 
-                        // PID velocity
-                        name = "joints_" + joints_names[i] + "_pid_velocity_p";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->pid_velocity.SetPGain(value);
-                        }
-                        name = "joints_" + joints_names[i] + "_pid_velocity_i";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->pid_velocity.SetIGain(value);
-                        }
-                        name = "joints_" + joints_names[i] + "_pid_velocity_d";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->pid_velocity.SetDGain(value);
-                        }
+                        // // PID velocity
+                        // name = "joints_" + joints_names[i] + "_pid_velocity_p";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->pid_velocity.SetPGain(value);
+                        // }
+                        // name = "joints_" + joints_names[i] + "_pid_velocity_i";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->pid_velocity.SetIGain(value);
+                        // }
+                        // name = "joints_" + joints_names[i] + "_pid_velocity_d";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->pid_velocity.SetDGain(value);
+                        // }
 
-                        // oscillator options
-                        name = "joints_" + joints_names[i] + "_type";
-                        if(_sdf->HasElement(name))
-                        {
-                            value_str = _sdf->Get<std::string>(name);
-                            std::cout << "    Setting " << name << " = " << value_str << std::endl;
-                            this->joints[joints_names[i]]->oscillator.type = value_str;
-                        }
-                        name = "joints_" + joints_names[i] + "_amplitude";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->oscillator["amplitude"] = value;
-                        }
-                        name = "joints_" + joints_names[i] + "_frequency";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->oscillator["frequency"] = value;
-                        }
-                        name = "joints_" + joints_names[i] + "_phase";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->oscillator["phase"] = value;
-                        }
-                        name = "joints_" + joints_names[i] + "_bias";
-                        if(_sdf->HasElement(name))
-                        {
-                            value = _sdf->Get<double>(name);
-                            std::cout << "    Setting " << name << " = " << value << std::endl;
-                            this->joints[joints_names[i]]->oscillator["bias"] = value;
-                        }
+                        // // oscillator options
+                        // name = "joints_" + joints_names[i] + "_type";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value_str = _sdf->Get<std::string>(name);
+                        //     std::cout << "    Setting " << name << " = " << value_str << std::endl;
+                        //     this->joints[joints_names[i]]->oscillator.type = value_str;
+                        // }
+                        // name = "joints_" + joints_names[i] + "_amplitude";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->oscillator["amplitude"] = value;
+                        // }
+                        // name = "joints_" + joints_names[i] + "_frequency";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->oscillator["frequency"] = value;
+                        // }
+                        // name = "joints_" + joints_names[i] + "_phase";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->oscillator["phase"] = value;
+                        // }
+                        // name = "joints_" + joints_names[i] + "_bias";
+                        // if(_sdf->HasElement(name))
+                        // {
+                        //     value = _sdf->Get<double>(name);
+                        //     std::cout << "    Setting " << name << " = " << value << std::endl;
+                        //     this->joints[joints_names[i]]->oscillator["bias"] = value;
+                        // }
                     }
                     i++;
                 }
