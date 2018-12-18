@@ -256,22 +256,6 @@ namespace gazebo
         /// \param[in] _sdf A pointer to the plugin's SDF element.
     public: virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
             {
-                // // std::string file = "model://biorob_salamander/biorob_salamander.sdf";
-                // std::string file = "/home/jonathan/.gazebo/models/biorob_salamander/biorob_salamander.sdf";
-                // std::ifstream t(file);
-                // std::string content(
-                //     (std::istreambuf_iterator<char>(t)),
-                //     (std::istreambuf_iterator<char>()));
-                // std::cout << content << std::endl;
-
-                // std::string name = this->GetFilename();
-                // std::cout << name << std::endl;
-
-                // if (_sdf->HasElement("gazebo_plugin_path"))
-                //     std::cout << "Gazebo plugin path: " << _sdf->Get<std::string>("gazebo_plugin_path") << std::endl;
-                // else
-                //     std::cout << "gazebo_plugin_path not found in sdf" << std::endl;
-
                 // Store the pointer to the model
                 this->model = _model;
 
