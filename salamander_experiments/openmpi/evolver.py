@@ -4,112 +4,199 @@ import time
 from mpi4py import MPI
 
 
-def evolver():
-    """ Writer """
-    # Communication parameters
-    comm = MPI.COMM_WORLD
-    size = comm.Get_size()  # new: gives number of ranks in comm
-    rank = comm.Get_rank()
-    # Evolutions parameters
-    # n_generations = 1
-    n_population = 5
-    individuals_left = n_population
-    individuals_simulating = 0
-    individuals_simulated = 0
-    indivudual_types = [
-        "biorob_salamander_walking",
-        "biorob_salamander_swimming",
-        "biorob_salamander_walking",
-        "biorob_salamander_swimming",
-        "biorob_salamander_walking"
-    ]
-    # Run evolution
-    print("Evolver is running (rank={}, size={})".format(rank, size))
-    assert rank == 0, "Rank of evolver must be 0, but is {}".format(rank)
-    v = [bytearray(('a'*1000).encode("ascii")) for i in range(size-1)]
-    # v = [array('u', '#') * 1000 for i in range(size-1)]
-    print("Buffer: {}".format(v))
-    buf = [[v[i], 1000, MPI.CHAR] for i in range(size-1)]
-    tag = 1
-    req_recv = [comm.Irecv(buf[i], source=i+1, tag=tag) for i in range(size-1)]
-    for i, r in enumerate(range(1, size)):
-        # buffer = [
-        #     str({
-        #         'message': "Message to process {}".format(i+1),
-        #         "source": rank,
-        #         'dest': i+1
-        #     }).encode("ascii"),
-        #     0,
-        #     MPI.BYTE
-        # ]
-        buffer = str(indivudual_types[individuals_simulated]).encode("ascii")
-        print("Sending: {}".format(buffer))
-        comm.Send(buffer, dest=r, tag=1)
-        individuals_left -= 1
-        individuals_simulating += 1
-        individuals_simulated += 1
-    print("Evolver: All data has been sent, now waiting")
-    # buf = [None, 0, MPI.BYTE]
-    # req_recv = [comm.irecv(dest=i+1, tag=1) for i in range(size-1)]
-    # Loop
-    status = MPI.Status()
-    # MPI.Request.Waitall([req_recv[0]], [status])
-    # from IPython import embed; embed()
-    while individuals_left + individuals_simulating:
-        print(
-            "Evolver: Individuals_left: {}, individuals_simulating: {}".format(
-                individuals_left, individuals_simulating
-            )
-        )
-        time.sleep(1e0)
-        for i in range(size-1):
+class MPIsettings(dict):
+    """ MPI settings """
+
+    def __init__(self):
+        super(MPIsettings, self).__init__()
+        self["comm"] = MPI.COMM_WORLD
+        self["size"] = self.comm.Get_size()
+        self["rank"] = self.comm.Get_rank()
+
+    @property
+    def comm(self):
+        """ Comm """
+        return self["comm"]
+
+    @property
+    def size(self):
+        """ Size """
+        return self["size"]
+
+    @property
+    def rank(self):
+        """ Rank """
+        return self["rank"]
+
+
+class Individual:
+    """ Individual """
+
+    def __init__(self, name):
+        super(Individual, self).__init__()
+        self._status = "ready"
+        self._name = name
+
+    @property
+    def name(self):
+        """ Name """
+        return self._name
+
+    @property
+    def status(self):
+        """ Status """
+        return self._status
+
+
+class Population:
+    """ Population to be spawned """
+
+    def __init__(self):
+        super(Population, self).__init__()
+        self._individuals = []
+        self._individuals_left = 0
+        self._individuals_simulating = 0
+        self._individuals_simulated = 0
+
+    @property
+    def individuals(self):
+        """ Individuals """
+        return self._individuals
+
+    @property
+    def individuals_left(self):
+        """ Individuals_left """
+        return self._individuals_left
+
+    @property
+    def individuals_simulating(self):
+        """ Individuals_simulating """
+        return self._individuals_simulating
+
+    @property
+    def individuals_simulated(self):
+        """ Individuals_simulated """
+        return self._individuals_simulated
+
+    def add_individuals(self, individuals):
+        """ Add individuals """
+        self._individuals.extend(individuals)
+        self._individuals_left = len(self._individuals)
+
+    def consume(self):
+        """ Consume individual """
+        self._individuals_left -= 1
+        self._individuals_simulating += 1
+        self._individuals_simulated += 1
+
+    def simulation_complete(self):
+        """ Simulation complete for individual """
+        self._individuals_simulating -= 1
+
+
+class Communication:
+    """ Communication """
+
+    def __init__(self, mpi):
+        super(Communication, self).__init__()
+        self.mpi = mpi
+        self.status = MPI.Status()
+        size = 1000
+        self.data_array = [
+            bytearray(('a'*size).encode("ascii"))
+            for i in range(self.mpi.size-1)
+        ]
+        self.buf = [
+            [self.data_array[i], size, MPI.CHAR]
+            for i in range(self.mpi.size-1)
+        ]
+        tag = 1
+        self.req_recv = [
+            self.mpi.comm.Irecv(self.buf[i], source=i+1, tag=tag)
+            for i in range(mpi.size-1)
+        ]
+
+    def init_send_individuals(self, pop):
+        """ Send initial individuals """
+        for world_rank in range(1, self.mpi.size):
+            buffer = str(
+                pop.individuals[pop.individuals_simulated]
+            ).encode("ascii")
+            print("Sending: {}".format(buffer))
+            self.mpi.comm.Send(buffer, dest=world_rank, tag=1)
+            pop.consume()
+
+    def check_receive(self, pop):
+        """ Check communication reception """
+        tag = 1
+        for i in range(self.mpi.size-1):
             msg = ""
-            # a, msg = req_recv[i].test()
-            # print("a: {}\nmsg: {}".format(a, msg))
-            # test = req_recv[i].Test(status)
-            test = req_recv[i].Get_status(status)
-            # if test:
-            #     re = MPI.Request.Waitall([req_recv[i]], [status])
-            #     # re = MPI.Request.Wait(req_recv[i])
-            #     print(re)
-            # # test_status = req_recv[i].Get_status(status=status)
-            # # count = bytearray(8)
-            count = status.Get_count(MPI.CHAR)  # MPI.CHAR
+            test = self.req_recv[i].Get_status(self.status)
+            count = self.status.Get_count(MPI.CHAR)  # MPI.CHAR
             print("  count: {}\n  status: {}".format(
                 count,
-                status
+                self.status
             ))
-            print("  Source: {}".format(status.Get_source()))
+            print("  Source: {}".format(self.status.Get_source()))
             if test and count:
-                msg = v[i][:count].decode()
+                msg = self.data_array[i][:count].decode()
                 print("Evolver: Message received:\n    {}".format(
                     msg.replace("\n", "\n    ")
                 ))
-                req_recv[i].Free()
+                self.req_recv[i].Free()
             if msg and count:
-                individuals_simulating -= 1
+                pop.simulation_complete()
                 # print("Evolver from {}: {} ({})".format(i+1, msg, a))
-                if individuals_left:
+                if pop.individuals_left:
                     # req_recv[i] = comm.Irecv(buf[i], source=i+1, tag=1)
-                    req_recv[i] = comm.Irecv(buf[i], source=i+1, tag=tag)
+                    self.req_recv[i] = self.mpi.comm.Irecv(
+                        self.buf[i], source=i+1, tag=tag
+                    )
                     buffer = str(
-                        indivudual_types[individuals_simulated]
+                        pop.individuals[pop.individuals_simulated]
                     ).encode("ascii")
                     print("Evolver: Sending back {}".format(buffer))
-                    comm.Send(buffer, dest=i+1, tag=1)
+                    self.mpi.comm.Send(buffer, dest=i+1, tag=1)
                     print("Evolver: Message sent")
-                    individuals_left -= 1
-                    individuals_simulating += 1
-                    individuals_simulated += 1
+                    pop.consume()
                     # print(
                     #     "Evolver: New data sent back to process {}".format(
                     #         i+1
                     #     )
                     # )
+
+
+def evolver():
+    """ Writer """
+    # Communication parameters
+    mpi = MPIsettings()
+    # Evolutions parameters
+    pop = Population()
+    pop.add_individuals([
+        "biorob_salamander_walking",
+        "biorob_salamander_swimming",
+        "biorob_salamander_walking",
+        "biorob_salamander_swimming",
+        "biorob_salamander_walking"
+    ])
+    # Run evolution
+    print("Evolver is running (rank={}, size={})".format(mpi.rank, mpi.size))
+    assert mpi.rank == 0, "Rank of evolver must be 0, but is {}".format(mpi.rank)
+    # Messaging
+    comm = Communication(mpi)
+    comm.init_send_individuals(pop)
+    print("Evolver: All data has been sent, now waiting")
+    while pop.individuals_left + pop.individuals_simulating:
+        print(
+            "Evolver: Individuals_left: {}, individuals_simulating: {}".format(
+                pop.individuals_left, pop.individuals_simulating
+            )
+        )
+        time.sleep(1e0)
+        comm.check_receive(pop)
     print("Evolver: Closing")
-    for i in range(size-1):
-        comm.Send("close".encode("ascii"), dest=i+1, tag=0)
-    return
+    for i in range(mpi.size-1):
+        mpi.comm.Send("close".encode("ascii"), dest=i+1, tag=0)
 
 
 if __name__ == '__main__':
