@@ -30,6 +30,7 @@ class ModelGenerationTemplates:
         self.parameter = self.env.get_template('parameters.xml')
         self.model = self.env.get_template('model.config')
         self.plugin = self.env.get_template('plugin.xml')
+        self.world = self.env.get_template('world.world')
 
     def render(self, config_package):
         """ Render Model """
@@ -43,6 +44,7 @@ class ModelGenerationTemplates:
         # Get environment and templates
         filename_sdf = "model.sdf"
         filename_model = "model.config"
+        filename_world = "world.world"
         # Generate sdf
         # parameters = self.get_parameters(config_control)
         _plugins = "\n".join([
@@ -56,6 +58,7 @@ class ModelGenerationTemplates:
             )
             for plugin in config_package.model.plugins
         ])
+        # Generate SDF
         sdf = self.sdf.render(
             name=config_package.model.name,
             plugins=_plugins,
@@ -75,6 +78,7 @@ class ModelGenerationTemplates:
         with open(home+folder_path+filename_model, "w+") as fileobject:
             fileobject.write(model)
             print("  Generation of {} model complete".format(filename_model))
+        # Generate plugins configs
         for plugin in config_package.model.plugins:
             if plugin.filename:
                 dest = "{}config/{}".format(
@@ -84,6 +88,15 @@ class ModelGenerationTemplates:
                 create_directory(home+dest)
                 with open(home+dest, "w+") as plugin_config:
                     plugin_config.write(ordered_dump(plugin.config))
+        # Generate world
+        world = self.world.render(
+            name="salamander",
+            uri="model://{}".format(config_package.model.name),
+            pose="0 0 0 0 0 0"
+        )
+        with open(home+folder_path+filename_world, "w+") as fileobject:
+            fileobject.write(world)
+            print("  Generation of {} sdf complete".format(filename_world))
 
     def get_parameters(self, config):
         """ Get parameters """

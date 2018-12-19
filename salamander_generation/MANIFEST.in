@@ -5,6 +5,7 @@ include salamander_generation/templates/parameters.xml
 include salamander_generation/templates/plugin.xml
 include salamander_generation/templates/plugin.yaml
 include salamander_generation/templates/salamander.sdf
+include salamander_generation/templates/world.world
 
 include salamander_generation/config/config_log_kinematics.yaml
 include salamander_generation/config/control.yaml
