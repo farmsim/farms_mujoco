@@ -188,7 +188,7 @@ public:
         // Serialise and store data
         std::string data;
         std::ofstream myfile;
-        myfile.open (this->filename);
+        myfile.open(getenv("HOME")+this->filename);
         links_logs.SerializeToString(&data);
         myfile << data;
         myfile.close();

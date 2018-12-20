@@ -117,6 +117,12 @@ class ModelGenerationTemplates:
                     folder_path,
                     plugin.filename
                 )
+                if "filename" in plugin.config:
+                    plugin.config["filename"] = (
+                        folder_path
+                        +plugin.config["filename"]
+                    )
+                    create_directory(home+plugin.config["filename"])
                 create_directory(home+dest)
                 with open(home+dest, "w+") as plugin_config:
                     plugin_config.write(ordered_dump(plugin.config))
