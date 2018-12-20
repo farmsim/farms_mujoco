@@ -1,0 +1,33 @@
+<sdf version='1.5'>
+  <world name='default'>
+    <!-- Models -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <include>
+      <name>{{name}}</name>
+      <uri>{{uri}}</uri>
+      <pose>{{pose}}</pose>
+      <plugin filename="libbiorob_salamander_benchmark_plugin.so" name="benchmark">
+      </plugin>
+    </include>
+    <physics type='ode'>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>0</real_time_update_rate>
+      <gravity>0 0 -9.81</gravity>
+    </physics>
+
+    <!-- GUI -->
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>5 -5 2 0 0.275643 2.35619</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+  </world>
+</sdf>

@@ -2,5 +2,6 @@
 -np 1 python3 evolver.py
 
 # Gazebo islands
--x GAZEBO_MASTER_URI=localhost:11345 -np 1 gazebo --verbose ../worlds/evolution.world
+-np 1 python3 gazebo_island.py
+# -x GAZEBO_MASTER_URI=localhost:11345 -np 1 gzserver --verbose ../worlds/evolution.world
 # -x GAZEBO_MASTER_URI=localhost:11346 -np 1 gazebo --verbose

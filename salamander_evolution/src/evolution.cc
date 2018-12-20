@@ -157,6 +157,14 @@ namespace gazebo
                     std::string answer = "I have correctly received message "+std::to_string(this->messages_received)+":\n" + this->message;
                     memcpy(this->reply, answer.data(), answer.length());
                     std::cout << "Island: Sending message back" << std::endl;
+                    std::cout << "MODELS:" << std::endl;
+                    for (auto &model: this->world_->Models()) {
+                        std::cout << "  " << model->GetName() << std::endl;
+                    }
+                    // this->world_->ClearModels();
+                    // this->world_->InsertModelFile("model://ground_plane");
+                    // this->world_->Reset();
+                    // this->world_->Stop();
                     result = MPI_Send(
                         this->reply,
                         answer.length(),

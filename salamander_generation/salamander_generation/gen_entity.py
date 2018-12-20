@@ -45,7 +45,6 @@ class ModelGenerationTemplates:
         filename_sdf = "model.sdf"
         filename_model = "model.config"
         filename_world = "world.world"
-        # Generate sdf
         # parameters = self.get_parameters(config_control)
         _plugins = "\n".join([
             self.plugin.render(
@@ -58,16 +57,47 @@ class ModelGenerationTemplates:
             )
             for plugin in config_package.model.plugins
         ])
-        # Generate SDF
+        # Generate sdf
+        self.generate_sdf(
+            filename_sdf,
+            config_package,
+            _plugins,
+            home+folder_path
+        )
+        # Generate model config
+        self.generate_model_config(
+            model_name,
+            filename_sdf,
+            filename_model,
+            config_package,
+            home+folder_path
+        )
+        # Generate plugins configs
+        self.generate_plugins(
+            config_package,
+            folder_path,
+            home
+        )
+        # Generate world
+        self.generate_world(
+            config_package,
+            home+folder_path,
+            filename_world
+        )
+
+    def generate_sdf(self, filename, config_package, plugins, path):
+        """ Generate SDF """
         sdf = self.sdf.render(
             name=config_package.model.name,
-            plugins=_plugins,
+            plugins=plugins,
             base_model=config_package.model.base_model
         )
-        with open(home+folder_path+filename_sdf, "w+") as fileobject:
+        with open(path+filename, "w+") as fileobject:
             fileobject.write(sdf)
-            print("  Generation of {} sdf complete".format(filename_sdf))
-        # Generate model config
+            print("  Generation of {} sdf complete".format(filename))
+
+    def generate_model_config(self, model_name, filename_sdf, filename_model, config_package, path):
+        """ Generate model config """
         model = self.model.render(
             model_name=model_name,
             filename_sdf=filename_sdf,
@@ -75,10 +105,12 @@ class ModelGenerationTemplates:
             author=config_package.creator.name,
             email=config_package.creator.email
         )
-        with open(home+folder_path+filename_model, "w+") as fileobject:
+        with open(path+filename_model, "w+") as fileobject:
             fileobject.write(model)
             print("  Generation of {} model complete".format(filename_model))
-        # Generate plugins configs
+
+    def generate_plugins(self, config_package, folder_path, home):
+        """ Generate plugins configs """
         for plugin in config_package.model.plugins:
             if plugin.filename:
                 dest = "{}config/{}".format(
@@ -88,13 +120,15 @@ class ModelGenerationTemplates:
                 create_directory(home+dest)
                 with open(home+dest, "w+") as plugin_config:
                     plugin_config.write(ordered_dump(plugin.config))
-        # Generate world
+
+    def generate_world(self, config_package, path, filename_world):
+        """ Generate world """
         world = self.world.render(
             name="salamander",
             uri="model://{}".format(config_package.model.name),
             pose="0 0 0 0 0 0"
         )
-        with open(home+folder_path+filename_world, "w+") as fileobject:
+        with open(path+filename_world, "w+") as fileobject:
             fileobject.write(world)
             print("  Generation of {} sdf complete".format(filename_world))
 
@@ -305,7 +339,7 @@ def generate_walking(name, frequency):
         name=name,
         base_model="biorob_salamander",
         gait="walking",
-        frequency=frequency
+        frequency=float(frequency)
     )
     templates = ModelGenerationTemplates()
     templates.render(package)
@@ -317,7 +351,7 @@ def generate_swimming(name, frequency):
         name=name,
         base_model="biorob_salamander_slip",
         gait="swimming",
-        frequency=frequency
+        frequency=float(frequency)
     )
     templates = ModelGenerationTemplates()
     templates.render(package)

@@ -3,30 +3,9 @@
 import time
 from mpi4py import MPI
 
-
-class MPIsettings(dict):
-    """ MPI settings """
-
-    def __init__(self):
-        super(MPIsettings, self).__init__()
-        self["comm"] = MPI.COMM_WORLD
-        self["size"] = self.comm.Get_size()
-        self["rank"] = self.comm.Get_rank()
-
-    @property
-    def comm(self):
-        """ Comm """
-        return self["comm"]
-
-    @property
-    def size(self):
-        """ Size """
-        return self["size"]
-
-    @property
-    def rank(self):
-        """ Rank """
-        return self["rank"]
+from communication import MPIsettings
+from salamander_generation import generate_walking
+import numpy as np
 
 
 class Individual:
@@ -34,7 +13,7 @@ class Individual:
 
     def __init__(self, name):
         super(Individual, self).__init__()
-        self._status = "ready"
+        self._status = None
         self._name = name
 
     @property
@@ -94,7 +73,7 @@ class Population:
         self._individuals_simulating -= 1
 
 
-class Communication:
+class CommunicationCPP:
     """ Communication """
 
     def __init__(self, mpi):
@@ -159,11 +138,51 @@ class Communication:
                     self.mpi.comm.Send(buffer, dest=i+1, tag=1)
                     print("Evolver: Message sent")
                     pop.consume()
-                    # print(
-                    #     "Evolver: New data sent back to process {}".format(
-                    #         i+1
-                    #     )
-                    # )
+
+
+class Communication:
+    """ Communication """
+
+    def __init__(self, mpi):
+        super(Communication, self).__init__()
+        self.mpi = mpi
+        tag = 1
+        self.req_recv = [
+            self.mpi.comm.irecv(source=i+1, tag=tag)
+            for i in range(mpi.size-1)
+        ]
+
+    def init_send_individuals(self, pop):
+        """ Send initial individuals """
+        for world_rank in range(1, self.mpi.size):
+            buffer = pop.individuals[pop.individuals_simulated]
+            print("Sending: {}".format(buffer))
+            self.mpi.comm.send(
+                buffer,
+                dest=world_rank,
+                tag=1
+            )
+            pop.consume()
+
+    def check_receive(self, pop):
+        """ Check communication reception """
+        tag = 1
+        for i in range(self.mpi.size-1):
+            _, msg = self.req_recv[i].test()
+            if msg:
+                pop.simulation_complete()
+                # print("Evolver from {}: {} ({})".format(i+1, msg, a))
+                if pop.individuals_left:
+                    # req_recv[i] = comm.Irecv(buf[i], source=i+1, tag=1)
+                    self.req_recv[i] = self.mpi.comm.irecv(
+                        source=i+1,
+                        tag=tag
+                    )
+                    buffer = pop.individuals[pop.individuals_simulated]
+                    print("Evolver: Sending back {}".format(buffer))
+                    self.mpi.comm.send(buffer, dest=i+1, tag=1)
+                    print("Evolver: Message sent")
+                    pop.consume()
 
 
 def evolver():
@@ -172,13 +191,11 @@ def evolver():
     mpi = MPIsettings()
     # Evolutions parameters
     pop = Population()
-    pop.add_individuals([
-        "biorob_salamander_walking",
-        "biorob_salamander_swimming",
-        "biorob_salamander_walking",
-        "biorob_salamander_swimming",
-        "biorob_salamander_walking"
-    ])
+    for freq in np.linspace(0, 2, 5):
+        name = "salamander_{}".format(float(freq)).replace(".", "d")
+        print("Generating {} with frequency {}".format(name, freq))
+        generate_walking(name, freq)
+        pop.add_individuals([name])
     # Run evolution
     print("Evolver is running (rank={}, size={})".format(mpi.rank, mpi.size))
     assert mpi.rank == 0, "Rank of evolver must be 0, but is {}".format(mpi.rank)
@@ -189,14 +206,15 @@ def evolver():
     while pop.individuals_left + pop.individuals_simulating:
         print(
             "Evolver: Individuals_left: {}, individuals_simulating: {}".format(
-                pop.individuals_left, pop.individuals_simulating
+                pop.individuals_left,
+                pop.individuals_simulating
             )
         )
         time.sleep(1e0)
         comm.check_receive(pop)
     print("Evolver: Closing")
     for i in range(mpi.size-1):
-        mpi.comm.Send("close".encode("ascii"), dest=i+1, tag=0)
+        mpi.comm.send("close", dest=i+1, tag=0)
 
 
 if __name__ == '__main__':
