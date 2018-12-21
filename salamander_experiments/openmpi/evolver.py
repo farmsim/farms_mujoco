@@ -4,6 +4,7 @@ import time
 from mpi4py import MPI
 
 from communication import MPIsettings
+from compute_fitness import compute_fitness
 from salamander_generation import generate_walking
 import numpy as np
 
@@ -36,6 +37,17 @@ class Population:
         self._individuals_left = 0
         self._individuals_simulating = 0
         self._individuals_simulated = 0
+
+    def __str__(self):
+        """ Individuals """
+        return "{}: {}\n{}: {}\n{}: {}".format(
+            "Individuals left",
+            self._individuals_left,
+            "Individuals simulating",
+            self._individuals_simulating,
+            "Individuals simulated",
+            self._individuals_simulated
+        )
 
     @property
     def individuals(self):
@@ -170,6 +182,13 @@ class Communication:
         for i in range(self.mpi.size-1):
             _, msg = self.req_recv[i].test()
             if msg:
+                print(pop)
+                individual = pop.individuals[pop.individuals_simulated-1]
+                fitness = compute_fitness(
+                    ".gazebo/models/"+individual,
+                    "link_body_0"
+                )
+                print("Fitness for {}: {}".format(individual, fitness))
                 pop.simulation_complete()
                 # print("Evolver from {}: {} ({})".format(i+1, msg, a))
                 if pop.individuals_left:
