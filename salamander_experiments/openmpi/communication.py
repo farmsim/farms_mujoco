@@ -42,14 +42,14 @@ class Communication:
     def init_send_individuals(self, pop):
         """ Send initial individuals """
         for world_rank in range(1, self.mpi.size):
-            buffer = pop[pop.individuals_simulated]
+            buffer = pop[pop.individuals_simulated].name
             print("Sending: {}".format(buffer))
             self.mpi.comm.send(
                 buffer,
                 dest=world_rank,
                 tag=1
             )
-            pop.consume()
+            pop[pop.individuals_simulated].status = "in_simulation"
 
     def check_receive(self, pop):
         """ Check communication reception """
@@ -57,16 +57,16 @@ class Communication:
         for i in range(self.mpi.size-1):
             _, msg = self.req_recv[i].test()
             if msg:
-                pop.simulation_complete()
+                pop[pop.individuals_simulated].status = "complete"
                 # print("Evolver from {}: {} ({})".format(i+1, msg, a))
-                if pop.individuals_left:
+                if pop.individuals_pending:
                     # req_recv[i] = comm.Irecv(buf[i], source=i+1, tag=1)
                     self.req_recv[i] = self.mpi.comm.irecv(
                         source=i+1,
                         tag=tag
                     )
-                    buffer = pop[pop.individuals_simulated]
+                    buffer = pop[pop.individuals_simulated].name
                     print("Evolver: Sending back {}".format(buffer))
                     self.mpi.comm.send(buffer, dest=i+1, tag=1)
                     print("Evolver: Message sent")
-                    pop.consume()
+                    pop[pop.individuals_simulated].status = "in_simulation"
