@@ -1,7 +1,6 @@
 """ Writer """
 
 import time
-from mpi4py import MPI
 
 from communication import Communication, MPIsettings
 from compute_fitness import compute_fitness
@@ -19,6 +18,7 @@ class Individual(dict):
         self["name"] = name
         self["parameters"] = None
         self["status"] = None
+        self["fitness"] = None
 
     @property
     def name(self):
@@ -53,9 +53,22 @@ class Individual(dict):
         else:
             raise Exception("Status '{}' is not a valid status".format(value))
 
+    @property
+    def fitness(self):
+        """ Fitness """
+        return self["fitness"]
+
     def generate(self):
         """ Generate individual """
         generate_walking(self.name, self.parameters[0])
+
+    def compute_fitness(self):
+        """ Compute fitness of individual """
+        self["fitness"] = compute_fitness(
+            ".gazebo/models/{}".format(self.name),
+            "link_body_0"
+        )
+        return self["fitness"]
 
 
 class Population(list):
@@ -107,21 +120,6 @@ class Population(list):
             if individual.status == "complete"
         ])
 
-    # def add_individuals(self, individuals):
-    #     """ Add individuals """
-    #     self.extend(individuals)
-    #     self._individuals_pending = len(self)
-
-    # def consume(self):
-    #     """ Consume individual """
-    #     self._individuals_pending -= 1
-    #     self._individuals_simulating += 1
-    #     self._individuals_simulated += 1
-
-    # def simulation_complete(self):
-    #     """ Simulation complete for individual """
-    #     self._individuals_simulating -= 1
-
 
 class Evolver:
     """ Evolver """
@@ -156,7 +154,8 @@ class Evolver:
         while self.pop.individuals_pending + self.pop.individuals_simulating:
             print(
                 (
-                    "Evolver: Individuals_pending: {}, individuals_simulating: {}"
+                    "Evolver: Individuals_pending: {}"
+                    ", individuals_simulating: {}"
                 ).format(
                     self.pop.individuals_pending,
                     self.pop.individuals_simulating
@@ -164,17 +163,21 @@ class Evolver:
             )
             self.comm.check_receive(self.pop)
             # COMPUTE FITNESS
-            # individual = pop.individuals[pop.individuals_simulated-1]
-            # fitness = compute_fitness(
-            #     ".gazebo/models/"+individual,
-            #     "link_body_0"
-            # )
-            # print("Fitness for {}: {}".format(individual, fitness))
+            for individual in self.pop:
+                if individual.status == "complete" and not individual.fitness:
+                    fitness = individual.compute_fitness()
+                    print("Fitness for {}: {}".format(individual, fitness))
             time.sleep(0.1)
 
         print("Evolver: Closing")
         for i in range(self.mpi.size-1):
             self.mpi.comm.send("close", dest=i+1, tag=0)
+        print("Final scores:")
+        for individual in self.pop:
+            print("Individual {}: {}".format(
+                individual.parameters,
+                individual.fitness
+            ))
 
 
 if __name__ == '__main__':
