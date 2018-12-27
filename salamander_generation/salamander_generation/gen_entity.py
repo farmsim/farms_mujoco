@@ -281,10 +281,12 @@ class Plugins(list):
                 library="libbiorob_salamander_log_kinematics_plugin.so",
                 config={
                     "filename": "logs/links_kinematics.pbdat",
-                    "links": {
-                        "link_body_0": {"frequency": 100},
-                        "link_body_1": {"frequency": 10}
-                    }
+                    "links": OrderedDict(
+                        [
+                            ("link_body_{}".format(i), {"frequency": 100})
+                            for i in range(12)
+                        ]
+                    )
                 }
             )
         )
