@@ -2,10 +2,11 @@
 
 import time
 
-from communication import Communication, MPIsettings
-from compute_fitness import compute_fitness
 from salamander_generation import generate_walking
 import numpy as np
+
+from communication import Communication, MPIsettings
+from compute_fitness import compute_fitness
 
 
 class Individual(dict):

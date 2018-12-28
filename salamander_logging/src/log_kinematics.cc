@@ -28,7 +28,7 @@ public:
 
 private:
     double time_tol = 1e-6;
-    nemesim::LinkKinematics data;
+    salamander::msgs::LinkKinematics data;
     double ifreq;
     double time_last_log = -1;
 
@@ -41,7 +41,7 @@ public:
         return;
     }
 
-    nemesim::LinkKinematics get_logs() {
+    salamander::msgs::LinkKinematics get_logs() {
         return this->data;
     }
 
@@ -56,82 +56,94 @@ private:
     void _log(gazebo::common::Time time, gazebo::physics::LinkPtr link)
         {
             // Memory allocation
-            nemesim::Kinematic *msg = this->data.add_link_kinematics();
-            nemesim::Vector3 *pos = new nemesim::Vector3;
-            nemesim::Rotation *rot = new nemesim::Rotation;
-            nemesim::Vector3 *rotx = new nemesim::Vector3;
-            nemesim::Vector3 *roty = new nemesim::Vector3;
-            nemesim::Vector3 *rotz = new nemesim::Vector3;
-            nemesim::Vector3 *lin_vel = new nemesim::Vector3;
-            nemesim::Vector3 *ang_vel = new nemesim::Vector3;
-            // Variables
-#if GAZEBO_MAJOR_VERSION >= 8
-            ignition::math::Pose3d linkworldpose = link->WorldPose();
-            ignition::math::Vector3d linkworldpos = linkworldpose.Pos();
-            ignition::math::Quaterniond quat = linkworldpose.Rot();
-            ignition::math::Vector3d axis;
-            double angle;
-            quat.ToAxis(axis, angle);
-            ignition::math::Matrix3d linkworldrot;
-            linkworldrot(0, 0) = axis[0];
-            linkworldrot(0, 1) = axis[1];
-            linkworldrot(0, 2) = axis[2];
-            linkworldrot(1, 0) = angle;
-            ignition::math::Vector3d linkworldlinearvel = link->WorldLinearVel();
-            ignition::math::Vector3d linkworldangularvel = link->WorldAngularVel();
-            // Orientation
-            rotx->set_x(linkworldrot(0, 0));
-            rotx->set_y(linkworldrot(0, 1));
-            rotx->set_z(linkworldrot(0, 2));
-            rot->set_allocated_x(rotx);
-            roty->set_x(linkworldrot(1, 0));
-            roty->set_y(linkworldrot(1, 1));
-            roty->set_z(linkworldrot(1, 2));
-            rot->set_allocated_y(roty);
-            rotz->set_x(linkworldrot(2, 0));
-            rotz->set_y(linkworldrot(2, 1));
-            rotz->set_z(linkworldrot(2, 2));
-            rot->set_allocated_z(rotz);
-            msg->set_allocated_rot(rot);
-#else
-            ignition::math::Pose3d linkworldpose = link->GetWorldPose();
-            ignition::math::Vector3d linkworldpos = linkworldpose.pos;
-            ignition::math::Matrix3d linkworldrot = linkworldpose.rot.GetAsMatrix3();
-            ignition::math::Vector3d linkworldlinearvel = link->GetWorldLinearVel();
-            ignition::math::Vector3d linkworldangularvel = link->GetWorldAngularVel();
-            // Orientation
-            rotx->set_x(linkworldrot[0][0]);
-            rotx->set_y(linkworldrot[0][1]);
-            rotx->set_z(linkworldrot[0][2]);
-            rot->set_allocated_x(rotx);
-            roty->set_x(linkworldrot[1][0]);
-            roty->set_y(linkworldrot[1][1]);
-            roty->set_z(linkworldrot[1][2]);
-            rot->set_allocated_y(roty);
-            rotz->set_x(linkworldrot[2][0]);
-            rotz->set_y(linkworldrot[2][1]);
-            rotz->set_z(linkworldrot[2][2]);
-            rot->set_allocated_z(rotz);
-            msg->set_allocated_rot(rot);
-#endif
+            salamander::msgs::LinkState *msg = this->data.add_state();
             // Time
-            msg->set_sec(time.sec);
-            msg->set_nsec(time.nsec);
-            // Position
-            pos->set_x(linkworldpos[0]);
-            pos->set_y(linkworldpos[1]);
-            pos->set_z(linkworldpos[2]);
-            msg->set_allocated_pos(pos);
-            // Linear velocity
-            lin_vel->set_x(linkworldlinearvel[0]);
-            lin_vel->set_y(linkworldlinearvel[1]);
-            lin_vel->set_z(linkworldlinearvel[2]);
-            msg->set_allocated_linvel(lin_vel);
-            // Angular velocity
-            ang_vel->set_x(linkworldangularvel[0]);
-            ang_vel->set_y(linkworldangularvel[1]);
-            ang_vel->set_z(linkworldangularvel[2]);
-            msg->set_allocated_angvel(ang_vel);
+            gazebo::msgs::Time *_time = new gazebo::msgs::Time;
+            gazebo::msgs::Set(_time, time);
+            msg->set_allocated_time(_time);
+            // Pose
+            gazebo::msgs::Pose *_pose = new gazebo::msgs::Pose;
+            gazebo::msgs::Set(_pose, link->WorldPose());
+            msg->set_allocated_pose(_pose);
+            // Linear_velocity
+            // Angular_velocity
+            
+            // // Other
+//             salamander::msgs::Vector3 *pos = new salamander::msgs::Vector3;
+//             salamander::msgs::Rotation *rot = new salamander::msgs::Rotation;
+//             salamander::msgs::Vector3 *rotx = new salamander::msgs::Vector3;
+//             salamander::msgs::Vector3 *roty = new salamander::msgs::Vector3;
+//             salamander::msgs::Vector3 *rotz = new salamander::msgs::Vector3;
+//             salamander::msgs::Vector3 *lin_vel = new salamander::msgs::Vector3;
+//             salamander::msgs::Vector3 *ang_vel = new salamander::msgs::Vector3;
+//             // Variables
+// #if GAZEBO_MAJOR_VERSION >= 8
+//             ignition::math::Pose3d linkworldpose = link->WorldPose();
+//             ignition::math::Vector3d linkworldpos = linkworldpose.Pos();
+//             ignition::math::Quaterniond quat = linkworldpose.Rot();
+//             ignition::math::Vector3d axis;
+//             double angle;
+//             quat.ToAxis(axis, angle);
+//             ignition::math::Matrix3d linkworldrot;
+//             linkworldrot(0, 0) = axis[0];
+//             linkworldrot(0, 1) = axis[1];
+//             linkworldrot(0, 2) = axis[2];
+//             linkworldrot(1, 0) = angle;
+//             ignition::math::Vector3d linkworldlinearvel = link->WorldLinearVel();
+//             ignition::math::Vector3d linkworldangularvel = link->WorldAngularVel();
+//             // Orientation
+//             rotx->set_x(linkworldrot(0, 0));
+//             rotx->set_y(linkworldrot(0, 1));
+//             rotx->set_z(linkworldrot(0, 2));
+//             rot->set_allocated_x(rotx);
+//             roty->set_x(linkworldrot(1, 0));
+//             roty->set_y(linkworldrot(1, 1));
+//             roty->set_z(linkworldrot(1, 2));
+//             rot->set_allocated_y(roty);
+//             rotz->set_x(linkworldrot(2, 0));
+//             rotz->set_y(linkworldrot(2, 1));
+//             rotz->set_z(linkworldrot(2, 2));
+//             rot->set_allocated_z(rotz);
+//             msg->set_allocated_rot(rot);
+// #else
+//             ignition::math::Pose3d linkworldpose = link->GetWorldPose();
+//             ignition::math::Vector3d linkworldpos = linkworldpose.pos;
+//             ignition::math::Matrix3d linkworldrot = linkworldpose.rot.GetAsMatrix3();
+//             ignition::math::Vector3d linkworldlinearvel = link->GetWorldLinearVel();
+//             ignition::math::Vector3d linkworldangularvel = link->GetWorldAngularVel();
+//             // Orientation
+//             rotx->set_x(linkworldrot[0][0]);
+//             rotx->set_y(linkworldrot[0][1]);
+//             rotx->set_z(linkworldrot[0][2]);
+//             rot->set_allocated_x(rotx);
+//             roty->set_x(linkworldrot[1][0]);
+//             roty->set_y(linkworldrot[1][1]);
+//             roty->set_z(linkworldrot[1][2]);
+//             rot->set_allocated_y(roty);
+//             rotz->set_x(linkworldrot[2][0]);
+//             rotz->set_y(linkworldrot[2][1]);
+//             rotz->set_z(linkworldrot[2][2]);
+//             rot->set_allocated_z(rotz);
+//             msg->set_allocated_rot(rot);
+// #endif
+//             // Time
+//             msg->set_sec(time.sec);
+//             msg->set_nsec(time.nsec);
+//             // Position
+//             pos->set_x(linkworldpos[0]);
+//             pos->set_y(linkworldpos[1]);
+//             pos->set_z(linkworldpos[2]);
+//             msg->set_allocated_pos(pos);
+//             // Linear velocity
+//             lin_vel->set_x(linkworldlinearvel[0]);
+//             lin_vel->set_y(linkworldlinearvel[1]);
+//             lin_vel->set_z(linkworldlinearvel[2]);
+//             msg->set_allocated_linvel(lin_vel);
+//             // Angular velocity
+//             ang_vel->set_x(linkworldangularvel[0]);
+//             ang_vel->set_y(linkworldangularvel[1]);
+//             ang_vel->set_z(linkworldangularvel[2]);
+//             msg->set_allocated_angvel(ang_vel);
         }
 };
 
@@ -178,8 +190,8 @@ public:
 
     void dump() {
         std::cout << "Logging data" << std::endl;
-        nemesim::LinksKinematics links_logs;
-        nemesim::LinkKinematics *link_logs_ptr;
+        salamander::msgs::ModelKinematics links_logs;
+        salamander::msgs::LinkKinematics *link_logs_ptr;
         for (auto &link: this->links)
         {
             link_logs_ptr = links_logs.add_links();

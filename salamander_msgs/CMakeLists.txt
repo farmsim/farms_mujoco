@@ -18,6 +18,31 @@ SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS
 
 ADD_SUBDIRECTORY(proto)
 
+# Binary
+SET(MSG_SRC "salamander_msgs_cpp/log_kinematics.pb.cc")
+SET(MSG_HEADER "salamander_msgs_cpp/log_kinematics.pb.h")
+include_directories(salamander_msgs_cpp)
+ADD_LIBRARY(
+  salamander_msg_log_kinematics
+  SHARED
+  ${MSG_SRC}
+  ${MSG_HEADER})
+set_target_properties(
+  salamander_msg_log_kinematics
+  PROPERTIES
+  PUBLIC_HEADER ${MSG_HEADER})
+set_target_properties(
+  salamander_msg_log_kinematics
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/)
+
+# Install
+include(GNUInstallDirs)
+INSTALL(
+  TARGETS salamander_msg_log_kinematics
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/salamander-msgs)
+
 # # Protobuf
 # add_library(
 #   log_kinematics_pb

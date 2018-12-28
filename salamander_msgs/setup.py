@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 """ Setup script """
 
-from subprocess import call
+# from subprocess import call
 from setuptools import setup
 
-print("Generating salamander_msgs protobuf library")
-call("protoc --proto_path={} --python_out={} {}".format(
-    "./proto",
-    "./salamander_msgs",
-    "./proto/log_kinematics.proto"
-), shell=True)
+# print("Generating salamander_msgs protobuf library")
+# call("protoc --proto_path={} --python_out={} {}".format(
+#     "./proto",
+#     "./salamander_msgs",
+#     "./proto/log_kinematics.proto"
+# ), shell=True)
 
 setup(
     name="salamander_msgs",

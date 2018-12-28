@@ -283,7 +283,10 @@ class Plugins(list):
                     "filename": "logs/links_kinematics.pbdat",
                     "links": OrderedDict(
                         [
-                            ("link_body_{}".format(i), {"frequency": 100})
+                            (
+                                "link_body_{}".format(i),
+                                {"frequency": 100 if i == 0 else 10}
+                            )
                             for i in range(12)
                         ]
                     )

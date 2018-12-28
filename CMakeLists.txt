@@ -12,7 +12,8 @@ SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS
 
 # Plugins
 add_subdirectory(salamander_msgs)
-include_directories(${CMAKE_BINARY_DIR}/salamander_msgs/proto)
+# include_directories(${CMAKE_BINARY_DIR}/salamander_msgs/proto)
+include_directories(salamander_msgs/salamander_msgs_cpp)
 add_subdirectory(salamander_parameters)
 include_directories(salamander_parameters/src)
 add_subdirectory(salamander_control)
