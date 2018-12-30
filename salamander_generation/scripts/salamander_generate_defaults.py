@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """ Test salamander generation """
 
 import salamander_generation as sg

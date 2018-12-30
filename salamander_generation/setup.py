@@ -20,6 +20,7 @@ setup(
     #     "Topic :: Utilities",
     #     "License :: OSI Approved :: BSD License",
     # ],
+    scripts=['scripts/salamander_generate_defaults.py'],
     package_data={'salamander_generation': [
         'salamander_generation/templates/*',
         'salamander_generation/config/*'
