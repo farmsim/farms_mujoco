@@ -5,14 +5,14 @@ from salamander_msgs.log_kinematics_pb2 import ModelKinematics
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def position(pos):
     """ Return array from position """
     return np.array([pos.x, pos.y, pos.z])
 
 
-def positions(path, link_name):
-    """ Main """
-    print("Opening file")
+def extract_logs(path):
+    """ Extract_logs """
     with open(
             os.path.expanduser('~')
             +"/"+path
@@ -22,6 +22,13 @@ def positions(path, link_name):
         kin = ModelKinematics()
         print("Loading from string")
         kin.ParseFromString(log_file.read())
+    return kin
+
+
+def positions(path, link_name):
+    """ Main """
+    print("Opening file")
+    kin = extract_logs(path)
     print("Loaded kin")
     link = None
     for link in kin.links:

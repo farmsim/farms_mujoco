@@ -3,6 +3,8 @@
 
 import argparse
 import salamander_pyrun as sr
+world_path = "/.gazebo/models/{}/world.world".format(model_name)
+sr.run_simulation(world_path)
 
 
 def run(model_name):
