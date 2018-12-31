@@ -1,7 +1,4 @@
-""" Salamander messages
-
-This package is for messaging withing the salamander framework
-"""
+""" Salamander results """
 
 __all__ = ["extract_logs", "plot"]
 
