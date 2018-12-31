@@ -25,7 +25,7 @@ private:
     YAML::Node config;
 
 public:
-    void load(std::string filename);
+    void load(std::string filename, bool verbose=false);
     YAML::Node operator[](std::string name);
 
 };
