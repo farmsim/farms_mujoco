@@ -95,27 +95,27 @@ def control_parameters(gait="walking", frequency=1):
     return data
 
 
-def generate_config(data, filename="config/control.yaml", verbose=False):
-    """ Generate config """
-    _filename = os.path.join(os.path.dirname(__file__), filename)
-    yaml_data = ordered_dump(data)
-    if verbose:
-        print(yaml_data)
-    with open(_filename, "w+") as yaml_file:
-        yaml_file.write(yaml_data)
-    print("{} generation complete".format(_filename))
+# def generate_config(data, filename="config/control.yaml", verbose=False):
+#     """ Generate config """
+#     _filename = os.path.join(os.path.dirname(__file__), filename)
+#     yaml_data = ordered_dump(data)
+#     if verbose:
+#         print(yaml_data)
+#     with open(_filename, "w+") as yaml_file:
+#         yaml_file.write(yaml_data)
+#     print("{} generation complete".format(_filename))
 
 
-def generate_controller(gait="walking", frequency=1):
-    """ Generate controller config """
-    data = control_parameters(gait=gait, frequency=frequency)
-    generate_config(data)
+# def generate_controller(gait="walking", frequency=1):
+#     """ Generate controller config """
+#     data = control_parameters(gait=gait, frequency=frequency)
+#     generate_config(data)
 
 
-def main():
-    """ Main """
-    generate_controller()
+# def main():
+#     """ Main """
+#     generate_controller()
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()

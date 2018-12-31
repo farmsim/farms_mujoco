@@ -252,19 +252,15 @@ class Plugin(OrderedDict):
 class Plugins(list):
     """ Plugins """
 
-    def __init__(self, gait, frequency):
+    def __init__(self, gait, control_plugin_parameters):
         super(Plugins, self).__init__()
         self.gait = gait
-        self.frequency = frequency
         # Control
         self.append(
             Plugin(
                 name="control",
                 library="libbiorob_salamander_control2_plugin.so",
-                config=control_parameters(
-                    gait=gait,
-                    frequency=frequency
-                )
+                config=control_plugin_parameters
             )
         )
         if gait == "swimming":
@@ -323,13 +319,13 @@ class Package(OrderedDict):
         """ Generate """
 
 
-def generate_entity_options(name, base_model, gait, frequency):
+def generate_model_options(name, base_model, gait, control_plugin_parameters):
     """ Generate package """
     creator = Creator(
         name="Jonathan Arreguit",
         email="jonathan.arreguitoneill@epfl.ch"
     )
-    plugins = Plugins(gait, frequency)
+    plugins = Plugins(gait, control_plugin_parameters)
     model = Model(
         name=name,
         base_model=base_model,
@@ -344,25 +340,25 @@ def generate_entity_options(name, base_model, gait, frequency):
     return package
 
 
-def generate_walking(name, frequency):
+def generate_walking(name, control_plugin_parameters):
     """ Generate walking salamander """
-    package = generate_entity_options(
+    package = generate_model_options(
         name=name,
         base_model="biorob_salamander",
         gait="walking",
-        frequency=float(frequency)
+        control_plugin_parameters=control_plugin_parameters
     )
     templates = ModelGenerationTemplates()
     templates.render(package)
 
 
-def generate_swimming(name, frequency):
+def generate_swimming(name, control_plugin_parameters):
     """ Generate walking salamander """
-    package = generate_entity_options(
+    package = generate_model_options(
         name=name,
         base_model="biorob_salamander_slip",
         gait="swimming",
-        frequency=float(frequency)
+        control_plugin_parameters=control_plugin_parameters
     )
     templates = ModelGenerationTemplates()
     templates.render(package)
@@ -371,10 +367,22 @@ def generate_swimming(name, frequency):
 def generate_all():
     """ Test entity generation """
     name = "salamander_new"
-    generate_walking(name, 1)
-    generate_walking(name+"_slow", 0.5)
-    generate_walking(name+"_fast", 2)
-    generate_swimming("salamander_swimming", 2)
+    generate_walking(
+        name,
+        control_parameters(gait="walking", frequency=1)
+    )
+    generate_walking(
+        name+"_slow",
+        control_parameters(gait="walking", frequency=0.5)
+    )
+    generate_walking(
+        name+"_fast",
+        control_parameters(gait="walking", frequency=2)
+    )
+    generate_swimming(
+        "salamander_swimming",
+        control_parameters(gait="swimming", frequency=2)
+    )
 
 
 if __name__ == '__main__':
