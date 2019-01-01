@@ -6,7 +6,7 @@ from collections import OrderedDict
 from jinja2 import Environment
 from jinja2.loaders import FileSystemLoader
 
-from .gen_controller import control_parameters
+from .gen_controller import ControlParameters
 from.yaml_utils import ordered_dump
 
 
@@ -16,6 +16,25 @@ def create_directory(folder):
     if not os.path.exists(directory):
         print("{} does not exist, creating directory".format(directory))
         os.makedirs(directory)
+
+
+def generate_plugins(config_package, folder_path, home):
+    """ Generate plugins configs """
+    for plugin in config_package.model.plugins:
+        if plugin.filename:
+            dest = "{}config/{}".format(
+                folder_path,
+                plugin.filename
+            )
+            if "filename" in plugin.config:
+                plugin.config["filename"] = (
+                    folder_path
+                    + plugin.config["filename"]
+                )
+                create_directory(home+plugin.config["filename"])
+            create_directory(home+dest)
+            with open(home+dest, "w+") as plugin_config:
+                plugin_config.write(ordered_dump(plugin.config))
 
 
 class ModelGenerationTemplates:
@@ -66,14 +85,14 @@ class ModelGenerationTemplates:
         )
         # Generate model config
         self.generate_model_config(
-            model_name,
-            filename_sdf,
-            filename_model,
-            config_package,
-            home+folder_path
+            model_name=model_name,
+            filename_sdf=filename_sdf,
+            filename_model=filename_model,
+            config_package=config_package,
+            path=home+folder_path
         )
         # Generate plugins configs
-        self.generate_plugins(
+        generate_plugins(
             config_package,
             folder_path,
             home
@@ -96,8 +115,11 @@ class ModelGenerationTemplates:
             fileobject.write(sdf)
             print("  Generation of {} sdf complete".format(filename))
 
-    def generate_model_config(self, model_name, filename_sdf, filename_model, config_package, path):
+    def generate_model_config(self, config_package, path, **kwargs):
         """ Generate model config """
+        model_name = kwargs.pop("model", "salamander_default_name")
+        filename_sdf = kwargs.pop("filename_sdf", "model.sdf")
+        filename_model = kwargs.pop("filename_model", "model.config")
         model = self.model.render(
             model_name=model_name,
             filename_sdf=filename_sdf,
@@ -108,24 +130,6 @@ class ModelGenerationTemplates:
         with open(path+filename_model, "w+") as fileobject:
             fileobject.write(model)
             print("  Generation of {} model complete".format(filename_model))
-
-    def generate_plugins(self, config_package, folder_path, home):
-        """ Generate plugins configs """
-        for plugin in config_package.model.plugins:
-            if plugin.filename:
-                dest = "{}config/{}".format(
-                    folder_path,
-                    plugin.filename
-                )
-                if "filename" in plugin.config:
-                    plugin.config["filename"] = (
-                        folder_path
-                        +plugin.config["filename"]
-                    )
-                    create_directory(home+plugin.config["filename"])
-                create_directory(home+dest)
-                with open(home+dest, "w+") as plugin_config:
-                    plugin_config.write(ordered_dump(plugin.config))
 
     def generate_world(self, config_package, path, filename_world):
         """ Generate world """
@@ -145,10 +149,10 @@ class ModelGenerationTemplates:
             self.get_parameter(parameters, _name, config[_name])
         return parameters
 
-    def get_parameter(
-            self, parameters, name, value, prefix="", sep="_"
-    ):
+    def get_parameter(self, parameters, name, value, **kwargs):
         """ Get parameter """
+        prefix = kwargs.pop("prefix", "")
+        sep = kwargs.pop("sep", "_")
         if isinstance(value, (dict, OrderedDict)):
             for _name in value:
                 self.get_parameter(
@@ -252,7 +256,7 @@ class Plugin(OrderedDict):
 class Plugins(list):
     """ Plugins """
 
-    def __init__(self, gait, control_plugin_parameters):
+    def __init__(self, gait, control_parameters):
         super(Plugins, self).__init__()
         self.gait = gait
         # Control
@@ -260,7 +264,7 @@ class Plugins(list):
             Plugin(
                 name="control",
                 library="libbiorob_salamander_control2_plugin.so",
-                config=control_plugin_parameters
+                config=control_parameters.data()
             )
         )
         if gait == "swimming":
@@ -319,13 +323,13 @@ class Package(OrderedDict):
         """ Generate """
 
 
-def generate_model_options(name, base_model, gait, control_plugin_parameters):
+def generate_model_options(name, base_model, gait, control_parameters):
     """ Generate package """
     creator = Creator(
         name="Jonathan Arreguit",
         email="jonathan.arreguitoneill@epfl.ch"
     )
-    plugins = Plugins(gait, control_plugin_parameters)
+    plugins = Plugins(gait, control_parameters)
     model = Model(
         name=name,
         base_model=base_model,
@@ -340,25 +344,25 @@ def generate_model_options(name, base_model, gait, control_plugin_parameters):
     return package
 
 
-def generate_walking(name, control_plugin_parameters):
+def generate_walking(name, control_parameters):
     """ Generate walking salamander """
     package = generate_model_options(
         name=name,
         base_model="biorob_salamander",
         gait="walking",
-        control_plugin_parameters=control_plugin_parameters
+        control_parameters=control_parameters
     )
     templates = ModelGenerationTemplates()
     templates.render(package)
 
 
-def generate_swimming(name, control_plugin_parameters):
+def generate_swimming(name, control_parameters):
     """ Generate walking salamander """
     package = generate_model_options(
         name=name,
         base_model="biorob_salamander_slip",
         gait="swimming",
-        control_plugin_parameters=control_plugin_parameters
+        control_parameters=control_parameters
     )
     templates = ModelGenerationTemplates()
     templates.render(package)
@@ -369,19 +373,19 @@ def generate_all():
     name = "salamander_new"
     generate_walking(
         name,
-        control_parameters(gait="walking", frequency=1)
+        ControlParameters(gait="walking", frequency=1)
     )
     generate_walking(
         name+"_slow",
-        control_parameters(gait="walking", frequency=0.5)
+        ControlParameters(gait="walking", frequency=0.5)
     )
     generate_walking(
         name+"_fast",
-        control_parameters(gait="walking", frequency=2)
+        ControlParameters(gait="walking", frequency=2)
     )
     generate_swimming(
         "salamander_swimming",
-        control_parameters(gait="swimming", frequency=2)
+        ControlParameters(gait="swimming", frequency=2)
     )
 
 

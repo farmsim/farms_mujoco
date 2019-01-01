@@ -4,7 +4,7 @@
 import argparse
 from subprocess import call
 
-from salamander_generation import generate_walking, control_parameters
+from salamander_generation import generate_walking, ControlParameters
 import numpy as np
 
 
@@ -30,7 +30,6 @@ def parse_args():
     args = parser.parse_args()
     return args.n_processes, args.n_individuals
 
-
 def main():
     """ Main """
     names = []
@@ -38,10 +37,10 @@ def main():
     for freq in np.linspace(0, 2, n_individuals):
         name = "salamander_{:.2f}".format(float(freq)).replace(".", "d")
         names.append(name)
-        control_data = control_parameters(gait="walking", frequency=float(freq))
+        control_data = ControlParameters(gait="walking", frequency=float(freq))
         generate_walking(
             name=name,
-            control_plugin_parameters=control_data
+            control_parameters=control_data
         )
     cmd = "mpiexec -n {} salamander_run_sweep.py {}".format(
         n_processes,
