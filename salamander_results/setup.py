@@ -13,6 +13,9 @@ setup(
     keywords="salamander results analysis",
     # url="",
     packages=['salamander_results'],
+    scripts=[
+        "scripts/salamander_plot_positions.py"
+    ]
     # long_description=read('README'),
     # classifiers=[
     #     "Development Status :: 3 - Alpha",
