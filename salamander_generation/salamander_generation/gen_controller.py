@@ -29,6 +29,36 @@ class ControlPID(OrderedDict):
         self["i"] = i
         self["d"] = d
 
+    @property
+    def p_term(self):
+        """ Proportional term """
+        return self["p"]
+
+    @p_term.setter
+    def p_term(self, value):
+        assert value >= 0
+        self["p"] = value
+
+    @property
+    def i_term(self):
+        """ Integrator term """
+        return self["i"]
+
+    @i_term.setter
+    def i_term(self, value):
+        assert value >= 0
+        self["i"] = value
+
+    @property
+    def d_term(self):
+        """ Derivative term """
+        return self["d"]
+
+    @d_term.setter
+    def d_term(self, value):
+        assert value >= 0
+        self["d"] = value
+
 
 class ControlPIDs(OrderedDict):
     """ ControlPIDs """
@@ -37,6 +67,24 @@ class ControlPIDs(OrderedDict):
         super(ControlPIDs, self).__init__()
         self["position"] = position
         self["velocity"] = velocity
+
+    @property
+    def position(self):
+        """ Position """
+        return self["position"]
+
+    @position.setter
+    def position(self, value):
+        self["position"] = value
+
+    @property
+    def velocity(self):
+        """ Velocity """
+        return self["velocity"]
+
+    @velocity.setter
+    def velocity(self, value):
+        self["velocity"] = value
 
 
 class ControlOscillator(OrderedDict):
@@ -48,6 +96,42 @@ class ControlOscillator(OrderedDict):
         self["frequency"] = frequency
         self["phase"] = phase
         self["bias"] = bias
+
+    @property
+    def amplitude(self):
+        """ Amplitude """
+        return self["amplitude"]
+
+    @amplitude.setter
+    def amplitude(self, value):
+        self["amplitude"] = value
+
+    @property
+    def frequency(self):
+        """ Frequency """
+        return self["frequency"]
+
+    @frequency.setter
+    def frequency(self, value):
+        self["frequency"] = value
+
+    @property
+    def phase(self):
+        """ Phase """
+        return self["phase"]
+
+    @phase.setter
+    def phase(self, value):
+        self["phase"] = value
+
+    @property
+    def bias(self):
+        """ Bias """
+        return self["bias"]
+
+    @bias.setter
+    def bias(self, value):
+        self["bias"] = value
 
 
 class ControlJoint(OrderedDict):
@@ -66,6 +150,33 @@ class ControlJoint(OrderedDict):
             position=kwargs.pop("position", ControlPID(p=0, i=0, d=0)),
             velocity=kwargs.pop("velocity", ControlPID(p=0, i=0, d=0))
         ))
+
+    @property
+    def type(self):
+        """ Type """
+        return self["type"]
+
+    @type.setter
+    def type(self, value):
+        self["type"] = value
+
+    @property
+    def oscillator(self):
+        """ Oscillator """
+        return self["oscillator"]
+
+    @oscillator.setter
+    def oscillator(self, value):
+        self["oscillator"] = value
+
+    @property
+    def pid(self):
+        """ Pid """
+        return self["pid"]
+
+    @pid.setter
+    def pid(self, value):
+        self["pid"] = value
 
 
 class ControlJoints(OrderedDict):
@@ -151,6 +262,15 @@ class ControlJoints(OrderedDict):
                             )
                         )
                     )
+
+    @property
+    def joints(self):
+        """ Joints """
+        return self["joints"]
+
+    @joints.setter
+    def joints(self, value):
+        self["joints"] = value
 
 
 class ControlParameters(OrderedDict):
