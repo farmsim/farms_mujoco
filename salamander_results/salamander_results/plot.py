@@ -42,12 +42,31 @@ def positions(path, link_name):
     return pos
 
 
-def plot_position(path=".gazebo/models/salamander_new"):
+def plot_links_positions(path=".gazebo/models/salamander_new", figure=None):
     """ Plot position """
+    if figure:
+        plt.figure(figure)
     for i in range(12):
         link_name = "link_body_{}".format(i)
         pos = positions(path, link_name)
         plt.plot(pos[:, 0], pos[:, 1], label=link_name)
+    plt.legend()
+    plt.axis("equal")
+    plt.grid(True)
+    plt.show()
+
+
+def plot_models_positions(path=".gazebo/models/", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    log_file = "/logs/links_kinematics.pbdat"
+    for folder in os.listdir(os.path.expanduser("~")+"/"+path):
+        if os.path.isfile(os.path.expanduser("~")+"/"+path+folder+log_file):
+            model_name = folder
+            link_name = "link_body_{}".format(0)
+            pos = positions(path+model_name, link_name)
+            plt.plot(pos[:, 0], pos[:, 1], label=model_name)
     plt.legend()
     plt.axis("equal")
     plt.grid(True)

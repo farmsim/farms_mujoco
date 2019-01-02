@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-""" Test parameter sweep """
+""" Plot positions """
 
 import argparse
-from salamander_results import plot_position
+from salamander_results import plot_links_positions
 
 
 def parse_args():
@@ -20,10 +20,11 @@ def parse_args():
     args = parser.parse_args()
     return args.path
 
+
 def main():
     """ Main """
     path = parse_args()
-    plot_position(path)
+    plot_links_positions(path)
 
 
 if __name__ == '__main__':
