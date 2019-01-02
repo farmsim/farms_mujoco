@@ -7,7 +7,7 @@ author copyright
 
 
 import time
-import imp
+import importlib as imp
 import csv
 import subprocess
 import matplotlib
@@ -61,13 +61,13 @@ matplotlib.rc('font', **font)
 # verbosity configuration
 verbosity_config = evol_config['verbosity']
 # computing the vector name
-name = filter(None, [algo_params_config['name_A'],
+name = list(filter(None, [algo_params_config['name_A'],
                      algo_params_config['name_B'],
                      algo_params_config['name_C'],
                      algo_params_config['name_D'],
                      algo_params_config['name_E'],
                      algo_params_config['name_F'],
-                     algo_params_config['name_G']])
+                     algo_params_config['name_G']]))
 
 # isl_topology(isl_topology)
 
@@ -106,7 +106,9 @@ if not os.path.exists(destination_dir_fig):
 
 # computing the optimization problem to solve
 #prob = pg.schwefel(1000)
-prob = evol_problem(dim = 1,link = "body_link_0", path = ".gazebo/models/salamander_new")
+prob = evol_problem(dim = 1,
+                    link_name = "body_link_0",
+                    path = ".gazebo/models/salamander_new")
 
 # ===============================topo single=======================================
 if isl_topo == 'single':

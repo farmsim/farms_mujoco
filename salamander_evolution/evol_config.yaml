@@ -1,13 +1,13 @@
 
 island:
     topology:
-        mixed: True
+        mixed: False
         full: False
-        single: False
-    number: 12
+        single: True
+    number: 1
 
 population: 
-    size: 20
+    size: 1
     seed:
 
 save:
@@ -21,7 +21,7 @@ migration:
     isl_worst_policy: False
     isl_rand_policy: False
     archi_best_policy: False
-  migration_on: True
+  migration_on: False
   probability: 100
   scheme:
     matrix: False
@@ -39,7 +39,7 @@ migration:
                    [1., 0., 0., 0., 0., 0., 0., 0.]]
 
 verbosity:
-    print_interval: 10
+    print_interval: 2
 
 algorithm_params:
     name_A: de
@@ -50,12 +50,12 @@ algorithm_params:
     name_F:
     name_G:
     verbosity: False
-    generation: 300
+    generation: 50
 
 algorithm:
     de: 
-        Muta_fac: 0.0
-        CR_fac: 0.0
+        Muta_fac: 0.8
+        CR_fac: 0.9
         variant: 2
         ftol: 0.000001
         xtol: 0.000001

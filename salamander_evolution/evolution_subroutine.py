@@ -1,4 +1,4 @@
-import imp
+import importlib as imp
 import time
 import results_subroutine
 import migration_subroutine
@@ -35,7 +35,7 @@ def evolution_cycle(udas, algo_params_config, prob, pop_config,
                   prob = prob,
                   size = pop_config['size'],
                   udi = pg.thread_island()) for uda in udas]
-
+    print(islands)
     data_f = []
     interval_observer = 0
     init_obs = 0
@@ -49,9 +49,10 @@ def evolution_cycle(udas, algo_params_config, prob, pop_config,
 
         data_f.append([isl.get_population().champion_f[0] for isl in islands])
 
-        print_generation(gen, islands, verbosity_config)
+        #print(data_f)
+        #print_generation(gen, islands, verbosity_config)
 
-        my_check = np.array(data_f)
+        #my_check = np.array(data_f)
         if np.remainder(gen, 100) == 0:
             print (time.time()-start_time)
 
