@@ -14,7 +14,8 @@ setup(
     # url="",
     packages=['salamander_results'],
     scripts=[
-        "scripts/salamander_plot_positions.py"
+        "scripts/salamander_plot_links.py",
+        "scripts/salamander_plot_models.py"
     ]
     # long_description=read('README'),
     # classifiers=[
