@@ -13,13 +13,16 @@ void print_yaml(YAML::Node node, std::string tab="") {
     }
 }
 
-void PluginParameters::load(std::string filename) {
+void PluginParameters::load(std::string filename, bool verbose) {
     std::string _filename = getenv("HOME")+filename;
     std::cout << "Loading " << _filename << std::endl;
     this->config = YAML::LoadFile(_filename);
     std::cout << _filename << " loaded" << std::endl;
-    std::cout << "Config parameters:" << std::endl;
-    print_yaml(config);
+    if (verbose)
+    {
+        std::cout << "Config parameters:" << std::endl;
+        print_yaml(config);
+    }
     std::cout << "Plugin parameters loaded" << std::endl;
 }
 

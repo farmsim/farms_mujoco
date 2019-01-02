@@ -42,9 +42,8 @@ def positions(path, link_name):
     return pos
 
 
-def main():
-    """ Main """
-    path = ".gazebo/models/salamander_new"
+def plot_position(path=".gazebo/models/salamander_new"):
+    """ Plot position """
     for i in range(12):
         link_name = "link_body_{}".format(i)
         pos = positions(path, link_name)
@@ -53,7 +52,3 @@ def main():
     plt.axis("equal")
     plt.grid(True)
     plt.show()
-
-
-if __name__ == '__main__':
-    main()

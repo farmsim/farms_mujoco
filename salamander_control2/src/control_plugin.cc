@@ -328,10 +328,10 @@ namespace gazebo
                         this->joints[joints_names[i]]->pid_velocity.SetDGain(pid_velocity["d"].as<double>());
                         // Oscillator
                         this->joints[joints_names[i]]->oscillator.type = joint_parameters["type"].as<std::string>();
-                        this->joints[joints_names[i]]->oscillator["amplitude"] = joint_parameters["amplitude"].as<double>();
-                        this->joints[joints_names[i]]->oscillator["frequency"] = joint_parameters["frequency"].as<double>();
-                        this->joints[joints_names[i]]->oscillator["phase"] = joint_parameters["phase"].as<double>();
-                        this->joints[joints_names[i]]->oscillator["bias"] = joint_parameters["bias"].as<double>();
+                        this->joints[joints_names[i]]->oscillator["amplitude"] = joint_parameters["oscillator"]["amplitude"].as<double>();
+                        this->joints[joints_names[i]]->oscillator["frequency"] = joint_parameters["oscillator"]["frequency"].as<double>();
+                        this->joints[joints_names[i]]->oscillator["phase"] = joint_parameters["oscillator"]["phase"].as<double>();
+                        this->joints[joints_names[i]]->oscillator["bias"] = joint_parameters["oscillator"]["bias"].as<double>();
                     }
                     i++;
                 }

@@ -1,121 +1,297 @@
 """ Generate controller """
 
-import os
 from collections import OrderedDict
 import numpy as np
 
-from .yaml_utils import ordered_dump
 
-
-def control_parameters(gait="walking", frequency=1):
-    """ Network parameters """
-    print("Generating config for {} gait at {} [Hz]".format(gait, frequency))
-    data = OrderedDict()
-    joints = OrderedDict()
-    data["joints"] = joints
-    # Morphology
-    n_body = 11
-    n_legs = 2
-    # joints["n_body"] = n_body
-    # joints["n_legs"] = n_legs
-    # Body
-    bias = 0
-    for i in range(n_body):
-        amplitude = 0.3 if gait == "walking" else 0.1+i*0.4/n_body
-        joint = OrderedDict()
-        joints["link_body_{}".format(i+1)] = joint
-        joint["type"] = "position"
-        joint["amplitude"] = (
-            float(amplitude*np.sin(2*np.pi*i/n_body))
-            if gait == "walking"
-            else float(amplitude)
+def control_data(data):
+    """ Data """
+    assert isinstance(data, OrderedDict)
+    return OrderedDict([
+        (
+            name,
+            (
+                control_data(data[name])
+                if isinstance(data[name], OrderedDict)
+                else data[name]
+            )
         )
-        joint["frequency"] = frequency
-        joint["phase"] = 0 if gait == "walking" else float(2*np.pi*i/n_body)
-        joint["bias"] = bias
-        pids = OrderedDict()
-        joint["pid"] = pids
-        pid_pos = OrderedDict()
-        pids["position"] = pid_pos
-        pid_pos["p"] = 1e1 if gait == "walking" else 1e1
-        pid_pos["i"] = 1e0 if gait == "walking" else 0
-        pid_pos["d"] = 0
-        pid_vel = OrderedDict()
-        pids["velocity"] = pid_vel
-        pid_vel["p"] = 1e-2 if gait == "walking" else 1e-2
-        pid_vel["i"] = 1e-3 if gait == "walking" else 0
-        pid_vel["d"] = 0
-    for leg_i in range(n_legs):
-        for side_i, side in enumerate(["L", "R"]):
-            for part_i in range(3):
-                joint = OrderedDict()
-                joint_name = "link_leg_{}_{}_{}".format(
-                    leg_i,
-                    side,
-                    part_i
-                )
-                joints[joint_name] = joint
-                joint["type"] = "position"  # if gait=="walking" else "torque"
-                joint["amplitude"] = (
-                    float(0.6 if part_i == 0 else 0.1)
-                    if gait == "walking"
-                    else 0.0
-                )
-                joint["frequency"] = (
-                    float(frequency)
-                    if gait == "walking"
-                    else 0
-                )
-                joint["phase"] = (
-                    float(
-                        np.pi*np.abs(leg_i-side_i)
-                        + (0 if part_i == 0 else 0.5*np.pi)
+        for name in data
+    ])
+
+
+class ControlPID(OrderedDict):
+    """ ControlPID """
+
+    def __init__(self, p, i, d):
+        super(ControlPID, self).__init__()
+        self["p"] = p
+        self["i"] = i
+        self["d"] = d
+
+    @property
+    def p_term(self):
+        """ Proportional term """
+        return self["p"]
+
+    @p_term.setter
+    def p_term(self, value):
+        assert value >= 0
+        self["p"] = value
+
+    @property
+    def i_term(self):
+        """ Integrator term """
+        return self["i"]
+
+    @i_term.setter
+    def i_term(self, value):
+        assert value >= 0
+        self["i"] = value
+
+    @property
+    def d_term(self):
+        """ Derivative term """
+        return self["d"]
+
+    @d_term.setter
+    def d_term(self, value):
+        assert value >= 0
+        self["d"] = value
+
+
+class ControlPIDs(OrderedDict):
+    """ ControlPIDs """
+
+    def __init__(self, position, velocity):
+        super(ControlPIDs, self).__init__()
+        self["position"] = position
+        self["velocity"] = velocity
+
+    @property
+    def position(self):
+        """ Position """
+        return self["position"]
+
+    @position.setter
+    def position(self, value):
+        self["position"] = value
+
+    @property
+    def velocity(self):
+        """ Velocity """
+        return self["velocity"]
+
+    @velocity.setter
+    def velocity(self, value):
+        self["velocity"] = value
+
+
+class ControlOscillator(OrderedDict):
+    """ ControlOscillator """
+
+    def __init__(self, amplitude, frequency, phase, bias):
+        super(ControlOscillator, self).__init__()
+        self["amplitude"] = amplitude
+        self["frequency"] = frequency
+        self["phase"] = phase
+        self["bias"] = bias
+
+    @property
+    def amplitude(self):
+        """ Amplitude """
+        return self["amplitude"]
+
+    @amplitude.setter
+    def amplitude(self, value):
+        self["amplitude"] = value
+
+    @property
+    def frequency(self):
+        """ Frequency """
+        return self["frequency"]
+
+    @frequency.setter
+    def frequency(self, value):
+        self["frequency"] = value
+
+    @property
+    def phase(self):
+        """ Phase """
+        return self["phase"]
+
+    @phase.setter
+    def phase(self, value):
+        self["phase"] = value
+
+    @property
+    def bias(self):
+        """ Bias """
+        return self["bias"]
+
+    @bias.setter
+    def bias(self, value):
+        self["bias"] = value
+
+
+class ControlJoint(OrderedDict):
+    """ ControlJoint """
+
+    def __init__(self, **kwargs):
+        super(ControlJoint, self).__init__()
+        self["type"] = kwargs.pop("type", "position")
+        self["oscillator"] = kwargs.pop("oscillator", ControlOscillator(
+            amplitude=0,
+            frequency=0,
+            phase=0,
+            bias=0
+        ))
+        self["pid"] = kwargs.pop("pid", ControlPIDs(
+            position=kwargs.pop("position", ControlPID(p=0, i=0, d=0)),
+            velocity=kwargs.pop("velocity", ControlPID(p=0, i=0, d=0))
+        ))
+
+    @property
+    def type(self):
+        """ Type """
+        return self["type"]
+
+    @type.setter
+    def type(self, value):
+        self["type"] = value
+
+    @property
+    def oscillator(self):
+        """ Oscillator """
+        return self["oscillator"]
+
+    @oscillator.setter
+    def oscillator(self, value):
+        self["oscillator"] = value
+
+    @property
+    def pid(self):
+        """ Pid """
+        return self["pid"]
+
+    @pid.setter
+    def pid(self, value):
+        self["pid"] = value
+
+
+class ControlJoints(OrderedDict):
+    """ ControlJoints """
+
+    def __init__(self, gait, frequency, n_body, n_legs):
+        super(ControlJoints, self).__init__()
+        # Body
+        for i in range(n_body):
+            amplitude = 0.3 if gait == "walking" else 0.1+i*0.4/n_body
+            self["link_body_{}".format(i+1)] = ControlJoint(
+                type="position",
+                oscillator=ControlOscillator(
+                    amplitude=(
+                        float(amplitude*np.sin(2*np.pi*i/n_body))
+                        if gait == "walking"
+                        else float(amplitude)
+                    ),
+                    frequency=frequency,
+                    phase=0 if gait == "walking" else float(2*np.pi*i/n_body),
+                    bias=0
+                ),
+                pid=ControlPIDs(
+                    position=ControlPID(
+                        p=1e1 if gait == "walking" else 1e1,
+                        i=1e0 if gait == "walking" else 0,
+                        d=0
+                    ),
+                    velocity=ControlPID(
+                        p=1e-2 if gait == "walking" else 1e-2,
+                        i=1e-3 if gait == "walking" else 0,
+                        d=0
                     )
-                    if gait == "walking"
-                    else 0
                 )
-                joint["bias"] = (
-                    float(0 if part_i == 0 else 0.1)
-                    if gait == "walking"
-                    else -2*np.pi/5 if part_i == 0
-                    else 0
-                )
-                pids = OrderedDict()
-                joint["pid"] = pids
-                pid_pos = OrderedDict()
-                pids["position"] = pid_pos
-                pid_pos["p"] = 1e1
-                pid_pos["i"] = 1e0
-                pid_pos["d"] = 0
-                pid_vel = OrderedDict()
-                pids["velocity"] = pid_vel
-                pid_vel["p"] = 1e-3
-                pid_vel["i"] = 1e-4
-                pid_vel["d"] = 0
-    return data
+            )
+        # Legs
+        for leg_i in range(n_legs):
+            for side_i, side in enumerate(["L", "R"]):
+                for part_i in range(3):
+                    name = "link_leg_{}_{}_{}".format(
+                        leg_i,
+                        side,
+                        part_i
+                    )
+                    self[name] = ControlJoint(
+                        type="position",
+                        oscillator=ControlOscillator(
+                            amplitude=(
+                                float(0.6 if part_i == 0 else 0.1)
+                                if gait == "walking"
+                                else 0.0
+                            ),
+                            frequency=(
+                                float(frequency)
+                                if gait == "walking"
+                                else 0
+                            ),
+                            phase=(
+                                float(
+                                    np.pi*np.abs(leg_i-side_i)
+                                    + (0 if part_i == 0 else 0.5*np.pi)
+                                )
+                                if gait == "walking"
+                                else 0
+                            ),
+                            bias=(
+                                float(0 if part_i == 0 else 0.1)
+                                if gait == "walking"
+                                else -2*np.pi/5 if part_i == 0
+                                else 0
+                            )
+                        ),
+                        pid=ControlPIDs(
+                            position=ControlPID(
+                                p=1e1,
+                                i=1e0,
+                                d=0
+                            ),
+                            velocity=ControlPID(
+                                p=1e-3,
+                                i=1e-4,
+                                d=0
+                            )
+                        )
+                    )
+
+    @property
+    def joints(self):
+        """ Joints """
+        return self["joints"]
+
+    @joints.setter
+    def joints(self, value):
+        self["joints"] = value
 
 
-def generate_config(data, filename="config/control.yaml", verbose=False):
-    """ Generate config """
-    _filename = os.path.join(os.path.dirname(__file__), filename)
-    yaml_data = ordered_dump(data)
-    if verbose:
-        print(yaml_data)
-    with open(_filename, "w+") as yaml_file:
-        yaml_file.write(yaml_data)
-    print("{} generation complete".format(_filename))
+class ControlParameters(OrderedDict):
+    """ Control parameters """
 
+    def __init__(self, gait, frequency, **kwargs):
+        super(ControlParameters, self).__init__()
+        self.gait = gait
+        self.frequency = frequency
+        self.n_body = kwargs.pop("n_body", 11)
+        self.n_legs = kwargs.pop("n_legs", 2)
+        self["joints"] = kwargs.pop(
+            "joints",
+            ControlJoints(
+                gait,
+                frequency,
+                self.n_body,
+                self.n_legs
+            )
+        )
 
-def generate_controller(gait="walking", frequency=1):
-    """ Generate controller config """
-    data = control_parameters(gait=gait, frequency=frequency)
-    generate_config(data)
-
-
-def main():
-    """ Main """
-    generate_controller()
-
-
-if __name__ == '__main__':
-    main()
+    def data(self):
+        """ Data """
+        return control_data(self)

@@ -4,17 +4,18 @@
 from setuptools import setup
 
 setup(
-    name="salamander_results",
+    name="salamander_sweep",
     version="0.1",
     author="Jonathan Arreguit",
     author_email="jonathan.arreguitoneill@epfl.ch",
-    description="Salamander results viewer and analysis",
+    description="Salamander sweep",
     # license="BSD",
-    keywords="salamander results analysis",
+    keywords="salamander sweep",
     # url="",
-    packages=['salamander_results'],
+    packages=['salamander_sweep'],
     scripts=[
-        "scripts/salamander_plot_positions.py"
+        "scripts/salamander_run_sweep.py",
+        "scripts/salamander_test_sweep.py"
     ]
     # long_description=read('README'),
     # classifiers=[

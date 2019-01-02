@@ -1,5 +1,0 @@
-{{plugin}}:
-  name: "{{name}}"
-  filename: "{{filename}}"
-  config: "{{config}}"
-  config_file: "{{config_file}}"
