@@ -65,85 +65,6 @@ private:
             gazebo::msgs::Pose *_pose = new gazebo::msgs::Pose;
             gazebo::msgs::Set(_pose, link->WorldPose());
             msg->set_allocated_pose(_pose);
-            // Linear_velocity
-            // Angular_velocity
-            
-            // // Other
-//             salamander::msgs::Vector3 *pos = new salamander::msgs::Vector3;
-//             salamander::msgs::Rotation *rot = new salamander::msgs::Rotation;
-//             salamander::msgs::Vector3 *rotx = new salamander::msgs::Vector3;
-//             salamander::msgs::Vector3 *roty = new salamander::msgs::Vector3;
-//             salamander::msgs::Vector3 *rotz = new salamander::msgs::Vector3;
-//             salamander::msgs::Vector3 *lin_vel = new salamander::msgs::Vector3;
-//             salamander::msgs::Vector3 *ang_vel = new salamander::msgs::Vector3;
-//             // Variables
-// #if GAZEBO_MAJOR_VERSION >= 8
-//             ignition::math::Pose3d linkworldpose = link->WorldPose();
-//             ignition::math::Vector3d linkworldpos = linkworldpose.Pos();
-//             ignition::math::Quaterniond quat = linkworldpose.Rot();
-//             ignition::math::Vector3d axis;
-//             double angle;
-//             quat.ToAxis(axis, angle);
-//             ignition::math::Matrix3d linkworldrot;
-//             linkworldrot(0, 0) = axis[0];
-//             linkworldrot(0, 1) = axis[1];
-//             linkworldrot(0, 2) = axis[2];
-//             linkworldrot(1, 0) = angle;
-//             ignition::math::Vector3d linkworldlinearvel = link->WorldLinearVel();
-//             ignition::math::Vector3d linkworldangularvel = link->WorldAngularVel();
-//             // Orientation
-//             rotx->set_x(linkworldrot(0, 0));
-//             rotx->set_y(linkworldrot(0, 1));
-//             rotx->set_z(linkworldrot(0, 2));
-//             rot->set_allocated_x(rotx);
-//             roty->set_x(linkworldrot(1, 0));
-//             roty->set_y(linkworldrot(1, 1));
-//             roty->set_z(linkworldrot(1, 2));
-//             rot->set_allocated_y(roty);
-//             rotz->set_x(linkworldrot(2, 0));
-//             rotz->set_y(linkworldrot(2, 1));
-//             rotz->set_z(linkworldrot(2, 2));
-//             rot->set_allocated_z(rotz);
-//             msg->set_allocated_rot(rot);
-// #else
-//             ignition::math::Pose3d linkworldpose = link->GetWorldPose();
-//             ignition::math::Vector3d linkworldpos = linkworldpose.pos;
-//             ignition::math::Matrix3d linkworldrot = linkworldpose.rot.GetAsMatrix3();
-//             ignition::math::Vector3d linkworldlinearvel = link->GetWorldLinearVel();
-//             ignition::math::Vector3d linkworldangularvel = link->GetWorldAngularVel();
-//             // Orientation
-//             rotx->set_x(linkworldrot[0][0]);
-//             rotx->set_y(linkworldrot[0][1]);
-//             rotx->set_z(linkworldrot[0][2]);
-//             rot->set_allocated_x(rotx);
-//             roty->set_x(linkworldrot[1][0]);
-//             roty->set_y(linkworldrot[1][1]);
-//             roty->set_z(linkworldrot[1][2]);
-//             rot->set_allocated_y(roty);
-//             rotz->set_x(linkworldrot[2][0]);
-//             rotz->set_y(linkworldrot[2][1]);
-//             rotz->set_z(linkworldrot[2][2]);
-//             rot->set_allocated_z(rotz);
-//             msg->set_allocated_rot(rot);
-// #endif
-//             // Time
-//             msg->set_sec(time.sec);
-//             msg->set_nsec(time.nsec);
-//             // Position
-//             pos->set_x(linkworldpos[0]);
-//             pos->set_y(linkworldpos[1]);
-//             pos->set_z(linkworldpos[2]);
-//             msg->set_allocated_pos(pos);
-//             // Linear velocity
-//             lin_vel->set_x(linkworldlinearvel[0]);
-//             lin_vel->set_y(linkworldlinearvel[1]);
-//             lin_vel->set_z(linkworldlinearvel[2]);
-//             msg->set_allocated_linvel(lin_vel);
-//             // Angular velocity
-//             ang_vel->set_x(linkworldangularvel[0]);
-//             ang_vel->set_y(linkworldangularvel[1]);
-//             ang_vel->set_z(linkworldangularvel[2]);
-//             msg->set_allocated_angvel(ang_vel);
         }
 };
 
@@ -156,6 +77,7 @@ public:
 
 public:
     std::unordered_map<std::string, LogLink> links;
+    bool verbose = false;
 
 private:
     std::string filename;
@@ -163,33 +85,39 @@ private:
 public:
     void parse_yaml(std::string filename) {
         std::string _filename = getenv("HOME")+filename;
-        std::cout << "Loading " << _filename << std::endl;
+        if (this->verbose)
+            std::cout << "Loading " << _filename << std::endl;
         YAML::Node config = YAML::LoadFile(_filename);
-        std::cout << _filename << " loaded" << std::endl;
+        if (this->verbose)
+            std::cout << _filename << " loaded" << std::endl;
         YAML::Node _links = config["links"];
-        std::cout << "Links to log:" << std::endl;
+        if (this->verbose)
+            std::cout << "Links to log:" << std::endl;
         for(YAML::const_iterator it=_links.begin(); it!=_links.end(); ++it) {
-            std::cout
-                << "  - Link "
-                << it->first
-                << " to be logged at "
-                << it->second["frequency"]
-                << " [Hz]"
-                << std::endl;
+            if (this->verbose)
+                std::cout
+                    << "  - Link "
+                    << it->first
+                    << " to be logged at "
+                    << it->second["frequency"]
+                    << " [Hz]"
+                    << std::endl;
             LogLink log(it->first.as<std::string>(), it->second["frequency"].as<double>());
             this->links.insert({it->first.as<std::string>(), log});
         }
         this->filename = config["filename"].as<std::string>();
-        std::cout
-            << "Links logs will be saved to "
-            << this->filename
-            << " upon deletion of the model"
-            << std::endl;
+        if (this->verbose)
+            std::cout
+                << "Links logs will be saved to "
+                << this->filename
+                << " upon deletion of the model"
+                << std::endl;
         return;
     }
 
     void dump() {
-        std::cout << "Logging data" << std::endl;
+        if (this->verbose)
+            std::cout << "Logging data" << std::endl;
         salamander::msgs::ModelKinematics links_logs;
         salamander::msgs::LinkKinematics *link_logs_ptr;
         for (auto &link: this->links)
@@ -204,7 +132,8 @@ public:
         links_logs.SerializeToString(&data);
         myfile << data;
         myfile.close();
-        std::cout << "Logged data" << std::endl;
+        if (this->verbose)
+            std::cout << "Logged data" << std::endl;
     }
 
 };
@@ -225,10 +154,11 @@ namespace gazebo
         ~LogKinematicsPlugin()
             {
                 // Deletion message
-                std::cout
-                    << "Model "
-                    << this->model->GetName()
-                    << ": Logging plugin deleted"
+                if (this->links_logs.verbose)
+                    std::cout
+                        << "Model "
+                        << this->model->GetName()
+                        << ": Logging plugin deleted"
                     << std::endl;
                 this->links_logs.dump();
                 return;
@@ -263,11 +193,12 @@ namespace gazebo
                 this->model = _model;
 
                 // Load confirmation message
-                std::cout
-                    << "\nThe salamander links logging plugin is attached to model["
-                    << this->model->GetName()
-                    << "]"
-                    << std::endl;
+                if (this->links_logs.verbose)
+                    std::cout
+                        << "\nThe salamander links logging plugin is attached to model["
+                        << this->model->GetName()
+                        << "]"
+                        << std::endl;
 
                 // Get all links
                 this->load_links(_model);
@@ -315,26 +246,31 @@ namespace gazebo
         void load_links(physics::ModelPtr _model)
             {
                 std::vector<physics::LinkPtr> links_all = _model->GetLinks();
-                std::cout << "Links found:";
+                if (this->links_logs.verbose)
+                    std::cout << "Links found:";
                 for (auto &link: links_all)
                 {
-                    std::cout << std::endl << "  " << link->GetName();
+                    if (this->links_logs.verbose)
+                        std::cout << std::endl << "  " << link->GetName();
                     this->links.insert({link->GetName(), link});
                 }
-                std::cout << std::endl;
+                if (this->links_logs.verbose)
+                    std::cout << std::endl;
                 return;
             }
 
         void load_sdf(sdf::ElementPtr _sdf)
             {
-                std::cout << "SDF parameters:" << std::endl;
+                if (this->links_logs.verbose)
+                    std::cout << "SDF parameters:" << std::endl;
                 std::string parameter = "config";
                 std::string filename = "";
                 std::string value;
                 if(_sdf->HasElement(parameter))
                 {
                     value = _sdf->Get<std::string>(parameter);
-                    std::cout << "    Setting " << parameter << " = " << value << std::endl;
+                    if (this->links_logs.verbose)
+                        std::cout << "    Setting " << parameter << " = " << value << std::endl;
                     filename = value;
                     this->links_logs.parse_yaml(filename);
                 }
