@@ -115,6 +115,7 @@ class Sweep:
         )
         self.comm = Communication(self.mpi)
         self.pop = Population(models)
+        self.n_loops = 0
 
     def run(self):
         """ Run evolution """
@@ -137,15 +138,17 @@ class Sweep:
 
     def loop(self):
         """ Loop """
-        print(
-            (
-                "Sweep: Individuals_pending: {}"
-                ", individuals_simulating: {}"
-            ).format(
-                self.pop.individuals_pending,
-                self.pop.individuals_simulating
+        if not self.n_loops % 10:
+            print(
+                (
+                    "Sweep: Individuals_pending: {}"
+                    ", individuals_simulating: {}"
+                ).format(
+                    self.pop.individuals_pending,
+                    self.pop.individuals_simulating
+                )
             )
-        )
+        self.n_loops += 1
         self.comm.check_receive(self.pop)
         completion = False
         for individual in self.pop:
