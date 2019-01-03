@@ -117,7 +117,7 @@ class ModelGenerationTemplates:
 
     def generate_model_config(self, config_package, path, **kwargs):
         """ Generate model config """
-        model_name = kwargs.pop("model", "salamander_default_name")
+        model_name = kwargs.pop("model_name", "salamander_default_name")
         filename_sdf = kwargs.pop("filename_sdf", "model.sdf")
         filename_model = kwargs.pop("filename_model", "model.config")
         model = self.model.render(

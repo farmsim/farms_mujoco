@@ -5,13 +5,12 @@ import subprocess
 import time
 
 from .communication import MPIsettings
-
+from salamander_pyrun import run_simulation
 
 def _run_island(world_path="/.gazebo/models/salamander_new/world.world"):
     """ Run island """
     exe = "gzserver"
     verbose = "--verbose"
-    # os.environ["GAZEBO_MASTER_URI"] = "localhost:11345"
     cmd = "{} {} {}".format(
         exe,
         verbose,
@@ -41,7 +40,8 @@ def run_island():
             req_recv = mpi.comm.irecv(source=0, tag=1)
             print('Process {}: NOW COMPUTING'.format(mpi.rank))
             # Computing
-            _run_island("/.gazebo/models/{}/world.world".format(msg))
+            # _run_island("/.gazebo/models/{}/world.world".format(msg))
+            run_simulation("/.gazebo/models/{}/world.world".format(msg))
             # Computation complete
             data = "Message received from {} and processed".format(mpi.rank)
             # print("Process {}: Ready to send".format(rank))

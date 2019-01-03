@@ -32,7 +32,7 @@ def main():
         sweep.run()
     else:
         port = 11345 + rank - 1
-        os.environ["GAZEBO_MASTER_URI"] = "localhost:{}".format(port)
+        # os.environ["GAZEBO_MASTER_URI"] = "localhost:{}".format(port)
         run_island()
     print("Simulation sweep COMPLETE")
 
