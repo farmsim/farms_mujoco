@@ -270,11 +270,13 @@ namespace gazebo
                 if (_sdf->HasElement("config"))
                 {
                     this->config_filename = _sdf->Get<std::string>("config");
-                    std::cout
-                        << "    Config found: "
-                        << this->config_filename
-                        << std::endl;
-                    std::cout << "Loading parameters from " << this->config_filename << std::endl;
+                    if (this->verbose)
+                        std::cout
+                            << "    Config found: "
+                            << this->config_filename
+                            << std::endl;
+                    if (this->verbose)
+                        std::cout << "Loading parameters from " << this->config_filename << std::endl;
                     this->parameters.load(this->config_filename);
                 }
                 else
@@ -289,18 +291,20 @@ namespace gazebo
                 std::vector<physics::JointPtr> joints_all = this->model->GetJoints();
                 joints_names.resize(joints_n);
                 int i = 0;
-                std::cout << "List of joints:" << std::endl;
+                if (this->verbose)
+                    std::cout << "List of joints:" << std::endl;
                 std::shared_ptr<Joint> joint_ptr;
                 YAML::Node joints_parameters = this->parameters["joints"];
                 for (auto &joint: joints_all) {
                     joints_names[i] = joint->GetName();
-                    std::cout
-                        << "  "
-                        << joints_names[i]
-                        << " (type: "
-                        << joint->GetType()
-                        << ")"
-                        << std::endl;
+                    if (this->verbose)
+                        std::cout
+                            << "  "
+                            << joints_names[i]
+                            << " (type: "
+                            << joint->GetType()
+                            << ")"
+                            << std::endl;
                     this->joints.insert({joints_names[i], std::make_shared<Joint>()});
                     this->joints[joints_names[i]]->name = joints_names[i];
                     if (!this->joints[joints_names[i]]->load(this->model)) {
@@ -335,13 +339,15 @@ namespace gazebo
                     }
                     i++;
                 }
-                std::cout << std::endl;
+                if (this->verbose)
+                    std::cout << std::endl;
 
                 // FT sensors
                 this->ft_sensors.resize(this->ft_sensors_names.size());
                 i = 0;
                 for (auto &name: this->ft_sensors_names) {
-                    std::cout << "Found FT sensor " << name << std::endl;
+                    if (this->verbose)
+                        std::cout << "Found FT sensor " << name << std::endl;
                     this->ft_sensors[i].name = name;
                     i++;
                 }
@@ -367,7 +373,7 @@ namespace gazebo
                 common::Time stepTime = cur_time - this->prevUpdateTime;
                 this->prevUpdateTime = cur_time;
 
-                if(verbose)
+                if(this->verbose)
                 {
                     std::cout
                         << "The salamander plugin was called at step "
@@ -417,7 +423,7 @@ namespace gazebo
                         {
                             joint.second->set_force(pos_cmd);
                         }
-                        if (verbose) {
+                        if (this->verbose) {
                             if (joint.first == "body_link_1"){
                                 std::cout
                                     << "controlled "
