@@ -4,8 +4,9 @@ import os
 import subprocess
 import time
 
-from .communication import MPIsettings
 from salamander_pyrun import run_simulation
+
+from .communication import MPIsettings
 
 def _run_island(world_path="/.gazebo/models/salamander_new/world.world"):
     """ Run island """
@@ -29,7 +30,6 @@ def run_island():
     req_recv = mpi.comm.irecv(source=0, tag=1)
     req_recv_master = mpi.comm.irecv(source=0, tag=0)
     while True:
-        time.sleep(1e-1)
         # Receive message
         _, msg = req_recv.test()
         _, msg_master = req_recv_master.test()
@@ -47,9 +47,8 @@ def run_island():
             # print("Process {}: Ready to send".format(rank))
             mpi.comm.send(data, dest=0, tag=1)
             # print("Process {}: Data sent back".format(rank))
-        if msg_master:
-            if msg_master == "close":
-                break
+        else:
+            time.sleep(1e-1)
     print("Process {}: Closing".format(mpi.rank))
 
 
