@@ -11,6 +11,7 @@ def run_simulation(
         database='salamander.db'
 ):
     """ Run island """
+    print("Preparing {} simulation".format(world_path))
     port = 11345
     conn = sqlite3.connect(database)
     cursor = conn.cursor()
@@ -19,29 +20,39 @@ def run_simulation(
         cursor.execute(
             "CREATE TABLE"
             " IF NOT EXISTS gazebo_address"
-            " (address text, UNIQUE(address))"
+            " (address text, model text, UNIQUE(address))"
         )
         conn.commit()
     # Insert address into table
 
     print("Verifying addresses")
+    address_found = False
     with conn:
-        offset = 0
         addresses_used = [
             address_used[0]
             for address_used
             in cursor.execute('SELECT * FROM gazebo_address')
         ]
         print("Verifying addresses_used: {}".format(addresses_used))
-        for _ in range(1000):
+        for offset in range(1000):
             address = "localhost:{}".format(port+offset)
-            if address in addresses_used:
-                offset += 1
-            else:
+            if address not in addresses_used:
                 print("Found unused address {}".format(address))
+                try:
+                    cursor.execute(
+                        "INSERT INTO gazebo_address VALUES (?, ?)",
+                        (address, world_path)
+                    )
+                    conn.commit()
+                except sqlite3.IntegrityError as err:
+                    print(err)
+                    print("Insertion into {} failed, trying another address")
+                else:
+                    address_found = True
+            if address_found:
                 break
-        cursor.execute("INSERT INTO gazebo_address VALUES (?)", (address,))
-        conn.commit()
+            if offset == 999:
+                raise Exception("No available address found")
     print("Verification of addresses complete")
 
     print("Addresses before simulation:")
