@@ -23,18 +23,21 @@ def evolution_cycle(udas, algo_params_config, prob, pop_config,
     return evolution_result[0] = data_f
     return evolution_result[1] = islands"""
 
+    prob = pg.problem(prob)
+    print("Problem:\n{}".format(prob))
+
     if algo_params_config['verbosity'] == True:
             udas = [pg.algorithm(uda) for uda in udas]
             for m in np.arange(0, len(udas)):
                 udas[m].set_verbosity(1)
     if 0:
         pop = pg.population(prob, size = pop_config['size'])
-        islands = [pg.island(algo = uda, pop = pop, udi = pg.thread_island()) for uda in udas]
+        islands = [pg.island(algo = uda, pop = pop, udi = pg.mp_island(use_pool=True)) for uda in udas]
     elif 1:
         islands = [pg.island(algo = uda,
                   prob = prob,
                   size = pop_config['size'],
-                  udi = pg.thread_island()) for uda in udas]
+                  udi = pg.mp_island(use_pool=True)) for uda in udas]
     print(islands)
     data_f = []
     interval_observer = 0

@@ -4,10 +4,10 @@ island:
         mixed: False
         full: False
         single: True
-    number: 1
+    number: 8
 
 population: 
-    size: 1
+    size: 5
     seed:
 
 save:
@@ -42,7 +42,7 @@ verbosity:
     print_interval: 2
 
 algorithm_params:
-    name_A: de
+    name_A: cmaes
     name_B:
     name_C:
     name_D:
@@ -50,7 +50,7 @@ algorithm_params:
     name_F:
     name_G:
     verbosity: False
-    generation: 50
+    generation: 3
 
 algorithm:
     de: 

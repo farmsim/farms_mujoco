@@ -15,8 +15,8 @@ class evol_problem:
         self.name = ""
 
     def fitness(self, x):
-        freq = x
-        self.name = "salamander_{:.2f}".format(float(freq)).replace(".", "d")
+        freq = x[0]
+        self.name = "salamander_{:.3f}".format(float(freq)).replace(".", "d")
         control_data = ControlParameters(gait="walking", frequency=float(freq))
         generate_walking(name=self.name, control_parameters=control_data)
 
@@ -28,7 +28,7 @@ class evol_problem:
         self.path = ".gazebo/models/{}".format(self.name)
         indiv_pos = plot.positions(self.path, self.link_name)
         obj_func = max([np.linalg.norm(indiv_pos[i]) for i in np.arange(0,len(indiv_pos))])
-        return np.array([obj_func])
+        return -np.array([obj_func])
 
     def get_bounds(self):
         return ([0] * self.dim, [2] * self.dim)
