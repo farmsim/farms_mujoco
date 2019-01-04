@@ -1,0 +1,52 @@
+algorithm:
+  bee_colony: {limit: 20}
+  cmaes: {c1: -1, cc: -1, cmu: -1, cs: -1, force_bounds: false, ftol: 1.0e-06, memory: false,
+    seed: null, sigma0: 0.5, xtol: 1.0e-06}
+  de: {CR_fac: 0.9, Muta_fac: 0.8, ftol: 1.0e-06, variant: 2, xtol: 1.0e-06}
+  de1220:
+    allowed_variants: [2, 3, 7, 10, 13, 14, 15, 16]
+    ftol: 1.0e-06
+    memory: false
+    variant_adptv: 1
+    xtol: 1.0e-06
+  moead: {CR: 1, F: 0.5, decomposition: tchebycheff, eta_m: 20, limit: 2, neighbours: 20,
+    preserve_diversity: true, realb: 0.9, seed: null, weight_generation: grid}
+  nsga2: {cr: 0.95, eta_c: 10, eta_m: 10, m: 0.01, seed: null}
+  pso: {eta1: 2.05, eta2: 2.05, max_vel: 0.5, memory: false, neighb_param: 4, neighb_type: 2,
+    omega: 0.7298, variant: 5}
+  psogen: {eta1: 2.05, eta2: 2.05, max_vel: 0.5, memory: false, neighb_param: 4, neighb_type: 2,
+    omega: 0.7298, seed: null, variant: 5}
+  sade: {ftol: 1.0e-06, memory: false, variant: 2, variant_adptv: 1, xtol: 1.0e-06}
+  sga: {CR_fac: 0.9, Muta_prob: 0.02, crossover: exponential, eta_c: 1.0, mutation: polynomial,
+    param_m: 1.0, param_s: 2, selection: tournament}
+  xnes: {eta_b: -1, eta_mu: -1, eta_sigma: -1, force_bounds: false, ftol: 1.0e-06,
+    memory: false, seed: null, sigma0: -1, xtol: 1.0e-06}
+algorithm_params: {generation: 10, name_A: de, name_B: null, name_C: null, name_D: null,
+  name_E: null, name_F: null, name_G: null, verbosity: false}
+figure: {confidence_interval: 2}
+island:
+  number: 1
+  topology: {full: false, mixed: false, single: true}
+migration:
+  adjacency_matrix:
+  - [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  - [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  - [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+  - [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+  - [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+  - [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+  - [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  - [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+  migration_on: false
+  probability: 100
+  scheme: {full: false, low_density: false, matrix: false, rand: true, ring: false}
+  selection_policy: {archi_best_policy: false, isl_best_policy: true, isl_rand_policy: false,
+    isl_worst_policy: false}
+model: {initial_condition: null, name: null, parameters: null}
+population: {seed: null, size: 5}
+problem:
+  dimension: {lower: null, upper: null}
+  fitness: null
+  name: schwefel
+save: {interval: 100, save_off: 1, save_on: 0}
+verbosity: {print_interval: 2}

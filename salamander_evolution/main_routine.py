@@ -107,9 +107,9 @@ def main():
 
     # computing the optimization problem to solve
     #prob = pg.schwefel(1000)
-    prob = evol_problem(dim = 1,
+    prob = pg.problem(evol_problem(dim = 1,
                         link_name = "body_link_0",
-                        path = ".gazebo/models/salamander_new")
+                        path = ".gazebo/models/salamander_new"))
 
     # ===============================topo single=======================================
     if isl_topo == 'single':

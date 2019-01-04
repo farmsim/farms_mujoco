@@ -4,16 +4,16 @@ island:
         mixed: False
         full: False
         single: True
-    number: 8
+    number: 4
 
 population: 
     size: 5
     seed:
 
 save:
-    save_on: 0
-    save_off: 1
-    interval: 100
+    save_on: 1
+    save_off: 0
+    interval: 2
 
 migration:
   selection_policy:
@@ -26,9 +26,9 @@ migration:
   scheme:
     matrix: False
     ring: False
-    rand: True
+    rand: False
     full: False
-    low_density: False
+    low_density: True
   adjacency_matrix: [[0., 1., 1., 1., 1., 1., 1., 1.],
                    [0., 0., 1., 0., 0., 0., 0., 0.],
                    [0., 0., 0., 1., 0., 0., 0., 0.],
@@ -50,7 +50,7 @@ algorithm_params:
     name_F:
     name_G:
     verbosity: False
-    generation: 3
+    generation: 50
 
 algorithm:
     de: 

@@ -206,10 +206,10 @@ def build_adjacency(islands, migration_config):
             adj_matrix = np.append(adj_matrix, np.roll(col, i), axis=1)
 
     if scheme == 'low_density':
-        col1 = [np.append([0, 1], np.zeros(np.round(len(islands)/2)-1), axis=0)]
+        col1 = [np.append([0, 1], np.zeros(int(np.round(len(islands)/2)-1)), axis=0)]
         col1 = [np.append(col1, np.array([1]))]
-        col1 = [np.append(col1, np.zeros(np.round(len(islands)/2)-2))]
-        col2 = [np.append([0, 0, 1], np.zeros(2*np.round(len(islands)/2)-3))]
+        col1 = [np.append(col1, np.zeros(int(np.round(len(islands)/2)-2)))]
+        col2 = [np.append([0, 0, 1], np.zeros(2*int(np.round(len(islands)/2))-3))]
         adj_matrix = np.append(col1, col2, axis=0)
         for i in np.arange(2,len(islands)):
             if i % 2 == 0:

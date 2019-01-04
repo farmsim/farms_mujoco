@@ -34,7 +34,7 @@ class evol_problem:
         return ([0] * self.dim, [2] * self.dim)
 
     def get_name(self):
-        return "Evolution of the salamdar (Frequency evolution)"
+        return "Evolution of the salamander (Frequency evolution)"
 
     def get_extra_info(self):
         return "\tDimensions: " + str(self.dim)
