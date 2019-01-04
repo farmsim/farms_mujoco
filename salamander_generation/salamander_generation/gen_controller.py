@@ -182,9 +182,11 @@ class ControlJoint(OrderedDict):
 class ControlJoints(OrderedDict):
     """ ControlJoints """
 
-    def __init__(self, gait, frequency, n_body, n_legs):
+    def __init__(self, gait, frequency, body_bias, **kwargs):
         super(ControlJoints, self).__init__()
         # Body
+        n_body = kwargs.pop("n_body", 11)
+        n_legs = kwargs.pop("n_legs", 2)
         for i in range(n_body):
             amplitude = 0.3 if gait == "walking" else 0.1+i*0.4/n_body
             self["link_body_{}".format(i+1)] = ControlJoint(
@@ -197,7 +199,7 @@ class ControlJoints(OrderedDict):
                     ),
                     frequency=frequency,
                     phase=0 if gait == "walking" else float(2*np.pi*i/n_body),
-                    bias=0
+                    bias=body_bias
                 ),
                 pid=ControlPIDs(
                     position=ControlPID(
@@ -280,15 +282,17 @@ class ControlParameters(OrderedDict):
         super(ControlParameters, self).__init__()
         self.gait = gait
         self.frequency = frequency
+        self.body_bias = kwargs.pop("body_bias", 0)
         self.n_body = kwargs.pop("n_body", 11)
         self.n_legs = kwargs.pop("n_legs", 2)
         self["joints"] = kwargs.pop(
             "joints",
             ControlJoints(
-                gait,
-                frequency,
-                self.n_body,
-                self.n_legs
+                self.gait,
+                self.frequency,
+                self.body_bias,
+                n_body=self.n_body,
+                n_legs=self.n_legs
             )
         )
 
