@@ -61,10 +61,14 @@ def run_simulation(
 
     exe = "gzserver"
     verbose = "--verbose"
+    seed = "--seed 0"
+    minimal_comms = "" # "--minimal_comms"
     os.environ["GAZEBO_MASTER_URI"] = address
-    cmd = "{} {} {}".format(
+    cmd = "{} {} {} {} {}".format(
         exe,
         verbose,
+        seed,
+        minimal_comms,
         os.environ["HOME"]+world_path
     )
     print(cmd)
