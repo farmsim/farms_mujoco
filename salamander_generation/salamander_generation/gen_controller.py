@@ -190,6 +190,18 @@ class ControlJoints(OrderedDict):
         n_legs = kwargs.pop("n_legs", 2)
         body_amplitude = kwargs.pop("body_amplitude", 0.3)
         body_bias = kwargs.pop("body_bias", 0)
+        b_pid_pos_p = kwargs.pop("b_pid_pos_p", 1e1 if walking_gait else 1e1)
+        b_pid_pos_i = kwargs.pop("b_pid_pos_i", 1e0 if walking_gait else 0)
+        b_pid_pos_d = kwargs.pop("b_pid_pos_d", 0)
+        b_pid_vel_p = kwargs.pop("b_pid_vel_p", 1e-2 if walking_gait else 1e-2)
+        b_pid_vel_i = kwargs.pop("b_pid_vel_i", 1e-3 if walking_gait else 0)
+        b_pid_vel_d = kwargs.pop("b_pid_vel_d", 0)
+        l_pid_pos_p = kwargs.pop("l_pid_pos_p", 1e1)
+        l_pid_pos_i = kwargs.pop("l_pid_pos_i", 1e0)
+        l_pid_pos_d = kwargs.pop("l_pid_pos_d", 0)
+        l_pid_vel_p = kwargs.pop("l_pid_vel_p", 1e-3)
+        l_pid_vel_i = kwargs.pop("l_pid_vel_i", 1e-4)
+        l_pid_vel_d = kwargs.pop("l_pid_vel_d", 0)
         for i in range(n_body):
             amplitude = (
                 body_amplitude
@@ -210,14 +222,14 @@ class ControlJoints(OrderedDict):
                 ),
                 pid=ControlPIDs(
                     position=ControlPID(
-                        p=1e1 if walking_gait else 1e1,
-                        i=1e0 if walking_gait else 0,
-                        d=0
+                        p=b_pid_pos_p,
+                        i=b_pid_pos_i,
+                        d=b_pid_pos_d
                     ),
                     velocity=ControlPID(
-                        p=1e-2 if walking_gait else 1e-2,
-                        i=1e-3 if walking_gait else 0,
-                        d=0
+                        p=b_pid_vel_p,
+                        i=b_pid_vel_i,
+                        d=b_pid_vel_d
                     )
                 )
             )
@@ -260,14 +272,14 @@ class ControlJoints(OrderedDict):
                         ),
                         pid=ControlPIDs(
                             position=ControlPID(
-                                p=1e1,
-                                i=1e0,
-                                d=0
+                                p=l_pid_pos_p,
+                                i=l_pid_pos_i,
+                                d=l_pid_pos_d
                             ),
                             velocity=ControlPID(
-                                p=1e-3,
-                                i=1e-4,
-                                d=0
+                                p=l_pid_vel_p,
+                                i=l_pid_vel_i,
+                                d=l_pid_vel_d
                             )
                         )
                     )
