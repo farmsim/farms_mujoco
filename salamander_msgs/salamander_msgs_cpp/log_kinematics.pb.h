@@ -41,7 +41,8 @@ void protobuf_AddDesc_log_5fkinematics_2eproto();
 void protobuf_AssignDesc_log_5fkinematics_2eproto();
 void protobuf_ShutdownFile_log_5fkinematics_2eproto();
 
-class JointsKinematics;
+class JointKinematics;
+class JointState;
 class LinkKinematics;
 class LinkState;
 class ModelKinematics;
@@ -128,16 +129,16 @@ class ModelKinematics : public ::google::protobuf::Message /* @@protoc_insertion
   const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::LinkKinematics >&
       links() const;
 
-  // repeated .salamander.msgs.JointsKinematics joints = 2;
+  // repeated .salamander.msgs.JointKinematics joints = 2;
   int joints_size() const;
   void clear_joints();
   static const int kJointsFieldNumber = 2;
-  const ::salamander::msgs::JointsKinematics& joints(int index) const;
-  ::salamander::msgs::JointsKinematics* mutable_joints(int index);
-  ::salamander::msgs::JointsKinematics* add_joints();
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointsKinematics >*
+  const ::salamander::msgs::JointKinematics& joints(int index) const;
+  ::salamander::msgs::JointKinematics* mutable_joints(int index);
+  ::salamander::msgs::JointKinematics* add_joints();
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointKinematics >*
       mutable_joints();
-  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointsKinematics >&
+  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointKinematics >&
       joints() const;
 
   // @@protoc_insertion_point(class_scope:salamander.msgs.ModelKinematics)
@@ -147,7 +148,7 @@ class ModelKinematics : public ::google::protobuf::Message /* @@protoc_insertion
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
   ::google::protobuf::RepeatedPtrField< ::salamander::msgs::LinkKinematics > links_;
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointsKinematics > joints_;
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointKinematics > joints_;
   friend void  protobuf_AddDesc_log_5fkinematics_2eproto();
   friend void protobuf_AssignDesc_log_5fkinematics_2eproto();
   friend void protobuf_ShutdownFile_log_5fkinematics_2eproto();
@@ -402,14 +403,14 @@ class LinkState : public ::google::protobuf::Message /* @@protoc_insertion_point
 };
 // -------------------------------------------------------------------
 
-class JointsKinematics : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointsKinematics) */ {
+class JointKinematics : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointKinematics) */ {
  public:
-  JointsKinematics();
-  virtual ~JointsKinematics();
+  JointKinematics();
+  virtual ~JointKinematics();
 
-  JointsKinematics(const JointsKinematics& from);
+  JointKinematics(const JointKinematics& from);
 
-  inline JointsKinematics& operator=(const JointsKinematics& from) {
+  inline JointKinematics& operator=(const JointKinematics& from) {
     CopyFrom(from);
     return *this;
   }
@@ -423,19 +424,19 @@ class JointsKinematics : public ::google::protobuf::Message /* @@protoc_insertio
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const JointsKinematics& default_instance();
+  static const JointKinematics& default_instance();
 
-  void Swap(JointsKinematics* other);
+  void Swap(JointKinematics* other);
 
   // implements Message ----------------------------------------------
 
-  inline JointsKinematics* New() const { return New(NULL); }
+  inline JointKinematics* New() const { return New(NULL); }
 
-  JointsKinematics* New(::google::protobuf::Arena* arena) const;
+  JointKinematics* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const JointsKinematics& from);
-  void MergeFrom(const JointsKinematics& from);
+  void CopyFrom(const JointKinematics& from);
+  void MergeFrom(const JointKinematics& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -454,7 +455,7 @@ class JointsKinematics : public ::google::protobuf::Message /* @@protoc_insertio
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(JointsKinematics* other);
+  void InternalSwap(JointKinematics* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return _internal_metadata_.arena();
@@ -482,19 +483,19 @@ class JointsKinematics : public ::google::protobuf::Message /* @@protoc_insertio
   ::std::string* release_name();
   void set_allocated_name(::std::string* name);
 
-  // repeated .gazebo.msgs.Joint joint = 2;
-  int joint_size() const;
-  void clear_joint();
-  static const int kJointFieldNumber = 2;
-  const ::gazebo::msgs::Joint& joint(int index) const;
-  ::gazebo::msgs::Joint* mutable_joint(int index);
-  ::gazebo::msgs::Joint* add_joint();
-  ::google::protobuf::RepeatedPtrField< ::gazebo::msgs::Joint >*
-      mutable_joint();
-  const ::google::protobuf::RepeatedPtrField< ::gazebo::msgs::Joint >&
-      joint() const;
+  // repeated .salamander.msgs.JointState state = 2;
+  int state_size() const;
+  void clear_state();
+  static const int kStateFieldNumber = 2;
+  const ::salamander::msgs::JointState& state(int index) const;
+  ::salamander::msgs::JointState* mutable_state(int index);
+  ::salamander::msgs::JointState* add_state();
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >*
+      mutable_state();
+  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >&
+      state() const;
 
-  // @@protoc_insertion_point(class_scope:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(class_scope:salamander.msgs.JointKinematics)
  private:
   inline void set_has_name();
   inline void clear_has_name();
@@ -503,13 +504,131 @@ class JointsKinematics : public ::google::protobuf::Message /* @@protoc_insertio
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
   ::google::protobuf::internal::ArenaStringPtr name_;
-  ::google::protobuf::RepeatedPtrField< ::gazebo::msgs::Joint > joint_;
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState > state_;
   friend void  protobuf_AddDesc_log_5fkinematics_2eproto();
   friend void protobuf_AssignDesc_log_5fkinematics_2eproto();
   friend void protobuf_ShutdownFile_log_5fkinematics_2eproto();
 
   void InitAsDefaultInstance();
-  static JointsKinematics* default_instance_;
+  static JointKinematics* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class JointState : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointState) */ {
+ public:
+  JointState();
+  virtual ~JointState();
+
+  JointState(const JointState& from);
+
+  inline JointState& operator=(const JointState& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields();
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const JointState& default_instance();
+
+  void Swap(JointState* other);
+
+  // implements Message ----------------------------------------------
+
+  inline JointState* New() const { return New(NULL); }
+
+  JointState* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const JointState& from);
+  void MergeFrom(const JointState& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(JointState* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .gazebo.msgs.Time time = 1;
+  bool has_time() const;
+  void clear_time();
+  static const int kTimeFieldNumber = 1;
+  const ::gazebo::msgs::Time& time() const;
+  ::gazebo::msgs::Time* mutable_time();
+  ::gazebo::msgs::Time* release_time();
+  void set_allocated_time(::gazebo::msgs::Time* time);
+
+  // required double position = 2;
+  bool has_position() const;
+  void clear_position();
+  static const int kPositionFieldNumber = 2;
+  double position() const;
+  void set_position(double value);
+
+  // optional double velocity = 3;
+  bool has_velocity() const;
+  void clear_velocity();
+  static const int kVelocityFieldNumber = 3;
+  double velocity() const;
+  void set_velocity(double value);
+
+  // @@protoc_insertion_point(class_scope:salamander.msgs.JointState)
+ private:
+  inline void set_has_time();
+  inline void clear_has_time();
+  inline void set_has_position();
+  inline void clear_has_position();
+  inline void set_has_velocity();
+  inline void clear_has_velocity();
+
+  // helper for ByteSize()
+  int RequiredFieldsByteSizeFallback() const;
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::gazebo::msgs::Time* time_;
+  double position_;
+  double velocity_;
+  friend void  protobuf_AddDesc_log_5fkinematics_2eproto();
+  friend void protobuf_AssignDesc_log_5fkinematics_2eproto();
+  friend void protobuf_ShutdownFile_log_5fkinematics_2eproto();
+
+  void InitAsDefaultInstance();
+  static JointState* default_instance_;
 };
 // ===================================================================
 
@@ -549,31 +668,31 @@ ModelKinematics::links() const {
   return links_;
 }
 
-// repeated .salamander.msgs.JointsKinematics joints = 2;
+// repeated .salamander.msgs.JointKinematics joints = 2;
 inline int ModelKinematics::joints_size() const {
   return joints_.size();
 }
 inline void ModelKinematics::clear_joints() {
   joints_.Clear();
 }
-inline const ::salamander::msgs::JointsKinematics& ModelKinematics::joints(int index) const {
+inline const ::salamander::msgs::JointKinematics& ModelKinematics::joints(int index) const {
   // @@protoc_insertion_point(field_get:salamander.msgs.ModelKinematics.joints)
   return joints_.Get(index);
 }
-inline ::salamander::msgs::JointsKinematics* ModelKinematics::mutable_joints(int index) {
+inline ::salamander::msgs::JointKinematics* ModelKinematics::mutable_joints(int index) {
   // @@protoc_insertion_point(field_mutable:salamander.msgs.ModelKinematics.joints)
   return joints_.Mutable(index);
 }
-inline ::salamander::msgs::JointsKinematics* ModelKinematics::add_joints() {
+inline ::salamander::msgs::JointKinematics* ModelKinematics::add_joints() {
   // @@protoc_insertion_point(field_add:salamander.msgs.ModelKinematics.joints)
   return joints_.Add();
 }
-inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointsKinematics >*
+inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointKinematics >*
 ModelKinematics::mutable_joints() {
   // @@protoc_insertion_point(field_mutable_list:salamander.msgs.ModelKinematics.joints)
   return &joints_;
 }
-inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointsKinematics >&
+inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointKinematics >&
 ModelKinematics::joints() const {
   // @@protoc_insertion_point(field_list:salamander.msgs.ModelKinematics.joints)
   return joints_;
@@ -849,93 +968,191 @@ inline void LinkState::set_allocated_angular_velocity(::gazebo::msgs::Vector3d* 
 
 // -------------------------------------------------------------------
 
-// JointsKinematics
+// JointKinematics
 
 // required string name = 1;
-inline bool JointsKinematics::has_name() const {
+inline bool JointKinematics::has_name() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void JointsKinematics::set_has_name() {
+inline void JointKinematics::set_has_name() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void JointsKinematics::clear_has_name() {
+inline void JointKinematics::clear_has_name() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void JointsKinematics::clear_name() {
+inline void JointKinematics::clear_name() {
   name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_name();
 }
-inline const ::std::string& JointsKinematics::name() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointsKinematics.name)
+inline const ::std::string& JointKinematics::name() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointKinematics.name)
   return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void JointsKinematics::set_name(const ::std::string& value) {
+inline void JointKinematics::set_name(const ::std::string& value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointKinematics.name)
 }
-inline void JointsKinematics::set_name(const char* value) {
+inline void JointKinematics::set_name(const char* value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointKinematics.name)
 }
-inline void JointsKinematics::set_name(const char* value, size_t size) {
+inline void JointKinematics::set_name(const char* value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointKinematics.name)
 }
-inline ::std::string* JointsKinematics::mutable_name() {
+inline ::std::string* JointKinematics::mutable_name() {
   set_has_name();
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointKinematics.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline ::std::string* JointsKinematics::release_name() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.JointsKinematics.name)
+inline ::std::string* JointKinematics::release_name() {
+  // @@protoc_insertion_point(field_release:salamander.msgs.JointKinematics.name)
   clear_has_name();
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
-inline void JointsKinematics::set_allocated_name(::std::string* name) {
+inline void JointKinematics::set_allocated_name(::std::string* name) {
   if (name != NULL) {
     set_has_name();
   } else {
     clear_has_name();
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointKinematics.name)
 }
 
-// repeated .gazebo.msgs.Joint joint = 2;
-inline int JointsKinematics::joint_size() const {
-  return joint_.size();
+// repeated .salamander.msgs.JointState state = 2;
+inline int JointKinematics::state_size() const {
+  return state_.size();
 }
-inline void JointsKinematics::clear_joint() {
-  joint_.Clear();
+inline void JointKinematics::clear_state() {
+  state_.Clear();
 }
-inline const ::gazebo::msgs::Joint& JointsKinematics::joint(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointsKinematics.joint)
-  return joint_.Get(index);
+inline const ::salamander::msgs::JointState& JointKinematics::state(int index) const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointKinematics.state)
+  return state_.Get(index);
 }
-inline ::gazebo::msgs::Joint* JointsKinematics::mutable_joint(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointsKinematics.joint)
-  return joint_.Mutable(index);
+inline ::salamander::msgs::JointState* JointKinematics::mutable_state(int index) {
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointKinematics.state)
+  return state_.Mutable(index);
 }
-inline ::gazebo::msgs::Joint* JointsKinematics::add_joint() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.JointsKinematics.joint)
-  return joint_.Add();
+inline ::salamander::msgs::JointState* JointKinematics::add_state() {
+  // @@protoc_insertion_point(field_add:salamander.msgs.JointKinematics.state)
+  return state_.Add();
 }
-inline ::google::protobuf::RepeatedPtrField< ::gazebo::msgs::Joint >*
-JointsKinematics::mutable_joint() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.JointsKinematics.joint)
-  return &joint_;
+inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >*
+JointKinematics::mutable_state() {
+  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.JointKinematics.state)
+  return &state_;
 }
-inline const ::google::protobuf::RepeatedPtrField< ::gazebo::msgs::Joint >&
-JointsKinematics::joint() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.JointsKinematics.joint)
-  return joint_;
+inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >&
+JointKinematics::state() const {
+  // @@protoc_insertion_point(field_list:salamander.msgs.JointKinematics.state)
+  return state_;
+}
+
+// -------------------------------------------------------------------
+
+// JointState
+
+// required .gazebo.msgs.Time time = 1;
+inline bool JointState::has_time() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void JointState::set_has_time() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void JointState::clear_has_time() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void JointState::clear_time() {
+  if (time_ != NULL) time_->::gazebo::msgs::Time::Clear();
+  clear_has_time();
+}
+inline const ::gazebo::msgs::Time& JointState::time() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointState.time)
+  return time_ != NULL ? *time_ : *default_instance_->time_;
+}
+inline ::gazebo::msgs::Time* JointState::mutable_time() {
+  set_has_time();
+  if (time_ == NULL) {
+    time_ = new ::gazebo::msgs::Time;
+  }
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointState.time)
+  return time_;
+}
+inline ::gazebo::msgs::Time* JointState::release_time() {
+  // @@protoc_insertion_point(field_release:salamander.msgs.JointState.time)
+  clear_has_time();
+  ::gazebo::msgs::Time* temp = time_;
+  time_ = NULL;
+  return temp;
+}
+inline void JointState::set_allocated_time(::gazebo::msgs::Time* time) {
+  delete time_;
+  time_ = time;
+  if (time) {
+    set_has_time();
+  } else {
+    clear_has_time();
+  }
+  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointState.time)
+}
+
+// required double position = 2;
+inline bool JointState::has_position() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void JointState::set_has_position() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void JointState::clear_has_position() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void JointState::clear_position() {
+  position_ = 0;
+  clear_has_position();
+}
+inline double JointState::position() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointState.position)
+  return position_;
+}
+inline void JointState::set_position(double value) {
+  set_has_position();
+  position_ = value;
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointState.position)
+}
+
+// optional double velocity = 3;
+inline bool JointState::has_velocity() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void JointState::set_has_velocity() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void JointState::clear_has_velocity() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void JointState::clear_velocity() {
+  velocity_ = 0;
+  clear_has_velocity();
+}
+inline double JointState::velocity() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointState.velocity)
+  return velocity_;
+}
+inline void JointState::set_velocity(double value) {
+  set_has_velocity();
+  velocity_ = value;
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointState.velocity)
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

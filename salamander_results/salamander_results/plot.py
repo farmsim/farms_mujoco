@@ -13,12 +13,13 @@ def position(pos):
 
 def extract_logs(path):
     """ Extract_logs """
-    with open(
-            os.path.expanduser('~')
-            +"/"+path
-            +"/logs/links_kinematics.pbdat",
-            mode="rb"
-    ) as log_file:
+    filepath = (
+        os.path.expanduser('~')
+        +"/"+path
+        +"/logs/links_kinematics.pbdat"
+    )
+    print("Opening file {}".format(filepath))
+    with open(filepath, mode="rb") as log_file:
         kin = ModelKinematics()
         print("Loading from string")
         kin.ParseFromString(log_file.read())
@@ -26,8 +27,8 @@ def extract_logs(path):
 
 
 def positions(path, link_name):
-    """ Main """
-    print("Opening file")
+    """ Link positions """
+    print("Processing model {}".format(path))
     kin = extract_logs(path)
     print("Loaded kin")
     link = None
@@ -40,6 +41,21 @@ def positions(path, link_name):
     print("  Last 5 times: {}".format(times[-5:]))
     pos = np.array([position(state.pose.position) for state in link.state])
     return pos
+
+
+def joint_positions(path, joint_name):
+    """ Joint positions """
+    print("Processing model {}".format(path))
+    kin = extract_logs(path)
+    print("Loaded kin")
+    joint = None
+    for joint in kin.joints:
+        if joint.name == joint_name:
+            break
+    print("Joint name: {}".format(joint.name))
+    times = [state.time.sec+1e-9*state.time.nsec for state in joint.state]
+    pos = np.array([state.position for state in joint.state])
+    return pos, times
 
 
 def plot_links_positions(path=".gazebo/models/salamander_new", figure=None):
@@ -69,5 +85,18 @@ def plot_models_positions(path=".gazebo/models/", figure=None):
             plt.plot(pos[:, 0], pos[:, 1], label=model_name)
     plt.legend()
     plt.axis("equal")
+    plt.grid(True)
+    plt.show()
+
+
+def plot_joints_positions(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    for i in range(11):
+        joint_name = "link_body_{}".format(i+1)
+        pos, times = joint_positions(path, joint_name)
+        plt.plot(times, pos, label=joint_name)
+    plt.legend()
     plt.grid(True)
     plt.show()
