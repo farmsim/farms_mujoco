@@ -189,6 +189,7 @@ class ControlJoints(OrderedDict):
         n_body = kwargs.pop("n_body", 11)
         n_legs = kwargs.pop("n_legs", 2)
         body_amplitude = kwargs.pop("body_amplitude", 0.3)
+        body_phase = kwargs.pop("body_phase", 0)
         body_bias = kwargs.pop("body_bias", 0)
         b_pid_pos_p = kwargs.pop("b_pid_pos_p", 1e1 if walking_gait else 1e1)
         b_pid_pos_i = kwargs.pop("b_pid_pos_i", 1e0 if walking_gait else 0)
@@ -202,6 +203,10 @@ class ControlJoints(OrderedDict):
         l_pid_vel_p = kwargs.pop("l_pid_vel_p", 1e-3)
         l_pid_vel_i = kwargs.pop("l_pid_vel_i", 1e-4)
         l_pid_vel_d = kwargs.pop("l_pid_vel_d", 0)
+        leg_a_0 = kwargs.pop("leg_a_0", 0.6 if walking_gait else 0)
+        leg_a_o = kwargs.pop("leg_a_o", 0.1 if walking_gait else 0)
+        leg_b_0 = kwargs.pop("leg_b_0", 0 if walking_gait else -2*np.pi/5)
+        leg_b_o = kwargs.pop("leg_b_o", 0.1 if walking_gait else 0)
         for i in range(n_body):
             amplitude = (
                 body_amplitude
@@ -217,7 +222,11 @@ class ControlJoints(OrderedDict):
                         else float(amplitude)
                     ),
                     frequency=frequency,
-                    phase=0 if walking_gait else float(2*np.pi*i/n_body),
+                    phase=(
+                        body_phase
+                        if walking_gait
+                        else float(2*np.pi*i/n_body)
+                    ),
                     bias=body_bias
                 ),
                 pid=ControlPIDs(
@@ -245,16 +254,8 @@ class ControlJoints(OrderedDict):
                     self[name] = ControlJoint(
                         type="position",
                         oscillator=ControlOscillator(
-                            amplitude=(
-                                float(0.6 if part_i == 0 else 0.1)
-                                if walking_gait
-                                else 0.0
-                            ),
-                            frequency=(
-                                float(frequency)
-                                if walking_gait
-                                else 0
-                            ),
+                            amplitude=(leg_a_0 if part_i == 0 else leg_a_o),
+                            frequency=(float(frequency) if walking_gait else 0),
                             phase=(
                                 float(
                                     np.pi*np.abs(leg_i-side_i)
@@ -263,12 +264,7 @@ class ControlJoints(OrderedDict):
                                 if walking_gait
                                 else 0
                             ),
-                            bias=(
-                                float(0 if part_i == 0 else 0.1)
-                                if walking_gait
-                                else -2*np.pi/5 if part_i == 0
-                                else 0
-                            )
+                            bias=(leg_b_0 if part_i == 0 else leg_b_o)
                         ),
                         pid=ControlPIDs(
                             position=ControlPID(
