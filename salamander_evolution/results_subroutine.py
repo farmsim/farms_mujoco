@@ -19,8 +19,8 @@ def config_print(isl_topo, algo_params_config, isl_config, pop_config, name_algo
 
 def print_generation(gen, islands, verbosity_config):
     if 0 == np.remainder(gen, verbosity_config['print_interval']):
-        print('generation: {}, fitness: {}').format(gen,
-                                                  min([isl.get_population().champion_f[0] for isl in islands]))
+        print('generation: {}, fitness: {}'.format(gen,
+                                                  min([isl.get_population().champion_f[0] for isl in islands])))
 
 def print_res(data_f, name_algo, algo_params_config):
     min_fitness = min(np.amin(data_f, axis=0))

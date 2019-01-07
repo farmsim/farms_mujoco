@@ -53,7 +53,7 @@ def evolution_cycle(udas, algo_params_config, prob, pop_config,
         data_f.append([isl.get_population().champion_f[0] for isl in islands])
 
         #print(data_f)
-        #print_generation(gen, islands, verbosity_config)
+        print_generation(gen, islands, verbosity_config)
 
         #my_check = np.array(data_f)
         if np.remainder(gen, 100) == 0:
