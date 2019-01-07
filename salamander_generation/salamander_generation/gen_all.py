@@ -289,6 +289,15 @@ class Plugins(list):
                             )
                             for i in range(12)
                         ]
+                    ),
+                    "joints": OrderedDict(
+                        [
+                            (
+                                "link_body_{}".format(i+1),
+                                {"frequency": 100}
+                            )
+                            for i in range(11)
+                        ]
                     )
                 }
             )
