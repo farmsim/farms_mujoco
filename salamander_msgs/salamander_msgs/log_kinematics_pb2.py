@@ -23,7 +23,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='log_kinematics.proto',
   package='salamander.msgs',
   syntax='proto2',
-  serialized_pb=_b('\n\x14log_kinematics.proto\x12\x0fsalamander.msgs\x1a\ntime.proto\x1a\npose.proto\x1a\x0bjoint.proto\x1a\x0evector3d.proto\"t\n\x0fModelKinematics\x12.\n\x05links\x18\x01 \x03(\x0b\x32\x1f.salamander.msgs.LinkKinematics\x12\x31\n\x06joints\x18\x02 \x03(\x0b\x32!.salamander.msgs.JointsKinematics\"I\n\x0eLinkKinematics\x12\x0c\n\x04name\x18\x01 \x02(\t\x12)\n\x05state\x18\x02 \x03(\x0b\x32\x1a.salamander.msgs.LinkState\"\xae\x01\n\tLinkState\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12\x1f\n\x04pose\x18\x02 \x02(\x0b\x32\x11.gazebo.msgs.Pose\x12.\n\x0flinear_velocity\x18\x03 \x01(\x0b\x32\x15.gazebo.msgs.Vector3d\x12/\n\x10\x61ngular_velocity\x18\x04 \x01(\x0b\x32\x15.gazebo.msgs.Vector3d\"C\n\x10JointsKinematics\x12\x0c\n\x04name\x18\x01 \x02(\t\x12!\n\x05joint\x18\x02 \x03(\x0b\x32\x12.gazebo.msgs.Joint')
+  serialized_pb=_b('\n\x14log_kinematics.proto\x12\x0fsalamander.msgs\x1a\ntime.proto\x1a\npose.proto\x1a\x0bjoint.proto\x1a\x0evector3d.proto\"s\n\x0fModelKinematics\x12.\n\x05links\x18\x01 \x03(\x0b\x32\x1f.salamander.msgs.LinkKinematics\x12\x30\n\x06joints\x18\x02 \x03(\x0b\x32 .salamander.msgs.JointKinematics\"I\n\x0eLinkKinematics\x12\x0c\n\x04name\x18\x01 \x02(\t\x12)\n\x05state\x18\x02 \x03(\x0b\x32\x1a.salamander.msgs.LinkState\"\xae\x01\n\tLinkState\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12\x1f\n\x04pose\x18\x02 \x02(\x0b\x32\x11.gazebo.msgs.Pose\x12.\n\x0flinear_velocity\x18\x03 \x01(\x0b\x32\x15.gazebo.msgs.Vector3d\x12/\n\x10\x61ngular_velocity\x18\x04 \x01(\x0b\x32\x15.gazebo.msgs.Vector3d\"K\n\x0fJointKinematics\x12\x0c\n\x04name\x18\x01 \x02(\t\x12*\n\x05state\x18\x02 \x03(\x0b\x32\x1b.salamander.msgs.JointState\"Q\n\nJointState\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12\x10\n\x08position\x18\x02 \x02(\x01\x12\x10\n\x08velocity\x18\x03 \x01(\x01')
   ,
   dependencies=[time__pb2.DESCRIPTOR,pose__pb2.DESCRIPTOR,joint__pb2.DESCRIPTOR,vector3d__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -65,7 +65,7 @@ _MODELKINEMATICS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=94,
-  serialized_end=210,
+  serialized_end=209,
 )
 
 
@@ -102,8 +102,8 @@ _LINKKINEMATICS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=212,
-  serialized_end=285,
+  serialized_start=211,
+  serialized_end=284,
 )
 
 
@@ -154,27 +154,27 @@ _LINKSTATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=288,
-  serialized_end=462,
+  serialized_start=287,
+  serialized_end=461,
 )
 
 
-_JOINTSKINEMATICS = _descriptor.Descriptor(
-  name='JointsKinematics',
-  full_name='salamander.msgs.JointsKinematics',
+_JOINTKINEMATICS = _descriptor.Descriptor(
+  name='JointKinematics',
+  full_name='salamander.msgs.JointKinematics',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='salamander.msgs.JointsKinematics.name', index=0,
+      name='name', full_name='salamander.msgs.JointKinematics.name', index=0,
       number=1, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='joint', full_name='salamander.msgs.JointsKinematics.joint', index=1,
+      name='state', full_name='salamander.msgs.JointKinematics.state', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -192,22 +192,69 @@ _JOINTSKINEMATICS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=464,
-  serialized_end=531,
+  serialized_start=463,
+  serialized_end=538,
+)
+
+
+_JOINTSTATE = _descriptor.Descriptor(
+  name='JointState',
+  full_name='salamander.msgs.JointState',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='time', full_name='salamander.msgs.JointState.time', index=0,
+      number=1, type=11, cpp_type=10, label=2,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='position', full_name='salamander.msgs.JointState.position', index=1,
+      number=2, type=1, cpp_type=5, label=2,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='velocity', full_name='salamander.msgs.JointState.velocity', index=2,
+      number=3, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto2',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=540,
+  serialized_end=621,
 )
 
 _MODELKINEMATICS.fields_by_name['links'].message_type = _LINKKINEMATICS
-_MODELKINEMATICS.fields_by_name['joints'].message_type = _JOINTSKINEMATICS
+_MODELKINEMATICS.fields_by_name['joints'].message_type = _JOINTKINEMATICS
 _LINKKINEMATICS.fields_by_name['state'].message_type = _LINKSTATE
 _LINKSTATE.fields_by_name['time'].message_type = time__pb2._TIME
 _LINKSTATE.fields_by_name['pose'].message_type = pose__pb2._POSE
 _LINKSTATE.fields_by_name['linear_velocity'].message_type = vector3d__pb2._VECTOR3D
 _LINKSTATE.fields_by_name['angular_velocity'].message_type = vector3d__pb2._VECTOR3D
-_JOINTSKINEMATICS.fields_by_name['joint'].message_type = joint__pb2._JOINT
+_JOINTKINEMATICS.fields_by_name['state'].message_type = _JOINTSTATE
+_JOINTSTATE.fields_by_name['time'].message_type = time__pb2._TIME
 DESCRIPTOR.message_types_by_name['ModelKinematics'] = _MODELKINEMATICS
 DESCRIPTOR.message_types_by_name['LinkKinematics'] = _LINKKINEMATICS
 DESCRIPTOR.message_types_by_name['LinkState'] = _LINKSTATE
-DESCRIPTOR.message_types_by_name['JointsKinematics'] = _JOINTSKINEMATICS
+DESCRIPTOR.message_types_by_name['JointKinematics'] = _JOINTKINEMATICS
+DESCRIPTOR.message_types_by_name['JointState'] = _JOINTSTATE
 
 ModelKinematics = _reflection.GeneratedProtocolMessageType('ModelKinematics', (_message.Message,), dict(
   DESCRIPTOR = _MODELKINEMATICS,
@@ -230,12 +277,19 @@ LinkState = _reflection.GeneratedProtocolMessageType('LinkState', (_message.Mess
   ))
 _sym_db.RegisterMessage(LinkState)
 
-JointsKinematics = _reflection.GeneratedProtocolMessageType('JointsKinematics', (_message.Message,), dict(
-  DESCRIPTOR = _JOINTSKINEMATICS,
+JointKinematics = _reflection.GeneratedProtocolMessageType('JointKinematics', (_message.Message,), dict(
+  DESCRIPTOR = _JOINTKINEMATICS,
   __module__ = 'log_kinematics_pb2'
-  # @@protoc_insertion_point(class_scope:salamander.msgs.JointsKinematics)
+  # @@protoc_insertion_point(class_scope:salamander.msgs.JointKinematics)
   ))
-_sym_db.RegisterMessage(JointsKinematics)
+_sym_db.RegisterMessage(JointKinematics)
+
+JointState = _reflection.GeneratedProtocolMessageType('JointState', (_message.Message,), dict(
+  DESCRIPTOR = _JOINTSTATE,
+  __module__ = 'log_kinematics_pb2'
+  # @@protoc_insertion_point(class_scope:salamander.msgs.JointState)
+  ))
+_sym_db.RegisterMessage(JointState)
 
 
 # @@protoc_insertion_point(module_scope)

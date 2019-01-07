@@ -14,7 +14,7 @@ import "vector3d.proto";
 
 message ModelKinematics {
     repeated LinkKinematics links = 1;
-    repeated JointsKinematics joints = 2;
+    repeated JointKinematics joints = 2;
 }
 
 message LinkKinematics {
@@ -29,7 +29,13 @@ message LinkState {
     optional gazebo.msgs.Vector3d angular_velocity = 4;
 }
 
-message JointsKinematics {
+message JointKinematics {
     required string name = 1;
-    repeated gazebo.msgs.Joint joint  = 2;
+    repeated JointState state  = 2;
+}
+
+message JointState {
+    required gazebo.msgs.Time time = 1;
+    required double position = 2;
+    optional double velocity = 3;
 }

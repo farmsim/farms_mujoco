@@ -31,9 +31,12 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* LinkState_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   LinkState_reflection_ = NULL;
-const ::google::protobuf::Descriptor* JointsKinematics_descriptor_ = NULL;
+const ::google::protobuf::Descriptor* JointKinematics_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
-  JointsKinematics_reflection_ = NULL;
+  JointKinematics_reflection_ = NULL;
+const ::google::protobuf::Descriptor* JointState_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  JointState_reflection_ = NULL;
 
 }  // namespace
 
@@ -95,21 +98,38 @@ void protobuf_AssignDesc_log_5fkinematics_2eproto() {
       sizeof(LinkState),
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(LinkState, _internal_metadata_),
       -1);
-  JointsKinematics_descriptor_ = file->message_type(3);
-  static const int JointsKinematics_offsets_[2] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointsKinematics, name_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointsKinematics, joint_),
+  JointKinematics_descriptor_ = file->message_type(3);
+  static const int JointKinematics_offsets_[2] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointKinematics, name_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointKinematics, state_),
   };
-  JointsKinematics_reflection_ =
+  JointKinematics_reflection_ =
     ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
-      JointsKinematics_descriptor_,
-      JointsKinematics::default_instance_,
-      JointsKinematics_offsets_,
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointsKinematics, _has_bits_[0]),
+      JointKinematics_descriptor_,
+      JointKinematics::default_instance_,
+      JointKinematics_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointKinematics, _has_bits_[0]),
       -1,
       -1,
-      sizeof(JointsKinematics),
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointsKinematics, _internal_metadata_),
+      sizeof(JointKinematics),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointKinematics, _internal_metadata_),
+      -1);
+  JointState_descriptor_ = file->message_type(4);
+  static const int JointState_offsets_[3] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointState, time_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointState, position_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointState, velocity_),
+  };
+  JointState_reflection_ =
+    ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
+      JointState_descriptor_,
+      JointState::default_instance_,
+      JointState_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointState, _has_bits_[0]),
+      -1,
+      -1,
+      sizeof(JointState),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointState, _internal_metadata_),
       -1);
 }
 
@@ -131,7 +151,9 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
       LinkState_descriptor_, &LinkState::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      JointsKinematics_descriptor_, &JointsKinematics::default_instance());
+      JointKinematics_descriptor_, &JointKinematics::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+      JointState_descriptor_, &JointState::default_instance());
 }
 
 }  // namespace
@@ -143,8 +165,10 @@ void protobuf_ShutdownFile_log_5fkinematics_2eproto() {
   delete LinkKinematics_reflection_;
   delete LinkState::default_instance_;
   delete LinkState_reflection_;
-  delete JointsKinematics::default_instance_;
-  delete JointsKinematics_reflection_;
+  delete JointKinematics::default_instance_;
+  delete JointKinematics_reflection_;
+  delete JointState::default_instance_;
+  delete JointState_reflection_;
 }
 
 void protobuf_AddDesc_log_5fkinematics_2eproto() GOOGLE_ATTRIBUTE_COLD;
@@ -161,28 +185,32 @@ void protobuf_AddDesc_log_5fkinematics_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\024log_kinematics.proto\022\017salamander.msgs\032"
     "\ntime.proto\032\npose.proto\032\013joint.proto\032\016ve"
-    "ctor3d.proto\"t\n\017ModelKinematics\022.\n\005links"
+    "ctor3d.proto\"s\n\017ModelKinematics\022.\n\005links"
     "\030\001 \003(\0132\037.salamander.msgs.LinkKinematics\022"
-    "1\n\006joints\030\002 \003(\0132!.salamander.msgs.Joints"
-    "Kinematics\"I\n\016LinkKinematics\022\014\n\004name\030\001 \002"
-    "(\t\022)\n\005state\030\002 \003(\0132\032.salamander.msgs.Link"
-    "State\"\256\001\n\tLinkState\022\037\n\004time\030\001 \002(\0132\021.gaze"
-    "bo.msgs.Time\022\037\n\004pose\030\002 \002(\0132\021.gazebo.msgs"
-    ".Pose\022.\n\017linear_velocity\030\003 \001(\0132\025.gazebo."
-    "msgs.Vector3d\022/\n\020angular_velocity\030\004 \001(\0132"
-    "\025.gazebo.msgs.Vector3d\"C\n\020JointsKinemati"
-    "cs\022\014\n\004name\030\001 \002(\t\022!\n\005joint\030\002 \003(\0132\022.gazebo"
-    ".msgs.Joint", 531);
+    "0\n\006joints\030\002 \003(\0132 .salamander.msgs.JointK"
+    "inematics\"I\n\016LinkKinematics\022\014\n\004name\030\001 \002("
+    "\t\022)\n\005state\030\002 \003(\0132\032.salamander.msgs.LinkS"
+    "tate\"\256\001\n\tLinkState\022\037\n\004time\030\001 \002(\0132\021.gazeb"
+    "o.msgs.Time\022\037\n\004pose\030\002 \002(\0132\021.gazebo.msgs."
+    "Pose\022.\n\017linear_velocity\030\003 \001(\0132\025.gazebo.m"
+    "sgs.Vector3d\022/\n\020angular_velocity\030\004 \001(\0132\025"
+    ".gazebo.msgs.Vector3d\"K\n\017JointKinematics"
+    "\022\014\n\004name\030\001 \002(\t\022*\n\005state\030\002 \003(\0132\033.salamand"
+    "er.msgs.JointState\"Q\n\nJointState\022\037\n\004time"
+    "\030\001 \002(\0132\021.gazebo.msgs.Time\022\020\n\010position\030\002 "
+    "\002(\001\022\020\n\010velocity\030\003 \001(\001", 621);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "log_kinematics.proto", &protobuf_RegisterTypes);
   ModelKinematics::default_instance_ = new ModelKinematics();
   LinkKinematics::default_instance_ = new LinkKinematics();
   LinkState::default_instance_ = new LinkState();
-  JointsKinematics::default_instance_ = new JointsKinematics();
+  JointKinematics::default_instance_ = new JointKinematics();
+  JointState::default_instance_ = new JointState();
   ModelKinematics::default_instance_->InitAsDefaultInstance();
   LinkKinematics::default_instance_->InitAsDefaultInstance();
   LinkState::default_instance_->InitAsDefaultInstance();
-  JointsKinematics::default_instance_->InitAsDefaultInstance();
+  JointKinematics::default_instance_->InitAsDefaultInstance();
+  JointState::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_log_5fkinematics_2eproto);
 }
 
@@ -293,7 +321,7 @@ bool ModelKinematics::MergePartialFromCodedStream(
         break;
       }
 
-      // repeated .salamander.msgs.JointsKinematics joints = 2;
+      // repeated .salamander.msgs.JointKinematics joints = 2;
       case 2: {
         if (tag == 18) {
           DO_(input->IncrementRecursionDepth());
@@ -340,7 +368,7 @@ void ModelKinematics::SerializeWithCachedSizes(
       1, this->links(i), output);
   }
 
-  // repeated .salamander.msgs.JointsKinematics joints = 2;
+  // repeated .salamander.msgs.JointKinematics joints = 2;
   for (unsigned int i = 0, n = this->joints_size(); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
       2, this->joints(i), output);
@@ -363,7 +391,7 @@ void ModelKinematics::SerializeWithCachedSizes(
         1, this->links(i), false, target);
   }
 
-  // repeated .salamander.msgs.JointsKinematics joints = 2;
+  // repeated .salamander.msgs.JointKinematics joints = 2;
   for (unsigned int i = 0, n = this->joints_size(); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
@@ -390,7 +418,7 @@ int ModelKinematics::ByteSize() const {
         this->links(i));
   }
 
-  // repeated .salamander.msgs.JointsKinematics joints = 2;
+  // repeated .salamander.msgs.JointKinematics joints = 2;
   total_size += 1 * this->joints_size();
   for (int i = 0; i < this->joints_size(); i++) {
     total_size +=
@@ -512,31 +540,31 @@ ModelKinematics::links() const {
   return links_;
 }
 
-// repeated .salamander.msgs.JointsKinematics joints = 2;
+// repeated .salamander.msgs.JointKinematics joints = 2;
 int ModelKinematics::joints_size() const {
   return joints_.size();
 }
 void ModelKinematics::clear_joints() {
   joints_.Clear();
 }
-const ::salamander::msgs::JointsKinematics& ModelKinematics::joints(int index) const {
+const ::salamander::msgs::JointKinematics& ModelKinematics::joints(int index) const {
   // @@protoc_insertion_point(field_get:salamander.msgs.ModelKinematics.joints)
   return joints_.Get(index);
 }
-::salamander::msgs::JointsKinematics* ModelKinematics::mutable_joints(int index) {
+::salamander::msgs::JointKinematics* ModelKinematics::mutable_joints(int index) {
   // @@protoc_insertion_point(field_mutable:salamander.msgs.ModelKinematics.joints)
   return joints_.Mutable(index);
 }
-::salamander::msgs::JointsKinematics* ModelKinematics::add_joints() {
+::salamander::msgs::JointKinematics* ModelKinematics::add_joints() {
   // @@protoc_insertion_point(field_add:salamander.msgs.ModelKinematics.joints)
   return joints_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointsKinematics >*
+::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointKinematics >*
 ModelKinematics::mutable_joints() {
   // @@protoc_insertion_point(field_mutable_list:salamander.msgs.ModelKinematics.joints)
   return &joints_;
 }
-const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointsKinematics >&
+const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointKinematics >&
 ModelKinematics::joints() const {
   // @@protoc_insertion_point(field_list:salamander.msgs.ModelKinematics.joints)
   return joints_;
@@ -1536,87 +1564,87 @@ void LinkState::set_allocated_angular_velocity(::gazebo::msgs::Vector3d* angular
 // ===================================================================
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int JointsKinematics::kNameFieldNumber;
-const int JointsKinematics::kJointFieldNumber;
+const int JointKinematics::kNameFieldNumber;
+const int JointKinematics::kStateFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
-JointsKinematics::JointsKinematics()
+JointKinematics::JointKinematics()
   : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(constructor:salamander.msgs.JointKinematics)
 }
 
-void JointsKinematics::InitAsDefaultInstance() {
+void JointKinematics::InitAsDefaultInstance() {
 }
 
-JointsKinematics::JointsKinematics(const JointsKinematics& from)
+JointKinematics::JointKinematics(const JointKinematics& from)
   : ::google::protobuf::Message(),
     _internal_metadata_(NULL) {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(copy_constructor:salamander.msgs.JointKinematics)
 }
 
-void JointsKinematics::SharedCtor() {
+void JointKinematics::SharedCtor() {
   ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
   name_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
-JointsKinematics::~JointsKinematics() {
-  // @@protoc_insertion_point(destructor:salamander.msgs.JointsKinematics)
+JointKinematics::~JointKinematics() {
+  // @@protoc_insertion_point(destructor:salamander.msgs.JointKinematics)
   SharedDtor();
 }
 
-void JointsKinematics::SharedDtor() {
+void JointKinematics::SharedDtor() {
   name_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   if (this != default_instance_) {
   }
 }
 
-void JointsKinematics::SetCachedSize(int size) const {
+void JointKinematics::SetCachedSize(int size) const {
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
 }
-const ::google::protobuf::Descriptor* JointsKinematics::descriptor() {
+const ::google::protobuf::Descriptor* JointKinematics::descriptor() {
   protobuf_AssignDescriptorsOnce();
-  return JointsKinematics_descriptor_;
+  return JointKinematics_descriptor_;
 }
 
-const JointsKinematics& JointsKinematics::default_instance() {
+const JointKinematics& JointKinematics::default_instance() {
   if (default_instance_ == NULL) protobuf_AddDesc_log_5fkinematics_2eproto();
   return *default_instance_;
 }
 
-JointsKinematics* JointsKinematics::default_instance_ = NULL;
+JointKinematics* JointKinematics::default_instance_ = NULL;
 
-JointsKinematics* JointsKinematics::New(::google::protobuf::Arena* arena) const {
-  JointsKinematics* n = new JointsKinematics;
+JointKinematics* JointKinematics::New(::google::protobuf::Arena* arena) const {
+  JointKinematics* n = new JointKinematics;
   if (arena != NULL) {
     arena->Own(n);
   }
   return n;
 }
 
-void JointsKinematics::Clear() {
-// @@protoc_insertion_point(message_clear_start:salamander.msgs.JointsKinematics)
+void JointKinematics::Clear() {
+// @@protoc_insertion_point(message_clear_start:salamander.msgs.JointKinematics)
   if (has_name()) {
     name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
-  joint_.Clear();
+  state_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   if (_internal_metadata_.have_unknown_fields()) {
     mutable_unknown_fields()->Clear();
   }
 }
 
-bool JointsKinematics::MergePartialFromCodedStream(
+bool JointKinematics::MergePartialFromCodedStream(
     ::google::protobuf::io::CodedInputStream* input) {
 #define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(parse_start:salamander.msgs.JointKinematics)
   for (;;) {
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(127);
     tag = p.first;
@@ -1630,26 +1658,26 @@ bool JointsKinematics::MergePartialFromCodedStream(
           ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
             this->name().data(), this->name().length(),
             ::google::protobuf::internal::WireFormat::PARSE,
-            "salamander.msgs.JointsKinematics.name");
+            "salamander.msgs.JointKinematics.name");
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(18)) goto parse_joint;
+        if (input->ExpectTag(18)) goto parse_state;
         break;
       }
 
-      // repeated .gazebo.msgs.Joint joint = 2;
+      // repeated .salamander.msgs.JointState state = 2;
       case 2: {
         if (tag == 18) {
-         parse_joint:
+         parse_state:
           DO_(input->IncrementRecursionDepth());
-         parse_loop_joint:
+         parse_loop_state:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtualNoRecursionDepth(
-                input, add_joint()));
+                input, add_state()));
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(18)) goto parse_loop_joint;
+        if (input->ExpectTag(18)) goto parse_loop_state;
         input->UnsafeDecrementRecursionDepth();
         if (input->ExpectAtEnd()) goto success;
         break;
@@ -1669,71 +1697,71 @@ bool JointsKinematics::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(parse_success:salamander.msgs.JointKinematics)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(parse_failure:salamander.msgs.JointKinematics)
   return false;
 #undef DO_
 }
 
-void JointsKinematics::SerializeWithCachedSizes(
+void JointKinematics::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(serialize_start:salamander.msgs.JointKinematics)
   // required string name = 1;
   if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE,
-      "salamander.msgs.JointsKinematics.name");
+      "salamander.msgs.JointKinematics.name");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
       1, this->name(), output);
   }
 
-  // repeated .gazebo.msgs.Joint joint = 2;
-  for (unsigned int i = 0, n = this->joint_size(); i < n; i++) {
+  // repeated .salamander.msgs.JointState state = 2;
+  for (unsigned int i = 0, n = this->state_size(); i < n; i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      2, this->joint(i), output);
+      2, this->state(i), output);
   }
 
   if (_internal_metadata_.have_unknown_fields()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
   }
-  // @@protoc_insertion_point(serialize_end:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(serialize_end:salamander.msgs.JointKinematics)
 }
 
-::google::protobuf::uint8* JointsKinematics::InternalSerializeWithCachedSizesToArray(
+::google::protobuf::uint8* JointKinematics::InternalSerializeWithCachedSizesToArray(
     bool deterministic, ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(serialize_to_array_start:salamander.msgs.JointKinematics)
   // required string name = 1;
   if (has_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->name().data(), this->name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE,
-      "salamander.msgs.JointsKinematics.name");
+      "salamander.msgs.JointKinematics.name");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         1, this->name(), target);
   }
 
-  // repeated .gazebo.msgs.Joint joint = 2;
-  for (unsigned int i = 0, n = this->joint_size(); i < n; i++) {
+  // repeated .salamander.msgs.JointState state = 2;
+  for (unsigned int i = 0, n = this->state_size(); i < n; i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       InternalWriteMessageNoVirtualToArray(
-        2, this->joint(i), false, target);
+        2, this->state(i), false, target);
   }
 
   if (_internal_metadata_.have_unknown_fields()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(serialize_to_array_end:salamander.msgs.JointKinematics)
   return target;
 }
 
-int JointsKinematics::ByteSize() const {
-// @@protoc_insertion_point(message_byte_size_start:salamander.msgs.JointsKinematics)
+int JointKinematics::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:salamander.msgs.JointKinematics)
   int total_size = 0;
 
   // required string name = 1;
@@ -1742,12 +1770,12 @@ int JointsKinematics::ByteSize() const {
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->name());
   }
-  // repeated .gazebo.msgs.Joint joint = 2;
-  total_size += 1 * this->joint_size();
-  for (int i = 0; i < this->joint_size(); i++) {
+  // repeated .salamander.msgs.JointState state = 2;
+  total_size += 1 * this->state_size();
+  for (int i = 0; i < this->state_size(); i++) {
     total_size +=
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-        this->joint(i));
+        this->state(i));
   }
 
   if (_internal_metadata_.have_unknown_fields()) {
@@ -1761,29 +1789,29 @@ int JointsKinematics::ByteSize() const {
   return total_size;
 }
 
-void JointsKinematics::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:salamander.msgs.JointsKinematics)
+void JointKinematics::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:salamander.msgs.JointKinematics)
   if (GOOGLE_PREDICT_FALSE(&from == this)) {
     ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
   }
-  const JointsKinematics* source = 
-      ::google::protobuf::internal::DynamicCastToGenerated<const JointsKinematics>(
+  const JointKinematics* source = 
+      ::google::protobuf::internal::DynamicCastToGenerated<const JointKinematics>(
           &from);
   if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:salamander.msgs.JointKinematics)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:salamander.msgs.JointsKinematics)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:salamander.msgs.JointKinematics)
     MergeFrom(*source);
   }
 }
 
-void JointsKinematics::MergeFrom(const JointsKinematics& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:salamander.msgs.JointsKinematics)
+void JointKinematics::MergeFrom(const JointKinematics& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:salamander.msgs.JointKinematics)
   if (GOOGLE_PREDICT_FALSE(&from == this)) {
     ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
   }
-  joint_.MergeFrom(from.joint_);
+  state_.MergeFrom(from.state_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_name()) {
       set_has_name();
@@ -1795,132 +1823,593 @@ void JointsKinematics::MergeFrom(const JointsKinematics& from) {
   }
 }
 
-void JointsKinematics::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:salamander.msgs.JointsKinematics)
+void JointKinematics::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:salamander.msgs.JointKinematics)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void JointsKinematics::CopyFrom(const JointsKinematics& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:salamander.msgs.JointsKinematics)
+void JointKinematics::CopyFrom(const JointKinematics& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:salamander.msgs.JointKinematics)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool JointsKinematics::IsInitialized() const {
+bool JointKinematics::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
 
-  if (!::google::protobuf::internal::AllAreInitialized(this->joint())) return false;
+  if (!::google::protobuf::internal::AllAreInitialized(this->state())) return false;
   return true;
 }
 
-void JointsKinematics::Swap(JointsKinematics* other) {
+void JointKinematics::Swap(JointKinematics* other) {
   if (other == this) return;
   InternalSwap(other);
 }
-void JointsKinematics::InternalSwap(JointsKinematics* other) {
+void JointKinematics::InternalSwap(JointKinematics* other) {
   name_.Swap(&other->name_);
-  joint_.UnsafeArenaSwap(&other->joint_);
+  state_.UnsafeArenaSwap(&other->state_);
   std::swap(_has_bits_[0], other->_has_bits_[0]);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
 }
 
-::google::protobuf::Metadata JointsKinematics::GetMetadata() const {
+::google::protobuf::Metadata JointKinematics::GetMetadata() const {
   protobuf_AssignDescriptorsOnce();
   ::google::protobuf::Metadata metadata;
-  metadata.descriptor = JointsKinematics_descriptor_;
-  metadata.reflection = JointsKinematics_reflection_;
+  metadata.descriptor = JointKinematics_descriptor_;
+  metadata.reflection = JointKinematics_reflection_;
   return metadata;
 }
 
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
-// JointsKinematics
+// JointKinematics
 
 // required string name = 1;
-bool JointsKinematics::has_name() const {
+bool JointKinematics::has_name() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-void JointsKinematics::set_has_name() {
+void JointKinematics::set_has_name() {
   _has_bits_[0] |= 0x00000001u;
 }
-void JointsKinematics::clear_has_name() {
+void JointKinematics::clear_has_name() {
   _has_bits_[0] &= ~0x00000001u;
 }
-void JointsKinematics::clear_name() {
+void JointKinematics::clear_name() {
   name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   clear_has_name();
 }
- const ::std::string& JointsKinematics::name() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointsKinematics.name)
+ const ::std::string& JointKinematics::name() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointKinematics.name)
   return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
- void JointsKinematics::set_name(const ::std::string& value) {
+ void JointKinematics::set_name(const ::std::string& value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointKinematics.name)
 }
- void JointsKinematics::set_name(const char* value) {
+ void JointKinematics::set_name(const char* value) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointKinematics.name)
 }
- void JointsKinematics::set_name(const char* value, size_t size) {
+ void JointKinematics::set_name(const char* value, size_t size) {
   set_has_name();
   name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointKinematics.name)
 }
- ::std::string* JointsKinematics::mutable_name() {
+ ::std::string* JointKinematics::mutable_name() {
   set_has_name();
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointKinematics.name)
   return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
- ::std::string* JointsKinematics::release_name() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.JointsKinematics.name)
+ ::std::string* JointKinematics::release_name() {
+  // @@protoc_insertion_point(field_release:salamander.msgs.JointKinematics.name)
   clear_has_name();
   return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
- void JointsKinematics::set_allocated_name(::std::string* name) {
+ void JointKinematics::set_allocated_name(::std::string* name) {
   if (name != NULL) {
     set_has_name();
   } else {
     clear_has_name();
   }
   name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointsKinematics.name)
+  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointKinematics.name)
 }
 
-// repeated .gazebo.msgs.Joint joint = 2;
-int JointsKinematics::joint_size() const {
-  return joint_.size();
+// repeated .salamander.msgs.JointState state = 2;
+int JointKinematics::state_size() const {
+  return state_.size();
 }
-void JointsKinematics::clear_joint() {
-  joint_.Clear();
+void JointKinematics::clear_state() {
+  state_.Clear();
 }
-const ::gazebo::msgs::Joint& JointsKinematics::joint(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointsKinematics.joint)
-  return joint_.Get(index);
+const ::salamander::msgs::JointState& JointKinematics::state(int index) const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointKinematics.state)
+  return state_.Get(index);
 }
-::gazebo::msgs::Joint* JointsKinematics::mutable_joint(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointsKinematics.joint)
-  return joint_.Mutable(index);
+::salamander::msgs::JointState* JointKinematics::mutable_state(int index) {
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointKinematics.state)
+  return state_.Mutable(index);
 }
-::gazebo::msgs::Joint* JointsKinematics::add_joint() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.JointsKinematics.joint)
-  return joint_.Add();
+::salamander::msgs::JointState* JointKinematics::add_state() {
+  // @@protoc_insertion_point(field_add:salamander.msgs.JointKinematics.state)
+  return state_.Add();
 }
-::google::protobuf::RepeatedPtrField< ::gazebo::msgs::Joint >*
-JointsKinematics::mutable_joint() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.JointsKinematics.joint)
-  return &joint_;
+::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >*
+JointKinematics::mutable_state() {
+  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.JointKinematics.state)
+  return &state_;
 }
-const ::google::protobuf::RepeatedPtrField< ::gazebo::msgs::Joint >&
-JointsKinematics::joint() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.JointsKinematics.joint)
-  return joint_;
+const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >&
+JointKinematics::state() const {
+  // @@protoc_insertion_point(field_list:salamander.msgs.JointKinematics.state)
+  return state_;
+}
+
+#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
+
+// ===================================================================
+
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const int JointState::kTimeFieldNumber;
+const int JointState::kPositionFieldNumber;
+const int JointState::kVelocityFieldNumber;
+#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
+
+JointState::JointState()
+  : ::google::protobuf::Message(), _internal_metadata_(NULL) {
+  SharedCtor();
+  // @@protoc_insertion_point(constructor:salamander.msgs.JointState)
+}
+
+void JointState::InitAsDefaultInstance() {
+  time_ = const_cast< ::gazebo::msgs::Time*>(&::gazebo::msgs::Time::default_instance());
+}
+
+JointState::JointState(const JointState& from)
+  : ::google::protobuf::Message(),
+    _internal_metadata_(NULL) {
+  SharedCtor();
+  MergeFrom(from);
+  // @@protoc_insertion_point(copy_constructor:salamander.msgs.JointState)
+}
+
+void JointState::SharedCtor() {
+  _cached_size_ = 0;
+  time_ = NULL;
+  position_ = 0;
+  velocity_ = 0;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+JointState::~JointState() {
+  // @@protoc_insertion_point(destructor:salamander.msgs.JointState)
+  SharedDtor();
+}
+
+void JointState::SharedDtor() {
+  if (this != default_instance_) {
+    delete time_;
+  }
+}
+
+void JointState::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* JointState::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return JointState_descriptor_;
+}
+
+const JointState& JointState::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_log_5fkinematics_2eproto();
+  return *default_instance_;
+}
+
+JointState* JointState::default_instance_ = NULL;
+
+JointState* JointState::New(::google::protobuf::Arena* arena) const {
+  JointState* n = new JointState;
+  if (arena != NULL) {
+    arena->Own(n);
+  }
+  return n;
+}
+
+void JointState::Clear() {
+// @@protoc_insertion_point(message_clear_start:salamander.msgs.JointState)
+#if defined(__clang__)
+#define ZR_HELPER_(f) \
+  _Pragma("clang diagnostic push") \
+  _Pragma("clang diagnostic ignored \"-Winvalid-offsetof\"") \
+  __builtin_offsetof(JointState, f) \
+  _Pragma("clang diagnostic pop")
+#else
+#define ZR_HELPER_(f) reinterpret_cast<char*>(\
+  &reinterpret_cast<JointState*>(16)->f)
+#endif
+
+#define ZR_(first, last) do {\
+  ::memset(&first, 0,\
+           ZR_HELPER_(last) - ZR_HELPER_(first) + sizeof(last));\
+} while (0)
+
+  if (_has_bits_[0 / 32] & 7u) {
+    ZR_(position_, velocity_);
+    if (has_time()) {
+      if (time_ != NULL) time_->::gazebo::msgs::Time::Clear();
+    }
+  }
+
+#undef ZR_HELPER_
+#undef ZR_
+
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  if (_internal_metadata_.have_unknown_fields()) {
+    mutable_unknown_fields()->Clear();
+  }
+}
+
+bool JointState::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
+  ::google::protobuf::uint32 tag;
+  // @@protoc_insertion_point(parse_start:salamander.msgs.JointState)
+  for (;;) {
+    ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(127);
+    tag = p.first;
+    if (!p.second) goto handle_unusual;
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required .gazebo.msgs.Time time = 1;
+      case 1: {
+        if (tag == 10) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+               input, mutable_time()));
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(17)) goto parse_position;
+        break;
+      }
+
+      // required double position = 2;
+      case 2: {
+        if (tag == 17) {
+         parse_position:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &position_)));
+          set_has_position();
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(25)) goto parse_velocity;
+        break;
+      }
+
+      // optional double velocity = 3;
+      case 3: {
+        if (tag == 25) {
+         parse_velocity:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &velocity_)));
+          set_has_velocity();
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectAtEnd()) goto success;
+        break;
+      }
+
+      default: {
+      handle_unusual:
+        if (tag == 0 ||
+            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+success:
+  // @@protoc_insertion_point(parse_success:salamander.msgs.JointState)
+  return true;
+failure:
+  // @@protoc_insertion_point(parse_failure:salamander.msgs.JointState)
+  return false;
+#undef DO_
+}
+
+void JointState::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // @@protoc_insertion_point(serialize_start:salamander.msgs.JointState)
+  // required .gazebo.msgs.Time time = 1;
+  if (has_time()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      1, *this->time_, output);
+  }
+
+  // required double position = 2;
+  if (has_position()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(2, this->position(), output);
+  }
+
+  // optional double velocity = 3;
+  if (has_velocity()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->velocity(), output);
+  }
+
+  if (_internal_metadata_.have_unknown_fields()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+  // @@protoc_insertion_point(serialize_end:salamander.msgs.JointState)
+}
+
+::google::protobuf::uint8* JointState::InternalSerializeWithCachedSizesToArray(
+    bool deterministic, ::google::protobuf::uint8* target) const {
+  // @@protoc_insertion_point(serialize_to_array_start:salamander.msgs.JointState)
+  // required .gazebo.msgs.Time time = 1;
+  if (has_time()) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      InternalWriteMessageNoVirtualToArray(
+        1, *this->time_, false, target);
+  }
+
+  // required double position = 2;
+  if (has_position()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(2, this->position(), target);
+  }
+
+  // optional double velocity = 3;
+  if (has_velocity()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->velocity(), target);
+  }
+
+  if (_internal_metadata_.have_unknown_fields()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:salamander.msgs.JointState)
+  return target;
+}
+
+int JointState::RequiredFieldsByteSizeFallback() const {
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:salamander.msgs.JointState)
+  int total_size = 0;
+
+  if (has_time()) {
+    // required .gazebo.msgs.Time time = 1;
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        *this->time_);
+  }
+
+  if (has_position()) {
+    // required double position = 2;
+    total_size += 1 + 8;
+  }
+
+  return total_size;
+}
+int JointState::ByteSize() const {
+// @@protoc_insertion_point(message_byte_size_start:salamander.msgs.JointState)
+  int total_size = 0;
+
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+    // required .gazebo.msgs.Time time = 1;
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        *this->time_);
+
+    // required double position = 2;
+    total_size += 1 + 8;
+
+  } else {
+    total_size += RequiredFieldsByteSizeFallback();
+  }
+  // optional double velocity = 3;
+  if (has_velocity()) {
+    total_size += 1 + 8;
+  }
+
+  if (_internal_metadata_.have_unknown_fields()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void JointState::MergeFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_merge_from_start:salamander.msgs.JointState)
+  if (GOOGLE_PREDICT_FALSE(&from == this)) {
+    ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
+  }
+  const JointState* source = 
+      ::google::protobuf::internal::DynamicCastToGenerated<const JointState>(
+          &from);
+  if (source == NULL) {
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:salamander.msgs.JointState)
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:salamander.msgs.JointState)
+    MergeFrom(*source);
+  }
+}
+
+void JointState::MergeFrom(const JointState& from) {
+// @@protoc_insertion_point(class_specific_merge_from_start:salamander.msgs.JointState)
+  if (GOOGLE_PREDICT_FALSE(&from == this)) {
+    ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
+  }
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_time()) {
+      mutable_time()->::gazebo::msgs::Time::MergeFrom(from.time());
+    }
+    if (from.has_position()) {
+      set_position(from.position());
+    }
+    if (from.has_velocity()) {
+      set_velocity(from.velocity());
+    }
+  }
+  if (from._internal_metadata_.have_unknown_fields()) {
+    mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+  }
+}
+
+void JointState::CopyFrom(const ::google::protobuf::Message& from) {
+// @@protoc_insertion_point(generalized_copy_from_start:salamander.msgs.JointState)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void JointState::CopyFrom(const JointState& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:salamander.msgs.JointState)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool JointState::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
+
+  if (has_time()) {
+    if (!this->time_->IsInitialized()) return false;
+  }
+  return true;
+}
+
+void JointState::Swap(JointState* other) {
+  if (other == this) return;
+  InternalSwap(other);
+}
+void JointState::InternalSwap(JointState* other) {
+  std::swap(time_, other->time_);
+  std::swap(position_, other->position_);
+  std::swap(velocity_, other->velocity_);
+  std::swap(_has_bits_[0], other->_has_bits_[0]);
+  _internal_metadata_.Swap(&other->_internal_metadata_);
+  std::swap(_cached_size_, other->_cached_size_);
+}
+
+::google::protobuf::Metadata JointState::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = JointState_descriptor_;
+  metadata.reflection = JointState_reflection_;
+  return metadata;
+}
+
+#if PROTOBUF_INLINE_NOT_IN_HEADERS
+// JointState
+
+// required .gazebo.msgs.Time time = 1;
+bool JointState::has_time() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+void JointState::set_has_time() {
+  _has_bits_[0] |= 0x00000001u;
+}
+void JointState::clear_has_time() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+void JointState::clear_time() {
+  if (time_ != NULL) time_->::gazebo::msgs::Time::Clear();
+  clear_has_time();
+}
+const ::gazebo::msgs::Time& JointState::time() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointState.time)
+  return time_ != NULL ? *time_ : *default_instance_->time_;
+}
+::gazebo::msgs::Time* JointState::mutable_time() {
+  set_has_time();
+  if (time_ == NULL) {
+    time_ = new ::gazebo::msgs::Time;
+  }
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointState.time)
+  return time_;
+}
+::gazebo::msgs::Time* JointState::release_time() {
+  // @@protoc_insertion_point(field_release:salamander.msgs.JointState.time)
+  clear_has_time();
+  ::gazebo::msgs::Time* temp = time_;
+  time_ = NULL;
+  return temp;
+}
+void JointState::set_allocated_time(::gazebo::msgs::Time* time) {
+  delete time_;
+  time_ = time;
+  if (time) {
+    set_has_time();
+  } else {
+    clear_has_time();
+  }
+  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointState.time)
+}
+
+// required double position = 2;
+bool JointState::has_position() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+void JointState::set_has_position() {
+  _has_bits_[0] |= 0x00000002u;
+}
+void JointState::clear_has_position() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+void JointState::clear_position() {
+  position_ = 0;
+  clear_has_position();
+}
+ double JointState::position() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointState.position)
+  return position_;
+}
+ void JointState::set_position(double value) {
+  set_has_position();
+  position_ = value;
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointState.position)
+}
+
+// optional double velocity = 3;
+bool JointState::has_velocity() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+void JointState::set_has_velocity() {
+  _has_bits_[0] |= 0x00000004u;
+}
+void JointState::clear_has_velocity() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+void JointState::clear_velocity() {
+  velocity_ = 0;
+  clear_has_velocity();
+}
+ double JointState::velocity() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointState.velocity)
+  return velocity_;
+}
+ void JointState::set_velocity(double value) {
+  set_has_velocity();
+  velocity_ = value;
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointState.velocity)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
