@@ -13,8 +13,7 @@
 #include <math.h>
 #include <yaml-cpp/yaml.h>
 
-#include <log_kinematics.pb.h>
-// #include <salamander-msgs/log_kinematics.pb.h>
+#include <salamander_kinematics.pb.h>
 
 
 template <class msgType, class entityType>
@@ -81,6 +80,9 @@ private:
             gazebo::msgs::Pose *_pose = new gazebo::msgs::Pose;
             gazebo::msgs::Set(_pose, link->WorldPose());
             msg->set_allocated_pose(_pose);
+            // Velocity
+            // optional gazebo.msgs.Vector3d linear_velocity  = 3;
+            // optional gazebo.msgs.Vector3d angular_velocity = 4;
         }
 };
 

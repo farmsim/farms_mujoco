@@ -1,7 +1,7 @@
 """ Plot """
 
 import os
-from salamander_msgs.log_kinematics_pb2 import ModelKinematics
+from salamander_msgs.salamander_kinematics_pb2 import ModelKinematics
 import numpy as np
 import matplotlib.pyplot as plt
 

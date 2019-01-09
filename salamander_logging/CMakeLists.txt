@@ -27,7 +27,7 @@ target_link_libraries(
   biorob_salamander_log_kinematics_plugin
   ${GAZEBO_libraries}
   ${PROTOBUF_LIBRARY}
-  salamander_msg_log_kinematics
+  salamander_msgs
   yaml-cpp)
 set_target_properties(
   biorob_salamander_log_kinematics_plugin

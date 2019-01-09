@@ -1,0 +1,30 @@
+syntax = "proto2";
+
+package salamander.msgs;
+
+import "salamander_joints.proto";
+
+message SalamanderControl {
+    repeated JointCommands cmds = 1;
+    repeated JointTorques torques = 2;
+    optional ControlAnalysis analysis = 3;
+}
+
+message ControlAnalysis {
+    repeated JointConsumption joints_consumption = 1;
+}
+
+message JointConsumption {
+    required string name = 1;
+    required double consumption = 2;
+}
+
+message JointCommands {
+    required string name = 1;
+    repeated JointState commands = 2;
+}
+
+message JointTorques {
+    required string name = 1;
+    repeated JointTorque torque = 2;
+}
