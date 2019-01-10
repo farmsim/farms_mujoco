@@ -32,6 +32,13 @@ def generate_plugins(config_package, folder_path, home):
                     + plugin.config["filename"]
                 )
                 create_directory(home+plugin.config["filename"])
+            elif "logging" in plugin.config:
+                if "filename" in plugin.config["logging"]:
+                    plugin.config["logging"]["filename"] = (
+                        folder_path
+                        + plugin.config["logging"]["filename"]
+                    )
+                    create_directory(home+plugin.config["logging"]["filename"])
             create_directory(home+dest)
             with open(home+dest, "w+") as plugin_config:
                 plugin_config.write(ordered_dump(plugin.config))

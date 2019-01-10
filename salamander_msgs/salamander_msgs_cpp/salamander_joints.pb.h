@@ -38,9 +38,9 @@ void protobuf_AddDesc_salamander_5fjoints_2eproto();
 void protobuf_AssignDesc_salamander_5fjoints_2eproto();
 void protobuf_ShutdownFile_salamander_5fjoints_2eproto();
 
+class JointCmd;
 class JointKinematics;
 class JointState;
-class JointTorque;
 
 // ===================================================================
 
@@ -273,14 +273,14 @@ class JointState : public ::google::protobuf::Message /* @@protoc_insertion_poin
 };
 // -------------------------------------------------------------------
 
-class JointTorque : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointTorque) */ {
+class JointCmd : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointCmd) */ {
  public:
-  JointTorque();
-  virtual ~JointTorque();
+  JointCmd();
+  virtual ~JointCmd();
 
-  JointTorque(const JointTorque& from);
+  JointCmd(const JointCmd& from);
 
-  inline JointTorque& operator=(const JointTorque& from) {
+  inline JointCmd& operator=(const JointCmd& from) {
     CopyFrom(from);
     return *this;
   }
@@ -294,19 +294,19 @@ class JointTorque : public ::google::protobuf::Message /* @@protoc_insertion_poi
   }
 
   static const ::google::protobuf::Descriptor* descriptor();
-  static const JointTorque& default_instance();
+  static const JointCmd& default_instance();
 
-  void Swap(JointTorque* other);
+  void Swap(JointCmd* other);
 
   // implements Message ----------------------------------------------
 
-  inline JointTorque* New() const { return New(NULL); }
+  inline JointCmd* New() const { return New(NULL); }
 
-  JointTorque* New(::google::protobuf::Arena* arena) const;
+  JointCmd* New(::google::protobuf::Arena* arena) const;
   void CopyFrom(const ::google::protobuf::Message& from);
   void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const JointTorque& from);
-  void MergeFrom(const JointTorque& from);
+  void CopyFrom(const JointCmd& from);
+  void MergeFrom(const JointCmd& from);
   void Clear();
   bool IsInitialized() const;
 
@@ -325,7 +325,7 @@ class JointTorque : public ::google::protobuf::Message /* @@protoc_insertion_poi
   void SharedCtor();
   void SharedDtor();
   void SetCachedSize(int size) const;
-  void InternalSwap(JointTorque* other);
+  void InternalSwap(JointCmd* other);
   private:
   inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
     return _internal_metadata_.arena();
@@ -341,43 +341,38 @@ class JointTorque : public ::google::protobuf::Message /* @@protoc_insertion_poi
 
   // accessors -------------------------------------------------------
 
-  // required .gazebo.msgs.Time time = 1;
-  bool has_time() const;
-  void clear_time();
-  static const int kTimeFieldNumber = 1;
-  const ::gazebo::msgs::Time& time() const;
-  ::gazebo::msgs::Time* mutable_time();
-  ::gazebo::msgs::Time* release_time();
-  void set_allocated_time(::gazebo::msgs::Time* time);
+  // required double position = 1;
+  bool has_position() const;
+  void clear_position();
+  static const int kPositionFieldNumber = 1;
+  double position() const;
+  void set_position(double value);
 
-  // required double torque = 2;
-  bool has_torque() const;
-  void clear_torque();
-  static const int kTorqueFieldNumber = 2;
-  double torque() const;
-  void set_torque(double value);
+  // optional double velocity = 2;
+  bool has_velocity() const;
+  void clear_velocity();
+  static const int kVelocityFieldNumber = 2;
+  double velocity() const;
+  void set_velocity(double value);
 
-  // @@protoc_insertion_point(class_scope:salamander.msgs.JointTorque)
+  // @@protoc_insertion_point(class_scope:salamander.msgs.JointCmd)
  private:
-  inline void set_has_time();
-  inline void clear_has_time();
-  inline void set_has_torque();
-  inline void clear_has_torque();
-
-  // helper for ByteSize()
-  int RequiredFieldsByteSizeFallback() const;
+  inline void set_has_position();
+  inline void clear_has_position();
+  inline void set_has_velocity();
+  inline void clear_has_velocity();
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::gazebo::msgs::Time* time_;
-  double torque_;
+  double position_;
+  double velocity_;
   friend void  protobuf_AddDesc_salamander_5fjoints_2eproto();
   friend void protobuf_AssignDesc_salamander_5fjoints_2eproto();
   friend void protobuf_ShutdownFile_salamander_5fjoints_2eproto();
 
   void InitAsDefaultInstance();
-  static JointTorque* default_instance_;
+  static JointCmd* default_instance_;
 };
 // ===================================================================
 
@@ -569,74 +564,54 @@ inline void JointState::set_velocity(double value) {
 
 // -------------------------------------------------------------------
 
-// JointTorque
+// JointCmd
 
-// required .gazebo.msgs.Time time = 1;
-inline bool JointTorque::has_time() const {
+// required double position = 1;
+inline bool JointCmd::has_position() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void JointTorque::set_has_time() {
+inline void JointCmd::set_has_position() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void JointTorque::clear_has_time() {
+inline void JointCmd::clear_has_position() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void JointTorque::clear_time() {
-  if (time_ != NULL) time_->::gazebo::msgs::Time::Clear();
-  clear_has_time();
+inline void JointCmd::clear_position() {
+  position_ = 0;
+  clear_has_position();
 }
-inline const ::gazebo::msgs::Time& JointTorque::time() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointTorque.time)
-  return time_ != NULL ? *time_ : *default_instance_->time_;
+inline double JointCmd::position() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointCmd.position)
+  return position_;
 }
-inline ::gazebo::msgs::Time* JointTorque::mutable_time() {
-  set_has_time();
-  if (time_ == NULL) {
-    time_ = new ::gazebo::msgs::Time;
-  }
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointTorque.time)
-  return time_;
-}
-inline ::gazebo::msgs::Time* JointTorque::release_time() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.JointTorque.time)
-  clear_has_time();
-  ::gazebo::msgs::Time* temp = time_;
-  time_ = NULL;
-  return temp;
-}
-inline void JointTorque::set_allocated_time(::gazebo::msgs::Time* time) {
-  delete time_;
-  time_ = time;
-  if (time) {
-    set_has_time();
-  } else {
-    clear_has_time();
-  }
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointTorque.time)
+inline void JointCmd::set_position(double value) {
+  set_has_position();
+  position_ = value;
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointCmd.position)
 }
 
-// required double torque = 2;
-inline bool JointTorque::has_torque() const {
+// optional double velocity = 2;
+inline bool JointCmd::has_velocity() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void JointTorque::set_has_torque() {
+inline void JointCmd::set_has_velocity() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void JointTorque::clear_has_torque() {
+inline void JointCmd::clear_has_velocity() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void JointTorque::clear_torque() {
-  torque_ = 0;
-  clear_has_torque();
+inline void JointCmd::clear_velocity() {
+  velocity_ = 0;
+  clear_has_velocity();
 }
-inline double JointTorque::torque() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointTorque.torque)
-  return torque_;
+inline double JointCmd::velocity() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointCmd.velocity)
+  return velocity_;
 }
-inline void JointTorque::set_torque(double value) {
-  set_has_torque();
-  torque_ = value;
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointTorque.torque)
+inline void JointCmd::set_velocity(double value) {
+  set_has_velocity();
+  velocity_ = value;
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointCmd.velocity)
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS

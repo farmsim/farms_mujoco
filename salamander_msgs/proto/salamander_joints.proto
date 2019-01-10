@@ -15,7 +15,7 @@ message JointState {
     optional double velocity = 3;
 }
 
-message JointTorque {
-    required gazebo.msgs.Time time = 1;
-    required double torque = 2;
+message JointCmd {
+    required double position = 1;
+    optional double velocity = 2;
 }

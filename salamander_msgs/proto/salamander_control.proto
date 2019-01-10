@@ -2,12 +2,23 @@ syntax = "proto2";
 
 package salamander.msgs;
 
+import "time.proto";
 import "salamander_joints.proto";
 
 message SalamanderControl {
-    repeated JointCommands cmds = 1;
-    repeated JointTorques torques = 2;
-    optional ControlAnalysis analysis = 3;
+    repeated JointControl joints = 1;
+    optional ControlAnalysis analysis = 2;
+}
+
+message JointControl {
+    required string name = 1;
+    repeated JointCommands control = 2;
+}
+
+message JointCommands {
+    required gazebo.msgs.Time time = 1;
+    required JointCmd commands = 2;
+    required double torque = 3;
 }
 
 message ControlAnalysis {
@@ -17,14 +28,4 @@ message ControlAnalysis {
 message JointConsumption {
     required string name = 1;
     required double consumption = 2;
-}
-
-message JointCommands {
-    required string name = 1;
-    repeated JointState commands = 2;
-}
-
-message JointTorques {
-    required string name = 1;
-    repeated JointTorque torque = 2;
 }

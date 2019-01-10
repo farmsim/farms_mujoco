@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='salamander_joints.proto',
   package='salamander.msgs',
   syntax='proto2',
-  serialized_pb=_b('\n\x17salamander_joints.proto\x12\x0fsalamander.msgs\x1a\ntime.proto\"K\n\x0fJointKinematics\x12\x0c\n\x04name\x18\x01 \x02(\t\x12*\n\x05state\x18\x02 \x03(\x0b\x32\x1b.salamander.msgs.JointState\"Q\n\nJointState\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12\x10\n\x08position\x18\x02 \x02(\x01\x12\x10\n\x08velocity\x18\x03 \x01(\x01\">\n\x0bJointTorque\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12\x0e\n\x06torque\x18\x02 \x02(\x01')
+  serialized_pb=_b('\n\x17salamander_joints.proto\x12\x0fsalamander.msgs\x1a\ntime.proto\"K\n\x0fJointKinematics\x12\x0c\n\x04name\x18\x01 \x02(\t\x12*\n\x05state\x18\x02 \x03(\x0b\x32\x1b.salamander.msgs.JointState\"Q\n\nJointState\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12\x10\n\x08position\x18\x02 \x02(\x01\x12\x10\n\x08velocity\x18\x03 \x01(\x01\".\n\x08JointCmd\x12\x10\n\x08position\x18\x01 \x02(\x01\x12\x10\n\x08velocity\x18\x02 \x01(\x01')
   ,
   dependencies=[time__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -111,23 +111,23 @@ _JOINTSTATE = _descriptor.Descriptor(
 )
 
 
-_JOINTTORQUE = _descriptor.Descriptor(
-  name='JointTorque',
-  full_name='salamander.msgs.JointTorque',
+_JOINTCMD = _descriptor.Descriptor(
+  name='JointCmd',
+  full_name='salamander.msgs.JointCmd',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='time', full_name='salamander.msgs.JointTorque.time', index=0,
-      number=1, type=11, cpp_type=10, label=2,
-      has_default_value=False, default_value=None,
+      name='position', full_name='salamander.msgs.JointCmd.position', index=0,
+      number=1, type=1, cpp_type=5, label=2,
+      has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='torque', full_name='salamander.msgs.JointTorque.torque', index=1,
-      number=2, type=1, cpp_type=5, label=2,
+      name='velocity', full_name='salamander.msgs.JointCmd.velocity', index=1,
+      number=2, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -145,15 +145,14 @@ _JOINTTORQUE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=216,
-  serialized_end=278,
+  serialized_end=262,
 )
 
 _JOINTKINEMATICS.fields_by_name['state'].message_type = _JOINTSTATE
 _JOINTSTATE.fields_by_name['time'].message_type = time__pb2._TIME
-_JOINTTORQUE.fields_by_name['time'].message_type = time__pb2._TIME
 DESCRIPTOR.message_types_by_name['JointKinematics'] = _JOINTKINEMATICS
 DESCRIPTOR.message_types_by_name['JointState'] = _JOINTSTATE
-DESCRIPTOR.message_types_by_name['JointTorque'] = _JOINTTORQUE
+DESCRIPTOR.message_types_by_name['JointCmd'] = _JOINTCMD
 
 JointKinematics = _reflection.GeneratedProtocolMessageType('JointKinematics', (_message.Message,), dict(
   DESCRIPTOR = _JOINTKINEMATICS,
@@ -169,12 +168,12 @@ JointState = _reflection.GeneratedProtocolMessageType('JointState', (_message.Me
   ))
 _sym_db.RegisterMessage(JointState)
 
-JointTorque = _reflection.GeneratedProtocolMessageType('JointTorque', (_message.Message,), dict(
-  DESCRIPTOR = _JOINTTORQUE,
+JointCmd = _reflection.GeneratedProtocolMessageType('JointCmd', (_message.Message,), dict(
+  DESCRIPTOR = _JOINTCMD,
   __module__ = 'salamander_joints_pb2'
-  # @@protoc_insertion_point(class_scope:salamander.msgs.JointTorque)
+  # @@protoc_insertion_point(class_scope:salamander.msgs.JointCmd)
   ))
-_sym_db.RegisterMessage(JointTorque)
+_sym_db.RegisterMessage(JointCmd)
 
 
 # @@protoc_insertion_point(module_scope)

@@ -233,8 +233,6 @@ namespace gazebo
                         << "]"
                         << std::endl;
 
-                this->model_logs->log(this->get_time());
-
                 // Listen to the update event. This event is broadcast every
                 // simulation iteration.
                 this->updateConnection = event::Events::ConnectWorldUpdateBegin(

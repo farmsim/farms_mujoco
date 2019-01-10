@@ -27,6 +27,7 @@
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
 #include <google/protobuf/unknown_field_set.h>
+#include "gazebo/msgs/time.pb.h"
 #include "salamander_joints.pb.h"
 // @@protoc_insertion_point(includes)
 
@@ -41,7 +42,7 @@ void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
 class ControlAnalysis;
 class JointCommands;
 class JointConsumption;
-class JointTorques;
+class JointControl;
 class SalamanderControl;
 
 // ===================================================================
@@ -114,34 +115,22 @@ class SalamanderControl : public ::google::protobuf::Message /* @@protoc_inserti
 
   // accessors -------------------------------------------------------
 
-  // repeated .salamander.msgs.JointCommands cmds = 1;
-  int cmds_size() const;
-  void clear_cmds();
-  static const int kCmdsFieldNumber = 1;
-  const ::salamander::msgs::JointCommands& cmds(int index) const;
-  ::salamander::msgs::JointCommands* mutable_cmds(int index);
-  ::salamander::msgs::JointCommands* add_cmds();
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >*
-      mutable_cmds();
-  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >&
-      cmds() const;
+  // repeated .salamander.msgs.JointControl joints = 1;
+  int joints_size() const;
+  void clear_joints();
+  static const int kJointsFieldNumber = 1;
+  const ::salamander::msgs::JointControl& joints(int index) const;
+  ::salamander::msgs::JointControl* mutable_joints(int index);
+  ::salamander::msgs::JointControl* add_joints();
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl >*
+      mutable_joints();
+  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl >&
+      joints() const;
 
-  // repeated .salamander.msgs.JointTorques torques = 2;
-  int torques_size() const;
-  void clear_torques();
-  static const int kTorquesFieldNumber = 2;
-  const ::salamander::msgs::JointTorques& torques(int index) const;
-  ::salamander::msgs::JointTorques* mutable_torques(int index);
-  ::salamander::msgs::JointTorques* add_torques();
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorques >*
-      mutable_torques();
-  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorques >&
-      torques() const;
-
-  // optional .salamander.msgs.ControlAnalysis analysis = 3;
+  // optional .salamander.msgs.ControlAnalysis analysis = 2;
   bool has_analysis() const;
   void clear_analysis();
-  static const int kAnalysisFieldNumber = 3;
+  static const int kAnalysisFieldNumber = 2;
   const ::salamander::msgs::ControlAnalysis& analysis() const;
   ::salamander::msgs::ControlAnalysis* mutable_analysis();
   ::salamander::msgs::ControlAnalysis* release_analysis();
@@ -155,8 +144,7 @@ class SalamanderControl : public ::google::protobuf::Message /* @@protoc_inserti
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands > cmds_;
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorques > torques_;
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl > joints_;
   ::salamander::msgs::ControlAnalysis* analysis_;
   friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
   friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
@@ -164,6 +152,237 @@ class SalamanderControl : public ::google::protobuf::Message /* @@protoc_inserti
 
   void InitAsDefaultInstance();
   static SalamanderControl* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class JointControl : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointControl) */ {
+ public:
+  JointControl();
+  virtual ~JointControl();
+
+  JointControl(const JointControl& from);
+
+  inline JointControl& operator=(const JointControl& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields();
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const JointControl& default_instance();
+
+  void Swap(JointControl* other);
+
+  // implements Message ----------------------------------------------
+
+  inline JointControl* New() const { return New(NULL); }
+
+  JointControl* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const JointControl& from);
+  void MergeFrom(const JointControl& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(JointControl* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required string name = 1;
+  bool has_name() const;
+  void clear_name();
+  static const int kNameFieldNumber = 1;
+  const ::std::string& name() const;
+  void set_name(const ::std::string& value);
+  void set_name(const char* value);
+  void set_name(const char* value, size_t size);
+  ::std::string* mutable_name();
+  ::std::string* release_name();
+  void set_allocated_name(::std::string* name);
+
+  // repeated .salamander.msgs.JointCommands control = 2;
+  int control_size() const;
+  void clear_control();
+  static const int kControlFieldNumber = 2;
+  const ::salamander::msgs::JointCommands& control(int index) const;
+  ::salamander::msgs::JointCommands* mutable_control(int index);
+  ::salamander::msgs::JointCommands* add_control();
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >*
+      mutable_control();
+  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >&
+      control() const;
+
+  // @@protoc_insertion_point(class_scope:salamander.msgs.JointControl)
+ private:
+  inline void set_has_name();
+  inline void clear_has_name();
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::google::protobuf::internal::ArenaStringPtr name_;
+  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands > control_;
+  friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
+  friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
+  friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
+
+  void InitAsDefaultInstance();
+  static JointControl* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class JointCommands : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointCommands) */ {
+ public:
+  JointCommands();
+  virtual ~JointCommands();
+
+  JointCommands(const JointCommands& from);
+
+  inline JointCommands& operator=(const JointCommands& from) {
+    CopyFrom(from);
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields();
+  }
+
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const JointCommands& default_instance();
+
+  void Swap(JointCommands* other);
+
+  // implements Message ----------------------------------------------
+
+  inline JointCommands* New() const { return New(NULL); }
+
+  JointCommands* New(::google::protobuf::Arena* arena) const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const JointCommands& from);
+  void MergeFrom(const JointCommands& from);
+  void Clear();
+  bool IsInitialized() const;
+
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
+    return InternalSerializeWithCachedSizesToArray(false, output);
+  }
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  void InternalSwap(JointCommands* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return _internal_metadata_.arena();
+  }
+  inline void* MaybeArenaPtr() const {
+    return _internal_metadata_.raw_arena_ptr();
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // required .gazebo.msgs.Time time = 1;
+  bool has_time() const;
+  void clear_time();
+  static const int kTimeFieldNumber = 1;
+  const ::gazebo::msgs::Time& time() const;
+  ::gazebo::msgs::Time* mutable_time();
+  ::gazebo::msgs::Time* release_time();
+  void set_allocated_time(::gazebo::msgs::Time* time);
+
+  // required .salamander.msgs.JointCmd commands = 2;
+  bool has_commands() const;
+  void clear_commands();
+  static const int kCommandsFieldNumber = 2;
+  const ::salamander::msgs::JointCmd& commands() const;
+  ::salamander::msgs::JointCmd* mutable_commands();
+  ::salamander::msgs::JointCmd* release_commands();
+  void set_allocated_commands(::salamander::msgs::JointCmd* commands);
+
+  // required double torque = 3;
+  bool has_torque() const;
+  void clear_torque();
+  static const int kTorqueFieldNumber = 3;
+  double torque() const;
+  void set_torque(double value);
+
+  // @@protoc_insertion_point(class_scope:salamander.msgs.JointCommands)
+ private:
+  inline void set_has_time();
+  inline void clear_has_time();
+  inline void set_has_commands();
+  inline void clear_has_commands();
+  inline void set_has_torque();
+  inline void clear_has_torque();
+
+  // helper for ByteSize()
+  int RequiredFieldsByteSizeFallback() const;
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::uint32 _has_bits_[1];
+  mutable int _cached_size_;
+  ::gazebo::msgs::Time* time_;
+  ::salamander::msgs::JointCmd* commands_;
+  double torque_;
+  friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
+  friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
+  friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
+
+  void InitAsDefaultInstance();
+  static JointCommands* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -372,228 +591,6 @@ class JointConsumption : public ::google::protobuf::Message /* @@protoc_insertio
   void InitAsDefaultInstance();
   static JointConsumption* default_instance_;
 };
-// -------------------------------------------------------------------
-
-class JointCommands : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointCommands) */ {
- public:
-  JointCommands();
-  virtual ~JointCommands();
-
-  JointCommands(const JointCommands& from);
-
-  inline JointCommands& operator=(const JointCommands& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const JointCommands& default_instance();
-
-  void Swap(JointCommands* other);
-
-  // implements Message ----------------------------------------------
-
-  inline JointCommands* New() const { return New(NULL); }
-
-  JointCommands* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const JointCommands& from);
-  void MergeFrom(const JointCommands& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
-    return InternalSerializeWithCachedSizesToArray(false, output);
-  }
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(JointCommands* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required string name = 1;
-  bool has_name() const;
-  void clear_name();
-  static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
-
-  // repeated .salamander.msgs.JointState commands = 2;
-  int commands_size() const;
-  void clear_commands();
-  static const int kCommandsFieldNumber = 2;
-  const ::salamander::msgs::JointState& commands(int index) const;
-  ::salamander::msgs::JointState* mutable_commands(int index);
-  ::salamander::msgs::JointState* add_commands();
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >*
-      mutable_commands();
-  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >&
-      commands() const;
-
-  // @@protoc_insertion_point(class_scope:salamander.msgs.JointCommands)
- private:
-  inline void set_has_name();
-  inline void clear_has_name();
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::internal::ArenaStringPtr name_;
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState > commands_;
-  friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
-
-  void InitAsDefaultInstance();
-  static JointCommands* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class JointTorques : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointTorques) */ {
- public:
-  JointTorques();
-  virtual ~JointTorques();
-
-  JointTorques(const JointTorques& from);
-
-  inline JointTorques& operator=(const JointTorques& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const JointTorques& default_instance();
-
-  void Swap(JointTorques* other);
-
-  // implements Message ----------------------------------------------
-
-  inline JointTorques* New() const { return New(NULL); }
-
-  JointTorques* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const JointTorques& from);
-  void MergeFrom(const JointTorques& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
-    return InternalSerializeWithCachedSizesToArray(false, output);
-  }
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(JointTorques* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required string name = 1;
-  bool has_name() const;
-  void clear_name();
-  static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
-
-  // repeated .salamander.msgs.JointTorque torque = 2;
-  int torque_size() const;
-  void clear_torque();
-  static const int kTorqueFieldNumber = 2;
-  const ::salamander::msgs::JointTorque& torque(int index) const;
-  ::salamander::msgs::JointTorque* mutable_torque(int index);
-  ::salamander::msgs::JointTorque* add_torque();
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorque >*
-      mutable_torque();
-  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorque >&
-      torque() const;
-
-  // @@protoc_insertion_point(class_scope:salamander.msgs.JointTorques)
- private:
-  inline void set_has_name();
-  inline void clear_has_name();
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::internal::ArenaStringPtr name_;
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorque > torque_;
-  friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
-
-  void InitAsDefaultInstance();
-  static JointTorques* default_instance_;
-};
 // ===================================================================
 
 
@@ -602,75 +599,45 @@ class JointTorques : public ::google::protobuf::Message /* @@protoc_insertion_po
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
 // SalamanderControl
 
-// repeated .salamander.msgs.JointCommands cmds = 1;
-inline int SalamanderControl::cmds_size() const {
-  return cmds_.size();
+// repeated .salamander.msgs.JointControl joints = 1;
+inline int SalamanderControl::joints_size() const {
+  return joints_.size();
 }
-inline void SalamanderControl::clear_cmds() {
-  cmds_.Clear();
+inline void SalamanderControl::clear_joints() {
+  joints_.Clear();
 }
-inline const ::salamander::msgs::JointCommands& SalamanderControl::cmds(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.SalamanderControl.cmds)
-  return cmds_.Get(index);
+inline const ::salamander::msgs::JointControl& SalamanderControl::joints(int index) const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.SalamanderControl.joints)
+  return joints_.Get(index);
 }
-inline ::salamander::msgs::JointCommands* SalamanderControl::mutable_cmds(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.SalamanderControl.cmds)
-  return cmds_.Mutable(index);
+inline ::salamander::msgs::JointControl* SalamanderControl::mutable_joints(int index) {
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.SalamanderControl.joints)
+  return joints_.Mutable(index);
 }
-inline ::salamander::msgs::JointCommands* SalamanderControl::add_cmds() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.SalamanderControl.cmds)
-  return cmds_.Add();
+inline ::salamander::msgs::JointControl* SalamanderControl::add_joints() {
+  // @@protoc_insertion_point(field_add:salamander.msgs.SalamanderControl.joints)
+  return joints_.Add();
 }
-inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >*
-SalamanderControl::mutable_cmds() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.SalamanderControl.cmds)
-  return &cmds_;
+inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl >*
+SalamanderControl::mutable_joints() {
+  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.SalamanderControl.joints)
+  return &joints_;
 }
-inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >&
-SalamanderControl::cmds() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.SalamanderControl.cmds)
-  return cmds_;
-}
-
-// repeated .salamander.msgs.JointTorques torques = 2;
-inline int SalamanderControl::torques_size() const {
-  return torques_.size();
-}
-inline void SalamanderControl::clear_torques() {
-  torques_.Clear();
-}
-inline const ::salamander::msgs::JointTorques& SalamanderControl::torques(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.SalamanderControl.torques)
-  return torques_.Get(index);
-}
-inline ::salamander::msgs::JointTorques* SalamanderControl::mutable_torques(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.SalamanderControl.torques)
-  return torques_.Mutable(index);
-}
-inline ::salamander::msgs::JointTorques* SalamanderControl::add_torques() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.SalamanderControl.torques)
-  return torques_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorques >*
-SalamanderControl::mutable_torques() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.SalamanderControl.torques)
-  return &torques_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorques >&
-SalamanderControl::torques() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.SalamanderControl.torques)
-  return torques_;
+inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl >&
+SalamanderControl::joints() const {
+  // @@protoc_insertion_point(field_list:salamander.msgs.SalamanderControl.joints)
+  return joints_;
 }
 
-// optional .salamander.msgs.ControlAnalysis analysis = 3;
+// optional .salamander.msgs.ControlAnalysis analysis = 2;
 inline bool SalamanderControl::has_analysis() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+  return (_has_bits_[0] & 0x00000002u) != 0;
 }
 inline void SalamanderControl::set_has_analysis() {
-  _has_bits_[0] |= 0x00000004u;
+  _has_bits_[0] |= 0x00000002u;
 }
 inline void SalamanderControl::clear_has_analysis() {
-  _has_bits_[0] &= ~0x00000004u;
+  _has_bits_[0] &= ~0x00000002u;
 }
 inline void SalamanderControl::clear_analysis() {
   if (analysis_ != NULL) analysis_->::salamander::msgs::ControlAnalysis::Clear();
@@ -704,6 +671,210 @@ inline void SalamanderControl::set_allocated_analysis(::salamander::msgs::Contro
     clear_has_analysis();
   }
   // @@protoc_insertion_point(field_set_allocated:salamander.msgs.SalamanderControl.analysis)
+}
+
+// -------------------------------------------------------------------
+
+// JointControl
+
+// required string name = 1;
+inline bool JointControl::has_name() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void JointControl::set_has_name() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void JointControl::clear_has_name() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void JointControl::clear_name() {
+  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  clear_has_name();
+}
+inline const ::std::string& JointControl::name() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointControl.name)
+  return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void JointControl::set_name(const ::std::string& value) {
+  set_has_name();
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointControl.name)
+}
+inline void JointControl::set_name(const char* value) {
+  set_has_name();
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointControl.name)
+}
+inline void JointControl::set_name(const char* value, size_t size) {
+  set_has_name();
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointControl.name)
+}
+inline ::std::string* JointControl::mutable_name() {
+  set_has_name();
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointControl.name)
+  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* JointControl::release_name() {
+  // @@protoc_insertion_point(field_release:salamander.msgs.JointControl.name)
+  clear_has_name();
+  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void JointControl::set_allocated_name(::std::string* name) {
+  if (name != NULL) {
+    set_has_name();
+  } else {
+    clear_has_name();
+  }
+  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
+  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointControl.name)
+}
+
+// repeated .salamander.msgs.JointCommands control = 2;
+inline int JointControl::control_size() const {
+  return control_.size();
+}
+inline void JointControl::clear_control() {
+  control_.Clear();
+}
+inline const ::salamander::msgs::JointCommands& JointControl::control(int index) const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointControl.control)
+  return control_.Get(index);
+}
+inline ::salamander::msgs::JointCommands* JointControl::mutable_control(int index) {
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointControl.control)
+  return control_.Mutable(index);
+}
+inline ::salamander::msgs::JointCommands* JointControl::add_control() {
+  // @@protoc_insertion_point(field_add:salamander.msgs.JointControl.control)
+  return control_.Add();
+}
+inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >*
+JointControl::mutable_control() {
+  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.JointControl.control)
+  return &control_;
+}
+inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCommands >&
+JointControl::control() const {
+  // @@protoc_insertion_point(field_list:salamander.msgs.JointControl.control)
+  return control_;
+}
+
+// -------------------------------------------------------------------
+
+// JointCommands
+
+// required .gazebo.msgs.Time time = 1;
+inline bool JointCommands::has_time() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void JointCommands::set_has_time() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void JointCommands::clear_has_time() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void JointCommands::clear_time() {
+  if (time_ != NULL) time_->::gazebo::msgs::Time::Clear();
+  clear_has_time();
+}
+inline const ::gazebo::msgs::Time& JointCommands::time() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointCommands.time)
+  return time_ != NULL ? *time_ : *default_instance_->time_;
+}
+inline ::gazebo::msgs::Time* JointCommands::mutable_time() {
+  set_has_time();
+  if (time_ == NULL) {
+    time_ = new ::gazebo::msgs::Time;
+  }
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointCommands.time)
+  return time_;
+}
+inline ::gazebo::msgs::Time* JointCommands::release_time() {
+  // @@protoc_insertion_point(field_release:salamander.msgs.JointCommands.time)
+  clear_has_time();
+  ::gazebo::msgs::Time* temp = time_;
+  time_ = NULL;
+  return temp;
+}
+inline void JointCommands::set_allocated_time(::gazebo::msgs::Time* time) {
+  delete time_;
+  time_ = time;
+  if (time) {
+    set_has_time();
+  } else {
+    clear_has_time();
+  }
+  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointCommands.time)
+}
+
+// required .salamander.msgs.JointCmd commands = 2;
+inline bool JointCommands::has_commands() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void JointCommands::set_has_commands() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void JointCommands::clear_has_commands() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void JointCommands::clear_commands() {
+  if (commands_ != NULL) commands_->::salamander::msgs::JointCmd::Clear();
+  clear_has_commands();
+}
+inline const ::salamander::msgs::JointCmd& JointCommands::commands() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointCommands.commands)
+  return commands_ != NULL ? *commands_ : *default_instance_->commands_;
+}
+inline ::salamander::msgs::JointCmd* JointCommands::mutable_commands() {
+  set_has_commands();
+  if (commands_ == NULL) {
+    commands_ = new ::salamander::msgs::JointCmd;
+  }
+  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointCommands.commands)
+  return commands_;
+}
+inline ::salamander::msgs::JointCmd* JointCommands::release_commands() {
+  // @@protoc_insertion_point(field_release:salamander.msgs.JointCommands.commands)
+  clear_has_commands();
+  ::salamander::msgs::JointCmd* temp = commands_;
+  commands_ = NULL;
+  return temp;
+}
+inline void JointCommands::set_allocated_commands(::salamander::msgs::JointCmd* commands) {
+  delete commands_;
+  commands_ = commands;
+  if (commands) {
+    set_has_commands();
+  } else {
+    clear_has_commands();
+  }
+  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointCommands.commands)
+}
+
+// required double torque = 3;
+inline bool JointCommands::has_torque() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void JointCommands::set_has_torque() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void JointCommands::clear_has_torque() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void JointCommands::clear_torque() {
+  torque_ = 0;
+  clear_has_torque();
+}
+inline double JointCommands::torque() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointCommands.torque)
+  return torque_;
+}
+inline void JointCommands::set_torque(double value) {
+  set_has_torque();
+  torque_ = value;
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointCommands.torque)
 }
 
 // -------------------------------------------------------------------
@@ -820,182 +991,6 @@ inline void JointConsumption::set_consumption(double value) {
   set_has_consumption();
   consumption_ = value;
   // @@protoc_insertion_point(field_set:salamander.msgs.JointConsumption.consumption)
-}
-
-// -------------------------------------------------------------------
-
-// JointCommands
-
-// required string name = 1;
-inline bool JointCommands::has_name() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void JointCommands::set_has_name() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void JointCommands::clear_has_name() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void JointCommands::clear_name() {
-  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_name();
-}
-inline const ::std::string& JointCommands::name() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointCommands.name)
-  return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void JointCommands::set_name(const ::std::string& value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointCommands.name)
-}
-inline void JointCommands::set_name(const char* value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointCommands.name)
-}
-inline void JointCommands::set_name(const char* value, size_t size) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointCommands.name)
-}
-inline ::std::string* JointCommands::mutable_name() {
-  set_has_name();
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointCommands.name)
-  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* JointCommands::release_name() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.JointCommands.name)
-  clear_has_name();
-  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void JointCommands::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
-    set_has_name();
-  } else {
-    clear_has_name();
-  }
-  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointCommands.name)
-}
-
-// repeated .salamander.msgs.JointState commands = 2;
-inline int JointCommands::commands_size() const {
-  return commands_.size();
-}
-inline void JointCommands::clear_commands() {
-  commands_.Clear();
-}
-inline const ::salamander::msgs::JointState& JointCommands::commands(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointCommands.commands)
-  return commands_.Get(index);
-}
-inline ::salamander::msgs::JointState* JointCommands::mutable_commands(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointCommands.commands)
-  return commands_.Mutable(index);
-}
-inline ::salamander::msgs::JointState* JointCommands::add_commands() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.JointCommands.commands)
-  return commands_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >*
-JointCommands::mutable_commands() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.JointCommands.commands)
-  return &commands_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointState >&
-JointCommands::commands() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.JointCommands.commands)
-  return commands_;
-}
-
-// -------------------------------------------------------------------
-
-// JointTorques
-
-// required string name = 1;
-inline bool JointTorques::has_name() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void JointTorques::set_has_name() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void JointTorques::clear_has_name() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void JointTorques::clear_name() {
-  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_name();
-}
-inline const ::std::string& JointTorques::name() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointTorques.name)
-  return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void JointTorques::set_name(const ::std::string& value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointTorques.name)
-}
-inline void JointTorques::set_name(const char* value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointTorques.name)
-}
-inline void JointTorques::set_name(const char* value, size_t size) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointTorques.name)
-}
-inline ::std::string* JointTorques::mutable_name() {
-  set_has_name();
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointTorques.name)
-  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* JointTorques::release_name() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.JointTorques.name)
-  clear_has_name();
-  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void JointTorques::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
-    set_has_name();
-  } else {
-    clear_has_name();
-  }
-  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointTorques.name)
-}
-
-// repeated .salamander.msgs.JointTorque torque = 2;
-inline int JointTorques::torque_size() const {
-  return torque_.size();
-}
-inline void JointTorques::clear_torque() {
-  torque_.Clear();
-}
-inline const ::salamander::msgs::JointTorque& JointTorques::torque(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointTorques.torque)
-  return torque_.Get(index);
-}
-inline ::salamander::msgs::JointTorque* JointTorques::mutable_torque(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointTorques.torque)
-  return torque_.Mutable(index);
-}
-inline ::salamander::msgs::JointTorque* JointTorques::add_torque() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.JointTorques.torque)
-  return torque_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorque >*
-JointTorques::mutable_torque() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.JointTorques.torque)
-  return &torque_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointTorque >&
-JointTorques::torque() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.JointTorques.torque)
-  return torque_;
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS

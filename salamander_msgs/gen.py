@@ -12,17 +12,22 @@ def correct_file_callback_py(pat):
     return "from . import {} as {}".format(pat.group(1), pat.group(2))
 
 
-def correct_file_callback_cpp(pat):
-    """ Correct file callback """
-    return '#include "gazebo/msgs/{}"'.format(pat.group(1))
-
-
-def correct_file(filename, regex, callback):
+def correct_file_py(filename, regex):
     """ Correct_file """
-    print("Correcting {}".format(filename))
+    print("  Correcting {}".format(filename))
     with open(filename, "r") as _file:
         data = _file.read()
-    data_new = re.sub(regex, callback, data)
+    data_new = re.sub(regex, correct_file_callback_py, data)
+    with open(filename, "w") as _file:
+        _file.write(data_new)
+
+
+def correct_file_cpp(filename, pattern, replacement):
+    """ Correct_file """
+    print("  Correcting {}".format(filename))
+    with open(filename, "r") as _file:
+        data = _file.read()
+    data_new = data.replace(pattern, replacement)
     with open(filename, "w") as _file:
         _file.write(data_new)
 
@@ -57,23 +62,31 @@ def gen_salamander_msgs(files, include_dir, output, language, extension):
         if language == "cpp":
             with open(filename_out, "r") as _file:
                 data = _file.read()
-            search = re.search(r'\#include\ \"(\w+)\.pb\.h\"', data)
-            if search:
+            for search in re.finditer(r'\#include\ \"(\w+)\.pb\.h\"', data):
                 print("Search FOUND: {}".format(search.group(0)))
                 if "./proto/" + search.group(1) + ".proto" not in files:
-                    print("Correcting {}, gazebo message deteted".format(
+                    print("  Correcting {}, gazebo message deteted".format(
                         search.group(0)
                     ))
-                    correct_file(
-                        filename_out,
-                        regex=r'\#include\ \"(\w+\.pb\.h)\"',
-                        callback=correct_file_callback_cpp
+                    pattern = '#include "{}.pb.h"'.format(search.group(1))
+                    replacement = '#include "gazebo/msgs/{}.pb.h"'.format(
+                        search.group(1)
                     )
+                    print("  Replacing {} with {}".format(
+                        pattern,
+                        replacement
+                    ))
+                    correct_file_cpp(
+                        filename_out,
+                        pattern=pattern,
+                        replacement=replacement
+                    )
+                else:
+                    break
         elif language == "python":
-            correct_file(
+            correct_file_py(
                 filename_out,
-                regex=r"import\ (\w+\_pb2)\ as\ (\w+\_\_pb2)",
-                callback=correct_file_callback_py
+                regex=r"import\ (\w+\_pb2)\ as\ (\w+\_\_pb2)"
             )
         else:
             raise Exception("Unrecognised language '{}'".format(language))
