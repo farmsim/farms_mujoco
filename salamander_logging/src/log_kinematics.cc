@@ -118,7 +118,13 @@ public:
             msg->set_allocated_pose(_pose);
             // Velocity
             // optional gazebo.msgs.Vector3d linear_velocity  = 3;
+            gazebo::msgs::Vector3d *linear_velocity = new gazebo::msgs::Vector3d;
+            gazebo::msgs::Set(linear_velocity, link->RelativeLinearVel());
+            msg->set_allocated_linear_velocity(linear_velocity);
             // optional gazebo.msgs.Vector3d angular_velocity = 4;
+            gazebo::msgs::Vector3d *angular_velocity = new gazebo::msgs::Vector3d;
+            gazebo::msgs::Set(angular_velocity, link->RelativeAngularVel());
+            msg->set_allocated_angular_velocity(angular_velocity);
         }
 
     void log_joint(gazebo::common::Time time,salamander::msgs::JointKinematics* joint_kin, gazebo::physics::JointPtr joint)
