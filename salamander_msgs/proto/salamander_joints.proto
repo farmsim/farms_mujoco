@@ -6,7 +6,7 @@ import "time.proto";
 
 message JointKinematics {
     required string name = 1;
-    repeated JointState state  = 2;
+    repeated JointState state = 2;
 }
 
 message JointState {
