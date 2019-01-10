@@ -39,9 +39,7 @@ void protobuf_AddDesc_salamander_5fcontrol_2eproto();
 void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
 void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
 
-class ControlAnalysis;
 class JointCommands;
-class JointConsumption;
 class JointControl;
 class SalamanderControl;
 
@@ -127,25 +125,13 @@ class SalamanderControl : public ::google::protobuf::Message /* @@protoc_inserti
   const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl >&
       joints() const;
 
-  // optional .salamander.msgs.ControlAnalysis analysis = 2;
-  bool has_analysis() const;
-  void clear_analysis();
-  static const int kAnalysisFieldNumber = 2;
-  const ::salamander::msgs::ControlAnalysis& analysis() const;
-  ::salamander::msgs::ControlAnalysis* mutable_analysis();
-  ::salamander::msgs::ControlAnalysis* release_analysis();
-  void set_allocated_analysis(::salamander::msgs::ControlAnalysis* analysis);
-
   // @@protoc_insertion_point(class_scope:salamander.msgs.SalamanderControl)
  private:
-  inline void set_has_analysis();
-  inline void clear_has_analysis();
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
   ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl > joints_;
-  ::salamander::msgs::ControlAnalysis* analysis_;
   friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
   friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
   friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
@@ -359,6 +345,13 @@ class JointCommands : public ::google::protobuf::Message /* @@protoc_insertion_p
   double torque() const;
   void set_torque(double value);
 
+  // optional double consumption = 4;
+  bool has_consumption() const;
+  void clear_consumption();
+  static const int kConsumptionFieldNumber = 4;
+  double consumption() const;
+  void set_consumption(double value);
+
   // @@protoc_insertion_point(class_scope:salamander.msgs.JointCommands)
  private:
   inline void set_has_time();
@@ -367,6 +360,8 @@ class JointCommands : public ::google::protobuf::Message /* @@protoc_insertion_p
   inline void clear_has_commands();
   inline void set_has_torque();
   inline void clear_has_torque();
+  inline void set_has_consumption();
+  inline void clear_has_consumption();
 
   // helper for ByteSize()
   int RequiredFieldsByteSizeFallback() const;
@@ -377,219 +372,13 @@ class JointCommands : public ::google::protobuf::Message /* @@protoc_insertion_p
   ::gazebo::msgs::Time* time_;
   ::salamander::msgs::JointCmd* commands_;
   double torque_;
-  friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
-
-  void InitAsDefaultInstance();
-  static JointCommands* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class ControlAnalysis : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.ControlAnalysis) */ {
- public:
-  ControlAnalysis();
-  virtual ~ControlAnalysis();
-
-  ControlAnalysis(const ControlAnalysis& from);
-
-  inline ControlAnalysis& operator=(const ControlAnalysis& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const ControlAnalysis& default_instance();
-
-  void Swap(ControlAnalysis* other);
-
-  // implements Message ----------------------------------------------
-
-  inline ControlAnalysis* New() const { return New(NULL); }
-
-  ControlAnalysis* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const ControlAnalysis& from);
-  void MergeFrom(const ControlAnalysis& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
-    return InternalSerializeWithCachedSizesToArray(false, output);
-  }
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(ControlAnalysis* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // repeated .salamander.msgs.JointConsumption joints_consumption = 1;
-  int joints_consumption_size() const;
-  void clear_joints_consumption();
-  static const int kJointsConsumptionFieldNumber = 1;
-  const ::salamander::msgs::JointConsumption& joints_consumption(int index) const;
-  ::salamander::msgs::JointConsumption* mutable_joints_consumption(int index);
-  ::salamander::msgs::JointConsumption* add_joints_consumption();
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointConsumption >*
-      mutable_joints_consumption();
-  const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointConsumption >&
-      joints_consumption() const;
-
-  // @@protoc_insertion_point(class_scope:salamander.msgs.ControlAnalysis)
- private:
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointConsumption > joints_consumption_;
-  friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
-  friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
-
-  void InitAsDefaultInstance();
-  static ControlAnalysis* default_instance_;
-};
-// -------------------------------------------------------------------
-
-class JointConsumption : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:salamander.msgs.JointConsumption) */ {
- public:
-  JointConsumption();
-  virtual ~JointConsumption();
-
-  JointConsumption(const JointConsumption& from);
-
-  inline JointConsumption& operator=(const JointConsumption& from) {
-    CopyFrom(from);
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
-    return _internal_metadata_.unknown_fields();
-  }
-
-  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
-    return _internal_metadata_.mutable_unknown_fields();
-  }
-
-  static const ::google::protobuf::Descriptor* descriptor();
-  static const JointConsumption& default_instance();
-
-  void Swap(JointConsumption* other);
-
-  // implements Message ----------------------------------------------
-
-  inline JointConsumption* New() const { return New(NULL); }
-
-  JointConsumption* New(::google::protobuf::Arena* arena) const;
-  void CopyFrom(const ::google::protobuf::Message& from);
-  void MergeFrom(const ::google::protobuf::Message& from);
-  void CopyFrom(const JointConsumption& from);
-  void MergeFrom(const JointConsumption& from);
-  void Clear();
-  bool IsInitialized() const;
-
-  int ByteSize() const;
-  bool MergePartialFromCodedStream(
-      ::google::protobuf::io::CodedInputStream* input);
-  void SerializeWithCachedSizes(
-      ::google::protobuf::io::CodedOutputStream* output) const;
-  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
-      bool deterministic, ::google::protobuf::uint8* output) const;
-  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const {
-    return InternalSerializeWithCachedSizesToArray(false, output);
-  }
-  int GetCachedSize() const { return _cached_size_; }
-  private:
-  void SharedCtor();
-  void SharedDtor();
-  void SetCachedSize(int size) const;
-  void InternalSwap(JointConsumption* other);
-  private:
-  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
-    return _internal_metadata_.arena();
-  }
-  inline void* MaybeArenaPtr() const {
-    return _internal_metadata_.raw_arena_ptr();
-  }
-  public:
-
-  ::google::protobuf::Metadata GetMetadata() const;
-
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-
-  // required string name = 1;
-  bool has_name() const;
-  void clear_name();
-  static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
-
-  // required double consumption = 2;
-  bool has_consumption() const;
-  void clear_consumption();
-  static const int kConsumptionFieldNumber = 2;
-  double consumption() const;
-  void set_consumption(double value);
-
-  // @@protoc_insertion_point(class_scope:salamander.msgs.JointConsumption)
- private:
-  inline void set_has_name();
-  inline void clear_has_name();
-  inline void set_has_consumption();
-  inline void clear_has_consumption();
-
-  // helper for ByteSize()
-  int RequiredFieldsByteSizeFallback() const;
-
-  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::uint32 _has_bits_[1];
-  mutable int _cached_size_;
-  ::google::protobuf::internal::ArenaStringPtr name_;
   double consumption_;
   friend void  protobuf_AddDesc_salamander_5fcontrol_2eproto();
   friend void protobuf_AssignDesc_salamander_5fcontrol_2eproto();
   friend void protobuf_ShutdownFile_salamander_5fcontrol_2eproto();
 
   void InitAsDefaultInstance();
-  static JointConsumption* default_instance_;
+  static JointCommands* default_instance_;
 };
 // ===================================================================
 
@@ -627,50 +416,6 @@ inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointCont
 SalamanderControl::joints() const {
   // @@protoc_insertion_point(field_list:salamander.msgs.SalamanderControl.joints)
   return joints_;
-}
-
-// optional .salamander.msgs.ControlAnalysis analysis = 2;
-inline bool SalamanderControl::has_analysis() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void SalamanderControl::set_has_analysis() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void SalamanderControl::clear_has_analysis() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void SalamanderControl::clear_analysis() {
-  if (analysis_ != NULL) analysis_->::salamander::msgs::ControlAnalysis::Clear();
-  clear_has_analysis();
-}
-inline const ::salamander::msgs::ControlAnalysis& SalamanderControl::analysis() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.SalamanderControl.analysis)
-  return analysis_ != NULL ? *analysis_ : *default_instance_->analysis_;
-}
-inline ::salamander::msgs::ControlAnalysis* SalamanderControl::mutable_analysis() {
-  set_has_analysis();
-  if (analysis_ == NULL) {
-    analysis_ = new ::salamander::msgs::ControlAnalysis;
-  }
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.SalamanderControl.analysis)
-  return analysis_;
-}
-inline ::salamander::msgs::ControlAnalysis* SalamanderControl::release_analysis() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.SalamanderControl.analysis)
-  clear_has_analysis();
-  ::salamander::msgs::ControlAnalysis* temp = analysis_;
-  analysis_ = NULL;
-  return temp;
-}
-inline void SalamanderControl::set_allocated_analysis(::salamander::msgs::ControlAnalysis* analysis) {
-  delete analysis_;
-  analysis_ = analysis;
-  if (analysis) {
-    set_has_analysis();
-  } else {
-    clear_has_analysis();
-  }
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.SalamanderControl.analysis)
 }
 
 // -------------------------------------------------------------------
@@ -877,127 +622,31 @@ inline void JointCommands::set_torque(double value) {
   // @@protoc_insertion_point(field_set:salamander.msgs.JointCommands.torque)
 }
 
-// -------------------------------------------------------------------
-
-// ControlAnalysis
-
-// repeated .salamander.msgs.JointConsumption joints_consumption = 1;
-inline int ControlAnalysis::joints_consumption_size() const {
-  return joints_consumption_.size();
+// optional double consumption = 4;
+inline bool JointCommands::has_consumption() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
-inline void ControlAnalysis::clear_joints_consumption() {
-  joints_consumption_.Clear();
+inline void JointCommands::set_has_consumption() {
+  _has_bits_[0] |= 0x00000008u;
 }
-inline const ::salamander::msgs::JointConsumption& ControlAnalysis::joints_consumption(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_.Get(index);
+inline void JointCommands::clear_has_consumption() {
+  _has_bits_[0] &= ~0x00000008u;
 }
-inline ::salamander::msgs::JointConsumption* ControlAnalysis::mutable_joints_consumption(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_.Mutable(index);
-}
-inline ::salamander::msgs::JointConsumption* ControlAnalysis::add_joints_consumption() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_.Add();
-}
-inline ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointConsumption >*
-ControlAnalysis::mutable_joints_consumption() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.ControlAnalysis.joints_consumption)
-  return &joints_consumption_;
-}
-inline const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointConsumption >&
-ControlAnalysis::joints_consumption() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_;
-}
-
-// -------------------------------------------------------------------
-
-// JointConsumption
-
-// required string name = 1;
-inline bool JointConsumption::has_name() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-inline void JointConsumption::set_has_name() {
-  _has_bits_[0] |= 0x00000001u;
-}
-inline void JointConsumption::clear_has_name() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-inline void JointConsumption::clear_name() {
-  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_name();
-}
-inline const ::std::string& JointConsumption::name() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointConsumption.name)
-  return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void JointConsumption::set_name(const ::std::string& value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointConsumption.name)
-}
-inline void JointConsumption::set_name(const char* value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointConsumption.name)
-}
-inline void JointConsumption::set_name(const char* value, size_t size) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointConsumption.name)
-}
-inline ::std::string* JointConsumption::mutable_name() {
-  set_has_name();
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointConsumption.name)
-  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* JointConsumption::release_name() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.JointConsumption.name)
-  clear_has_name();
-  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void JointConsumption::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
-    set_has_name();
-  } else {
-    clear_has_name();
-  }
-  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointConsumption.name)
-}
-
-// required double consumption = 2;
-inline bool JointConsumption::has_consumption() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-inline void JointConsumption::set_has_consumption() {
-  _has_bits_[0] |= 0x00000002u;
-}
-inline void JointConsumption::clear_has_consumption() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-inline void JointConsumption::clear_consumption() {
+inline void JointCommands::clear_consumption() {
   consumption_ = 0;
   clear_has_consumption();
 }
-inline double JointConsumption::consumption() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointConsumption.consumption)
+inline double JointCommands::consumption() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointCommands.consumption)
   return consumption_;
 }
-inline void JointConsumption::set_consumption(double value) {
+inline void JointCommands::set_consumption(double value) {
   set_has_consumption();
   consumption_ = value;
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointConsumption.consumption)
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointCommands.consumption)
 }
 
 #endif  // !PROTOBUF_INLINE_NOT_IN_HEADERS
-// -------------------------------------------------------------------
-
-// -------------------------------------------------------------------
-
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

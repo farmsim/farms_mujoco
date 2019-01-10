@@ -31,12 +31,6 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* JointCommands_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   JointCommands_reflection_ = NULL;
-const ::google::protobuf::Descriptor* ControlAnalysis_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-  ControlAnalysis_reflection_ = NULL;
-const ::google::protobuf::Descriptor* JointConsumption_descriptor_ = NULL;
-const ::google::protobuf::internal::GeneratedMessageReflection*
-  JointConsumption_reflection_ = NULL;
 
 }  // namespace
 
@@ -49,9 +43,8 @@ void protobuf_AssignDesc_salamander_5fcontrol_2eproto() {
       "salamander_control.proto");
   GOOGLE_CHECK(file != NULL);
   SalamanderControl_descriptor_ = file->message_type(0);
-  static const int SalamanderControl_offsets_[2] = {
+  static const int SalamanderControl_offsets_[1] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SalamanderControl, joints_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(SalamanderControl, analysis_),
   };
   SalamanderControl_reflection_ =
     ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
@@ -81,10 +74,11 @@ void protobuf_AssignDesc_salamander_5fcontrol_2eproto() {
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointControl, _internal_metadata_),
       -1);
   JointCommands_descriptor_ = file->message_type(2);
-  static const int JointCommands_offsets_[3] = {
+  static const int JointCommands_offsets_[4] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointCommands, time_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointCommands, commands_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointCommands, torque_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointCommands, consumption_),
   };
   JointCommands_reflection_ =
     ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
@@ -96,37 +90,6 @@ void protobuf_AssignDesc_salamander_5fcontrol_2eproto() {
       -1,
       sizeof(JointCommands),
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointCommands, _internal_metadata_),
-      -1);
-  ControlAnalysis_descriptor_ = file->message_type(3);
-  static const int ControlAnalysis_offsets_[1] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ControlAnalysis, joints_consumption_),
-  };
-  ControlAnalysis_reflection_ =
-    ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
-      ControlAnalysis_descriptor_,
-      ControlAnalysis::default_instance_,
-      ControlAnalysis_offsets_,
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ControlAnalysis, _has_bits_[0]),
-      -1,
-      -1,
-      sizeof(ControlAnalysis),
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ControlAnalysis, _internal_metadata_),
-      -1);
-  JointConsumption_descriptor_ = file->message_type(4);
-  static const int JointConsumption_offsets_[2] = {
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointConsumption, name_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointConsumption, consumption_),
-  };
-  JointConsumption_reflection_ =
-    ::google::protobuf::internal::GeneratedMessageReflection::NewGeneratedMessageReflection(
-      JointConsumption_descriptor_,
-      JointConsumption::default_instance_,
-      JointConsumption_offsets_,
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointConsumption, _has_bits_[0]),
-      -1,
-      -1,
-      sizeof(JointConsumption),
-      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(JointConsumption, _internal_metadata_),
       -1);
 }
 
@@ -147,10 +110,6 @@ void protobuf_RegisterTypes(const ::std::string&) {
       JointControl_descriptor_, &JointControl::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
       JointCommands_descriptor_, &JointCommands::default_instance());
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      ControlAnalysis_descriptor_, &ControlAnalysis::default_instance());
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
-      JointConsumption_descriptor_, &JointConsumption::default_instance());
 }
 
 }  // namespace
@@ -162,10 +121,6 @@ void protobuf_ShutdownFile_salamander_5fcontrol_2eproto() {
   delete JointControl_reflection_;
   delete JointCommands::default_instance_;
   delete JointCommands_reflection_;
-  delete ControlAnalysis::default_instance_;
-  delete ControlAnalysis_reflection_;
-  delete JointConsumption::default_instance_;
-  delete JointConsumption_reflection_;
 }
 
 void protobuf_AddDesc_salamander_5fcontrol_2eproto() GOOGLE_ATTRIBUTE_COLD;
@@ -180,30 +135,21 @@ void protobuf_AddDesc_salamander_5fcontrol_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\030salamander_control.proto\022\017salamander.m"
     "sgs\032\ntime.proto\032\027salamander_joints.proto"
-    "\"v\n\021SalamanderControl\022-\n\006joints\030\001 \003(\0132\035."
-    "salamander.msgs.JointControl\0222\n\010analysis"
-    "\030\002 \001(\0132 .salamander.msgs.ControlAnalysis"
-    "\"M\n\014JointControl\022\014\n\004name\030\001 \002(\t\022/\n\007contro"
-    "l\030\002 \003(\0132\036.salamander.msgs.JointCommands\""
-    "m\n\rJointCommands\022\037\n\004time\030\001 \002(\0132\021.gazebo."
-    "msgs.Time\022+\n\010commands\030\002 \002(\0132\031.salamander"
-    ".msgs.JointCmd\022\016\n\006torque\030\003 \002(\001\"P\n\017Contro"
-    "lAnalysis\022=\n\022joints_consumption\030\001 \003(\0132!."
-    "salamander.msgs.JointConsumption\"5\n\020Join"
-    "tConsumption\022\014\n\004name\030\001 \002(\t\022\023\n\013consumptio"
-    "n\030\002 \002(\001", 527);
+    "\"B\n\021SalamanderControl\022-\n\006joints\030\001 \003(\0132\035."
+    "salamander.msgs.JointControl\"M\n\014JointCon"
+    "trol\022\014\n\004name\030\001 \002(\t\022/\n\007control\030\002 \003(\0132\036.sa"
+    "lamander.msgs.JointCommands\"\202\001\n\rJointCom"
+    "mands\022\037\n\004time\030\001 \002(\0132\021.gazebo.msgs.Time\022+"
+    "\n\010commands\030\002 \002(\0132\031.salamander.msgs.Joint"
+    "Cmd\022\016\n\006torque\030\003 \002(\001\022\023\n\013consumption\030\004 \001(\001", 360);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "salamander_control.proto", &protobuf_RegisterTypes);
   SalamanderControl::default_instance_ = new SalamanderControl();
   JointControl::default_instance_ = new JointControl();
   JointCommands::default_instance_ = new JointCommands();
-  ControlAnalysis::default_instance_ = new ControlAnalysis();
-  JointConsumption::default_instance_ = new JointConsumption();
   SalamanderControl::default_instance_->InitAsDefaultInstance();
   JointControl::default_instance_->InitAsDefaultInstance();
   JointCommands::default_instance_->InitAsDefaultInstance();
-  ControlAnalysis::default_instance_->InitAsDefaultInstance();
-  JointConsumption::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_salamander_5fcontrol_2eproto);
 }
 
@@ -218,7 +164,6 @@ struct StaticDescriptorInitializer_salamander_5fcontrol_2eproto {
 
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 const int SalamanderControl::kJointsFieldNumber;
-const int SalamanderControl::kAnalysisFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 SalamanderControl::SalamanderControl()
@@ -228,7 +173,6 @@ SalamanderControl::SalamanderControl()
 }
 
 void SalamanderControl::InitAsDefaultInstance() {
-  analysis_ = const_cast< ::salamander::msgs::ControlAnalysis*>(&::salamander::msgs::ControlAnalysis::default_instance());
 }
 
 SalamanderControl::SalamanderControl(const SalamanderControl& from)
@@ -241,7 +185,6 @@ SalamanderControl::SalamanderControl(const SalamanderControl& from)
 
 void SalamanderControl::SharedCtor() {
   _cached_size_ = 0;
-  analysis_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -252,7 +195,6 @@ SalamanderControl::~SalamanderControl() {
 
 void SalamanderControl::SharedDtor() {
   if (this != default_instance_) {
-    delete analysis_;
   }
 }
 
@@ -283,9 +225,6 @@ SalamanderControl* SalamanderControl::New(::google::protobuf::Arena* arena) cons
 
 void SalamanderControl::Clear() {
 // @@protoc_insertion_point(message_clear_start:salamander.msgs.SalamanderControl)
-  if (has_analysis()) {
-    if (analysis_ != NULL) analysis_->::salamander::msgs::ControlAnalysis::Clear();
-  }
   joints_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   if (_internal_metadata_.have_unknown_fields()) {
@@ -315,19 +254,6 @@ bool SalamanderControl::MergePartialFromCodedStream(
         }
         if (input->ExpectTag(10)) goto parse_loop_joints;
         input->UnsafeDecrementRecursionDepth();
-        if (input->ExpectTag(18)) goto parse_analysis;
-        break;
-      }
-
-      // optional .salamander.msgs.ControlAnalysis analysis = 2;
-      case 2: {
-        if (tag == 18) {
-         parse_analysis:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_analysis()));
-        } else {
-          goto handle_unusual;
-        }
         if (input->ExpectAtEnd()) goto success;
         break;
       }
@@ -363,12 +289,6 @@ void SalamanderControl::SerializeWithCachedSizes(
       1, this->joints(i), output);
   }
 
-  // optional .salamander.msgs.ControlAnalysis analysis = 2;
-  if (has_analysis()) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      2, *this->analysis_, output);
-  }
-
   if (_internal_metadata_.have_unknown_fields()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -386,13 +306,6 @@ void SalamanderControl::SerializeWithCachedSizes(
         1, this->joints(i), false, target);
   }
 
-  // optional .salamander.msgs.ControlAnalysis analysis = 2;
-  if (has_analysis()) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      InternalWriteMessageNoVirtualToArray(
-        2, *this->analysis_, false, target);
-  }
-
   if (_internal_metadata_.have_unknown_fields()) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
         unknown_fields(), target);
@@ -404,13 +317,6 @@ void SalamanderControl::SerializeWithCachedSizes(
 int SalamanderControl::ByteSize() const {
 // @@protoc_insertion_point(message_byte_size_start:salamander.msgs.SalamanderControl)
   int total_size = 0;
-
-  // optional .salamander.msgs.ControlAnalysis analysis = 2;
-  if (has_analysis()) {
-    total_size += 1 +
-      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-        *this->analysis_);
-  }
 
   // repeated .salamander.msgs.JointControl joints = 1;
   total_size += 1 * this->joints_size();
@@ -454,11 +360,6 @@ void SalamanderControl::MergeFrom(const SalamanderControl& from) {
     ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
   }
   joints_.MergeFrom(from.joints_);
-  if (from._has_bits_[1 / 32] & (0xffu << (1 % 32))) {
-    if (from.has_analysis()) {
-      mutable_analysis()->::salamander::msgs::ControlAnalysis::MergeFrom(from.analysis());
-    }
-  }
   if (from._internal_metadata_.have_unknown_fields()) {
     mutable_unknown_fields()->MergeFrom(from.unknown_fields());
   }
@@ -481,9 +382,6 @@ void SalamanderControl::CopyFrom(const SalamanderControl& from) {
 bool SalamanderControl::IsInitialized() const {
 
   if (!::google::protobuf::internal::AllAreInitialized(this->joints())) return false;
-  if (has_analysis()) {
-    if (!this->analysis_->IsInitialized()) return false;
-  }
   return true;
 }
 
@@ -493,7 +391,6 @@ void SalamanderControl::Swap(SalamanderControl* other) {
 }
 void SalamanderControl::InternalSwap(SalamanderControl* other) {
   joints_.UnsafeArenaSwap(&other->joints_);
-  std::swap(analysis_, other->analysis_);
   std::swap(_has_bits_[0], other->_has_bits_[0]);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
@@ -538,50 +435,6 @@ const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointControl >&
 SalamanderControl::joints() const {
   // @@protoc_insertion_point(field_list:salamander.msgs.SalamanderControl.joints)
   return joints_;
-}
-
-// optional .salamander.msgs.ControlAnalysis analysis = 2;
-bool SalamanderControl::has_analysis() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-void SalamanderControl::set_has_analysis() {
-  _has_bits_[0] |= 0x00000002u;
-}
-void SalamanderControl::clear_has_analysis() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-void SalamanderControl::clear_analysis() {
-  if (analysis_ != NULL) analysis_->::salamander::msgs::ControlAnalysis::Clear();
-  clear_has_analysis();
-}
-const ::salamander::msgs::ControlAnalysis& SalamanderControl::analysis() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.SalamanderControl.analysis)
-  return analysis_ != NULL ? *analysis_ : *default_instance_->analysis_;
-}
-::salamander::msgs::ControlAnalysis* SalamanderControl::mutable_analysis() {
-  set_has_analysis();
-  if (analysis_ == NULL) {
-    analysis_ = new ::salamander::msgs::ControlAnalysis;
-  }
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.SalamanderControl.analysis)
-  return analysis_;
-}
-::salamander::msgs::ControlAnalysis* SalamanderControl::release_analysis() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.SalamanderControl.analysis)
-  clear_has_analysis();
-  ::salamander::msgs::ControlAnalysis* temp = analysis_;
-  analysis_ = NULL;
-  return temp;
-}
-void SalamanderControl::set_allocated_analysis(::salamander::msgs::ControlAnalysis* analysis) {
-  delete analysis_;
-  analysis_ = analysis;
-  if (analysis) {
-    set_has_analysis();
-  } else {
-    clear_has_analysis();
-  }
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.SalamanderControl.analysis)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
@@ -984,6 +837,7 @@ JointControl::control() const {
 const int JointCommands::kTimeFieldNumber;
 const int JointCommands::kCommandsFieldNumber;
 const int JointCommands::kTorqueFieldNumber;
+const int JointCommands::kConsumptionFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 JointCommands::JointCommands()
@@ -1010,6 +864,7 @@ void JointCommands::SharedCtor() {
   time_ = NULL;
   commands_ = NULL;
   torque_ = 0;
+  consumption_ = 0;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1052,15 +907,35 @@ JointCommands* JointCommands::New(::google::protobuf::Arena* arena) const {
 
 void JointCommands::Clear() {
 // @@protoc_insertion_point(message_clear_start:salamander.msgs.JointCommands)
-  if (_has_bits_[0 / 32] & 7u) {
+#if defined(__clang__)
+#define ZR_HELPER_(f) \
+  _Pragma("clang diagnostic push") \
+  _Pragma("clang diagnostic ignored \"-Winvalid-offsetof\"") \
+  __builtin_offsetof(JointCommands, f) \
+  _Pragma("clang diagnostic pop")
+#else
+#define ZR_HELPER_(f) reinterpret_cast<char*>(\
+  &reinterpret_cast<JointCommands*>(16)->f)
+#endif
+
+#define ZR_(first, last) do {\
+  ::memset(&first, 0,\
+           ZR_HELPER_(last) - ZR_HELPER_(first) + sizeof(last));\
+} while (0)
+
+  if (_has_bits_[0 / 32] & 15u) {
+    ZR_(torque_, consumption_);
     if (has_time()) {
       if (time_ != NULL) time_->::gazebo::msgs::Time::Clear();
     }
     if (has_commands()) {
       if (commands_ != NULL) commands_->::salamander::msgs::JointCmd::Clear();
     }
-    torque_ = 0;
   }
+
+#undef ZR_HELPER_
+#undef ZR_
+
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   if (_internal_metadata_.have_unknown_fields()) {
     mutable_unknown_fields()->Clear();
@@ -1113,6 +988,21 @@ bool JointCommands::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
+        if (input->ExpectTag(33)) goto parse_consumption;
+        break;
+      }
+
+      // optional double consumption = 4;
+      case 4: {
+        if (tag == 33) {
+         parse_consumption:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &consumption_)));
+          set_has_consumption();
+        } else {
+          goto handle_unusual;
+        }
         if (input->ExpectAtEnd()) goto success;
         break;
       }
@@ -1159,6 +1049,11 @@ void JointCommands::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteDouble(3, this->torque(), output);
   }
 
+  // optional double consumption = 4;
+  if (has_consumption()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(4, this->consumption(), output);
+  }
+
   if (_internal_metadata_.have_unknown_fields()) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         unknown_fields(), output);
@@ -1186,6 +1081,11 @@ void JointCommands::SerializeWithCachedSizes(
   // required double torque = 3;
   if (has_torque()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(3, this->torque(), target);
+  }
+
+  // optional double consumption = 4;
+  if (has_consumption()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(4, this->consumption(), target);
   }
 
   if (_internal_metadata_.have_unknown_fields()) {
@@ -1242,6 +1142,11 @@ int JointCommands::ByteSize() const {
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
+  // optional double consumption = 4;
+  if (has_consumption()) {
+    total_size += 1 + 8;
+  }
+
   if (_internal_metadata_.have_unknown_fields()) {
     total_size +=
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
@@ -1285,6 +1190,9 @@ void JointCommands::MergeFrom(const JointCommands& from) {
     if (from.has_torque()) {
       set_torque(from.torque());
     }
+    if (from.has_consumption()) {
+      set_consumption(from.consumption());
+    }
   }
   if (from._internal_metadata_.have_unknown_fields()) {
     mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -1325,6 +1233,7 @@ void JointCommands::InternalSwap(JointCommands* other) {
   std::swap(time_, other->time_);
   std::swap(commands_, other->commands_);
   std::swap(torque_, other->torque_);
+  std::swap(consumption_, other->consumption_);
   std::swap(_has_bits_[0], other->_has_bits_[0]);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
@@ -1453,684 +1362,28 @@ void JointCommands::clear_torque() {
   // @@protoc_insertion_point(field_set:salamander.msgs.JointCommands.torque)
 }
 
-#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
-
-// ===================================================================
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int ControlAnalysis::kJointsConsumptionFieldNumber;
-#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
-
-ControlAnalysis::ControlAnalysis()
-  : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  // @@protoc_insertion_point(constructor:salamander.msgs.ControlAnalysis)
+// optional double consumption = 4;
+bool JointCommands::has_consumption() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
-
-void ControlAnalysis::InitAsDefaultInstance() {
+void JointCommands::set_has_consumption() {
+  _has_bits_[0] |= 0x00000008u;
 }
-
-ControlAnalysis::ControlAnalysis(const ControlAnalysis& from)
-  : ::google::protobuf::Message(),
-    _internal_metadata_(NULL) {
-  SharedCtor();
-  MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:salamander.msgs.ControlAnalysis)
+void JointCommands::clear_has_consumption() {
+  _has_bits_[0] &= ~0x00000008u;
 }
-
-void ControlAnalysis::SharedCtor() {
-  _cached_size_ = 0;
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-}
-
-ControlAnalysis::~ControlAnalysis() {
-  // @@protoc_insertion_point(destructor:salamander.msgs.ControlAnalysis)
-  SharedDtor();
-}
-
-void ControlAnalysis::SharedDtor() {
-  if (this != default_instance_) {
-  }
-}
-
-void ControlAnalysis::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* ControlAnalysis::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return ControlAnalysis_descriptor_;
-}
-
-const ControlAnalysis& ControlAnalysis::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_salamander_5fcontrol_2eproto();
-  return *default_instance_;
-}
-
-ControlAnalysis* ControlAnalysis::default_instance_ = NULL;
-
-ControlAnalysis* ControlAnalysis::New(::google::protobuf::Arena* arena) const {
-  ControlAnalysis* n = new ControlAnalysis;
-  if (arena != NULL) {
-    arena->Own(n);
-  }
-  return n;
-}
-
-void ControlAnalysis::Clear() {
-// @@protoc_insertion_point(message_clear_start:salamander.msgs.ControlAnalysis)
-  joints_consumption_.Clear();
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-  if (_internal_metadata_.have_unknown_fields()) {
-    mutable_unknown_fields()->Clear();
-  }
-}
-
-bool ControlAnalysis::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
-  ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:salamander.msgs.ControlAnalysis)
-  for (;;) {
-    ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(127);
-    tag = p.first;
-    if (!p.second) goto handle_unusual;
-    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // repeated .salamander.msgs.JointConsumption joints_consumption = 1;
-      case 1: {
-        if (tag == 10) {
-          DO_(input->IncrementRecursionDepth());
-         parse_loop_joints_consumption:
-          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtualNoRecursionDepth(
-                input, add_joints_consumption()));
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectTag(10)) goto parse_loop_joints_consumption;
-        input->UnsafeDecrementRecursionDepth();
-        if (input->ExpectAtEnd()) goto success;
-        break;
-      }
-
-      default: {
-      handle_unusual:
-        if (tag == 0 ||
-            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
-          goto success;
-        }
-        DO_(::google::protobuf::internal::WireFormat::SkipField(
-              input, tag, mutable_unknown_fields()));
-        break;
-      }
-    }
-  }
-success:
-  // @@protoc_insertion_point(parse_success:salamander.msgs.ControlAnalysis)
-  return true;
-failure:
-  // @@protoc_insertion_point(parse_failure:salamander.msgs.ControlAnalysis)
-  return false;
-#undef DO_
-}
-
-void ControlAnalysis::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:salamander.msgs.ControlAnalysis)
-  // repeated .salamander.msgs.JointConsumption joints_consumption = 1;
-  for (unsigned int i = 0, n = this->joints_consumption_size(); i < n; i++) {
-    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      1, this->joints_consumption(i), output);
-  }
-
-  if (_internal_metadata_.have_unknown_fields()) {
-    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
-        unknown_fields(), output);
-  }
-  // @@protoc_insertion_point(serialize_end:salamander.msgs.ControlAnalysis)
-}
-
-::google::protobuf::uint8* ControlAnalysis::InternalSerializeWithCachedSizesToArray(
-    bool deterministic, ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:salamander.msgs.ControlAnalysis)
-  // repeated .salamander.msgs.JointConsumption joints_consumption = 1;
-  for (unsigned int i = 0, n = this->joints_consumption_size(); i < n; i++) {
-    target = ::google::protobuf::internal::WireFormatLite::
-      InternalWriteMessageNoVirtualToArray(
-        1, this->joints_consumption(i), false, target);
-  }
-
-  if (_internal_metadata_.have_unknown_fields()) {
-    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
-        unknown_fields(), target);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:salamander.msgs.ControlAnalysis)
-  return target;
-}
-
-int ControlAnalysis::ByteSize() const {
-// @@protoc_insertion_point(message_byte_size_start:salamander.msgs.ControlAnalysis)
-  int total_size = 0;
-
-  // repeated .salamander.msgs.JointConsumption joints_consumption = 1;
-  total_size += 1 * this->joints_consumption_size();
-  for (int i = 0; i < this->joints_consumption_size(); i++) {
-    total_size +=
-      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-        this->joints_consumption(i));
-  }
-
-  if (_internal_metadata_.have_unknown_fields()) {
-    total_size +=
-      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
-        unknown_fields());
-  }
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void ControlAnalysis::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:salamander.msgs.ControlAnalysis)
-  if (GOOGLE_PREDICT_FALSE(&from == this)) {
-    ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
-  }
-  const ControlAnalysis* source = 
-      ::google::protobuf::internal::DynamicCastToGenerated<const ControlAnalysis>(
-          &from);
-  if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:salamander.msgs.ControlAnalysis)
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:salamander.msgs.ControlAnalysis)
-    MergeFrom(*source);
-  }
-}
-
-void ControlAnalysis::MergeFrom(const ControlAnalysis& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:salamander.msgs.ControlAnalysis)
-  if (GOOGLE_PREDICT_FALSE(&from == this)) {
-    ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
-  }
-  joints_consumption_.MergeFrom(from.joints_consumption_);
-  if (from._internal_metadata_.have_unknown_fields()) {
-    mutable_unknown_fields()->MergeFrom(from.unknown_fields());
-  }
-}
-
-void ControlAnalysis::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:salamander.msgs.ControlAnalysis)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void ControlAnalysis::CopyFrom(const ControlAnalysis& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:salamander.msgs.ControlAnalysis)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool ControlAnalysis::IsInitialized() const {
-
-  if (!::google::protobuf::internal::AllAreInitialized(this->joints_consumption())) return false;
-  return true;
-}
-
-void ControlAnalysis::Swap(ControlAnalysis* other) {
-  if (other == this) return;
-  InternalSwap(other);
-}
-void ControlAnalysis::InternalSwap(ControlAnalysis* other) {
-  joints_consumption_.UnsafeArenaSwap(&other->joints_consumption_);
-  std::swap(_has_bits_[0], other->_has_bits_[0]);
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  std::swap(_cached_size_, other->_cached_size_);
-}
-
-::google::protobuf::Metadata ControlAnalysis::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = ControlAnalysis_descriptor_;
-  metadata.reflection = ControlAnalysis_reflection_;
-  return metadata;
-}
-
-#if PROTOBUF_INLINE_NOT_IN_HEADERS
-// ControlAnalysis
-
-// repeated .salamander.msgs.JointConsumption joints_consumption = 1;
-int ControlAnalysis::joints_consumption_size() const {
-  return joints_consumption_.size();
-}
-void ControlAnalysis::clear_joints_consumption() {
-  joints_consumption_.Clear();
-}
-const ::salamander::msgs::JointConsumption& ControlAnalysis::joints_consumption(int index) const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_.Get(index);
-}
-::salamander::msgs::JointConsumption* ControlAnalysis::mutable_joints_consumption(int index) {
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_.Mutable(index);
-}
-::salamander::msgs::JointConsumption* ControlAnalysis::add_joints_consumption() {
-  // @@protoc_insertion_point(field_add:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_.Add();
-}
-::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointConsumption >*
-ControlAnalysis::mutable_joints_consumption() {
-  // @@protoc_insertion_point(field_mutable_list:salamander.msgs.ControlAnalysis.joints_consumption)
-  return &joints_consumption_;
-}
-const ::google::protobuf::RepeatedPtrField< ::salamander::msgs::JointConsumption >&
-ControlAnalysis::joints_consumption() const {
-  // @@protoc_insertion_point(field_list:salamander.msgs.ControlAnalysis.joints_consumption)
-  return joints_consumption_;
-}
-
-#endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
-
-// ===================================================================
-
-#if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int JointConsumption::kNameFieldNumber;
-const int JointConsumption::kConsumptionFieldNumber;
-#endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
-
-JointConsumption::JointConsumption()
-  : ::google::protobuf::Message(), _internal_metadata_(NULL) {
-  SharedCtor();
-  // @@protoc_insertion_point(constructor:salamander.msgs.JointConsumption)
-}
-
-void JointConsumption::InitAsDefaultInstance() {
-}
-
-JointConsumption::JointConsumption(const JointConsumption& from)
-  : ::google::protobuf::Message(),
-    _internal_metadata_(NULL) {
-  SharedCtor();
-  MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:salamander.msgs.JointConsumption)
-}
-
-void JointConsumption::SharedCtor() {
-  ::google::protobuf::internal::GetEmptyString();
-  _cached_size_ = 0;
-  name_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  consumption_ = 0;
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-}
-
-JointConsumption::~JointConsumption() {
-  // @@protoc_insertion_point(destructor:salamander.msgs.JointConsumption)
-  SharedDtor();
-}
-
-void JointConsumption::SharedDtor() {
-  name_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (this != default_instance_) {
-  }
-}
-
-void JointConsumption::SetCachedSize(int size) const {
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-}
-const ::google::protobuf::Descriptor* JointConsumption::descriptor() {
-  protobuf_AssignDescriptorsOnce();
-  return JointConsumption_descriptor_;
-}
-
-const JointConsumption& JointConsumption::default_instance() {
-  if (default_instance_ == NULL) protobuf_AddDesc_salamander_5fcontrol_2eproto();
-  return *default_instance_;
-}
-
-JointConsumption* JointConsumption::default_instance_ = NULL;
-
-JointConsumption* JointConsumption::New(::google::protobuf::Arena* arena) const {
-  JointConsumption* n = new JointConsumption;
-  if (arena != NULL) {
-    arena->Own(n);
-  }
-  return n;
-}
-
-void JointConsumption::Clear() {
-// @@protoc_insertion_point(message_clear_start:salamander.msgs.JointConsumption)
-  if (_has_bits_[0 / 32] & 3u) {
-    if (has_name()) {
-      name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-    }
-    consumption_ = 0;
-  }
-  ::memset(_has_bits_, 0, sizeof(_has_bits_));
-  if (_internal_metadata_.have_unknown_fields()) {
-    mutable_unknown_fields()->Clear();
-  }
-}
-
-bool JointConsumption::MergePartialFromCodedStream(
-    ::google::protobuf::io::CodedInputStream* input) {
-#define DO_(EXPRESSION) if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) goto failure
-  ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:salamander.msgs.JointConsumption)
-  for (;;) {
-    ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoff(127);
-    tag = p.first;
-    if (!p.second) goto handle_unusual;
-    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required string name = 1;
-      case 1: {
-        if (tag == 10) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-                input, this->mutable_name()));
-          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
-            this->name().data(), this->name().length(),
-            ::google::protobuf::internal::WireFormat::PARSE,
-            "salamander.msgs.JointConsumption.name");
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectTag(17)) goto parse_consumption;
-        break;
-      }
-
-      // required double consumption = 2;
-      case 2: {
-        if (tag == 17) {
-         parse_consumption:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
-                 input, &consumption_)));
-          set_has_consumption();
-        } else {
-          goto handle_unusual;
-        }
-        if (input->ExpectAtEnd()) goto success;
-        break;
-      }
-
-      default: {
-      handle_unusual:
-        if (tag == 0 ||
-            ::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
-          goto success;
-        }
-        DO_(::google::protobuf::internal::WireFormat::SkipField(
-              input, tag, mutable_unknown_fields()));
-        break;
-      }
-    }
-  }
-success:
-  // @@protoc_insertion_point(parse_success:salamander.msgs.JointConsumption)
-  return true;
-failure:
-  // @@protoc_insertion_point(parse_failure:salamander.msgs.JointConsumption)
-  return false;
-#undef DO_
-}
-
-void JointConsumption::SerializeWithCachedSizes(
-    ::google::protobuf::io::CodedOutputStream* output) const {
-  // @@protoc_insertion_point(serialize_start:salamander.msgs.JointConsumption)
-  // required string name = 1;
-  if (has_name()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->name().data(), this->name().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE,
-      "salamander.msgs.JointConsumption.name");
-    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
-      1, this->name(), output);
-  }
-
-  // required double consumption = 2;
-  if (has_consumption()) {
-    ::google::protobuf::internal::WireFormatLite::WriteDouble(2, this->consumption(), output);
-  }
-
-  if (_internal_metadata_.have_unknown_fields()) {
-    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
-        unknown_fields(), output);
-  }
-  // @@protoc_insertion_point(serialize_end:salamander.msgs.JointConsumption)
-}
-
-::google::protobuf::uint8* JointConsumption::InternalSerializeWithCachedSizesToArray(
-    bool deterministic, ::google::protobuf::uint8* target) const {
-  // @@protoc_insertion_point(serialize_to_array_start:salamander.msgs.JointConsumption)
-  // required string name = 1;
-  if (has_name()) {
-    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->name().data(), this->name().length(),
-      ::google::protobuf::internal::WireFormat::SERIALIZE,
-      "salamander.msgs.JointConsumption.name");
-    target =
-      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        1, this->name(), target);
-  }
-
-  // required double consumption = 2;
-  if (has_consumption()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(2, this->consumption(), target);
-  }
-
-  if (_internal_metadata_.have_unknown_fields()) {
-    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
-        unknown_fields(), target);
-  }
-  // @@protoc_insertion_point(serialize_to_array_end:salamander.msgs.JointConsumption)
-  return target;
-}
-
-int JointConsumption::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:salamander.msgs.JointConsumption)
-  int total_size = 0;
-
-  if (has_name()) {
-    // required string name = 1;
-    total_size += 1 +
-      ::google::protobuf::internal::WireFormatLite::StringSize(
-        this->name());
-  }
-
-  if (has_consumption()) {
-    // required double consumption = 2;
-    total_size += 1 + 8;
-  }
-
-  return total_size;
-}
-int JointConsumption::ByteSize() const {
-// @@protoc_insertion_point(message_byte_size_start:salamander.msgs.JointConsumption)
-  int total_size = 0;
-
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
-    // required string name = 1;
-    total_size += 1 +
-      ::google::protobuf::internal::WireFormatLite::StringSize(
-        this->name());
-
-    // required double consumption = 2;
-    total_size += 1 + 8;
-
-  } else {
-    total_size += RequiredFieldsByteSizeFallback();
-  }
-  if (_internal_metadata_.have_unknown_fields()) {
-    total_size +=
-      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
-        unknown_fields());
-  }
-  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
-  _cached_size_ = total_size;
-  GOOGLE_SAFE_CONCURRENT_WRITES_END();
-  return total_size;
-}
-
-void JointConsumption::MergeFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:salamander.msgs.JointConsumption)
-  if (GOOGLE_PREDICT_FALSE(&from == this)) {
-    ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
-  }
-  const JointConsumption* source = 
-      ::google::protobuf::internal::DynamicCastToGenerated<const JointConsumption>(
-          &from);
-  if (source == NULL) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:salamander.msgs.JointConsumption)
-    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
-  } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:salamander.msgs.JointConsumption)
-    MergeFrom(*source);
-  }
-}
-
-void JointConsumption::MergeFrom(const JointConsumption& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:salamander.msgs.JointConsumption)
-  if (GOOGLE_PREDICT_FALSE(&from == this)) {
-    ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
-  }
-  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_name()) {
-      set_has_name();
-      name_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.name_);
-    }
-    if (from.has_consumption()) {
-      set_consumption(from.consumption());
-    }
-  }
-  if (from._internal_metadata_.have_unknown_fields()) {
-    mutable_unknown_fields()->MergeFrom(from.unknown_fields());
-  }
-}
-
-void JointConsumption::CopyFrom(const ::google::protobuf::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:salamander.msgs.JointConsumption)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-void JointConsumption::CopyFrom(const JointConsumption& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:salamander.msgs.JointConsumption)
-  if (&from == this) return;
-  Clear();
-  MergeFrom(from);
-}
-
-bool JointConsumption::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000003) != 0x00000003) return false;
-
-  return true;
-}
-
-void JointConsumption::Swap(JointConsumption* other) {
-  if (other == this) return;
-  InternalSwap(other);
-}
-void JointConsumption::InternalSwap(JointConsumption* other) {
-  name_.Swap(&other->name_);
-  std::swap(consumption_, other->consumption_);
-  std::swap(_has_bits_[0], other->_has_bits_[0]);
-  _internal_metadata_.Swap(&other->_internal_metadata_);
-  std::swap(_cached_size_, other->_cached_size_);
-}
-
-::google::protobuf::Metadata JointConsumption::GetMetadata() const {
-  protobuf_AssignDescriptorsOnce();
-  ::google::protobuf::Metadata metadata;
-  metadata.descriptor = JointConsumption_descriptor_;
-  metadata.reflection = JointConsumption_reflection_;
-  return metadata;
-}
-
-#if PROTOBUF_INLINE_NOT_IN_HEADERS
-// JointConsumption
-
-// required string name = 1;
-bool JointConsumption::has_name() const {
-  return (_has_bits_[0] & 0x00000001u) != 0;
-}
-void JointConsumption::set_has_name() {
-  _has_bits_[0] |= 0x00000001u;
-}
-void JointConsumption::clear_has_name() {
-  _has_bits_[0] &= ~0x00000001u;
-}
-void JointConsumption::clear_name() {
-  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  clear_has_name();
-}
- const ::std::string& JointConsumption::name() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointConsumption.name)
-  return name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
- void JointConsumption::set_name(const ::std::string& value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointConsumption.name)
-}
- void JointConsumption::set_name(const char* value) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:salamander.msgs.JointConsumption.name)
-}
- void JointConsumption::set_name(const char* value, size_t size) {
-  set_has_name();
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:salamander.msgs.JointConsumption.name)
-}
- ::std::string* JointConsumption::mutable_name() {
-  set_has_name();
-  // @@protoc_insertion_point(field_mutable:salamander.msgs.JointConsumption.name)
-  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
- ::std::string* JointConsumption::release_name() {
-  // @@protoc_insertion_point(field_release:salamander.msgs.JointConsumption.name)
-  clear_has_name();
-  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
- void JointConsumption::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
-    set_has_name();
-  } else {
-    clear_has_name();
-  }
-  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:salamander.msgs.JointConsumption.name)
-}
-
-// required double consumption = 2;
-bool JointConsumption::has_consumption() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
-}
-void JointConsumption::set_has_consumption() {
-  _has_bits_[0] |= 0x00000002u;
-}
-void JointConsumption::clear_has_consumption() {
-  _has_bits_[0] &= ~0x00000002u;
-}
-void JointConsumption::clear_consumption() {
+void JointCommands::clear_consumption() {
   consumption_ = 0;
   clear_has_consumption();
 }
- double JointConsumption::consumption() const {
-  // @@protoc_insertion_point(field_get:salamander.msgs.JointConsumption.consumption)
+ double JointCommands::consumption() const {
+  // @@protoc_insertion_point(field_get:salamander.msgs.JointCommands.consumption)
   return consumption_;
 }
- void JointConsumption::set_consumption(double value) {
+ void JointCommands::set_consumption(double value) {
   set_has_consumption();
   consumption_ = value;
-  // @@protoc_insertion_point(field_set:salamander.msgs.JointConsumption.consumption)
+  // @@protoc_insertion_point(field_set:salamander.msgs.JointCommands.consumption)
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS

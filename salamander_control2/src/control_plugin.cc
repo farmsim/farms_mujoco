@@ -38,6 +38,7 @@ public:
                 salamander::msgs::JointControl* joint_msg = this->log_msg.add_joints();
                 joint_msg->set_name(it->first.as<std::string>());
                 this->joints.insert({it->first.as<std::string>(), joint_msg});
+                this->joints_consumption.insert({it->first.as<std::string>(), 0});
                 this->log_joint(time, joint_msg, 0, 0, 0);
             }
 
@@ -55,18 +56,22 @@ public:
         {
             if (this->joints.find(joint_name) != this->joints.end())
             {
-                // Previous time
                 salamander::msgs::JointControl* joint_msg = this->joints[joint_name];
                 int size = joint_msg->control().size();
                 gazebo::common::Time t = Convert(joint_msg->control(size-1).time());
-                if (time.Double() - t.Double() >= 1./this->parameters["logging"]["joints"][joint_name]["frequency"].as<double>())
+                double dt = time.Double() - t.Double();
+                joints_consumption[joint_name] += torque*dt;
+                if (dt >= 1./this->parameters["logging"]["joints"][joint_name]["frequency"].as<double>())
                 {
-                    this->log_joint(time, joint_msg, torque, pos, vel);
+                    this->log_joint(
+                        time, joint_msg,
+                        torque, pos, vel,
+                        joints_consumption[joint_name]);
                 }
             }
         };
 
-    void log_joint(gazebo::common::Time time, salamander::msgs::JointControl* joint_msg, double torque, double pos, double vel)
+    void log_joint(gazebo::common::Time time, salamander::msgs::JointControl* joint_msg, double torque, double pos, double vel, double consumption=0)
         {
             // Memory allocation
             salamander::msgs::JointCommands *msg_control = joint_msg->add_control();
@@ -80,6 +85,8 @@ public:
             msg_commands->set_velocity(vel);
             msg_control->set_allocated_commands(msg_commands);
             msg_control->set_torque(torque);
+            // Consumption
+            msg_control->set_consumption(consumption);
         }
 
     void dump()
@@ -105,6 +112,7 @@ private:
     // gazebo::physics::ModelPtr model;
     salamander::msgs::SalamanderControl log_msg;
     std::unordered_map<std::string, salamander::msgs::JointControl*> joints;
+    std::unordered_map<std::string, double> joints_consumption;
     std::string filename;
 };
 

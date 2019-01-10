@@ -7,7 +7,6 @@ import "salamander_joints.proto";
 
 message SalamanderControl {
     repeated JointControl joints = 1;
-    optional ControlAnalysis analysis = 2;
 }
 
 message JointControl {
@@ -19,13 +18,5 @@ message JointCommands {
     required gazebo.msgs.Time time = 1;
     required JointCmd commands = 2;
     required double torque = 3;
-}
-
-message ControlAnalysis {
-    repeated JointConsumption joints_consumption = 1;
-}
-
-message JointConsumption {
-    required string name = 1;
-    required double consumption = 2;
+    optional double consumption = 4;
 }

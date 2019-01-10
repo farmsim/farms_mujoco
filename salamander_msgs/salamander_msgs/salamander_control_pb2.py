@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='salamander_control.proto',
   package='salamander.msgs',
   syntax='proto2',
-  serialized_pb=_b('\n\x18salamander_control.proto\x12\x0fsalamander.msgs\x1a\ntime.proto\x1a\x17salamander_joints.proto\"v\n\x11SalamanderControl\x12-\n\x06joints\x18\x01 \x03(\x0b\x32\x1d.salamander.msgs.JointControl\x12\x32\n\x08\x61nalysis\x18\x02 \x01(\x0b\x32 .salamander.msgs.ControlAnalysis\"M\n\x0cJointControl\x12\x0c\n\x04name\x18\x01 \x02(\t\x12/\n\x07\x63ontrol\x18\x02 \x03(\x0b\x32\x1e.salamander.msgs.JointCommands\"m\n\rJointCommands\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12+\n\x08\x63ommands\x18\x02 \x02(\x0b\x32\x19.salamander.msgs.JointCmd\x12\x0e\n\x06torque\x18\x03 \x02(\x01\"P\n\x0f\x43ontrolAnalysis\x12=\n\x12joints_consumption\x18\x01 \x03(\x0b\x32!.salamander.msgs.JointConsumption\"5\n\x10JointConsumption\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x13\n\x0b\x63onsumption\x18\x02 \x02(\x01')
+  serialized_pb=_b('\n\x18salamander_control.proto\x12\x0fsalamander.msgs\x1a\ntime.proto\x1a\x17salamander_joints.proto\"B\n\x11SalamanderControl\x12-\n\x06joints\x18\x01 \x03(\x0b\x32\x1d.salamander.msgs.JointControl\"M\n\x0cJointControl\x12\x0c\n\x04name\x18\x01 \x02(\t\x12/\n\x07\x63ontrol\x18\x02 \x03(\x0b\x32\x1e.salamander.msgs.JointCommands\"\x82\x01\n\rJointCommands\x12\x1f\n\x04time\x18\x01 \x02(\x0b\x32\x11.gazebo.msgs.Time\x12+\n\x08\x63ommands\x18\x02 \x02(\x0b\x32\x19.salamander.msgs.JointCmd\x12\x0e\n\x06torque\x18\x03 \x02(\x01\x12\x13\n\x0b\x63onsumption\x18\x04 \x01(\x01')
   ,
   dependencies=[time__pb2.DESCRIPTOR,salamander__joints__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -43,13 +43,6 @@ _SALAMANDERCONTROL = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
-    _descriptor.FieldDescriptor(
-      name='analysis', full_name='salamander.msgs.SalamanderControl.analysis', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
   ],
   extensions=[
   ],
@@ -63,7 +56,7 @@ _SALAMANDERCONTROL = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=82,
-  serialized_end=200,
+  serialized_end=148,
 )
 
 
@@ -100,8 +93,8 @@ _JOINTCONTROL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=202,
-  serialized_end=279,
+  serialized_start=150,
+  serialized_end=227,
 )
 
 
@@ -133,71 +126,9 @@ _JOINTCOMMANDS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto2',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=281,
-  serialized_end=390,
-)
-
-
-_CONTROLANALYSIS = _descriptor.Descriptor(
-  name='ControlAnalysis',
-  full_name='salamander.msgs.ControlAnalysis',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
     _descriptor.FieldDescriptor(
-      name='joints_consumption', full_name='salamander.msgs.ControlAnalysis.joints_consumption', index=0,
-      number=1, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto2',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=392,
-  serialized_end=472,
-)
-
-
-_JOINTCONSUMPTION = _descriptor.Descriptor(
-  name='JointConsumption',
-  full_name='salamander.msgs.JointConsumption',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='salamander.msgs.JointConsumption.name', index=0,
-      number=1, type=9, cpp_type=9, label=2,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='consumption', full_name='salamander.msgs.JointConsumption.consumption', index=1,
-      number=2, type=1, cpp_type=5, label=2,
+      name='consumption', full_name='salamander.msgs.JointCommands.consumption', index=3,
+      number=4, type=1, cpp_type=5, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -214,21 +145,17 @@ _JOINTCONSUMPTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=474,
-  serialized_end=527,
+  serialized_start=230,
+  serialized_end=360,
 )
 
 _SALAMANDERCONTROL.fields_by_name['joints'].message_type = _JOINTCONTROL
-_SALAMANDERCONTROL.fields_by_name['analysis'].message_type = _CONTROLANALYSIS
 _JOINTCONTROL.fields_by_name['control'].message_type = _JOINTCOMMANDS
 _JOINTCOMMANDS.fields_by_name['time'].message_type = time__pb2._TIME
 _JOINTCOMMANDS.fields_by_name['commands'].message_type = salamander__joints__pb2._JOINTCMD
-_CONTROLANALYSIS.fields_by_name['joints_consumption'].message_type = _JOINTCONSUMPTION
 DESCRIPTOR.message_types_by_name['SalamanderControl'] = _SALAMANDERCONTROL
 DESCRIPTOR.message_types_by_name['JointControl'] = _JOINTCONTROL
 DESCRIPTOR.message_types_by_name['JointCommands'] = _JOINTCOMMANDS
-DESCRIPTOR.message_types_by_name['ControlAnalysis'] = _CONTROLANALYSIS
-DESCRIPTOR.message_types_by_name['JointConsumption'] = _JOINTCONSUMPTION
 
 SalamanderControl = _reflection.GeneratedProtocolMessageType('SalamanderControl', (_message.Message,), dict(
   DESCRIPTOR = _SALAMANDERCONTROL,
@@ -250,20 +177,6 @@ JointCommands = _reflection.GeneratedProtocolMessageType('JointCommands', (_mess
   # @@protoc_insertion_point(class_scope:salamander.msgs.JointCommands)
   ))
 _sym_db.RegisterMessage(JointCommands)
-
-ControlAnalysis = _reflection.GeneratedProtocolMessageType('ControlAnalysis', (_message.Message,), dict(
-  DESCRIPTOR = _CONTROLANALYSIS,
-  __module__ = 'salamander_control_pb2'
-  # @@protoc_insertion_point(class_scope:salamander.msgs.ControlAnalysis)
-  ))
-_sym_db.RegisterMessage(ControlAnalysis)
-
-JointConsumption = _reflection.GeneratedProtocolMessageType('JointConsumption', (_message.Message,), dict(
-  DESCRIPTOR = _JOINTCONSUMPTION,
-  __module__ = 'salamander_control_pb2'
-  # @@protoc_insertion_point(class_scope:salamander.msgs.JointConsumption)
-  ))
-_sym_db.RegisterMessage(JointConsumption)
 
 
 # @@protoc_insertion_point(module_scope)
