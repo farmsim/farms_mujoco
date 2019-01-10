@@ -61,6 +61,28 @@ def joint_positions(path, joint_name):
     return pos, times
 
 
+def extract_consumption(path=".gazebo/models/salamander_new"):
+    """ Consumption """
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    return {
+        joint.name: [control.consumption for control in joint.control]
+        for joint in control_logs.joints
+    }
+
+
+def extract_final_consumption(path=".gazebo/models/salamander_new"):
+    """ Final consumption """
+    consumption = extract_consumption(path)
+    return {
+        joint: consumption[joint][-1]
+        for joint in consumption
+    }
+
+
 def plot_links_positions(path=".gazebo/models/salamander_new", figure=None):
     """ Plot position """
     if figure:
@@ -162,6 +184,27 @@ def plot_joints_cmd_torque(path=".gazebo/models/salamander_new", figure=None):
             for control in joint.control
         ]
         pos = [control.torque for control in joint.control]
+        plt.plot(times, pos, label=joint.name)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_joints_cmd_consumption(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    for joint in control_logs.joints:
+        times = [
+            control.time.sec+1e-9*control.time.nsec
+            for control in joint.control
+        ]
+        pos = [control.consumption for control in joint.control]
         plt.plot(times, pos, label=joint.name)
     plt.legend()
     plt.grid(True)

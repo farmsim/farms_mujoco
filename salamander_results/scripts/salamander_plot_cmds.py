@@ -5,7 +5,9 @@ import argparse
 from salamander_results import (
     plot_joints_cmd_pos,
     plot_joints_cmd_vel,
-    plot_joints_cmd_torque
+    plot_joints_cmd_torque,
+    plot_joints_cmd_consumption,
+    extract_final_consumption
 )
 
 
@@ -31,6 +33,12 @@ def main():
     plot_joints_cmd_pos(path, figure="Positions commands")
     plot_joints_cmd_vel(path, figure="Velocity commands")
     plot_joints_cmd_torque(path, figure="Motor torques")
+    plot_joints_cmd_consumption(path, figure="Motor torques")
+    consumption = extract_final_consumption(path)
+    print("Consumption:{}".format("\n  ".join([
+        "{}: {}".format(joint, consumption[joint])
+        for joint in consumption
+    ])))
 
 
 if __name__ == '__main__':

@@ -60,7 +60,7 @@ public:
                 int size = joint_msg->control().size();
                 gazebo::common::Time t = Convert(joint_msg->control(size-1).time());
                 double dt = time.Double() - t.Double();
-                joints_consumption[joint_name] += torque*dt;
+                joints_consumption[joint_name] += abs(torque*dt);
                 if (dt >= 1./this->parameters["logging"]["joints"][joint_name]["frequency"].as<double>())
                 {
                     this->log_joint(
