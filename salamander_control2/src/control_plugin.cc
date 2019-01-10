@@ -266,25 +266,7 @@ namespace gazebo
                     << "]"
                     << std::endl;
 
-                // Parameters
-                if (_sdf->HasElement("config"))
-                {
-                    this->config_filename = _sdf->Get<std::string>("config");
-                    if (this->verbose)
-                        std::cout
-                            << "    Config found: "
-                            << this->config_filename
-                            << std::endl;
-                    if (this->verbose)
-                        std::cout << "Loading parameters from " << this->config_filename << std::endl;
-                    this->parameters.load(this->config_filename);
-                }
-                else
-                {
-                    std::cerr
-                        << "ERROR: config not found in control plugin"
-                        << std::endl;
-                }
+                this->parameters = get_parameters(_sdf);
 
                 // Joints
                 int joints_n = this->model->GetJointCount();
