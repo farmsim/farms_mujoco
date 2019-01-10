@@ -29,3 +29,27 @@ void PluginParameters::load(std::string filename, bool verbose) {
 YAML::Node PluginParameters::operator[](std::string name) {
     return this->config[name];
 }
+
+PluginParameters get_parameters(sdf::ElementPtr sdf, bool verbose)
+{
+    PluginParameters parameters;
+    if (sdf->HasElement("config"))
+    {
+        std::string config_filename = sdf->Get<std::string>("config");
+        if (verbose)
+            std::cout
+                << "    Config found: "
+                << config_filename
+                << std::endl;
+        if (verbose)
+            std::cout << "Loading parameters from " << config_filename << std::endl;
+        parameters.load(config_filename);
+    }
+    else
+    {
+        std::cerr
+            << "ERROR: config not found in plugin"
+            << std::endl;
+    }
+    return parameters;
+}

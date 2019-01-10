@@ -1,0 +1,21 @@
+syntax = "proto2";
+
+package salamander.msgs;
+
+import "time.proto";
+
+message JointKinematics {
+    required string name = 1;
+    repeated JointState state = 2;
+}
+
+message JointState {
+    required gazebo.msgs.Time time = 1;
+    required double position = 2;
+    optional double velocity = 3;
+}
+
+message JointCmd {
+    required double position = 1;
+    optional double velocity = 2;
+}

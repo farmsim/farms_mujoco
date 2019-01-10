@@ -305,6 +305,22 @@ class ControlParameters(OrderedDict):
                 **kwargs
             )
         )
+        self["logging"] = OrderedDict(
+            [
+                (
+                    "joints",
+                    OrderedDict(
+                        [
+                            (
+                                "link_body_{}".format(i+1),
+                                {"frequency": 100}
+                            )
+                            for i in range(11)
+                        ]
+                    ))
+            ]
+            + [("filename", "logs/control.pbdat")]
+        )
 
     def data(self):
         """ Data """

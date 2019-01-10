@@ -13,7 +13,6 @@
 #include <math.h>
 #include <yaml-cpp/yaml.h>
 
-
 class PluginParameters
 {
 public:
@@ -27,7 +26,8 @@ private:
 public:
     void load(std::string filename, bool verbose=false);
     YAML::Node operator[](std::string name);
-
 };
+
+PluginParameters get_parameters(sdf::ElementPtr sdf, bool verbose=false);
 
 #endif

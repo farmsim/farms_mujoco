@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package salamander.msgs;
+
+/// \ingroup salamande_msgs
+/// \interface ModelKinematics
+/// \brief Message for model kinematics
+
+import "salamander_links.proto";
+import "salamander_joints.proto";
+
+message ModelKinematics {
+    repeated LinkKinematics links = 1;
+    repeated JointKinematics joints = 2;
+}

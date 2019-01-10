@@ -1,7 +1,8 @@
 """ Plot """
 
 import os
-from salamander_msgs.log_kinematics_pb2 import ModelKinematics
+from salamander_msgs.salamander_kinematics_pb2 import ModelKinematics
+from salamander_msgs.salamander_control_pb2 import SalamanderControl
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -11,19 +12,21 @@ def position(pos):
     return np.array([pos.x, pos.y, pos.z])
 
 
-def extract_logs(path):
+def extract_logs(path, log_type=ModelKinematics, log_file=None):
     """ Extract_logs """
+    if log_file is None:
+        log_file = "links_kinematics.pbdat"
     filepath = (
         os.path.expanduser('~')
         +"/"+path
-        +"/logs/links_kinematics.pbdat"
+        +"/logs/{}".format(log_file)
     )
     print("Opening file {}".format(filepath))
-    with open(filepath, mode="rb") as log_file:
-        kin = ModelKinematics()
+    with open(filepath, mode="rb") as _log_file:
+        logs = log_type()
         print("Loading from string")
-        kin.ParseFromString(log_file.read())
-    return kin
+        logs.ParseFromString(_log_file.read())
+    return logs
 
 
 def positions(path, link_name):
@@ -56,6 +59,28 @@ def joint_positions(path, joint_name):
     times = [state.time.sec+1e-9*state.time.nsec for state in joint.state]
     pos = np.array([state.position for state in joint.state])
     return pos, times
+
+
+def extract_consumption(path=".gazebo/models/salamander_new"):
+    """ Consumption """
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    return {
+        joint.name: [control.consumption for control in joint.control]
+        for joint in control_logs.joints
+    }
+
+
+def extract_final_consumption(path=".gazebo/models/salamander_new"):
+    """ Final consumption """
+    consumption = extract_consumption(path)
+    return {
+        joint: consumption[joint][-1]
+        for joint in consumption
+    }
 
 
 def plot_links_positions(path=".gazebo/models/salamander_new", figure=None):
@@ -97,6 +122,90 @@ def plot_joints_positions(path=".gazebo/models/salamander_new", figure=None):
         joint_name = "link_body_{}".format(i+1)
         pos, times = joint_positions(path, joint_name)
         plt.plot(times, pos, label=joint_name)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_joints_cmd_pos(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    for joint in control_logs.joints:
+        times = [
+            control.time.sec+1e-9*control.time.nsec
+            for control in joint.control
+        ]
+        pos = [control.commands.position for control in joint.control]
+        plt.plot(times, pos, label=joint.name)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_joints_cmd_vel(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    for joint in control_logs.joints:
+        times = [
+            control.time.sec+1e-9*control.time.nsec
+            for control in joint.control
+        ]
+        pos = [control.commands.velocity for control in joint.control]
+        plt.plot(times, pos, label=joint.name)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_joints_cmd_torque(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    for joint in control_logs.joints:
+        times = [
+            control.time.sec+1e-9*control.time.nsec
+            for control in joint.control
+        ]
+        pos = [control.torque for control in joint.control]
+        plt.plot(times, pos, label=joint.name)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_joints_cmd_consumption(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    for joint in control_logs.joints:
+        times = [
+            control.time.sec+1e-9*control.time.nsec
+            for control in joint.control
+        ]
+        pos = [control.consumption for control in joint.control]
+        plt.plot(times, pos, label=joint.name)
     plt.legend()
     plt.grid(True)
     plt.show()

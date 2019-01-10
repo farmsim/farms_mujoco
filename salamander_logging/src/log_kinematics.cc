@@ -13,66 +13,101 @@
 #include <math.h>
 #include <yaml-cpp/yaml.h>
 
-#include <log_kinematics.pb.h>
-// #include <salamander-msgs/log_kinematics.pb.h>
+#include <salamander_kinematics.pb.h>
+#include "parameters.hh"
 
 
-template <class msgType, class entityType>
-class LogEntity
+class LogModelKinematics
 {
-protected:
-    msgType data;
-    double time_tol = 1e-6;
-    double ifreq;
-    double time_last_log = -1;
-
 public:
-    LogEntity(std::string name, double frequency){
-        data.set_name(name);
-        this->ifreq = 1./frequency;
-    };
-    virtual ~LogEntity(){};
-
-public:
-    void log(gazebo::common::Time time, entityType entity){
-        if (this->check_if_log(time.sec+1e-9*time.nsec))
+    LogModelKinematics(gazebo::common::Time time, gazebo::physics::ModelPtr model, sdf::ElementPtr sdf)
         {
-            this->_log(time, entity);
-        }
-        return;
-    }
+            this->model = model;
+            this->parameters = get_parameters(sdf);
+            this->filename = getenv("HOME")+this->parameters["filename"].as<std::string>();
 
-    msgType get_logs() {
-        return this->data;
-    }
+            // Links
+            YAML::Node _links = this->parameters["links"];
+            for(YAML::const_iterator it=_links.begin(); it!=_links.end(); ++it)
+            {
+                if (this->verbose)
+                    std::cout
+                        << "  - Link "
+                        << it->first
+                        << " to be logged at "
+                        << it->second["frequency"]
+                        << " [Hz]"
+                        << std::endl;
+                salamander::msgs::LinkKinematics* link_msg = this->log_msg.add_links();
+                link_msg->set_name(it->first.as<std::string>());
+                this->links.insert({it->first.as<std::string>(), link_msg});
+                this->log_link(time, link_msg, this->model->GetLink(it->first.as<std::string>()));
+            }
+            
 
-private:
-    bool check_if_log(double time) {
-        bool result = ((time - time_last_log) - (this->ifreq) >= -time_tol) || (time < time_tol);
-        if (result)
-            time_last_log = time;
-        return result;
-    }
+            // Joints
+            YAML::Node _joints = this->parameters["joints"];
+            for(YAML::const_iterator it=_joints.begin(); it!=_joints.end(); ++it)
+            {
+                if (this->verbose)
+                    std::cout
+                        << "  - Joint "
+                        << it->first
+                        << " to be logged at "
+                        << it->second["frequency"]
+                        << " [Hz]"
+                        << std::endl;
+                salamander::msgs::JointKinematics* joint_msg = this->log_msg.add_joints();
+                joint_msg->set_name(it->first.as<std::string>());
+                this->joints.insert({it->first.as<std::string>(), joint_msg});
+                this->log_joint(time, joint_msg, this->model->GetJoint(it->first.as<std::string>()));
+            }
 
-    virtual void _log(gazebo::common::Time time, entityType entity) = 0;
-};
+            if (this->verbose)
+                std::cout
+                    << "Model logs will be saved to "
+                    << this->filename
+                    << " upon deletion of the model"
+                    << std::endl;
+        };
+    virtual ~LogModelKinematics(){};
 
-
-class LogLink:
-    public LogEntity<
-    salamander::msgs::LinkKinematics,
-    gazebo::physics::LinkPtr>
-{
 public:
-    LogLink(std::string name, double frequency): LogEntity(name, frequency){};
-    virtual ~LogLink(){};
+    void log(gazebo::common::Time time)
+        {
+            // Links
+            YAML::Node _links = this->parameters["links"];
+            for(YAML::const_iterator it=_links.begin(); it!=_links.end(); ++it)
+            {
+                // Previous time
+                salamander::msgs::LinkKinematics* link_kin = this->links[it->first.as<std::string>()];
+                int size = link_kin->state().size();
+                gazebo::common::Time t = Convert(link_kin->state(size-1).time());
+                if (time.Double() - t.Double() >= 1./it->second["frequency"].as<double>())
+                {
+                    this->log_link(time, link_kin, this->model->GetLink(it->first.as<std::string>()));
+                }
+            }
 
-private:
+            // Joints
+            YAML::Node _joints = this->parameters["joints"];
+            for(YAML::const_iterator it=_joints.begin(); it!=_joints.end(); ++it)
+            {
+                // Previous time
+                salamander::msgs::JointKinematics* joint_kin = this->joints[it->first.as<std::string>()];
+                int size = joint_kin->state().size();
+                gazebo::common::Time t = Convert(joint_kin->state(size-1).time());
+                if (time.Double() - t.Double() >= 1./it->second["frequency"].as<double>())
+                {
+                    this->log_joint(time, joint_kin, this->model->GetJoint(it->first.as<std::string>()));
+                }
+            }
+        };
 
-    void _log(gazebo::common::Time time, gazebo::physics::LinkPtr link)
+    void log_link(gazebo::common::Time time,salamander::msgs::LinkKinematics* link_kin, gazebo::physics::LinkPtr link)
         {
             // Memory allocation
-            salamander::msgs::LinkState *msg = this->data.add_state();
+            salamander::msgs::LinkState *msg = link_kin->add_state();
             // Time
             gazebo::msgs::Time *_time = new gazebo::msgs::Time;
             gazebo::msgs::Set(_time, time);
@@ -81,25 +116,21 @@ private:
             gazebo::msgs::Pose *_pose = new gazebo::msgs::Pose;
             gazebo::msgs::Set(_pose, link->WorldPose());
             msg->set_allocated_pose(_pose);
+            // Velocity
+            // optional gazebo.msgs.Vector3d linear_velocity  = 3;
+            gazebo::msgs::Vector3d *linear_velocity = new gazebo::msgs::Vector3d;
+            gazebo::msgs::Set(linear_velocity, link->RelativeLinearVel());
+            msg->set_allocated_linear_velocity(linear_velocity);
+            // optional gazebo.msgs.Vector3d angular_velocity = 4;
+            gazebo::msgs::Vector3d *angular_velocity = new gazebo::msgs::Vector3d;
+            gazebo::msgs::Set(angular_velocity, link->RelativeAngularVel());
+            msg->set_allocated_angular_velocity(angular_velocity);
         }
-};
 
-
-class LogJoint:
-    public LogEntity<
-    salamander::msgs::JointKinematics,
-    gazebo::physics::JointPtr>
-{
-public:
-    LogJoint(std::string name, double frequency): LogEntity(name, frequency){};
-    virtual ~LogJoint(){};
-
-private:
-
-    void _log(gazebo::common::Time time, gazebo::physics::JointPtr joint)
+    void log_joint(gazebo::common::Time time,salamander::msgs::JointKinematics* joint_kin, gazebo::physics::JointPtr joint)
         {
             // Memory allocation
-            salamander::msgs::JointState *msg = this->data.add_state();
+            salamander::msgs::JointState *msg = joint_kin->add_state();
             // Time
             gazebo::msgs::Time *_time = new gazebo::msgs::Time;
             gazebo::msgs::Set(_time, time);
@@ -108,107 +139,32 @@ private:
             msg->set_position(joint->Position(0));
             msg->set_velocity(joint->GetVelocity(0));
         }
-};
 
+    void dump()
+        {
+            if (this->verbose)
+                std::cout << "Logging data" << std::endl;
+            // Serialise and store data
+            std::string data;
+            std::ofstream myfile;
+            myfile.open(this->filename);
+            this->log_msg.SerializeToString(&data);
+            myfile << data;
+            myfile.close();
+            if (this->verbose)
+                std::cout << "Logged data" << std::endl;
+        };
 
-class LogParameters
-{
 public:
-    LogParameters(){};
-    virtual ~LogParameters(){};
-
-public:
-    std::unordered_map<std::string, LogLink> links;
-    std::unordered_map<std::string, LogJoint> joints;
-    bool verbose = true;
+    bool verbose=true;
 
 private:
+    PluginParameters parameters;
+    gazebo::physics::ModelPtr model;
+    salamander::msgs::ModelKinematics log_msg;
+    std::unordered_map<std::string, salamander::msgs::LinkKinematics*> links;
+    std::unordered_map<std::string, salamander::msgs::JointKinematics*> joints;
     std::string filename;
-
-public:
-    void parse_yaml(std::string filename) {
-        std::string _filename = getenv("HOME")+filename;
-        if (this->verbose)
-            std::cout << "Loading " << _filename << std::endl;
-        YAML::Node config = YAML::LoadFile(_filename);
-        if (this->verbose)
-            std::cout << _filename << " loaded" << std::endl;
-        // Links
-        YAML::Node _links = config["links"];
-        if (this->verbose)
-            std::cout << "Links to log:" << std::endl;
-        for(YAML::const_iterator it=_links.begin(); it!=_links.end(); ++it) {
-            if (this->verbose)
-                std::cout
-                    << "  - Link "
-                    << it->first
-                    << " to be logged at "
-                    << it->second["frequency"]
-                    << " [Hz]"
-                    << std::endl;
-            LogLink log(it->first.as<std::string>(), it->second["frequency"].as<double>());
-            this->links.insert({it->first.as<std::string>(), log});
-        }
-        this->filename = config["filename"].as<std::string>();
-        if (this->verbose)
-            std::cout
-                << "Links logs will be saved to "
-                << this->filename
-                << " upon deletion of the model"
-                << std::endl;
-        // Joints
-        YAML::Node _joints = config["joints"];
-        if (this->verbose)
-            std::cout << "Joints to log:" << std::endl;
-        for(YAML::const_iterator it=_joints.begin(); it!=_joints.end(); ++it) {
-            if (this->verbose)
-                std::cout
-                    << "  - Joint "
-                    << it->first
-                    << " to be logged at "
-                    << it->second["frequency"]
-                    << " [Hz]"
-                    << std::endl;
-            LogJoint log(it->first.as<std::string>(), it->second["frequency"].as<double>());
-            this->joints.insert({it->first.as<std::string>(), log});
-        }
-        this->filename = config["filename"].as<std::string>();
-        if (this->verbose)
-            std::cout
-                << "Joints logs will be saved to "
-                << this->filename
-                << " upon deletion of the model"
-                << std::endl;
-        return;
-    }
-
-    void dump() {
-        if (this->verbose)
-            std::cout << "Logging data" << std::endl;
-        salamander::msgs::ModelKinematics model_logs;
-        salamander::msgs::LinkKinematics *link_logs_ptr;
-        for (auto &link: this->links)
-        {
-            link_logs_ptr = model_logs.add_links();
-            link_logs_ptr->MergeFrom(link.second.get_logs());
-        }
-        salamander::msgs::JointKinematics *joint_logs_ptr;
-        for (auto &joint: this->joints)
-        {
-            joint_logs_ptr = model_logs.add_joints();
-            joint_logs_ptr->MergeFrom(joint.second.get_logs());
-        }
-        // Serialise and store data
-        std::string data;
-        std::ofstream myfile;
-        myfile.open(getenv("HOME")+this->filename);
-        model_logs.SerializeToString(&data);
-        myfile << data;
-        myfile.close();
-        if (this->verbose)
-            std::cout << "Logged data" << std::endl;
-    }
-
 };
 
 
@@ -227,14 +183,14 @@ namespace gazebo
         ~LogKinematicsPlugin()
             {
                 // Deletion message
-                if (this->model_logs.verbose)
+                if (this->model_logs->verbose)
                     std::cout
                         << "Model "
                         << this->model->GetName()
                         << ": Logging in progress"
                         << std::endl;
-                this->model_logs.dump();
-                if (this->model_logs.verbose)
+                this->model_logs->dump();
+                if (this->model_logs->verbose)
                     std::cout
                         << "Model "
                         << this->model->GetName()
@@ -246,17 +202,8 @@ namespace gazebo
     private:
         // Model information
         physics::ModelPtr model;
-        std::vector<std::string> joints_names;
-        std::unordered_map<std::string, physics::LinkPtr> links;
-        std::unordered_map<std::string, physics::JointPtr> joints;
         physics::WorldPtr world_;
-
-        // Additional information
-        long step = 0;
-        common::Time prevUpdateTime;
-
-        // Logging
-        LogParameters model_logs;
+        LogModelKinematics* model_logs;
 
         // Pointer to the update event connection
         event::ConnectionPtr updateConnection;
@@ -272,27 +219,19 @@ namespace gazebo
                 // Store the pointer to the model
                 this->model = _model;
 
+                // Save pointers
+                this->world_ = this->model->GetWorld();
+
+                // Logs
+                this->model_logs = new LogModelKinematics(this->get_time(), _model, _sdf);
+
                 // Load confirmation message
-                if (this->model_logs.verbose)
+                if (this->model_logs->verbose)
                     std::cout
                         << "\nThe salamander links logging plugin is attached to model["
                         << this->model->GetName()
                         << "]"
                         << std::endl;
-
-                // Get all links
-                this->load_links(_model);
-
-                // Get all joints
-                this->load_joints(_model);
-
-                // SDF
-                this->load_sdf(_sdf);
-
-                // Save pointers
-                this->world_ = this->model->GetWorld();
-
-                this->log(this->get_time());
 
                 // Listen to the update event. This event is broadcast every
                 // simulation iteration.
@@ -303,16 +242,8 @@ namespace gazebo
         // Called by the world update start event
         virtual void OnUpdate()
             {
-                // Time
-                common::Time cur_time = this->get_time();
-                common::Time stepTime = cur_time - this->prevUpdateTime;
-                this->prevUpdateTime = cur_time;
-
                 // Logging
-                this->log(cur_time);
-
-                // Iteration
-                this->step++;
+                this->model_logs->log(this->get_time());
             }
 
     private:
@@ -324,68 +255,6 @@ namespace gazebo
                 common::Time cur_time = this->world_->GetSimTime();
 #endif
                 return cur_time;
-            }
-        
-        void load_links(physics::ModelPtr _model)
-            {
-                std::vector<physics::LinkPtr> links_all = _model->GetLinks();
-                if (this->model_logs.verbose)
-                    std::cout << "Links found:";
-                for (auto &link: links_all)
-                {
-                    if (this->model_logs.verbose)
-                        std::cout << std::endl << "  " << link->GetName();
-                    this->links.insert({link->GetName(), link});
-                }
-                if (this->model_logs.verbose)
-                    std::cout << std::endl;
-                return;
-            }
-
-        void load_joints(physics::ModelPtr _model)
-            {
-                std::vector<physics::JointPtr> joints_all = _model->GetJoints();
-                if (this->model_logs.verbose)
-                    std::cout << "Joints found:";
-                for (auto &joint: joints_all)
-                {
-                    if (this->model_logs.verbose)
-                        std::cout << std::endl << "  " << joint->GetName();
-                    this->joints.insert({joint->GetName(), joint});
-                }
-                if (this->model_logs.verbose)
-                    std::cout << std::endl;
-                return;
-            }
-
-        void load_sdf(sdf::ElementPtr _sdf)
-            {
-                if (this->model_logs.verbose)
-                    std::cout << "SDF parameters:" << std::endl;
-                std::string parameter = "config";
-                std::string filename = "";
-                std::string value;
-                if(_sdf->HasElement(parameter))
-                {
-                    value = _sdf->Get<std::string>(parameter);
-                    if (this->model_logs.verbose)
-                        std::cout << "    Setting " << parameter << " = " << value << std::endl;
-                    filename = value;
-                    this->model_logs.parse_yaml(filename);
-                }
-                return;
-            }
-
-        void log(common::Time time)
-            {
-                for (auto &link_map: this->model_logs.links)
-                {
-                    link_map.second.log(time, this->links[link_map.first]);
-                }
-                for (auto &joint_map: this->model_logs.joints)
-                {
-                    joint_map.second.log(time, this->joints[joint_map.first]);
-                }
             }
     };
 

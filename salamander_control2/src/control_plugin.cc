@@ -10,8 +10,111 @@
 
 #include <math.h>
 
+#include <salamander_control.pb.h>
 #include "parameters.hh"
 #include <yaml-cpp/yaml.h>
+
+
+class LogControl
+{
+public:
+    LogControl(gazebo::common::Time time, sdf::ElementPtr sdf)
+        {
+            this->parameters = get_parameters(sdf);
+            this->filename = getenv("HOME")+this->parameters["logging"]["filename"].as<std::string>();
+
+            // Joints
+            YAML::Node _joints = this->parameters["logging"]["joints"];
+            for(YAML::const_iterator it=_joints.begin(); it!=_joints.end(); ++it)
+            {
+                if (this->verbose)
+                    std::cout
+                        << "  - Joint control "
+                        << it->first
+                        << " to be logged at "
+                        << it->second["frequency"]
+                        << " [Hz]"
+                        << std::endl;
+                salamander::msgs::JointControl* joint_msg = this->log_msg.add_joints();
+                joint_msg->set_name(it->first.as<std::string>());
+                this->joints.insert({it->first.as<std::string>(), joint_msg});
+                this->joints_consumption.insert({it->first.as<std::string>(), 0});
+                this->log_joint(time, joint_msg, 0, 0, 0);
+            }
+
+            if (this->verbose)
+                std::cout
+                    << "Model logs will be saved to "
+                    << this->filename
+                    << " upon deletion of the model"
+                    << std::endl;
+        };
+    virtual ~LogControl(){};
+
+public:
+    void log(gazebo::common::Time time, std::string joint_name, double torque, double pos, double vel)
+        {
+            if (this->joints.find(joint_name) != this->joints.end())
+            {
+                salamander::msgs::JointControl* joint_msg = this->joints[joint_name];
+                int size = joint_msg->control().size();
+                gazebo::common::Time t = Convert(joint_msg->control(size-1).time());
+                double dt = time.Double() - t.Double();
+                joints_consumption[joint_name] += abs(torque*dt);
+                if (dt >= 1./this->parameters["logging"]["joints"][joint_name]["frequency"].as<double>())
+                {
+                    this->log_joint(
+                        time, joint_msg,
+                        torque, pos, vel,
+                        joints_consumption[joint_name]);
+                }
+            }
+        };
+
+    void log_joint(gazebo::common::Time time, salamander::msgs::JointControl* joint_msg, double torque, double pos, double vel, double consumption=0)
+        {
+            // Memory allocation
+            salamander::msgs::JointCommands *msg_control = joint_msg->add_control();
+            salamander::msgs::JointCmd *msg_commands = new salamander::msgs::JointCmd;
+            // Time
+            gazebo::msgs::Time *_time = new gazebo::msgs::Time;
+            gazebo::msgs::Set(_time, time);
+            msg_control->set_allocated_time(_time);
+            // Commands
+            msg_commands->set_position(pos);
+            msg_commands->set_velocity(vel);
+            msg_control->set_allocated_commands(msg_commands);
+            msg_control->set_torque(torque);
+            // Consumption
+            msg_control->set_consumption(consumption);
+        }
+
+    void dump()
+        {
+            if (this->verbose)
+                std::cout << "Logging data" << std::endl;
+            // Serialise and store data
+            std::string data;
+            std::ofstream myfile;
+            myfile.open(this->filename);
+            this->log_msg.SerializeToString(&data);
+            myfile << data;
+            myfile.close();
+            if (this->verbose)
+                std::cout << "Logged data" << std::endl;
+        };
+
+public:
+    bool verbose=true;
+
+private:
+    PluginParameters parameters;
+    // gazebo::physics::ModelPtr model;
+    salamander::msgs::SalamanderControl log_msg;
+    std::unordered_map<std::string, salamander::msgs::JointControl*> joints;
+    std::unordered_map<std::string, double> joints_consumption;
+    std::string filename;
+};
 
 
 class JointOscillatorOptions : public std::unordered_map<std::string, double>
@@ -115,7 +218,7 @@ public:
             return this->joint->HasType(gazebo::physics::Joint::FIXED_JOINT);
         }
 
-    void control(double position_cmd, double velocity_cmd, bool verbose=false)
+    double control(double position_cmd, double velocity_cmd, bool verbose=false)
         {
             this->update();
             this->pid_position.SetCmd(0);
@@ -147,7 +250,7 @@ public:
                     << std::endl;
             }
             this->set_force(cmd_pos+cmd_vel);
-            return;
+            return cmd_pos+cmd_vel;
         }
 };
 
@@ -214,6 +317,17 @@ namespace gazebo
     public: SalamanderPlugin() {}
     public: ~SalamanderPlugin()
             {
+                // Logging
+                if (this->parameters["logging"])
+                {
+                    if (this->control_logs->verbose)
+                        std::cout
+                            << "Model "
+                            << this->model->GetName()
+                            << ": Logging control in progress"
+                            << std::endl;
+                    this->control_logs->dump();
+                }
                 // Deletion message
                 std::cout
                     << "Model "
@@ -238,6 +352,7 @@ namespace gazebo
         std::vector<FT_Sensor> ft_sensors;
         physics::WorldPtr world_;
         std::vector<std::string> frame_name_;
+        LogControl* control_logs;
 
     private:
         // Additional information
@@ -259,6 +374,9 @@ namespace gazebo
                 // Store the pointer to the model
                 this->model = _model;
 
+                // Save pointers
+                this->world_ = this->model->GetWorld();
+
                 // Load confirmation message
                 std::cout
                     << "\nThe salamander plugin is attached to model["
@@ -267,24 +385,11 @@ namespace gazebo
                     << std::endl;
 
                 // Parameters
-                if (_sdf->HasElement("config"))
-                {
-                    this->config_filename = _sdf->Get<std::string>("config");
-                    if (this->verbose)
-                        std::cout
-                            << "    Config found: "
-                            << this->config_filename
-                            << std::endl;
-                    if (this->verbose)
-                        std::cout << "Loading parameters from " << this->config_filename << std::endl;
-                    this->parameters.load(this->config_filename);
-                }
-                else
-                {
-                    std::cerr
-                        << "ERROR: config not found in control plugin"
-                        << std::endl;
-                }
+                this->parameters = get_parameters(_sdf);
+
+                // Logs
+                if (this->parameters["logging"])
+                    this->control_logs = new LogControl(this->world_->SimTime(), _sdf);
 
                 // Joints
                 int joints_n = this->model->GetJointCount();
@@ -352,9 +457,6 @@ namespace gazebo
                     i++;
                 }
 
-                // Save pointers
-                this->world_ = this->model->GetWorld();
-
                 // Listen to the update event. This event is broadcast every
                 // simulation iteration.
                 this->updateConnection = event::Events::ConnectWorldUpdateBegin(
@@ -417,7 +519,9 @@ namespace gazebo
                         if (joint.second->oscillator.type == "position")
                         {
                             vel_cmd = omega*amplitude*cos(omega*t - phase);
-                            joint.second->control(pos_cmd, vel_cmd);
+                            double torque = joint.second->control(pos_cmd, vel_cmd);
+                            if (this->parameters["logging"])
+                                this->control_logs->log(this->world_->SimTime(), joint.first, torque, pos_cmd, vel_cmd);
                         }
                         else if (joint.second->oscillator.type == "torque")
                         {

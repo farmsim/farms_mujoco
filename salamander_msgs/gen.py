@@ -12,17 +12,22 @@ def correct_file_callback_py(pat):
     return "from . import {} as {}".format(pat.group(1), pat.group(2))
 
 
-def correct_file_callback_cpp(pat):
-    """ Correct file callback """
-    return '#include "gazebo/msgs/{}"'.format(pat.group(1))
-
-
-def correct_file(filename, regex, callback):
+def correct_file_py(filename, regex):
     """ Correct_file """
-    print("Correcting {}".format(filename))
+    print("  Correcting {}".format(filename))
     with open(filename, "r") as _file:
         data = _file.read()
-    data_new = re.sub(regex, callback, data)
+    data_new = re.sub(regex, correct_file_callback_py, data)
+    with open(filename, "w") as _file:
+        _file.write(data_new)
+
+
+def correct_file_cpp(filename, pattern, replacement):
+    """ Correct_file """
+    print("  Correcting {}".format(filename))
+    with open(filename, "r") as _file:
+        data = _file.read()
+    data_new = data.replace(pattern, replacement)
     with open(filename, "w") as _file:
         _file.write(data_new)
 
@@ -55,16 +60,33 @@ def gen_salamander_msgs(files, include_dir, output, language, extension):
             + extension
         )
         if language == "cpp":
-            correct_file(
-                filename_out,
-                regex=r'\#include\ \"(\w+\.pb\.h)\"',
-                callback=correct_file_callback_cpp
-            )
+            with open(filename_out, "r") as _file:
+                data = _file.read()
+            for search in re.finditer(r'\#include\ \"(\w+)\.pb\.h\"', data):
+                print("Search FOUND: {}".format(search.group(0)))
+                if "./proto/" + search.group(1) + ".proto" not in files:
+                    print("  Correcting {}, gazebo message deteted".format(
+                        search.group(0)
+                    ))
+                    pattern = '#include "{}.pb.h"'.format(search.group(1))
+                    replacement = '#include "gazebo/msgs/{}.pb.h"'.format(
+                        search.group(1)
+                    )
+                    print("  Replacing {} with {}".format(
+                        pattern,
+                        replacement
+                    ))
+                    correct_file_cpp(
+                        filename_out,
+                        pattern=pattern,
+                        replacement=replacement
+                    )
+                else:
+                    break
         elif language == "python":
-            correct_file(
+            correct_file_py(
                 filename_out,
-                regex=r"import\ (\w+\_pb2)\ as\ (\w+\_\_pb2)",
-                callback=correct_file_callback_py
+                regex=r"import\ (\w+\_pb2)\ as\ (\w+\_\_pb2)"
             )
         else:
             raise Exception("Unrecognised language '{}'".format(language))
@@ -76,7 +98,12 @@ def gen_all():
     gazebo_dir = "/usr/include/gazebo-9/gazebo/msgs/proto"
     include_dir = "./proto/gazebo"
     gazebo_files = copy_proto_files(gazebo_dir, include_dir)
-    files = ["./proto/log_kinematics.proto"]
+    files = [
+        "./proto/salamander_kinematics.proto",
+        "./proto/salamander_links.proto",
+        "./proto/salamander_joints.proto",
+        "./proto/salamander_control.proto"
+    ]
     gen_salamander_msgs(
         files,
         include_dir,
@@ -92,42 +119,6 @@ def gen_all():
         language="python",
         extension="_pb2.py"
     )
-
-
-# def gen_salamander_msgs_py():
-#     """ Generate salamander msgs - python """
-#     print("Generating salamander_msgs protobuf library")
-#     gazebo_dir = "/usr/include/gazebo-9/gazebo/msgs/proto"
-#     include_dir = "./proto/gazebo"
-#     # Copy files
-#     for filename in os.listdir(gazebo_dir):
-#         copyfile(gazebo_dir+"/"+filename, include_dir+"/"+filename)
-#     python_out = "./salamander_msgs"
-#     command = "protoc --proto_path={} --proto_path={} --python_out={} {}"
-#     files = ["./proto/log_kinematics.proto"] + [
-#         include_dir+"/"+filename
-#         for filename in os.listdir(include_dir)
-#     ]
-#     for filename in files:
-#         cmd = command.format(
-#             include_dir,
-#             "./proto",
-#             python_out,
-#             filename
-#         )
-#         print(cmd)
-#         call(cmd, shell=True)
-#         # Correct files
-#         pyfile = (
-#             python_out + "/"
-#             + filename.split("/")[-1].split(".")[0]
-#             + "_pb2.py"
-#         )
-#         correct_file(
-#             pyfile,
-#             regex=r"import\ (\w+\_pb2)\ as\ (\w+\_\_pb2)",
-#             callback=correct_file_callback_py
-#         )
 
 
 if __name__ == '__main__':

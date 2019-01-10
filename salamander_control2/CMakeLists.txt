@@ -25,8 +25,11 @@ add_library(
   src/control_plugin.cc)
 target_link_libraries(
   biorob_salamander_control2_plugin
+  biorob_salamander_parameters_plugin
   ${GAZEBO_libraries}
-  biorob_salamander_parameters_plugin)
+  ${PROTOBUF_LIBRARY}
+  salamander_msgs
+  yaml-cpp)
 set_target_properties(
   biorob_salamander_control2_plugin
   PROPERTIES
