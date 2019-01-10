@@ -17,7 +17,7 @@ setup(
         "scripts/salamander_plot_links.py",
         "scripts/salamander_plot_models.py",
         "scripts/salamander_plot_joints.py",
-        "scripts/salamander_plot_cmds_positions.py"
+        "scripts/salamander_plot_cmds.py"
     ]
     # long_description=read('README'),
     # classifiers=[

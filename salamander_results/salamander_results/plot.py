@@ -124,3 +124,45 @@ def plot_joints_cmd_pos(path=".gazebo/models/salamander_new", figure=None):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+
+def plot_joints_cmd_vel(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    for joint in control_logs.joints:
+        times = [
+            control.time.sec+1e-9*control.time.nsec
+            for control in joint.control
+        ]
+        pos = [control.commands.velocity for control in joint.control]
+        plt.plot(times, pos, label=joint.name)
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def plot_joints_cmd_torque(path=".gazebo/models/salamander_new", figure=None):
+    """ Plot position """
+    if figure:
+        plt.figure(figure)
+    control_logs = extract_logs(
+        path,
+        log_type=SalamanderControl,
+        log_file="control.pbdat"
+    )
+    for joint in control_logs.joints:
+        times = [
+            control.time.sec+1e-9*control.time.nsec
+            for control in joint.control
+        ]
+        pos = [control.torque for control in joint.control]
+        plt.plot(times, pos, label=joint.name)
+    plt.legend()
+    plt.grid(True)
+    plt.show()

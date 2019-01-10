@@ -5,7 +5,9 @@ __all__ = [
     "plot_links_positions",
     "plot_models_positions",
     "plot_joints_positions",
-    "plot_joints_cmd_pos"
+    "plot_joints_cmd_pos",
+    "plot_joints_cmd_vel",
+    "plot_joints_cmd_torque"
 ]
 
 from .plot import (
@@ -13,5 +15,7 @@ from .plot import (
     plot_links_positions,
     plot_models_positions,
     plot_joints_positions,
-    plot_joints_cmd_pos
+    plot_joints_cmd_pos,
+    plot_joints_cmd_vel,
+    plot_joints_cmd_torque
 )
