@@ -243,42 +243,52 @@ class ControlJoints(OrderedDict):
                 )
             )
         # Legs
-        for leg_i in range(n_legs):
-            for side_i, side in enumerate(["L", "R"]):
-                for part_i in range(3):
-                    name = "link_leg_{}_{}_{}".format(
-                        leg_i,
-                        side,
-                        part_i
-                    )
-                    self[name] = ControlJoint(
-                        type="position",
-                        oscillator=ControlOscillator(
-                            amplitude=(leg_a_0 if part_i == 0 else leg_a_o),
-                            frequency=(float(frequency) if walking_gait else 0),
-                            phase=(
-                                float(
-                                    np.pi*np.abs(leg_i-side_i)
-                                    + (0 if part_i == 0 else 0.5*np.pi)
+        has_legs = kwargs.pop("legs", True)
+        if has_legs:
+            for leg_i in range(n_legs):
+                for side_i, side in enumerate(["L", "R"]):
+                    for part_i in range(3):
+                        name = "link_leg_{}_{}_{}".format(
+                            leg_i,
+                            side,
+                            part_i
+                        )
+                        self[name] = ControlJoint(
+                            type="position",
+                            oscillator=ControlOscillator(
+                                amplitude=(
+                                    leg_a_0
+                                    if part_i == 0
+                                    else leg_a_o
+                                ),
+                                frequency=(
+                                    float(frequency)
+                                    if walking_gait
+                                    else 0
+                                ),
+                                phase=(
+                                    float(
+                                        np.pi*np.abs(leg_i-side_i)
+                                        + (0 if part_i == 0 else 0.5*np.pi)
+                                    )
+                                    if walking_gait
+                                    else 0
+                                ),
+                                bias=(leg_b_0 if part_i == 0 else leg_b_o)
+                            ),
+                            pid=ControlPIDs(
+                                position=ControlPID(
+                                    p=l_pid_pos_p,
+                                    i=l_pid_pos_i,
+                                    d=l_pid_pos_d
+                                ),
+                                velocity=ControlPID(
+                                    p=l_pid_vel_p,
+                                    i=l_pid_vel_i,
+                                    d=l_pid_vel_d
                                 )
-                                if walking_gait
-                                else 0
-                            ),
-                            bias=(leg_b_0 if part_i == 0 else leg_b_o)
-                        ),
-                        pid=ControlPIDs(
-                            position=ControlPID(
-                                p=l_pid_pos_p,
-                                i=l_pid_pos_i,
-                                d=l_pid_pos_d
-                            ),
-                            velocity=ControlPID(
-                                p=l_pid_vel_p,
-                                i=l_pid_vel_i,
-                                d=l_pid_vel_d
                             )
                         )
-                    )
 
     @property
     def joints(self):
@@ -297,6 +307,7 @@ class ControlParameters(OrderedDict):
         super(ControlParameters, self).__init__()
         self.gait = gait
         self.frequency = frequency
+        log_frequency = kwargs.pop("log_frequency", 100)
         self["joints"] = kwargs.pop(
             "joints",
             ControlJoints(
@@ -313,7 +324,7 @@ class ControlParameters(OrderedDict):
                         [
                             (
                                 "link_body_{}".format(i+1),
-                                {"frequency": 100}
+                                {"frequency": log_frequency}
                             )
                             for i in range(11)
                         ]

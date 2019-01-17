@@ -384,6 +384,30 @@ def generate_swimming(name, control_parameters):
     templates.render(package)
 
 
+def generate_swimming_legless(name, control_parameters):
+    """ Generate walking salamander """
+    package = generate_model_options(
+        name=name,
+        base_model="biorob_salamander_slip_no_legs",
+        gait="swimming",
+        control_parameters=control_parameters
+    )
+    templates = ModelGenerationTemplates()
+    templates.render(package)
+
+
+def generate_swimming_luc(name, control_parameters):
+    """ Generate walking salamander """
+    package = generate_model_options(
+        name=name,
+        base_model="biorob_salamander_slip_no_legs",
+        gait="swimming_luc",
+        control_parameters=control_parameters
+    )
+    templates = ModelGenerationTemplates()
+    templates.render(package)
+
+
 def generate_all():
     """ Test entity generation """
     name = "salamander_new"
@@ -402,6 +426,24 @@ def generate_all():
     generate_swimming(
         "salamander_swimming",
         ControlParameters(gait="swimming", frequency=2)
+    )
+    generate_swimming_legless(
+        "salamander_swimming_legless",
+        ControlParameters(
+            gait="swimming",
+            frequency=1.5,
+            log_frequency=1000,
+            legs=False
+        )
+    )
+    generate_swimming_luc(
+        "salamander_swimming_luc",
+        ControlParameters(
+            gait="swimming",
+            frequency=1.5,
+            log_frequency=1000,
+            legs=False
+        )
     )
 
 
