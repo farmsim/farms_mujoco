@@ -2,12 +2,12 @@
 """ Plot joints positions commands """
 
 import argparse
-from salamander_results import (
+from salamander_results import extract_final_consumption
+from salamander_results.plot import (
     plot_joints_cmd_pos,
     plot_joints_cmd_vel,
     plot_joints_cmd_torque,
-    plot_joints_cmd_consumption,
-    extract_final_consumption
+    plot_joints_cmd_consumption
 )
 
 

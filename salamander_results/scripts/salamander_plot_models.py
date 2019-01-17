@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """ Plot all positions """
 
-import os
-
 import argparse
-from salamander_results import plot_models_positions
+from salamander_results.plot import plot_models_positions
 
 
 def parse_args():

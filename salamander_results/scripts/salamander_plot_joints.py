@@ -2,7 +2,7 @@
 """ Plot joints positions """
 
 import argparse
-from salamander_results import plot_joints_positions
+from salamander_results.plot import plot_joints_positions
 
 
 def parse_args():

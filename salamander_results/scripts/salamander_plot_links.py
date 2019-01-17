@@ -2,7 +2,7 @@
 """ Plot positions """
 
 import argparse
-from salamander_results import plot_links_positions
+from salamander_results.plot import plot_links_positions
 
 
 def parse_args():
