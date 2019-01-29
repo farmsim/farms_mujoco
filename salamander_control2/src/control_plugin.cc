@@ -353,6 +353,7 @@ namespace gazebo
         physics::WorldPtr world_;
         std::vector<std::string> frame_name_;
         LogControl* control_logs;
+        double time_spawn=0;
 
     private:
         // Additional information
@@ -390,6 +391,8 @@ namespace gazebo
                 // Logs
                 if (this->parameters["logging"])
                     this->control_logs = new LogControl(this->world_->SimTime(), _sdf);
+
+                time_spawn = this->world_->SimTime().Double();
 
                 // Joints
                 int joints_n = this->model->GetJointCount();
@@ -505,12 +508,13 @@ namespace gazebo
                 double bias;
                 double pos_cmd;
                 double vel_cmd;
+                double time_gain = (t - time_spawn) < 1.0 ? (t - time_spawn) : 1.0;
 
                 // Joints
                 for (auto &joint: this->joints) {
                     if (!joint.second->fixed())
                     {
-                        amplitude = joint.second->oscillator["amplitude"];
+                        amplitude = time_gain*joint.second->oscillator["amplitude"];
                         frequency = joint.second->oscillator["frequency"];
                         omega = 2*M_PI*frequency;
                         phase = joint.second->oscillator["phase"];
