@@ -2,6 +2,7 @@
 """ Plot joints positions commands """
 
 import argparse
+import matplotlib.pyplot as plt
 from salamander_results import extract_final_consumption
 from salamander_results.plot import (
     plot_joints_cmd_pos,
@@ -33,12 +34,13 @@ def main():
     plot_joints_cmd_pos(path, figure="Positions commands")
     plot_joints_cmd_vel(path, figure="Velocity commands")
     plot_joints_cmd_torque(path, figure="Motor torques")
-    plot_joints_cmd_consumption(path, figure="Motor torques")
+    plot_joints_cmd_consumption(path, figure="Torque consumption")
     consumption = extract_final_consumption(path)
     print("Consumption:{}".format("\n  ".join([
         "{}: {}".format(joint, consumption[joint])
         for joint in consumption
     ])))
+    plt.show()
 
 
 if __name__ == '__main__':

@@ -41,7 +41,6 @@ def plot_models_positions(path=".gazebo/models/", figure=None):
     plt.legend()
     plt.axis("equal")
     plt.grid(True)
-    plt.show()
 
 
 def plot_joints_positions(path=".gazebo/models/salamander_new", figure=None):
@@ -54,7 +53,6 @@ def plot_joints_positions(path=".gazebo/models/salamander_new", figure=None):
         plt.plot(times, pos, label=joint_name)
     plt.legend()
     plt.grid(True)
-    plt.show()
 
 
 def plot_joints_cmd_pos(path=".gazebo/models/salamander_new", figure=None):
@@ -75,7 +73,6 @@ def plot_joints_cmd_pos(path=".gazebo/models/salamander_new", figure=None):
         plt.plot(times, pos, label=joint.name)
     plt.legend()
     plt.grid(True)
-    plt.show()
 
 
 def plot_joints_cmd_vel(path=".gazebo/models/salamander_new", figure=None):
@@ -96,7 +93,6 @@ def plot_joints_cmd_vel(path=".gazebo/models/salamander_new", figure=None):
         plt.plot(times, pos, label=joint.name)
     plt.legend()
     plt.grid(True)
-    plt.show()
 
 
 def plot_joints_cmd_torque(path=".gazebo/models/salamander_new", figure=None):
@@ -117,7 +113,6 @@ def plot_joints_cmd_torque(path=".gazebo/models/salamander_new", figure=None):
         plt.plot(times, pos, label=joint.name)
     plt.legend()
     plt.grid(True)
-    plt.show()
 
 
 def plot_joints_cmd_consumption(path=".gazebo/models/salamander_new", figure=None):
@@ -138,4 +133,3 @@ def plot_joints_cmd_consumption(path=".gazebo/models/salamander_new", figure=Non
         plt.plot(times, pos, label=joint.name)
     plt.legend()
     plt.grid(True)
-    plt.show()

@@ -3,6 +3,7 @@
 
 import argparse
 from salamander_results.plot import plot_models_positions
+import matplotlib.pyplot as plt
 
 
 def parse_args():
@@ -25,6 +26,7 @@ def main():
     """ Main """
     path = parse_args()
     plot_models_positions(path)
+    plt.show()
 
 
 if __name__ == '__main__':
