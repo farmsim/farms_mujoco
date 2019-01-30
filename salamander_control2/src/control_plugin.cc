@@ -508,7 +508,10 @@ namespace gazebo
                 double bias;
                 double pos_cmd;
                 double vel_cmd;
-                double time_gain = (t - time_spawn) < 1.0 ? (t - time_spawn) : 1.0;
+                double time_gain = (
+                    (t - time_spawn) < 1.0 && (t - time_spawn) >= 0.0
+                    ? (t - time_spawn)
+                    : 1.0);
 
                 // Joints
                 for (auto &joint: this->joints) {
