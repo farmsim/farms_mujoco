@@ -11,23 +11,24 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 
-class SphereFunction:
-    """SphereFunction"""
+class QuadraticFunction:
+    """QuadraticFunction"""
 
-    @staticmethod
-    def fitness_function_fast(decision_vector):
-        """Fitnesss"""
-        return [np.linalg.norm(decision_vector - SphereFunction.best_known())]
+    def __init__(self, dim, slow=False):
+        super(QuadraticFunction, self).__init__()
+        self._dim = dim
+        self._slow = slow
 
     @staticmethod
     def fitness_function(decision_vector):
         """Fitnesss"""
-        time.sleep(0.5)
-        return SphereFunction.fitness_function_fast(decision_vector)
+        return [np.linalg.norm(decision_vector - QuadraticFunction.best_known())]
 
     def fitness(self, decision_vector):
         """Fitnesss"""
         print("Computing for {}".format(decision_vector))
+        if self._slow:
+            time.sleep(0.5)
         return self.fitness_function(decision_vector)
 
     @staticmethod
@@ -38,13 +39,13 @@ class SphereFunction:
     @staticmethod
     def best_known():
         """Best known"""
-        return np.array([1, 2])
+        return np.array([0.5, 0.5])
 
 
 def run_archipelago():
     """ Run archipelago"""
     algo = pg.algorithm(pg.cmaes(gen=3, force_bounds=True))
-    prob = pg.problem(SphereFunction())
+    prob = pg.problem(QuadraticFunction())
     archi = pg.archipelago(n=10, algo=algo, prob=prob, pop_size=5)
     print("\nRUNNING EVOLUTION\n")
     archi.evolve()
@@ -101,7 +102,7 @@ class JonAlgorithm:
             )
             # print("Computing fitnesses")
             fitnesses = pool.map(
-                SphereFunction.fitness_function,
+                QuadraticFunction.fitness_function,
                 decisions
             )
             for dec, fit in zip(decisions, fitnesses):
@@ -170,7 +171,7 @@ def plot_fitness(problem, distribution, best=None, figure=None):
 def main():
     """Main"""
     # Problem
-    prob = pg.problem(SphereFunction())
+    prob = pg.problem(QuadraticFunction())
     # Algorithm
     # algo = pg.algorithm(pg.cmaes(gen=10))
     algo = pg.algorithm(JonAlgorithm(gen=10))
@@ -179,7 +180,7 @@ def main():
     pop = pg.population(prob)
     decisions = np.random.ranf([n_pop, 2])
     p = Pool(10)
-    fitnesses = p.map(SphereFunction.fitness_function, decisions)
+    fitnesses = p.map(QuadraticFunction.fitness_function, decisions)
     for dec, fit in zip(decisions, fitnesses):
         print("Decision: {} Fitness : {}".format(dec, fit))
         pop.push_back(x=dec, f=fit)
@@ -198,6 +199,7 @@ def main():
 
 if __name__ == '__main__':
     for problem in [
+            QuadraticFunction(dim=2),
             pg.ackley(dim=2),
             pg.griewank(dim=2),
             # pg.hock_schittkowsky_71(dim=2),
