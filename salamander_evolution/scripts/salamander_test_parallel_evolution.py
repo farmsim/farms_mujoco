@@ -9,6 +9,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from matplotlib.animation import FuncAnimation
 
 
 class QuadraticFunction:
@@ -176,12 +177,15 @@ class EvolutionViewer2D(object):
         self.algorithm = pg.algorithm(algorithm)
         self.n_pop = n_pop
         self.n_gen = n_gen
-        pop = pg.population(self._problem, size=n_pop)
         self.pops = [None for i in range(self.n_gen)]
-        self.pops[0] = pop
+        self.pops[0] = pg.population(self._problem, size=n_pop)
         print("Running problem: {}".format(self._problem.get_name()))
-        self.plot_fitness()
         self.evolve()
+        self.plot_fitness()
+        self.plot_evolution()
+        self.ani = None
+        self.fig = plt.gcf()
+        self.animate()
 
     def plot_fitness(self):
         """Plot fitness"""
@@ -206,20 +210,56 @@ class EvolutionViewer2D(object):
 
     def evolve(self):
         """Evolve"""
-        evols_tic = self._problem.get_fevals()
         print("  Running evolution", end="", flush=True)
         tic = time.time()
-        for i in range(self.n_gen-1):
-            self.pops[i+1] = self.algorithm.evolve(self.pops[i])
-            for decision_vector in self.pops[i+1].get_x():
-                plt.plot(decision_vector[0], decision_vector[1], "b.")
+        for gen in range(self.n_gen-1):
+            self.pops[gen+1] = self.algorithm.evolve(self.pops[gen])
         toc = time.time()
         print(" (time: {} [s])".format(toc-tic))
-        evols_toc = self.pops[-1].problem.get_fevals()
         print("  Number of evaluations: {}".format([
             pop.problem.get_fevals()
             for pop in self.pops
         ][-1]))
+
+    def plot_evolution(self):
+        """Evolve"""
+        print("  Plotting evolution", end="", flush=True)
+        tic = time.time()
+        # for gen in range(self.n_gen-1):
+        #     self.plot_generation(gen)
+        self.plot_generation(0)
+        toc = time.time()
+        print(" (time: {} [s])".format(toc-tic))
+
+    def plot_generation(self, gen):
+        """Plot population"""
+        decision_vectors = self.pops[gen+1].get_x()
+        self.ln, = plt.plot(
+            decision_vectors[:, 0],
+            decision_vectors[:, 1],
+            "b."
+        )
+
+    def init_plot(self):
+        """Init plot"""
+        return self.ln,
+
+    def update_plot(self, frame):
+        """Plot population"""
+        decision_vectors = self.pops[frame+1].get_x()
+        self.ln.set_data(decision_vectors[:, 0], decision_vectors[:, 1])
+        return self.ln,
+
+    def animate(self):
+        """Animate evolution"""
+        self.ani = FuncAnimation(
+            self.fig, self.update_plot,
+            frames=np.arange(self.n_gen-1),
+            init_func=self.init_plot,
+            blit=True,
+            interval=100,
+            repeat=True
+        )
 
 
 def main():
@@ -257,10 +297,12 @@ def main2():
     # Population without memory
     kwargs = {"seed": 0}
     # algorithm = pg.de(gen=1, **kwargs)
+    # algorithm = pg.de(gen=1, variant=1, **kwargs)
     # algorithm = pg.sea(gen=1, **kwargs)
     # algorithm = pg.sga(gen=1, **kwargs)
-    # algorithm = pg.ihs(gen=1, **kwargs)
     # algorithm = pg.bee_colony(gen=1, **kwargs)
+    # algorithm = pg.simulated_annealing()
+    # algorithm = pg.ihs(gen=1, bw_min=1e-2, **kwargs)
 
     # Population with memory
     kwargs = {"memory": True, "seed": 0}
@@ -269,6 +311,10 @@ def main2():
     # algorithm = pg.pso(gen=1, **kwargs)
     # algorithm = pg.pso_gen(gen=1, **kwargs)
     # algorithm = pg.sade(gen=1, **kwargs)
+    # algorithm = pg.sade(gen=1, variant=13, **kwargs)
+    # algorithm = pg.sade(gen=1, xtol=1e0, ftol=1e0, **kwargs)
+    # algorithm = pg.sade(gen=1, variant=11, variant_adptv=1, **kwargs)
+    # algorithm = pg.sade(gen=1, variant=2, variant_adptv=2, **kwargs)
     algorithm = pg.de1220(gen=1, **kwargs)
 
     # Multiobjective
@@ -276,21 +322,26 @@ def main2():
     # algorithm = pg.moead(gen=1, **kwargs)
 
     # Local
+    # algorithm = pg.compass_search(max_fevals=100)
+    # algorithm = pg.nlopt(solver="cobyla")
     # algorithm = pg.nlopt(solver="bobyqa")
+    # algorithm = pg.nlopt(solver="neldermead")
 
-    for problem in [
-            QuadraticFunction(dim=2),
-            pg.ackley(dim=2),
-            pg.griewank(dim=2),
-            # pg.hock_schittkowsky_71(dim=2),
-            # pg.inventory(dim=2),
-            # pg.luksan_vlcek1(dim=2),
-            pg.rastrigin(dim=2),
-            # pg.minlp_rastrigin(dim=2),
-            pg.rosenbrock(dim=2),
-            pg.schwefel(dim=2)
-    ]:
-        EvolutionViewer2D(
+    problems = [
+        QuadraticFunction(dim=2),
+        pg.ackley(dim=2),
+        pg.griewank(dim=2),
+        # pg.hock_schittkowsky_71(dim=2),
+        # pg.inventory(dim=2),
+        # pg.luksan_vlcek1(dim=2),
+        pg.rastrigin(dim=2),
+        # pg.minlp_rastrigin(dim=2),
+        pg.rosenbrock(dim=2),
+        pg.schwefel(dim=2)
+    ]
+    viewers = [None for _, _ in enumerate(problems)]
+    for i, problem in enumerate(problems):
+        viewers[i] = EvolutionViewer2D(
             problem=problem,
             algorithm=algorithm,
             n_pop=10,
