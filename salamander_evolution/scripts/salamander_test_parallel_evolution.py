@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.animation import FuncAnimation
+from matplotlib.colors import LogNorm
 
 
 class QuadraticFunction:
@@ -115,7 +116,7 @@ class JonAlgorithm:
         return pop
 
 
-def plot_fitness(problem, distribution, best=None, figure=None):
+def plot_fitness(problem, distribution, best=None, figure=None, log=False):
     """Plot fitess landscape"""
     # x_distribution, y_distribution = (
     #     [
@@ -141,6 +142,7 @@ def plot_fitness(problem, distribution, best=None, figure=None):
             min(distribution[0]), max(distribution[0]),
             min(distribution[1]), max(distribution[1])
         ],
+        norm=(LogNorm() if log else None)
         # vmax=abs(_z).max(), vmin=-abs(_z).max()
     )
     plt.colorbar()
@@ -167,16 +169,17 @@ def plot_fitness(problem, distribution, best=None, figure=None):
     # )
 
 
-class EvolutionViewer2D(object):
+class EvolutionViewer2D:
     """EvolutionViewer2D"""
 
-    def __init__(self, problem, algorithm, n_pop, n_gen):
+    def __init__(self, problem, algorithm, n_pop, n_gen, plot_log):
         super(EvolutionViewer2D, self).__init__()
         self.problem = problem
         self._problem = pg.problem(self.problem)
         self.algorithm = pg.algorithm(algorithm)
         self.n_pop = n_pop
         self.n_gen = n_gen
+        self.plot_log = plot_log
         self.pops = [None for i in range(self.n_gen)]
         self.pops[0] = pg.population(self._problem, size=n_pop)
         print("Running problem: {}".format(self._problem.get_name()))
@@ -203,7 +206,8 @@ class EvolutionViewer2D(object):
                 if "best_known" in dir(self.problem)
                 else None
             ),
-            figure=self._problem.get_name()
+            figure=self._problem.get_name(),
+            log=self.plot_log
         )
         toc = time.time()
         print(" (time: {} [s])".format(toc-tic))
@@ -237,12 +241,8 @@ class EvolutionViewer2D(object):
         self.ln, = plt.plot(
             decision_vectors[:, 0],
             decision_vectors[:, 1],
-            "b."
+            "bo"
         )
-
-    def init_plot(self):
-        """Init plot"""
-        return self.ln,
 
     def update_plot(self, frame):
         """Plot population"""
@@ -255,7 +255,7 @@ class EvolutionViewer2D(object):
         self.ani = FuncAnimation(
             self.fig, self.update_plot,
             frames=np.arange(self.n_gen-1),
-            init_func=self.init_plot,
+            # init_func=self.init_plot,
             blit=True,
             interval=100,
             repeat=True
@@ -345,7 +345,8 @@ def main2():
             problem=problem,
             algorithm=algorithm,
             n_pop=10,
-            n_gen=100
+            n_gen=100,
+            plot_log=False if not isinstance(problem, pg.rosenbrock) else True
         )
     plt.show()
 
