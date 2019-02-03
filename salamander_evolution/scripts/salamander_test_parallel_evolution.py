@@ -26,7 +26,6 @@ class QuadraticFunction:
 
     def fitness(self, decision_vector):
         """Fitnesss"""
-        print("Computing for {}".format(decision_vector))
         if self._slow:
             time.sleep(0.5)
         return self.fitness_function(decision_vector)
@@ -145,7 +144,7 @@ def plot_fitness(problem, distribution, best=None, figure=None):
     )
     plt.colorbar()
     if best is not None:
-        plt.plot(best[0], best[1], "b*", markersize=20)
+        plt.plot(best[0], best[1], "w*", markersize=20)
 
     # ln, = plt.plot([], [], 'ro', animated=True)
 
@@ -166,6 +165,61 @@ def plot_fitness(problem, distribution, best=None, figure=None):
     #     init_func=init, blit=True
     # )
 
+
+class EvolutionViewer2D(object):
+    """EvolutionViewer2D"""
+
+    def __init__(self, problem, algorithm, n_pop, n_gen):
+        super(EvolutionViewer2D, self).__init__()
+        self.problem = problem
+        self._problem = pg.problem(self.problem)
+        self.algorithm = pg.algorithm(algorithm)
+        self.n_pop = n_pop
+        self.n_gen = n_gen
+        pop = pg.population(self._problem, size=n_pop)
+        self.pops = [None for i in range(self.n_gen)]
+        self.pops[0] = pop
+        print("Running problem: {}".format(self._problem.get_name()))
+        self.plot_fitness()
+        self.evolve()
+
+    def plot_fitness(self):
+        """Plot fitness"""
+        print("  Plotting fitness landscape", end="", flush=True)
+        tic = time.time()
+        bounds_min, bounds_max = self._problem.get_bounds()
+        plot_fitness(
+            self._problem.fitness,
+            distribution=[
+                np.linspace(bounds_min[0], bounds_max[0], 300),
+                np.linspace(bounds_min[1], bounds_max[1], 300)
+            ],
+            best=(
+                self.problem.best_known()
+                if "best_known" in dir(self.problem)
+                else None
+            ),
+            figure=self._problem.get_name()
+        )
+        toc = time.time()
+        print(" (time: {} [s])".format(toc-tic))
+
+    def evolve(self):
+        """Evolve"""
+        evols_tic = self._problem.get_fevals()
+        print("  Running evolution", end="", flush=True)
+        tic = time.time()
+        for i in range(self.n_gen-1):
+            self.pops[i+1] = self.algorithm.evolve(self.pops[i])
+            for decision_vector in self.pops[i+1].get_x():
+                plt.plot(decision_vector[0], decision_vector[1], "b.")
+        toc = time.time()
+        print(" (time: {} [s])".format(toc-tic))
+        evols_toc = self.pops[-1].problem.get_fevals()
+        print("  Number of evaluations: {}".format([
+            pop.problem.get_fevals()
+            for pop in self.pops
+        ][-1]))
 
 
 def main():
@@ -197,7 +251,33 @@ def main():
     # print("Population:\n{}".format(isl.get_population()))
 
 
-if __name__ == '__main__':
+def main2():
+    """Main 2"""
+
+    # Population without memory
+    kwargs = {"seed": 0}
+    # algorithm = pg.de(gen=1, **kwargs)
+    # algorithm = pg.sea(gen=1, **kwargs)
+    # algorithm = pg.sga(gen=1, **kwargs)
+    # algorithm = pg.ihs(gen=1, **kwargs)
+    # algorithm = pg.bee_colony(gen=1, **kwargs)
+
+    # Population with memory
+    kwargs = {"memory": True, "seed": 0}
+    # algorithm = pg.cmaes(gen=1, force_bounds=True, **kwargs)
+    # algorithm = pg.xnes(gen=1, force_bounds=True, **kwargs)
+    # algorithm = pg.pso(gen=1, **kwargs)
+    # algorithm = pg.pso_gen(gen=1, **kwargs)
+    # algorithm = pg.sade(gen=1, **kwargs)
+    algorithm = pg.de1220(gen=1, **kwargs)
+
+    # Multiobjective
+    # algorithm = pg.nsga2(gen=1, **kwargs)
+    # algorithm = pg.moead(gen=1, **kwargs)
+
+    # Local
+    # algorithm = pg.nlopt(solver="bobyqa")
+
     for problem in [
             QuadraticFunction(dim=2),
             pg.ackley(dim=2),
@@ -210,19 +290,14 @@ if __name__ == '__main__':
             pg.rosenbrock(dim=2),
             pg.schwefel(dim=2)
     ]:
-        _problem = pg.problem(problem)
-        print("Running problem: {}".format(_problem.get_name()))
-        bounds_min, bounds_max = _problem.get_bounds()
-        algo = pg.algorithm(pg.cmaes(gen=10, force_bounds=True))
-        pop = pg.population(_problem, size=100)
-        pop = algo.evolve(pop)
-        plot_fitness(
-            _problem.fitness,
-            distribution=[
-                np.linspace(bounds_min[0], bounds_max[0], 300),
-                np.linspace(bounds_min[1], bounds_max[1], 300)
-            ],
-            best=problem.best_known(),
-            figure=_problem.get_name()
+        EvolutionViewer2D(
+            problem=problem,
+            algorithm=algorithm,
+            n_pop=10,
+            n_gen=100
         )
     plt.show()
+
+
+if __name__ == '__main__':
+    main2()
