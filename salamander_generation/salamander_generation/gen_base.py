@@ -7,7 +7,6 @@ import xml.dom.minidom
 from xml.etree import ElementTree as etree
 
 from .model import (
-    # create_directory,
     generate_model_options,
     ModelGenerationTemplates
 )
@@ -150,7 +149,9 @@ def create_new_model(previous_model, new_model, friction):
 
 def generate_base():
     """Generate base models"""
-    previous_model = "biorob_salamander_base"
-    next_model = "biorob_salamander"
-    friction = FrictionParameters(body=1e-3, feet=0.7)
-    create_new_model(previous_model, next_model, friction)
+    suffixes = ["", "_slip", "_slip_no_legs"]
+    for model_suffix in suffixes:
+        previous_model = "biorob_salamander_base{}".format(model_suffix)
+        next_model = "biorob_salamander{}".format(model_suffix)
+        friction = FrictionParameters(body=1e-3, feet=0.7)
+        create_new_model(previous_model, next_model, friction)
