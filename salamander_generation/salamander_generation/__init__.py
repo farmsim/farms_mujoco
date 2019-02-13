@@ -8,6 +8,7 @@ __all__ = ["generate_all", "generate_walking", "ControlParameters"]
 
 
 from .gen_all import generate_all, generate_walking
+from .gen_base import generate_base
 from .gen_controller import ControlParameters
 # from .gen_entity import test_entity
 # from .gen_entity import generate_walking
