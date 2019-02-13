@@ -89,7 +89,7 @@ class ModelGenerationTemplates(JinjaGeneration):
         self.sdf = self.env.get_template('salamander.sdf')
         self.parameter = self.env.get_template('parameters.xml')
         self.model = self.env.get_template('model.config')
-        self.sensor = self.env.get_template('sensor.xml')
+        # self.sensor = self.env.get_template('sensor.xml')
         self.plugin = self.env.get_template('plugin.xml')
         self.world = self.env.get_template('world.world')
 

@@ -8,18 +8,6 @@ from .model import (
 from .gen_controller import ControlParameters
 
 
-# def generate_sensor_model(name):
-#     """Generate model with sensors"""
-#     package = generate_model_options(
-#         name=name,
-#         base_model="biorob_salamander",
-#         sensors=Sensors()
-#     )
-#     templates = ModelGenerationTemplates()
-#     packager = templates.render(package)
-#     packager.generate()
-
-
 def generate_walking(name, control_parameters):
     """ Generate walking salamander """
     package = generate_model_options(
@@ -59,19 +47,6 @@ def generate_swimming_legless(name, control_parameters):
     packager.generate()
 
 
-def generate_swimming_luc(name, control_parameters):
-    """ Generate walking salamander """
-    package = generate_model_options(
-        name=name,
-        base_model="biorob_salamander_slip_no_legs",
-        gait="swimming_luc",
-        control_parameters=control_parameters
-    )
-    templates = ModelGenerationTemplates()
-    packager = templates.render(package)
-    packager.generate()
-
-
 def generate_all():
     """ Test entity generation """
     name = "salamander_walking"
@@ -94,15 +69,6 @@ def generate_all():
     )
     generate_swimming_legless(
         name+"_legless",
-        ControlParameters(
-            gait="swimming",
-            frequency=1.5,
-            log_frequency=1000,
-            legs=False
-        )
-    )
-    generate_swimming_luc(
-        name+"_luc",
         ControlParameters(
             gait="swimming",
             frequency=1.5,
