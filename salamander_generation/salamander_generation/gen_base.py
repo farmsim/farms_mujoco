@@ -83,6 +83,78 @@ def apply_collisions_properties(root, friction_params):
             ode.append(min_depth)
 
 
+def add_contact_sensors(root):
+    """Apply collisions properties"""
+    for link in root.iter('link'):
+        print("link: {}".format(link))
+        if "name" in link.attrib:
+            if "_R_3" in link.attrib["name"] or "_L_3" in link.attrib["name"]:
+                print("Foot found: {}".format(link.attrib["name"]))
+                sensor = etree.Element("sensor")
+                sensor.attrib["name"] = "sensor_{}_{}".format(
+                    "contact",
+                    link.attrib["name"]
+                )
+                sensor.attrib["type"] = "contact"
+                link.append(sensor)
+                always_on = etree.Element("always_on")
+                always_on.text = "true"
+                sensor.append(always_on)
+                update_rate = etree.Element("update_rate")
+                update_rate.text = "1000"
+                sensor.append(update_rate)
+                visualize = etree.Element("visualize")
+                visualize.text = "true"
+                sensor.append(visualize)
+                # topic = etree.Element("topic")
+                # topic.text = "__default__"
+                # sensor.append(topic)
+                contact = etree.Element("contact")
+                sensor.append(contact)
+                collision = etree.Element("collision")
+                collision.text = "__default__"
+                contact.append(collision)
+                # topic = etree.Element("topic")
+                # topic.text = "__default_topic__"
+                # contact.append(topic)
+
+def add_force_torque_sensors(root):
+    """Apply collisions properties"""
+    for joint in root.iter('joint'):
+        print("joint: {}".format(joint))
+        if "name" in joint.attrib:
+            joint.attrib["name"] = "joint_"+joint.attrib["name"]
+            if "_R_3" in joint.attrib["name"] or "_L_3" in joint.attrib["name"]:
+                print("Ankle found: {}".format(joint.attrib["name"]))
+                sensor = etree.Element("sensor")
+                sensor.attrib["name"] = "sensor_{}_{}".format(
+                    "ft",
+                    joint.attrib["name"]
+                )
+                sensor.attrib["type"] = "force_torque"
+                joint.append(sensor)
+                always_on = etree.Element("always_on")
+                always_on.text = "true"
+                sensor.append(always_on)
+                update_rate = etree.Element("update_rate")
+                update_rate.text = "1000"
+                sensor.append(update_rate)
+                visualize = etree.Element("visualize")
+                visualize.text = "true"
+                sensor.append(visualize)
+                # topic = etree.Element("topic")
+                # topic.text = "__default__"
+                # sensor.append(topic)
+                force_torque = etree.Element("force_torque")
+                sensor.append(force_torque)
+                frame = etree.Element("frame")
+                frame.text = "sensor"
+                force_torque.append(frame)
+                measure_direction = etree.Element("measure_direction")
+                measure_direction.text = "child_to_parent"
+                force_torque.append(measure_direction)
+
+
 def correct_sdf_visuals_materials(root):
     """Correct materials from SDF visuals (DEPRECATED)
 
@@ -133,6 +205,10 @@ def create_new_model(previous_model, new_model, friction):
 
     # Collision properties
     apply_collisions_properties(root, friction)
+
+    # Add sensors
+    add_contact_sensors(root)
+    add_force_torque_sensors(root)
 
     # Write to SDF
     sdf = new_sdf_text(root)

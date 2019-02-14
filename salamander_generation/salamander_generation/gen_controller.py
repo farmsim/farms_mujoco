@@ -213,7 +213,7 @@ class ControlJoints(OrderedDict):
                 if walking_gait
                 else 0.1+i*0.4/n_body
             )
-            self["link_body_{}".format(i+1)] = ControlJoint(
+            self["joint_link_body_{}".format(i+1)] = ControlJoint(
                 type="position",
                 oscillator=ControlOscillator(
                     amplitude=(
@@ -248,7 +248,7 @@ class ControlJoints(OrderedDict):
             for leg_i in range(n_legs):
                 for side_i, side in enumerate(["L", "R"]):
                     for part_i in range(3):
-                        name = "link_leg_{}_{}_{}".format(
+                        name = "joint_link_leg_{}_{}_{}".format(
                             leg_i,
                             side,
                             part_i
@@ -323,7 +323,7 @@ class ControlParameters(OrderedDict):
                     OrderedDict(
                         [
                             (
-                                "link_body_{}".format(i+1),
+                                "joint_link_body_{}".format(i+1),
                                 {"frequency": log_frequency}
                             )
                             for i in range(11)

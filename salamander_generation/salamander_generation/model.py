@@ -424,7 +424,7 @@ class Plugins(list):
                     "joints": OrderedDict(
                         [
                             (
-                                "link_body_{}".format(i+1),
+                                "joint_link_body_{}".format(i+1),
                                 {"frequency": 100}
                             )
                             for i in range(11)
