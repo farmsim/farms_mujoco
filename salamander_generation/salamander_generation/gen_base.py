@@ -225,9 +225,15 @@ def create_new_model(previous_model, new_model, friction):
 
 def generate_base():
     """Generate base models"""
-    suffixes = ["", "_slip", "_slip_no_legs"]
-    for model_suffix in suffixes:
-        previous_model = "biorob_salamander_base{}".format(model_suffix)
-        next_model = "biorob_salamander{}".format(model_suffix)
+    model_names = [
+        "biorob_salamander_base",
+        "biorob_salamander_base_slip",
+        "biorob_salamander_base_slip_no_legs",
+        "biorob_centipede_base",
+        "biorob_polypterus_base"
+    ]
+    for model_name in model_names:
+        previous_model = "{}".format(model_name)
+        next_model = "{}".format(model_name.replace("_base", ""))
         friction = FrictionParameters(body=1e-3, feet=0.7)
         create_new_model(previous_model, next_model, friction)
