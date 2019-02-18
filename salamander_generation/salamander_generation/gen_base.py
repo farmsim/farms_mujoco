@@ -73,12 +73,21 @@ def apply_collisions_properties(root, friction_params, verbose=False):
             surface.append(contact)
             ode = etree.Element("ode")
             contact.append(ode)
+            soft_cfm = etree.Element("soft_cfm")
+            soft_cfm.text = str(0)
+            ode.append(soft_cfm)
+            soft_erp = etree.Element("soft_erp")
+            soft_erp.text = str(0.2)
+            ode.append(soft_erp)
             kp = etree.Element("kp")
             kp.text = str(1e6)
             ode.append(kp)
             kd = etree.Element("kd")
             kd.text = str(1e2)
             ode.append(kd)
+            max_vel = etree.Element("max_vel")
+            max_vel.text = str(0.01)
+            ode.append(max_vel)
             min_depth = etree.Element("min_depth")
             min_depth.text = str(1e2)
             ode.append(min_depth)
@@ -121,43 +130,73 @@ def add_contact_sensors(root, verbose=False):
                 # topic.text = "__default_topic__"
                 # contact.append(topic)
 
+
+def correct_joint_names(root, verbose=False):
+    """Correct joint names"""
+    for joint in root.iter('joint'):
+        if verbose:
+            print("joint: {}".format(joint))
+        joint.attrib["name"] = "joint_"+joint.attrib["name"]
+
+
+def add_joint_dynamics(root, verbose=False):
+    """Apply collisions properties"""
+    for joint in root.iter('joint'):
+        if verbose:
+            print("joint: {}".format(joint))
+        if joint.attrib["type"] == "revolute":
+            for axis in joint.iter('axis'):
+                dynamics = etree.Element("dynamics")
+                axis.append(dynamics)
+                damping = etree.Element("damping")
+                damping.text = "0.1"
+                dynamics.append(damping)
+                friction = etree.Element("friction")
+                friction.text = "0"
+                dynamics.append(friction)
+                spring_reference = etree.Element("spring_reference")
+                spring_reference.text = "0"
+                dynamics.append(spring_reference)
+                spring_stiffness = etree.Element("spring_stiffness")
+                spring_stiffness.text = "0.1"
+                dynamics.append(spring_stiffness)
+
+
 def add_force_torque_sensors(root, verbose=False):
     """Apply collisions properties"""
     for joint in root.iter('joint'):
         if verbose:
             print("joint: {}".format(joint))
-        if "name" in joint.attrib:
-            joint.attrib["name"] = "joint_"+joint.attrib["name"]
-            if "_R_3" in joint.attrib["name"] or "_L_3" in joint.attrib["name"]:
-                if verbose:
-                    print("Ankle found: {}".format(joint.attrib["name"]))
-                sensor = etree.Element("sensor")
-                sensor.attrib["name"] = "sensor_{}_{}".format(
-                    "ft",
-                    joint.attrib["name"]
-                )
-                sensor.attrib["type"] = "force_torque"
-                joint.append(sensor)
-                always_on = etree.Element("always_on")
-                always_on.text = "true"
-                sensor.append(always_on)
-                update_rate = etree.Element("update_rate")
-                update_rate.text = "1000"
-                sensor.append(update_rate)
-                visualize = etree.Element("visualize")
-                visualize.text = "true"
-                sensor.append(visualize)
-                # topic = etree.Element("topic")
-                # topic.text = "__default__"
-                # sensor.append(topic)
-                force_torque = etree.Element("force_torque")
-                sensor.append(force_torque)
-                frame = etree.Element("frame")
-                frame.text = "sensor"
-                force_torque.append(frame)
-                measure_direction = etree.Element("measure_direction")
-                measure_direction.text = "child_to_parent"
-                force_torque.append(measure_direction)
+        if "_R_3" in joint.attrib["name"] or "_L_3" in joint.attrib["name"]:
+            if verbose:
+                print("Ankle found: {}".format(joint.attrib["name"]))
+            sensor = etree.Element("sensor")
+            sensor.attrib["name"] = "sensor_{}_{}".format(
+                "ft",
+                joint.attrib["name"]
+            )
+            sensor.attrib["type"] = "force_torque"
+            joint.append(sensor)
+            always_on = etree.Element("always_on")
+            always_on.text = "true"
+            sensor.append(always_on)
+            update_rate = etree.Element("update_rate")
+            update_rate.text = "1000"
+            sensor.append(update_rate)
+            visualize = etree.Element("visualize")
+            visualize.text = "true"
+            sensor.append(visualize)
+            # topic = etree.Element("topic")
+            # topic.text = "__default__"
+            # sensor.append(topic)
+            force_torque = etree.Element("force_torque")
+            sensor.append(force_torque)
+            frame = etree.Element("frame")
+            frame.text = "sensor"
+            force_torque.append(frame)
+            measure_direction = etree.Element("measure_direction")
+            measure_direction.text = "child_to_parent"
+            force_torque.append(measure_direction)
 
 
 def correct_sdf_visuals_materials(root):
@@ -207,6 +246,12 @@ def create_new_model(previous_model, new_model, friction):
     # SDF
     tree = etree.parse(path_sdf_previous)
     root = tree.getroot()
+
+    # Correct joints
+    correct_joint_names(root)
+
+    # Apply joints dynamics
+    add_joint_dynamics(root)
 
     # Collision properties
     apply_collisions_properties(root, friction)
