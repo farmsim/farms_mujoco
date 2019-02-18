@@ -31,11 +31,12 @@ class FrictionParameters:
         return self._body
 
 
-def apply_collisions_properties(root, friction_params):
+def apply_collisions_properties(root, friction_params, verbose=False):
     """Apply collisions properties"""
     for collision in root.iter('collision'):
-        print("collision: {}".format(collision))
-        print("tag: {} attribute: {}".format(collision.tag, collision.attrib))
+        if verbose:
+            print("collision: {}".format(collision))
+            print("tag: {} attribute: {}".format(collision.tag, collision.attrib))
         if "name" in collision.attrib:
             max_contacts = etree.Element("max_contacts")
             max_contacts.text = str(3)
@@ -83,13 +84,15 @@ def apply_collisions_properties(root, friction_params):
             ode.append(min_depth)
 
 
-def add_contact_sensors(root):
+def add_contact_sensors(root, verbose=False):
     """Apply collisions properties"""
     for link in root.iter('link'):
-        print("link: {}".format(link))
+        if verbose:
+            print("link: {}".format(link))
         if "name" in link.attrib:
             if "_R_3" in link.attrib["name"] or "_L_3" in link.attrib["name"]:
-                print("Foot found: {}".format(link.attrib["name"]))
+                if verbose:
+                    print("Foot found: {}".format(link.attrib["name"]))
                 sensor = etree.Element("sensor")
                 sensor.attrib["name"] = "sensor_{}_{}".format(
                     "contact",
@@ -118,14 +121,16 @@ def add_contact_sensors(root):
                 # topic.text = "__default_topic__"
                 # contact.append(topic)
 
-def add_force_torque_sensors(root):
+def add_force_torque_sensors(root, verbose=False):
     """Apply collisions properties"""
     for joint in root.iter('joint'):
-        print("joint: {}".format(joint))
+        if verbose:
+            print("joint: {}".format(joint))
         if "name" in joint.attrib:
             joint.attrib["name"] = "joint_"+joint.attrib["name"]
             if "_R_3" in joint.attrib["name"] or "_L_3" in joint.attrib["name"]:
-                print("Ankle found: {}".format(joint.attrib["name"]))
+                if verbose:
+                    print("Ankle found: {}".format(joint.attrib["name"]))
                 sensor = etree.Element("sensor")
                 sensor.attrib["name"] = "sensor_{}_{}".format(
                     "ft",
@@ -196,8 +201,8 @@ def create_new_model(previous_model, new_model, friction):
     path_models = home + "/.gazebo/models/"
     path_model_previous = path_models+"{}/".format(previous_model)
     path_sdf_previous = path_model_previous+"{}.sdf".format(previous_model)
-    path_model_new = path_models+"{}/".format(new_model)
-    path_sdf_new = path_model_new+"{}.sdf".format(new_model)
+    # path_model_new = path_models+"{}/".format(new_model)
+    # path_sdf_new = path_model_new+"{}.sdf".format(new_model)
 
     # SDF
     tree = etree.parse(path_sdf_previous)
