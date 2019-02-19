@@ -3,13 +3,14 @@
 
 import time
 from multiprocessing import Pool
+import argparse
 
 import pygmo as pg
 import numpy as np
 
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-from matplotlib.animation import FuncAnimation
+import matplotlib.animation as animation
 from matplotlib.colors import LogNorm
 
 
@@ -20,6 +21,7 @@ class QuadraticFunction:
         super(QuadraticFunction, self).__init__()
         self._dim = dim
         self._slow = slow
+        self._name = "Quadratic Function"
 
     @staticmethod
     def fitness_function(decision_vector):
@@ -31,6 +33,10 @@ class QuadraticFunction:
         if self._slow:
             time.sleep(0.5)
         return self.fitness_function(decision_vector)
+
+    def get_name(self):
+        """Get name"""
+        return self._name
 
     @staticmethod
     def get_bounds():
@@ -116,7 +122,7 @@ class JonAlgorithm:
         return pop
 
 
-def plot_fitness(problem, distribution, best=None, figure=None, log=False):
+def plot_fitness(axe, problem, distribution, best=None, log=False):
     """Plot fitess landscape"""
     # x_distribution, y_distribution = (
     #     [
@@ -126,15 +132,15 @@ def plot_fitness(problem, distribution, best=None, figure=None, log=False):
     # )
     # _x, _y = np.meshgrid(distribution[0], distribution[1])
     # _z = np.array([problem(np.array([_i, _j])) for _i, _j in zip(_x, _y)])
-    if figure is not None:
-        plt.figure(figure)
+    # if figure is not None:
+    #     plt.figure(figure)
     _z = np.array([
         [
             problem(np.array([_x, _y]))[0]
             for _y in distribution[1]
         ] for _x in distribution[0]
     ])
-    plt.imshow(
+    image = axe.imshow(
         _z.transpose(), interpolation='bicubic',  # bicubic
         cmap=cm.RdYlGn,
         origin='lower',
@@ -145,9 +151,9 @@ def plot_fitness(problem, distribution, best=None, figure=None, log=False):
         norm=(LogNorm() if log else None)
         # vmax=abs(_z).max(), vmin=-abs(_z).max()
     )
-    plt.colorbar()
+    plt.colorbar(image, ax=axe)
     if best is not None:
-        plt.plot(best[0], best[1], "w*", markersize=20)
+        axe.plot(best[0], best[1], "w*", markersize=20)
 
     # ln, = plt.plot([], [], 'ro', animated=True)
 
@@ -169,10 +175,86 @@ def plot_fitness(problem, distribution, best=None, figure=None, log=False):
     # )
 
 
+class AlgorithmViewer2D:
+    """EvolutionViewer2D"""
+
+    def __init__(self, algorithm, n_pop, n_gen):
+        super(AlgorithmViewer2D, self).__init__()
+
+        self.algorithm = algorithm
+        self.n_pop = n_pop
+        self.n_gen = n_gen
+        self.problems = [
+            QuadraticFunction(dim=2),
+            pg.ackley(dim=2),
+            pg.griewank(dim=2),
+            # pg.hock_schittkowsky_71(dim=2),
+            # pg.inventory(dim=2),
+            # pg.luksan_vlcek1(dim=2),
+            pg.rastrigin(dim=2),
+            # pg.minlp_rastrigin(dim=2),
+            pg.rosenbrock(dim=2),
+            pg.schwefel(dim=2)
+        ]
+        self.viewers = [None for _, _ in enumerate(self.problems)]
+        self.fig, self.axes, self.ani = None, None, None
+        self.name = pg.algorithm(self.algorithm).get_name()
+        self.run_evolutions()
+
+    def run_evolutions(self):
+        """Run evolutions"""
+        self.fig, self.axes = plt.subplots(
+            nrows=2,
+            ncols=3,
+            figsize=(15, 8),
+            num=self.name
+        )
+        self.axes = np.reshape(self.axes, 6)
+        for i, problem in enumerate(self.problems):
+            self.viewers[i] = EvolutionViewer2D(
+                problem=problem,
+                algorithm=self.algorithm,
+                n_pop=self.n_pop,
+                n_gen=self.n_gen,
+                plot_log=isinstance(problem, pg.rosenbrock),
+                ax=self.axes[i]
+            )
+
+    def update_plot(self, frame):
+        """Update plot"""
+        return [
+            item
+            for viewer in self.viewers
+            for item in viewer.update_plot(frame)
+        ]
+
+    def animate(self, write):
+        """Animate"""
+        self.ani = animation.FuncAnimation(
+            self.fig, self.update_plot,
+            frames=np.arange(self.n_gen-1),
+            # init_func=self.init_plot,
+            blit=True,
+            interval=100,
+            repeat=True
+        )
+        if write:
+            writer = animation.writers['ffmpeg'](
+                fps=10,
+                # metadata=dict(artist=''),
+                bitrate=1800
+            )
+            name = self.name.replace(" ", "_")
+            name = name.replace(":", "_")
+            filename = "{}.mp4".format(name)
+            print("Saving to {}".format(filename))
+            self.ani.save(filename, writer=writer)
+
+
 class EvolutionViewer2D:
     """EvolutionViewer2D"""
 
-    def __init__(self, problem, algorithm, n_pop, n_gen, plot_log):
+    def __init__(self, problem, algorithm, n_pop, n_gen, plot_log, **kwargs):
         super(EvolutionViewer2D, self).__init__()
         self.problem = problem
         self._problem = pg.problem(self.problem)
@@ -184,11 +266,15 @@ class EvolutionViewer2D:
         self.pops[0] = pg.population(self._problem, size=n_pop)
         print("Running problem: {}".format(self._problem.get_name()))
         self.evolve()
+        self.axe = kwargs.pop("ax", None)
+        if self.axe is None:
+            _ , self.axe = plt.subplots(1, 1)
         self.plot_fitness()
         self.plot_evolution()
         self.ani = None
         self.fig = plt.gcf()
-        self.animate()
+        self.axe.set_title(self._problem.get_name())
+        # self.animate()
 
     def plot_fitness(self):
         """Plot fitness"""
@@ -196,6 +282,7 @@ class EvolutionViewer2D:
         tic = time.time()
         bounds_min, bounds_max = self._problem.get_bounds()
         plot_fitness(
+            self.axe,
             self._problem.fitness,
             distribution=[
                 np.linspace(bounds_min[0], bounds_max[0], 300),
@@ -206,7 +293,7 @@ class EvolutionViewer2D:
                 if "best_known" in dir(self.problem)
                 else None
             ),
-            figure=self._problem.get_name(),
+            # figure=self._problem.get_name(),
             log=self.plot_log
         )
         toc = time.time()
@@ -238,7 +325,7 @@ class EvolutionViewer2D:
     def plot_generation(self, gen):
         """Plot population"""
         decision_vectors = self.pops[gen+1].get_x()
-        self.ln, = plt.plot(
+        self.ln, = self.axe.plot(
             decision_vectors[:, 0],
             decision_vectors[:, 1],
             "bo"
@@ -250,9 +337,9 @@ class EvolutionViewer2D:
         self.ln.set_data(decision_vectors[:, 0], decision_vectors[:, 1])
         return self.ln,
 
-    def animate(self):
+    def animate(self, write=False):
         """Animate evolution"""
-        self.ani = FuncAnimation(
+        self.ani = animation.FuncAnimation(
             self.fig, self.update_plot,
             frames=np.arange(self.n_gen-1),
             # init_func=self.init_plot,
@@ -260,6 +347,13 @@ class EvolutionViewer2D:
             interval=100,
             repeat=True
         )
+        if write:
+            writer = animation.writers['ffmpeg'](
+                fps=10,
+                # metadata=dict(artist=''),
+                bitrate=1800
+            )
+            self.ani.save('{}.mp4'.format("test"), writer=writer)
 
 
 def main():
@@ -291,8 +385,30 @@ def main():
     # print("Population:\n{}".format(isl.get_population()))
 
 
+def parse_args():
+    """ Parse arguments """
+    parser = argparse.ArgumentParser(description='Test evolution')
+    # parser.add_argument(
+    #     'model_names',
+    #     type=str,
+    #     nargs='+',
+    #     help='Name of Gazebo model to simulate'
+    # )
+    parser.add_argument(
+        "-s", '--save',
+        action='store_true',
+        dest='save',
+        help='Save results'
+    )
+    args = parser.parse_args()
+    return args
+
+
 def main2():
     """Main 2"""
+
+    args = parse_args()
+    algorithms = []
 
     # Population without memory
     kwargs = {"seed": 0}
@@ -303,6 +419,11 @@ def main2():
     # algorithm = pg.bee_colony(gen=1, **kwargs)
     # algorithm = pg.simulated_annealing()
     # algorithm = pg.ihs(gen=1, bw_min=1e-2, **kwargs)
+
+    algorithms.append(pg.de(gen=1, **kwargs))
+    algorithms.append(pg.sea(gen=1, **kwargs))
+    algorithms.append(pg.sga(gen=1, **kwargs))
+    algorithms.append(pg.bee_colony(gen=1, **kwargs))
 
     # Population with memory
     kwargs = {"memory": True, "seed": 0}
@@ -315,7 +436,15 @@ def main2():
     # algorithm = pg.sade(gen=1, xtol=1e0, ftol=1e0, **kwargs)
     # algorithm = pg.sade(gen=1, variant=11, variant_adptv=1, **kwargs)
     # algorithm = pg.sade(gen=1, variant=2, variant_adptv=2, **kwargs)
-    algorithm = pg.de1220(gen=1, **kwargs)
+    # algorithm = pg.de1220(gen=1, **kwargs)
+
+    algorithms.append(pg.pso(gen=1, **kwargs))
+    algorithms.append(pg.sade(gen=1, **kwargs))
+    algorithms.append(pg.de1220(gen=1, **kwargs))
+
+    kwargs = {"memory": True, "seed": 0, "force_bounds": True}
+    algorithms.append(pg.cmaes(gen=1, **kwargs))
+    algorithms.append(pg.xnes(gen=1, **kwargs))
 
     # Multiobjective
     # algorithm = pg.nsga2(gen=1, **kwargs)
@@ -327,28 +456,14 @@ def main2():
     # algorithm = pg.nlopt(solver="bobyqa")
     # algorithm = pg.nlopt(solver="neldermead")
 
-    problems = [
-        QuadraticFunction(dim=2),
-        pg.ackley(dim=2),
-        pg.griewank(dim=2),
-        # pg.hock_schittkowsky_71(dim=2),
-        # pg.inventory(dim=2),
-        # pg.luksan_vlcek1(dim=2),
-        pg.rastrigin(dim=2),
-        # pg.minlp_rastrigin(dim=2),
-        pg.rosenbrock(dim=2),
-        pg.schwefel(dim=2)
+    viewers = [
+        AlgorithmViewer2D(algorithm, n_pop=10, n_gen=100)
+        for algorithm in algorithms
     ]
-    viewers = [None for _, _ in enumerate(problems)]
-    for i, problem in enumerate(problems):
-        viewers[i] = EvolutionViewer2D(
-            problem=problem,
-            algorithm=algorithm,
-            n_pop=10,
-            n_gen=100,
-            plot_log=False if not isinstance(problem, pg.rosenbrock) else True
-        )
-    plt.show()
+    for viewer in viewers:
+        viewer.animate(write=args.save)
+    if not args.save:
+        plt.show()
 
 
 if __name__ == '__main__':
