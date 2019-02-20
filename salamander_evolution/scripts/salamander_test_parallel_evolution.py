@@ -176,14 +176,15 @@ def plot_fitness(axe, problem, distribution, best=None, log=False):
 
 
 class AlgorithmViewer2D:
-    """EvolutionViewer2D"""
+    """AlgorithmViewer2D"""
 
-    def __init__(self, algorithm, n_pop, n_gen):
+    def __init__(self, algorithm, n_pop, n_gen, n_isl):
         super(AlgorithmViewer2D, self).__init__()
 
         self.algorithm = algorithm
         self.n_pop = n_pop
         self.n_gen = n_gen
+        self.n_isl = n_isl
         self.problems = [
             QuadraticFunction(dim=2),
             pg.ackley(dim=2),
@@ -216,6 +217,7 @@ class AlgorithmViewer2D:
                 algorithm=self.algorithm,
                 n_pop=self.n_pop,
                 n_gen=self.n_gen,
+                n_isl=self.n_isl,
                 plot_log=isinstance(problem, pg.rosenbrock),
                 ax=self.axes[i]
             )
@@ -254,16 +256,19 @@ class AlgorithmViewer2D:
 class EvolutionViewer2D:
     """EvolutionViewer2D"""
 
-    def __init__(self, problem, algorithm, n_pop, n_gen, plot_log, **kwargs):
+    def __init__(self, problem, algorithm, n_pop, n_gen, n_isl, plot_log, **kwargs):
         super(EvolutionViewer2D, self).__init__()
         self.problem = problem
         self._problem = pg.problem(self.problem)
         self.algorithm = pg.algorithm(algorithm)
         self.n_pop = n_pop
         self.n_gen = n_gen
+        self.n_isl = n_isl
         self.plot_log = plot_log
-        self.pops = [None for i in range(self.n_gen)]
-        self.pops[0] = pg.population(self._problem, size=n_pop)
+        self.pops = [[None for _ in range(self.n_gen)] for _ in range(n_isl)]
+        self.pop_plots = None
+        for j_isl in range(n_isl):
+            self.pops[j_isl][0] = pg.population(self._problem, size=n_pop)
         print("Running problem: {}".format(self._problem.get_name()))
         self.evolve()
         self.axe = kwargs.pop("ax", None)
@@ -303,21 +308,27 @@ class EvolutionViewer2D:
         """Evolve"""
         print("  Running evolution", end="", flush=True)
         tic = time.time()
-        isl = pg.island(
-            algo=self.algorithm,
-            pop=self.pops[0],
-            udi=pg.mp_island()
-        )
+        islands = [
+            pg.island(
+                algo=self.algorithm,
+                pop=pop[0],
+                udi=pg.mp_island()
+            )
+            for pop in self.pops
+        ]
         for gen in range(self.n_gen-1):
-            isl.evolve()
-            isl.wait()
-            self.pops[gen+1] = isl.get_population()
+            for i_isl, isl in enumerate(islands):
+                isl.evolve()
+            for i_isl, isl in enumerate(islands):
+                isl.wait()
+            for i_isl, isl in enumerate(islands):
+                self.pops[i_isl][gen+1] = isl.get_population()
             # self.pops[gen+1] = self.algorithm.evolve(self.pops[gen])
         toc = time.time()
         print(" (time: {} [s])".format(toc-tic))
         print("  Number of evaluations: {}".format([
             pop.problem.get_fevals()
-            for pop in self.pops
+            for pop in self.pops[0]
         ][-1]))
 
     def plot_evolution(self):
@@ -331,19 +342,23 @@ class EvolutionViewer2D:
         print(" (time: {} [s])".format(toc-tic))
 
     def plot_generation(self, gen):
-        """Plot population"""
-        decision_vectors = self.pops[gen+1].get_x()
-        self.ln, = self.axe.plot(
-            decision_vectors[:, 0],
-            decision_vectors[:, 1],
-            "bo"
-        )
+        """Plot population for a specific generation"""
+        pops_size = len(self.pops)
+        self.pop_plots = [
+            self.axe.plot(
+                pop[gen+1].get_x()[:, 0],
+                pop[gen+1].get_x()[:, 1],
+                "C{}o".format(pops_size-i)
+            )[0]
+            for i, pop in enumerate(self.pops)
+        ]
 
     def update_plot(self, frame):
-        """Plot population"""
-        decision_vectors = self.pops[frame+1].get_x()
-        self.ln.set_data(decision_vectors[:, 0], decision_vectors[:, 1])
-        return self.ln,
+        """Update population plot"""
+        for i, pop_plot in enumerate(self.pop_plots):
+            decision_vectors = self.pops[i][frame].get_x()
+            pop_plot.set_data(decision_vectors[:, 0], decision_vectors[:, 1])
+        return self.pop_plots
 
     def animate(self, write=False):
         """Animate evolution"""
@@ -465,7 +480,7 @@ def main2():
     # algorithm = pg.nlopt(solver="neldermead")
 
     viewers = [
-        AlgorithmViewer2D(algorithm, n_pop=10, n_gen=100)
+        AlgorithmViewer2D(algorithm, n_pop=10, n_gen=100, n_isl=8)
         for algorithm in algorithms
     ]
     for viewer in viewers:
