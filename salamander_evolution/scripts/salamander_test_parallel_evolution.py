@@ -303,8 +303,16 @@ class EvolutionViewer2D:
         """Evolve"""
         print("  Running evolution", end="", flush=True)
         tic = time.time()
+        isl = pg.island(
+            algo=self.algorithm,
+            pop=self.pops[0],
+            udi=pg.mp_island()
+        )
         for gen in range(self.n_gen-1):
-            self.pops[gen+1] = self.algorithm.evolve(self.pops[gen])
+            isl.evolve()
+            isl.wait()
+            self.pops[gen+1] = isl.get_population()
+            # self.pops[gen+1] = self.algorithm.evolve(self.pops[gen])
         toc = time.time()
         print(" (time: {} [s])".format(toc-tic))
         print("  Number of evaluations: {}".format([
