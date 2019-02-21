@@ -321,8 +321,24 @@ class EvolutionViewer2D:
                 isl.evolve()
             for i_isl, isl in enumerate(islands):
                 isl.wait()
+            # Save population
             for i_isl, isl in enumerate(islands):
                 self.pops[i_isl][gen+1] = isl.get_population()
+            # Migrate
+            if not gen % 10:
+                for i_isl, isl in enumerate(islands[:-1]):
+                    worst = self.pops[i_isl+1][gen+1].worst_idx()
+                    self.pops[i_isl+1][gen+1].set_xf(
+                        worst,
+                        self.pops[i_isl][gen+1].champion_x,
+                        self.pops[i_isl][gen+1].champion_f
+                    )
+            worst = self.pops[0][gen+1].worst_idx()
+            self.pops[0][gen+1].set_xf(
+                worst,
+                self.pops[-1][gen+1].champion_x,
+                self.pops[-1][gen+1].champion_f
+            )
             # self.pops[gen+1] = self.algorithm.evolve(self.pops[gen])
         toc = time.time()
         print(" (time: {} [s])".format(toc-tic))
@@ -478,6 +494,10 @@ def main2():
     # algorithm = pg.nlopt(solver="cobyla")
     # algorithm = pg.nlopt(solver="bobyqa")
     # algorithm = pg.nlopt(solver="neldermead")
+
+    # algorithms = []
+    # kwargs = {"memory": True, "seed": 0}
+    # algorithms.append(pg.sade(gen=1, **kwargs))
 
     viewers = [
         AlgorithmViewer2D(algorithm, n_pop=10, n_gen=100, n_isl=8)
