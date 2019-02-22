@@ -35,23 +35,18 @@ def main(n_threads=8):
     args = parse_args()
 
     kwargs = {"memory": True, "seed": 0}
-    algorithms = [[
+    algorithms = [
         pg.sade(gen=1, variant=variant+1, **kwargs)
         for variant in range(8)
-    ]]
+    ]
 
     # Instantiate viewers
-    viewers = [
-        AlgorithmViewer2D(_algorithms, n_pop=10, n_gen=100)
-        for _algorithms in algorithms
-    ]
+    viewer = AlgorithmViewer2D(algorithms, n_pop=10, n_gen=100)
     # Run evolutions
     print("Running archipelago evolutions")
-    for viewer in viewers:
-        viewer.run_evolutions()
+    viewer.run_evolutions()
     # Animate
-    for viewer in viewers:
-        viewer.animate(write=args.save)
+    viewer.animate(write=args.save)
     # Save
     if not args.save:
         plt.show()
