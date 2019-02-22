@@ -40,7 +40,7 @@ class AlgorithmViewer2D:
         self.fig, self.axes, self.ani = None, None, None
         self.name = pg.algorithm(self.algorithms[0]).get_name()
 
-    def run_evolutions(self):
+    def run_evolutions(self, migration=None):
         """Run evolutions"""
         self.fig, self.axes = plt.subplots(
             nrows=2,
@@ -56,7 +56,8 @@ class AlgorithmViewer2D:
                 n_pop=self.n_pop,
                 n_gen=self.n_gen,
                 plot_log=isinstance(problem, pg.rosenbrock),
-                ax=self.axes[i]
+                ax=self.axes[i],
+                migration=migration
             )
 
     def update_plot(self, frame):
