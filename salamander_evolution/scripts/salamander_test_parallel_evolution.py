@@ -178,13 +178,12 @@ def plot_fitness(axe, problem, distribution, best=None, log=False):
 class AlgorithmViewer2D:
     """AlgorithmViewer2D"""
 
-    def __init__(self, algorithm, n_pop, n_gen, n_isl):
+    def __init__(self, algorithms, n_pop, n_gen):
         super(AlgorithmViewer2D, self).__init__()
 
-        self.algorithm = algorithm
+        self.algorithms = algorithms
         self.n_pop = n_pop
         self.n_gen = n_gen
-        self.n_isl = n_isl
         self.problems = [
             QuadraticFunction(dim=2),
             pg.ackley(dim=2),
@@ -199,8 +198,7 @@ class AlgorithmViewer2D:
         ]
         self.viewers = [None for _, _ in enumerate(self.problems)]
         self.fig, self.axes, self.ani = None, None, None
-        self.name = pg.algorithm(self.algorithm).get_name()
-        self.run_evolutions()
+        self.name = pg.algorithm(self.algorithms[0]).get_name()
 
     def run_evolutions(self):
         """Run evolutions"""
@@ -214,10 +212,9 @@ class AlgorithmViewer2D:
         for i, problem in enumerate(self.problems):
             self.viewers[i] = EvolutionViewer2D(
                 problem=problem,
-                algorithm=self.algorithm,
+                algorithms=self.algorithms,
                 n_pop=self.n_pop,
                 n_gen=self.n_gen,
-                n_isl=self.n_isl,
                 plot_log=isinstance(problem, pg.rosenbrock),
                 ax=self.axes[i]
             )
@@ -253,24 +250,86 @@ class AlgorithmViewer2D:
             self.ani.save(filename, writer=writer)
 
 
-class EvolutionViewer2D:
-    """EvolutionViewer2D"""
+class ArchiEvolution:
+    """ArchiEvolution"""
 
-    def __init__(self, problem, algorithm, n_pop, n_gen, n_isl, plot_log, **kwargs):
-        super(EvolutionViewer2D, self).__init__()
+    def __init__(self, problem, algorithms, n_pop, n_gen, **kwargs):
+        super(ArchiEvolution, self).__init__()
         self.problem = problem
         self._problem = pg.problem(self.problem)
-        self.algorithm = pg.algorithm(algorithm)
+        self.algorithms = [
+            pg.algorithm(algorithm)
+            for algorithm in algorithms
+        ]
         self.n_pop = n_pop
         self.n_gen = n_gen
-        self.n_isl = n_isl
-        self.plot_log = plot_log
-        self.pops = [[None for _ in range(self.n_gen)] for _ in range(n_isl)]
-        self.pop_plots = None
-        for j_isl in range(n_isl):
+        self.n_isl = len(algorithms)
+        self.pops = [
+            [None for _ in range(self.n_gen)]
+            for _ in range(self.n_isl)
+        ]
+        for j_isl in range(self.n_isl):
             self.pops[j_isl][0] = pg.population(self._problem, size=n_pop)
         print("Running problem: {}".format(self._problem.get_name()))
+        self._migrate = kwargs.pop("migrate", False)
         self.evolve()
+
+    def evolve(self):
+        """Evolve"""
+        print("  Running evolution", end="", flush=True)
+        tic = time.time()
+        self.islands = [
+            pg.island(
+                algo=algorithm,
+                pop=pop[0],
+                udi=pg.mp_island()
+            )
+            for algorithm, pop in zip(self.algorithms, self.pops)
+        ]
+        for gen in range(self.n_gen-1):
+            for i_isl, isl in enumerate(self.islands):
+                isl.evolve()
+            for i_isl, isl in enumerate(self.islands):
+                isl.wait()
+            # Save population
+            for i_isl, isl in enumerate(self.islands):
+                self.pops[i_isl][gen+1] = isl.get_population()
+            # Migrate
+            if self._migrate:
+                if not gen % 10:
+                    self.migrate(gen)
+            # self.pops[gen+1] = self.algorithm.evolve(self.pops[gen])
+        toc = time.time()
+        print(" (time: {} [s])".format(toc-tic))
+        print("  Number of evaluations: {}".format([
+            pop.problem.get_fevals()
+            for pop in self.pops[0]
+        ][-1]))
+
+    def migrate(self, gen):
+        """Migrate"""
+        for i_isl, _ in enumerate(self.islands[:-1]):
+            worst = self.pops[i_isl+1][gen+1].worst_idx()
+            self.pops[i_isl+1][gen+1].set_xf(
+                worst,
+                self.pops[i_isl][gen+1].champion_x,
+                self.pops[i_isl][gen+1].champion_f
+            )
+        worst = self.pops[0][gen+1].worst_idx()
+        self.pops[0][gen+1].set_xf(
+            worst,
+            self.pops[-1][gen+1].champion_x,
+            self.pops[-1][gen+1].champion_f
+        )
+
+
+class EvolutionViewer2D(ArchiEvolution):
+    """EvolutionViewer2D"""
+
+    def __init__(self, problem, algorithms, n_pop, n_gen, plot_log, **kwargs):
+        super(EvolutionViewer2D, self).__init__(problem, algorithms, n_pop, n_gen, **kwargs)
+        self.plot_log = plot_log
+        self.pop_plots = None
         self.axe = kwargs.pop("ax", None)
         if self.axe is None:
             _ , self.axe = plt.subplots(1, 1)
@@ -303,49 +362,6 @@ class EvolutionViewer2D:
         )
         toc = time.time()
         print(" (time: {} [s])".format(toc-tic))
-
-    def evolve(self):
-        """Evolve"""
-        print("  Running evolution", end="", flush=True)
-        tic = time.time()
-        islands = [
-            pg.island(
-                algo=self.algorithm,
-                pop=pop[0],
-                udi=pg.mp_island()
-            )
-            for pop in self.pops
-        ]
-        for gen in range(self.n_gen-1):
-            for i_isl, isl in enumerate(islands):
-                isl.evolve()
-            for i_isl, isl in enumerate(islands):
-                isl.wait()
-            # Save population
-            for i_isl, isl in enumerate(islands):
-                self.pops[i_isl][gen+1] = isl.get_population()
-            # Migrate
-            if not gen % 10:
-                for i_isl, isl in enumerate(islands[:-1]):
-                    worst = self.pops[i_isl+1][gen+1].worst_idx()
-                    self.pops[i_isl+1][gen+1].set_xf(
-                        worst,
-                        self.pops[i_isl][gen+1].champion_x,
-                        self.pops[i_isl][gen+1].champion_f
-                    )
-            worst = self.pops[0][gen+1].worst_idx()
-            self.pops[0][gen+1].set_xf(
-                worst,
-                self.pops[-1][gen+1].champion_x,
-                self.pops[-1][gen+1].champion_f
-            )
-            # self.pops[gen+1] = self.algorithm.evolve(self.pops[gen])
-        toc = time.time()
-        print(" (time: {} [s])".format(toc-tic))
-        print("  Number of evaluations: {}".format([
-            pop.problem.get_fevals()
-            for pop in self.pops[0]
-        ][-1]))
 
     def plot_evolution(self):
         """Evolve"""
@@ -443,11 +459,17 @@ def parse_args():
     return args
 
 
+def run_evolutions(viewer):
+    """Run evolution"""
+    viewer.run_evolutions()
+
+
 def main2():
     """Main 2"""
 
     args = parse_args()
     algorithms = []
+    n_threads = 8
 
     # Population without memory
     kwargs = {"seed": 0}
@@ -459,10 +481,10 @@ def main2():
     # algorithm = pg.simulated_annealing()
     # algorithm = pg.ihs(gen=1, bw_min=1e-2, **kwargs)
 
-    algorithms.append(pg.de(gen=1, **kwargs))
-    algorithms.append(pg.sea(gen=1, **kwargs))
-    algorithms.append(pg.sga(gen=1, **kwargs))
-    algorithms.append(pg.bee_colony(gen=1, **kwargs))
+    algorithms.append([pg.de(gen=1, **kwargs) for _ in range(n_threads)])
+    algorithms.append([pg.sea(gen=1, **kwargs) for _ in range(n_threads)])
+    algorithms.append([pg.sga(gen=1, **kwargs) for _ in range(n_threads)])
+    algorithms.append([pg.bee_colony(gen=1, **kwargs) for _ in range(n_threads)])
 
     # Population with memory
     kwargs = {"memory": True, "seed": 0}
@@ -477,13 +499,13 @@ def main2():
     # algorithm = pg.sade(gen=1, variant=2, variant_adptv=2, **kwargs)
     # algorithm = pg.de1220(gen=1, **kwargs)
 
-    algorithms.append(pg.pso(gen=1, **kwargs))
-    algorithms.append(pg.sade(gen=1, **kwargs))
-    algorithms.append(pg.de1220(gen=1, **kwargs))
+    # algorithms.append([pg.pso(gen=1, **kwargs) for _ in range(n_threads)])
+    # algorithms.append([pg.sade(gen=1, **kwargs) for _ in range(n_threads)])
+    # algorithms.append([pg.de1220(gen=1, **kwargs) for _ in range(n_threads)])
 
-    kwargs = {"memory": True, "seed": 0, "force_bounds": True}
-    algorithms.append(pg.cmaes(gen=1, **kwargs))
-    algorithms.append(pg.xnes(gen=1, **kwargs))
+    # kwargs = {"memory": True, "seed": 0, "force_bounds": True}
+    # algorithms.append([pg.cmaes(gen=1, **kwargs) for _ in range(n_threads)])
+    # algorithms.append([pg.xnes(gen=1, **kwargs) for _ in range(n_threads)])
 
     # Multiobjective
     # algorithm = pg.nsga2(gen=1, **kwargs)
@@ -497,14 +519,27 @@ def main2():
 
     # algorithms = []
     # kwargs = {"memory": True, "seed": 0}
-    # algorithms.append(pg.sade(gen=1, **kwargs))
+    # algorithms.append([
+    #     pg.sade(gen=1, variant=variant//2+1, **kwargs)
+    #     for variant in range(8)
+    # ])
 
+    # Instantiate viewers
     viewers = [
-        AlgorithmViewer2D(algorithm, n_pop=10, n_gen=100, n_isl=8)
-        for algorithm in algorithms
+        AlgorithmViewer2D(_algorithms, n_pop=10, n_gen=100)
+        for _algorithms in algorithms
     ]
+    print("Running islands")
+    # Run evolutions
+    for viewer in viewers:
+        viewer.run_evolutions()
+    # from multiprocessing import Pool
+    # p = Pool(4)
+    # print(p.map(run_evolutions, viewers))
+    # Animate
     for viewer in viewers:
         viewer.animate(write=args.save)
+    # Save
     if not args.save:
         plt.show()
 
