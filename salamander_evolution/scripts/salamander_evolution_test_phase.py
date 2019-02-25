@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from salamander_evolution.archipelago import ArchiEvolution
+from salamander_evolution.migration import RingMigration
 
 
 class SineModel:
@@ -41,12 +42,11 @@ class SineModel:
             ) + self.offset
         )
 
-    def plot(self, label, start, end, style="-"):
+    def plot(self, label, xdata, style="-"):
         """Plot"""
-        xdata = np.linspace(start, end, 3e3)
         plt.plot(xdata, self.data(xdata), style, label=label)
         plt.xlabel("Time [s]")
-        plt.ylabel("Data")
+        plt.ylabel("Amplitude")
         plt.legend()
         plt.grid(True)
 
@@ -78,14 +78,31 @@ class NSineModel:
         """Data"""
         return np.sum([sine.data(xdata) for sine in self.sines], axis=0)
 
-    def plot(self, label, start, end, style="-"):
+    def plot(self, label, xdata, style="-"):
         """Plot"""
-        xdata = np.linspace(start, end, 3e3)
         plt.plot(xdata, self.data(xdata), style, label=label)
         plt.xlabel("Time [s]")
-        plt.ylabel("Data")
+        plt.ylabel("Amplitude")
         plt.legend()
         plt.grid(True)
+
+    def plot_frquency_response(self, figurename, *args, **kwargs):
+        """Plot frequency response"""
+        response = np.array([
+            [sine.frequency, sine.amplitude, sine.phase]
+            for sine in self.sines
+        ])
+        sort = np.argsort(response[:, 0])
+        response = response[sort]
+        _, ax = plt.subplots(nrows=2, ncols=1, sharex=True, num=figurename)
+        ax[0].plot(response[:, 0], response[:, 1], *args, **kwargs)
+        ax[0].set_xlabel("Frequency [Hz]")
+        ax[0].set_ylabel("Amplitude")
+        ax[0].grid(True)
+        ax[1].plot(response[:, 0], response[:, 2], *args, **kwargs)
+        ax[1].set_xlabel("Frequency [Hz]")
+        ax[1].set_ylabel("Phase [rad]")
+        ax[1].grid(True)
 
 
 class SineFitting:
@@ -117,7 +134,7 @@ class SineFitting:
         """Get bounds"""
         return (
             [0, 0, 0, -100],
-            [100, self._max_freq, 2*np.pi, 100],
+            [10, 10, 2*np.pi, 100],
         )
 
     def best_known(self):
@@ -135,10 +152,10 @@ class NSineFitting:
         self.xdata = xdata
         self._data = (
             nsines.data(xdata)
-            # + np.random.normal(0, 0.1*self._nsines.amplitude, np.size(xdata))
+            + np.random.normal(0, 1e-1, np.size(xdata))
         )
         self._name = "Nsines fitting"
-        self._max_freq = 0.5*len(xdata)/(xdata[-1] - xdata[0])
+        # self._max_freq = 0.5*len(xdata)/(xdata[-1] - xdata[0])
 
     def fitness(self, decision_vector):
         """Fitness"""
@@ -156,7 +173,7 @@ class NSineFitting:
         return (
             np.concatenate([[0, 0, 0, -100] for _ in range(self._size)]),
             np.concatenate([
-                [100, self._max_freq, 2*np.pi, 100]
+                [100, 6, 2*np.pi, 100]
                 for _ in range(self._size)
             ])
         )
@@ -169,13 +186,13 @@ class NSineFitting:
 def main():
     """Main"""
 
-    problem_size = 2
+    problem_size = 3
 
     # Original data
-    amplitudes = [10*np.random.ranf() for _ in range(problem_size)]
-    freqs = [10*np.random.ranf() for _ in range(problem_size)]
+    amplitudes = [5*np.random.ranf() for _ in range(problem_size)]
+    freqs = [5*np.random.ranf() for _ in range(problem_size)]
     phases = [2*np.pi*np.random.ranf() for _ in range(problem_size)]
-    offsets = [10*np.random.ranf() for _ in range(problem_size)]
+    offsets = [5*np.random.ranf() for _ in range(problem_size)]
     models = [
         SineModel(amplitudes[i], freqs[i], phases[i], offsets[i])
         for i in range(problem_size)
@@ -185,8 +202,8 @@ def main():
 
     # Model
     kwargs = {"memory": True, "seed": 0}
-    n_threads = 4
-    algorithms = [pg.sade(gen=1, **kwargs) for _ in range(n_threads)]
+    n_threads = 8
+    algorithms = [pg.sade(gen=300, **kwargs) for _ in range(n_threads)]
 
     # Optimisation problem
     problem = NSineFitting(nmodels, xdata)
@@ -197,13 +214,19 @@ def main():
         problem=problem,
         algorithms=algorithms,
         n_pop=10,
-        n_gen=300
+        n_gen=10,
+        migration=RingMigration(
+            n_islands=n_threads,
+            p_migrate_backward=1,
+            p_migrate_forward=1
+        )
     )
 
     # Result
     print("Evolution complete, getting result")
     champion = evolution.champion()
     fit_model = NSineModel.from_vector(champion[0])
+    print("Champion (fitness={}):\n{}".format(champion[1], champion[0]))
     # champion = evolution.champion()
     # fit_model = SineModel.from_vector(champion[0])
     # message = (
@@ -220,8 +243,11 @@ def main():
     #     np.abs(model.phase - fit_model.phase) % (2*np.pi),
     #     np.abs(model.offset - fit_model.offset)
     # ))
-    nmodels.plot("Original data", xdata[0], xdata[-1], ".-")
-    fit_model.plot("Fitted data", xdata[0], xdata[-1], "-")
+    plt.figure("Model fit")
+    nmodels.plot("Original model", np.linspace(xdata[0], xdata[-1], 3e3))
+    fit_model.plot("Fitted data", np.linspace(xdata[0], xdata[-1], 3e3))
+    nmodels.plot("Original data", xdata, "r.")
+    fit_model.plot_frquency_response("Frequency response", "-o")
     plt.show()
 
 
