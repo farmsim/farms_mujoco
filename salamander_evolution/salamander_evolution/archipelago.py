@@ -3,6 +3,7 @@
 import time
 
 import pygmo as pg
+import numpy as np
 
 
 class ArchiEvolution:
@@ -65,3 +66,15 @@ class ArchiEvolution:
         print("  Number of evaluations: {}".format(
             self.pops[0][-1].problem.get_fevals()
         ))
+
+    def champion(self):
+        """Best solution"""
+        champions = self.champions()
+        return champions[np.argmin(champions[:, 1])]
+
+    def champions(self):
+        """Best solutions"""
+        return np.array([
+            [pop[-1].champion_x, pop[-1].champion_f]
+            for pop in self.pops
+        ])
