@@ -10,6 +10,8 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 
+#include <gazebo/sensors/sensors.hh>
+
 #include <math.h>
 #include <yaml-cpp/yaml.h>
 
@@ -24,7 +26,8 @@ public:
         {
             this->model = model;
             this->parameters = get_parameters(sdf);
-            this->filename = getenv("HOME")+this->parameters["filename"].as<std::string>();
+            // getenv("HOME")+
+            this->filename = this->parameters["filename"].as<std::string>();
 
             // Links
             YAML::Node _links = this->parameters["links"];
@@ -143,7 +146,7 @@ public:
     void dump()
         {
             if (this->verbose)
-                std::cout << "Logging data" << std::endl;
+                std::cout << "Logging data to " << this->filename << std::endl;
             // Serialise and store data
             std::string data;
             std::ofstream myfile;
@@ -221,6 +224,24 @@ namespace gazebo
 
                 // Save pointers
                 this->world_ = this->model->GetWorld();
+
+                // Sensors
+                gazebo::sensors::SensorManager *sensor_mgr = gazebo::sensors::SensorManager::Instance();
+                gazebo::sensors::Sensor_V sensors = sensor_mgr->GetSensors();
+
+                std::cout << "Sensors:" << std::endl;
+                for (auto sensor: sensors)
+                {
+                    std::cout << "  Found sensor " << sensor->Name() << std::endl;
+                }
+                this->lFootContactSensor =
+                    boost::shared_dynamic_cast<sensors::ContactSensor>
+                    (sensors::SensorManager::Instance()->GetSensor(
+                        this->world->GetName() + "::" + this->model->GetScopedName()
+                        + "::l_foot::"
+                        "l_foot_contact_sensor"));
+                if (!this->lFootContactSensor)
+                    gzerr << "l_foot_contact_sensor not found\n" << "\n";
 
                 // Logs
                 this->model_logs = new LogModelKinematics(this->get_time(), _model, _sdf);
