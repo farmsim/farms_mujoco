@@ -276,6 +276,7 @@ def main():
 
     tic = time.time()
     for sim_step in range(int(10/time_step)):
+        tic_rt = time.time()
         sim_time = time_step*sim_step
         controller.control(sim_time)
         # control_robot(robot, joints, sim_time)
@@ -293,6 +294,10 @@ def main():
             cameraPitch=pitch,
             cameraTargetPosition=targetPos
         )
+        toc_rt = time.time()
+        sleep_rt = time_step - (toc_rt - tic_rt)
+        if sleep_rt > 0:
+            time.sleep(sleep_rt)
     toc = time.time()
 
     sim_time = time_step*(sim_step+1)
