@@ -256,12 +256,27 @@ def main():
     # gait = "swimming"
     controller = RobotController.salamander(robot, joints, gait=gait)
 
+    camera_filter = 1e-3
+    targetPos = np.array(pybullet.getBasePositionAndOrientation(robot)[0])
     tic = time.time()
-    for sim_step in range(int(100/time_step)):
+    for sim_step in range(int(10/time_step)):
         sim_time = time_step*sim_step
         controller.control(sim_time)
         # control_robot(robot, joints, sim_time)
         pybullet.stepSimulation()
+        distance, yaw, pitch = 1, 0, -45
+        targetPos = (
+            (1-camera_filter)*targetPos
+            + camera_filter*np.array(
+                pybullet.getBasePositionAndOrientation(robot)[0]
+            )
+        )
+        pybullet.resetDebugVisualizerCamera(
+            cameraDistance=distance,
+            cameraYaw=yaw,
+            cameraPitch=pitch,
+            cameraTargetPosition=targetPos
+        )
     toc = time.time()
 
     sim_time = time_step*(sim_step+1)
