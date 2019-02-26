@@ -21,7 +21,8 @@ public:
     LogControl(gazebo::common::Time time, sdf::ElementPtr sdf)
         {
             this->parameters = get_parameters(sdf);
-            this->filename = getenv("HOME")+this->parameters["logging"]["filename"].as<std::string>();
+            // getenv("HOME")+
+            this->filename = this->parameters["logging"]["filename"].as<std::string>();
 
             // Joints
             YAML::Node _joints = this->parameters["logging"]["joints"];
