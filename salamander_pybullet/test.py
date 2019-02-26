@@ -256,8 +256,24 @@ def main():
     # gait = "swimming"
     controller = RobotController.salamander(robot, joints, gait=gait)
 
+    # Camera
     camera_filter = 1e-3
     targetPos = np.array(pybullet.getBasePositionAndOrientation(robot)[0])
+
+    # PDF parameters
+    pybullet.addUserDebugParameter(
+        paramName="Gait",
+        rangeMin=0,
+        rangeMax=1,
+        startValue=0
+    )
+    pybullet.addUserDebugParameter(
+        paramName="pfd_p",
+        rangeMin=0,
+        rangeMax=10,
+        startValue=0.1
+    )
+
     tic = time.time()
     for sim_step in range(int(10/time_step)):
         sim_time = time_step*sim_step
