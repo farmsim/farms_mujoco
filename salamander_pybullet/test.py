@@ -276,12 +276,38 @@ def camera_view(robot, target_pos=None, **kwargs):
     return target_pos
 
 
+def viscous_swimming(robot, links):
+    """Viscous swimming"""
+    # Swimming
+    for link_i in range(1, 11):
+        link_world_velocity = np.array(
+            pybullet.getLinkState(
+                robot,
+                links["link_body_{}".format(link_i+1)],
+                computeLinkVelocity=1,
+                computeForwardKinematics=1
+            )[6]
+        )
+        pybullet.applyExternalForce(
+            robot,
+            links["link_body_{}".format(link_i+1)],
+            forceObj=[
+                -1e-2*link_world_velocity[0],
+                -1e-1*link_world_velocity[1],
+                -1e-1*link_world_velocity[2],
+            ],
+            posObj=[0, 0, 0],
+            flags=pybullet.LINK_FRAME
+        )
+
+
+
 def main():
     """Main"""
     init_engine()
 
     # Gait
-    gait = "swimming"
+    gait = "walking"
 
     # Physics
     time_step = 1e-3
@@ -331,6 +357,9 @@ def main():
         sim_time = time_step*sim_step
         # Control
         controller.control(sim_time)
+        # Swimming
+        if gait == "swimming":
+            viscous_swimming(robot, links)
         # Physics
         pybullet.stepSimulation()
         # Video recording
