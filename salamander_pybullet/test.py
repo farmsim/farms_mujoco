@@ -192,10 +192,10 @@ def init_engine():
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def init_physics(time_step):
+def init_physics(time_step, gait="walking"):
     """Initialise physics"""
     pybullet.resetSimulation()
-    pybullet.setGravity(0, 0, -9.81)
+    pybullet.setGravity(0, 0, -9.81 if gait == "walking" else 0)
     pybullet.setTimeStep(time_step)
     pybullet.setRealTimeSimulation(0)
 
@@ -205,6 +205,9 @@ def spawn_models():
     robot = pybullet.loadSDF(
         "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf"
     )[0]
+    # robot = pybullet.loadSDF(
+    #     "/home/jonathan/.gazebo/models/biorob_centipede/model.sdf"
+    # )[0]
     plane = pybullet.loadURDF(
         "plane.urdf",
         basePosition=[0, 0, -0.1]
@@ -229,6 +232,13 @@ def get_joints(robot):
     #         pybullet.getJointStates(robot, range(n_joints)),
     #     )
     # }
+    links = {
+        info[12].decode("UTF-8"): info[16]
+        for info in [
+            pybullet.getJointInfo(robot, j)
+            for j in range(n_joints)
+        ]
+    }
     joints = {
         info[1].decode("UTF-8"): info[0]
         for info in [
@@ -236,31 +246,69 @@ def get_joints(robot):
             for j in range(n_joints)
         ]
     }
-    return joints, n_joints
+    return links, joints, n_joints
+
+
+def camera_view(robot, target_pos=None, **kwargs):
+    """Camera view"""
+    camera_filter = kwargs.pop("camera_filter", 1e-3)
+    distance = kwargs.pop("distance", 1)
+    yaw = kwargs.pop("yaw", 0)
+    pitch = kwargs.pop("pitch", -45)
+    target_pos = (
+        (
+            (1-camera_filter)*target_pos
+            + camera_filter*np.array(
+                pybullet.getBasePositionAndOrientation(robot)[0]
+            )
+        )
+        if target_pos is not None
+        else np.array(
+            pybullet.getBasePositionAndOrientation(robot)[0]
+        )
+    )
+    pybullet.resetDebugVisualizerCamera(
+        cameraDistance=distance,
+        cameraYaw=yaw,
+        cameraPitch=pitch,
+        cameraTargetPosition=target_pos
+    )
+    return target_pos
 
 
 def main():
     """Main"""
     init_engine()
 
+    # Gait
+    gait = "swimming"
+
+    # Physics
     time_step = 1e-3
-    init_physics(time_step)
+    init_physics(time_step, gait)
 
+    # Spawn models
     robot, _ = spawn_models()
+    # time.sleep(10)
 
-    joints, _ = get_joints(robot)
+    # Links and joints
+    links, joints, _ = get_joints(robot)
+    print("Links ids:\n{}".format(links))
     print("Joints ids:\n{}".format(joints))
 
     # Controller
-    gait = "walking"
     # gait = "swimming"
-    controller = RobotController.salamander(robot, joints, gait=gait)
+    controller = RobotController.salamander(
+        robot,
+        joints,
+        gait=gait,
+        frequency=1 if gait == "walking" else 2
+    )
 
     # Camera
-    camera_filter = 1e-3
-    targetPos = np.array(pybullet.getBasePositionAndOrientation(robot)[0])
+    target_pos = camera_view(robot)
 
-    # PDF parameters
+    # User parameters
     pybullet.addUserDebugParameter(
         paramName="Gait",
         rangeMin=0,
@@ -268,32 +316,34 @@ def main():
         startValue=0
     )
     pybullet.addUserDebugParameter(
-        paramName="pfd_p",
+        paramName="pdf_p",
         rangeMin=0,
         rangeMax=10,
         startValue=0.1
     )
 
+    # Video recording
+    record = False
+
     tic = time.time()
     for sim_step in range(int(10/time_step)):
         tic_rt = time.time()
         sim_time = time_step*sim_step
+        # Control
         controller.control(sim_time)
-        # control_robot(robot, joints, sim_time)
+        # Physics
         pybullet.stepSimulation()
-        distance, yaw, pitch = 1, 0, -45
-        targetPos = (
-            (1-camera_filter)*targetPos
-            + camera_filter*np.array(
-                pybullet.getBasePositionAndOrientation(robot)[0]
+        # Video recording
+        if record and not sim_step % 30:
+            camera_view(robot, pitch=80)
+            image = pybullet.getCameraImage(
+                width=800,
+                height=600,
+                renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
             )
-        )
-        pybullet.resetDebugVisualizerCamera(
-            cameraDistance=distance,
-            cameraYaw=yaw,
-            cameraPitch=pitch,
-            cameraTargetPosition=targetPos
-        )
+        # User camera
+        target_pos = camera_view(robot, target_pos)
+        # Real-time
         toc_rt = time.time()
         sleep_rt = time_step - (toc_rt - tic_rt)
         if sleep_rt > 0:
