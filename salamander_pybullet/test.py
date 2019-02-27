@@ -314,26 +314,64 @@ def viscous_swimming(robot, links):
         )
 
 
+def record_camera():
+    """Record camera"""
+    image = pybullet.getCameraImage(
+        width=800,
+        height=480,
+        renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
+    )
 
-def main():
-    """Main"""
-    init_engine()
 
-    # Gait
-    gait = "walking"
-
+def init_simulation(time_step, gait="walking"):
+    """Initialise simulation"""
     # Physics
-    time_step = 1e-3
     init_physics(time_step, gait)
 
     # Spawn models
     robot, _ = spawn_models()
-    # time.sleep(10)
 
     # Links and joints
     links, joints, _ = get_joints(robot)
     print("Links ids:\n{}".format(links))
     print("Joints ids:\n{}".format(joints))
+    return robot, links, joints
+
+
+def user_parameters():
+    """User parameters"""
+    pybullet.addUserDebugParameter(
+        paramName="Gait",
+        rangeMin=0,
+        rangeMax=1,
+        startValue=0
+    )
+    pybullet.addUserDebugParameter(
+        paramName="Frequency",
+        rangeMin=0,
+        rangeMax=3,
+        startValue=1
+    )
+    for part in ["body", "legs"]:
+        for pdf in ["p", "d", "f"]:
+            pybullet.addUserDebugParameter(
+                paramName="{}_{}".format(part, pdf),
+                rangeMin=0,
+                rangeMax=10,
+                startValue=0.1
+            )
+
+
+def main():
+    """Main"""
+    init_engine()
+
+    # Parameters
+    gait = "walking"
+    time_step = 1e-3
+
+    # Initialise
+    robot, _, joints = init_simulation(time_step, gait)
 
     # Controller
     # gait = "swimming"
@@ -348,18 +386,7 @@ def main():
     target_pos = camera_view(robot)
 
     # User parameters
-    pybullet.addUserDebugParameter(
-        paramName="Gait",
-        rangeMin=0,
-        rangeMax=1,
-        startValue=0
-    )
-    pybullet.addUserDebugParameter(
-        paramName="pdf_p",
-        rangeMin=0,
-        rangeMax=10,
-        startValue=0.1
-    )
+    user_parameters()
 
     # Video recording
     record = False
@@ -371,18 +398,14 @@ def main():
         # Control
         controller.control(sim_time)
         # Swimming
-        # if gait == "swimming":
-        #     viscous_swimming(robot, links)
+        if gait == "swimming":
+            viscous_swimming(robot, links)
         # Physics
         pybullet.stepSimulation()
         # Video recording
         if record and not sim_step % 30:
             camera_view(robot, pitch=80)
-            image = pybullet.getCameraImage(
-                width=800,
-                height=600,
-                renderer=pybullet.ER_BULLET_HARDWARE_OPENGL
-            )
+            record_camera()
         # User camera
         target_pos = camera_view(robot, target_pos)
         # Real-time
