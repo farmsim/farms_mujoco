@@ -392,6 +392,24 @@ def main():
     record = False
 
     tic = time.time()
+    pybullet.addUserDebugLine(
+        lineFromXYZ=[0, 0, -0.09],
+        lineToXYZ=[-3, 0, -0.09],
+        lineColorRGB=[0.1, 0.5, 0.9],
+        lineWidth=10,
+        lifeTime=0
+    )
+    text = pybullet.addUserDebugText(
+        text="Lunch!!",
+        textPosition=[-2.5, 0.1, -0.09],
+        textColorRGB=[0, 0, 0],
+        textSize=1,
+        lifeTime=0,
+        textOrientation=[0, 0, 0, 1],
+        # parentObjectUniqueId
+        # parentLinkIndex
+        # replaceItemUniqueId
+    )
     for sim_step in range(int(10/time_step)):
         tic_rt = time.time()
         sim_time = time_step*sim_step
