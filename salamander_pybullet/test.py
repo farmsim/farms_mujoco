@@ -355,7 +355,7 @@ def user_parameters():
         rangeMax=1,
         startValue=0
     )
-    pybullet.addUserDebugParameter(
+    freq_id = pybullet.addUserDebugParameter(
         paramName="Frequency",
         rangeMin=0,
         rangeMax=3,
@@ -369,38 +369,11 @@ def user_parameters():
                 rangeMax=10,
                 startValue=0.1
             )
+    return freq_id
 
 
-def main():
-    """Main"""
-    init_engine()
-
-    # Parameters
-    gait = "walking"
-    time_step = 1e-3
-
-    # Initialise
-    robot, _, joints = init_simulation(time_step, gait)
-
-    # Controller
-    # gait = "swimming"
-    controller = RobotController.salamander(
-        robot,
-        joints,
-        gait=gait,
-        frequency=1 if gait == "walking" else 2
-    )
-
-    # Camera
-    target_pos = camera_view(robot)
-
-    # User parameters
-    user_parameters()
-
-    # Video recording
-    record = False
-
-    tic = time.time()
+def test_debug_info():
+    """Test debug info"""
     pybullet.addUserDebugLine(
         lineFromXYZ=[0, 0, -0.09],
         lineToXYZ=[-3, 0, -0.09],
@@ -409,8 +382,8 @@ def main():
         lifeTime=0
     )
     text = pybullet.addUserDebugText(
-        text="Lunch!!",
-        textPosition=[-2.5, 0.1, -0.09],
+        text="BIOROB",
+        textPosition=[-3, 0.1, -0.09],
         textColorRGB=[0, 0, 0],
         textSize=1,
         lifeTime=0,
@@ -419,10 +392,56 @@ def main():
         # parentLinkIndex
         # replaceItemUniqueId
     )
+
+
+def main():
+    """Main"""
+    init_engine()
+
+    # Parameters
+    gait = "walking"
+    # gait = "swimming"
+    time_step = 1e-3
+
+    # Initialise
+    robot, _, joints = init_simulation(time_step, gait)
+
+    # Controller
+    frequency = 1 if gait == "walking" else 2
+    controller = RobotController.salamander(
+        robot,
+        joints,
+        gait=gait,
+        frequency=frequency
+    )
+
+    # Camera
+    target_pos = camera_view(robot)
+
+    # User parameters
+    freq_id = user_parameters()
+
+    # Video recording
+    record = False
+
+    # Debug info
+    test_debug_info()
+
+    # Run simulation
+    tic = time.time()
     for sim_step in range(int(10/time_step)):
         tic_rt = time.time()
         sim_time = time_step*sim_step
         # Control
+        new_freq = pybullet.readUserDebugParameter(freq_id)
+        if frequency != new_freq:
+            frequency = new_freq
+            controller = RobotController.salamander(
+                robot,
+                joints,
+                gait=gait,
+                frequency=frequency
+            )
         controller.control(sim_time)
         # Swimming
         if gait == "swimming":
