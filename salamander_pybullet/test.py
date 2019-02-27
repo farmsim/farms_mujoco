@@ -118,8 +118,6 @@ class RobotController:
                 ),
                 pdf=(
                     ControlPDF(p=1e-1, d=1e0, f=1e1)
-                    if gait == "walking"
-                    else ControlPDF(p=1e-1, d=1e0, f=1e1)
                 )
             )
             for joint_i in range(n_body_joints)
@@ -277,24 +275,39 @@ def camera_view(robot, target_pos=None, **kwargs):
 
 
 def viscous_swimming(robot, links):
-    """Viscous swimming"""
+    """Viscous swimming
+
+    TODO: CORRECT LOCAL/WORLD FRAME
+
+    """
     # Swimming
     for link_i in range(1, 11):
-        link_world_velocity = np.array(
-            pybullet.getLinkState(
-                robot,
-                links["link_body_{}".format(link_i+1)],
-                computeLinkVelocity=1,
-                computeForwardKinematics=1
-            )[6]
+        link_state = pybullet.getLinkState(
+            robot,
+            links["link_body_{}".format(link_i+1)],
+            computeLinkVelocity=1,
+            computeForwardKinematics=1
         )
+        link_velocity = link_state[6]
+        link_angular_velocity = link_state[7]
         pybullet.applyExternalForce(
             robot,
             links["link_body_{}".format(link_i+1)],
             forceObj=[
-                -1e-2*link_world_velocity[0],
-                -1e-1*link_world_velocity[1],
-                -1e-1*link_world_velocity[2],
+                -1e-2*link_velocity[0],
+                -1e-1*link_velocity[1],
+                -1e-1*link_velocity[2],
+            ],
+            posObj=[0, 0, 0],
+            flags=pybullet.LINK_FRAME
+        )
+        pybullet.applyExternalTorque(
+            robot,
+            links["link_body_{}".format(link_i+1)],
+            forceObj=[
+                link_angular_velocity[0],
+                link_angular_velocity[1],
+                link_angular_velocity[2]
             ],
             posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
@@ -358,8 +371,8 @@ def main():
         # Control
         controller.control(sim_time)
         # Swimming
-        if gait == "swimming":
-            viscous_swimming(robot, links)
+        # if gait == "swimming":
+        #     viscous_swimming(robot, links)
         # Physics
         pybullet.stepSimulation()
         # Video recording
