@@ -431,6 +431,12 @@ def main():
         sleep_rt = time_step - (toc_rt - tic_rt)
         if sleep_rt > 0:
             time.sleep(sleep_rt)
+        else:
+            print(
+                "Slower than real-time: {} %".format(
+                (1 - sleep_rt/time_step)*100
+                )
+            )
     toc = time.time()
 
     sim_time = time_step*(sim_step+1)
