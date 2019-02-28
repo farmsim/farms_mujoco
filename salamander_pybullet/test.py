@@ -385,6 +385,12 @@ def init_simulation(time_step, gait="walking"):
 
 def user_parameters():
     """User parameters"""
+    rtl_id = pybullet.addUserDebugParameter(
+        paramName="Real-time limiter",
+        rangeMin=1e-3,
+        rangeMax=3,
+        startValue=1
+    )
     pybullet.addUserDebugParameter(
         paramName="Gait",
         rangeMin=0,
@@ -405,7 +411,7 @@ def user_parameters():
                 rangeMax=10,
                 startValue=0.1
             )
-    return freq_id
+    return freq_id, rtl_id
 
 
 def test_debug_info():
@@ -459,7 +465,7 @@ def main():
     target_pos = camera_view(robot)
 
     # User parameters
-    freq_id = user_parameters()
+    freq_id, rtl_id = user_parameters()
 
     # Video recording
     record = False
@@ -505,16 +511,14 @@ def main():
             target_pos = camera_view(robot, target_pos, yaw=yaw)
         # Real-time
         toc_rt = time.time()
-        sleep_rt = time_step - (toc_rt - tic_rt)
         if not clargs.fast:
-            if sleep_rt > 0:
-                time.sleep(sleep_rt)
-            else:
-                print(
-                    "Slower than real-time: {} %".format(
-                    (1 - sleep_rt/time_step)*100
-                    )
-                )
+            rtl = pybullet.readUserDebugParameter(rtl_id)
+            sleep_rtl = time_step/rtl - (toc_rt - tic_rt)
+            rtf = time_step / (toc_rt - tic_rt)
+            if sleep_rtl > 0:
+                time.sleep(sleep_rtl)
+            if rtf < 1:
+                print("Slower than real-time: {} %".format(100*rtf))
     toc = time.time()
 
     sim_time = time_step*(sim_step+1)
