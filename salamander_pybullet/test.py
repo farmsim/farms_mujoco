@@ -324,15 +324,18 @@ def viscous_swimming(robot, links):
             computeLinkVelocity=1,
             computeForwardKinematics=1
         )
-        link_velocity = link_state[6]
-        link_angular_velocity = link_state[7]
+        link_orientation = np.linalg.inv(np.array(
+            pybullet.getMatrixFromQuaternion(link_state[5])
+        ).reshape([3, 3]))
+        link_velocity = np.dot(link_orientation, link_state[6])
+        link_angular_velocity = np.dot(link_orientation, link_state[7])
         pybullet.applyExternalForce(
             robot,
             links["link_body_{}".format(link_i+1)],
             forceObj=[
-                -1e-2*link_velocity[0],
-                -1e-1*link_velocity[1],
-                -1e-1*link_velocity[2],
+                -1e-1*link_velocity[0],
+                -1e1*link_velocity[1],
+                -1e1*link_velocity[2],
             ],
             posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
@@ -340,12 +343,11 @@ def viscous_swimming(robot, links):
         pybullet.applyExternalTorque(
             robot,
             links["link_body_{}".format(link_i+1)],
-            forceObj=[
-                link_angular_velocity[0],
-                link_angular_velocity[1],
-                link_angular_velocity[2]
+            torqueObj=[
+                -1e-1*link_angular_velocity[0],
+                -1e-1*link_angular_velocity[1],
+                -1e-1*link_angular_velocity[2]
             ],
-            posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
         )
 
@@ -455,12 +457,12 @@ def main():
     init_engine()
 
     # Parameters
-    gait = "walking"
+    gait = "swimming"
     # gait = "swimming"
     time_step = 1e-3
 
     # Initialise
-    robot, _, joints = init_simulation(time_step, gait)
+    robot, links, joints = init_simulation(time_step, gait)
 
     # Controller
     frequency = 1 if gait == "walking" else 2
