@@ -26,6 +26,13 @@ def parse_args():
         default=False,
         help='Enable rotating_camera'
     )
+    parser.add_argument(
+        '--fast',
+        action='store_true',
+        dest='fast',
+        default=False,
+        help='Remove real-time limiter'
+    )
     return parser.parse_args()
 
 
@@ -487,14 +494,15 @@ def main():
         # Real-time
         toc_rt = time.time()
         sleep_rt = time_step - (toc_rt - tic_rt)
-        if sleep_rt > 0:
-            time.sleep(sleep_rt)
-        else:
-            print(
-                "Slower than real-time: {} %".format(
-                (1 - sleep_rt/time_step)*100
+        if not clargs.fast:
+            if sleep_rt > 0:
+                time.sleep(sleep_rt)
+            else:
+                print(
+                    "Slower than real-time: {} %".format(
+                    (1 - sleep_rt/time_step)*100
+                    )
                 )
-            )
     toc = time.time()
 
     sim_time = time_step*(sim_step+1)
