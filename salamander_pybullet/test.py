@@ -224,12 +224,20 @@ def init_physics(time_step, gait="walking"):
     pybullet.setGravity(0, 0, -9.81 if gait == "walking" else 0)
     pybullet.setTimeStep(time_step)
     pybullet.setRealTimeSimulation(0)
+    pybullet.setPhysicsEngineParameter(
+        fixedTimeStep=1e-3,
+        numSolverIterations=50
+    )
+    print("Physics parameters:\n{}".format(
+        pybullet.getPhysicsEngineParameters()
+    ))
 
 
 def spawn_models():
     """Spawn models"""
     robot = pybullet.loadSDF(
-        "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf"
+        "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
+        # useMaximalCoordinates=1
     )[0]
     # robot = pybullet.loadSDF(
     #     "/home/jonathan/.gazebo/models/biorob_centipede/model.sdf"
