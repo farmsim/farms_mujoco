@@ -436,6 +436,16 @@ def test_debug_info():
     )
 
 
+def real_time_handing(time_step, tic_rt, toc_rt, rtl=1.0):
+    """Real-time handling"""
+    sleep_rtl = time_step/rtl - (toc_rt - tic_rt)
+    rtf = time_step / (toc_rt - tic_rt)
+    if sleep_rtl > 0:
+        time.sleep(sleep_rtl)
+    if rtf < 1:
+        print("Slower than real-time: {} %".format(100*rtf))
+
+
 def main():
     """Main"""
     # Parse command line arguments
@@ -512,13 +522,10 @@ def main():
         # Real-time
         toc_rt = time.time()
         if not clargs.fast:
-            rtl = pybullet.readUserDebugParameter(rtl_id)
-            sleep_rtl = time_step/rtl - (toc_rt - tic_rt)
-            rtf = time_step / (toc_rt - tic_rt)
-            if sleep_rtl > 0:
-                time.sleep(sleep_rtl)
-            if rtf < 1:
-                print("Slower than real-time: {} %".format(100*rtf))
+            real_time_handing(
+                time_step, tic_rt, toc_rt,
+                rtl=pybullet.readUserDebugParameter(rtl_id)
+            )
     toc = time.time()
 
     sim_time = time_step*(sim_step+1)
