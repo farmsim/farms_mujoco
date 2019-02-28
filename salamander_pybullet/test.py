@@ -469,6 +469,7 @@ def main():
 
     # Run simulation
     tic = time.time()
+    tot_sim_time = 0
     for sim_step in range(int(10/time_step)):
         tic_rt = time.time()
         sim_time = time_step*sim_step
@@ -487,7 +488,10 @@ def main():
         if gait == "swimming":
             viscous_swimming(robot, links)
         # Physics
+        tic_sim = time.time()
         pybullet.stepSimulation()
+        toc_sim = time.time()
+        tot_sim_time += toc_sim - tic_sim
         # Video recording
         if record and not sim_step % 30:
             yaw = sim_time*360/10 if clargs.rotating_camera else 0
@@ -514,7 +518,11 @@ def main():
     toc = time.time()
 
     sim_time = time_step*(sim_step+1)
-    print("Time to simulate {} [s]: {} [s]".format(sim_time, toc-tic))
+    print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
+        sim_time,
+        toc-tic,
+        tot_sim_time
+    ))
 
     pybullet.disconnect()
 
