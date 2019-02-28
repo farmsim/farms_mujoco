@@ -334,8 +334,8 @@ def viscous_swimming(robot, links):
             links["link_body_{}".format(link_i+1)],
             forceObj=[
                 -1e-1*link_velocity[0],
-                -1e1*link_velocity[1],
-                -1e1*link_velocity[2],
+                -1e0*link_velocity[1],
+                -1e0*link_velocity[2],
             ],
             posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
@@ -344,9 +344,9 @@ def viscous_swimming(robot, links):
             robot,
             links["link_body_{}".format(link_i+1)],
             torqueObj=[
-                -1e-1*link_angular_velocity[0],
-                -1e-1*link_angular_velocity[1],
-                -1e-1*link_angular_velocity[2]
+                -1e-2*link_angular_velocity[0],
+                -1e-2*link_angular_velocity[1],
+                -1e-2*link_angular_velocity[2]
             ],
             flags=pybullet.LINK_FRAME
         )
@@ -385,7 +385,7 @@ def init_simulation(time_step, gait="walking"):
     return robot, links, joints
 
 
-def user_parameters():
+def user_parameters(frequency):
     """User parameters"""
     rtl_id = pybullet.addUserDebugParameter(
         paramName="Real-time limiter",
@@ -403,7 +403,7 @@ def user_parameters():
         paramName="Frequency",
         rangeMin=0,
         rangeMax=3,
-        startValue=1
+        startValue=frequency
     )
     for part in ["body", "legs"]:
         for pdf in ["p", "d", "f"]:
@@ -477,7 +477,7 @@ def main():
     target_pos = camera_view(robot)
 
     # User parameters
-    freq_id, rtl_id = user_parameters()
+    freq_id, rtl_id = user_parameters(frequency)
 
     # Video recording
     record = False
