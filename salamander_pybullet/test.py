@@ -52,17 +52,22 @@ class SineControl:
         self.angular_frequency = 2*np.pi*frequency
         self.phase = phase
         self.offset = offset
+        self._phase = 0
 
-    def position(self, sim_time):
+    def update(self, time_step):
+        """Update"""
+        self._phase = self._phase + self.angular_frequency*time_step
+
+    def position(self):
         """"Position"""
         return self.amplitude*np.sin(
-            self.angular_frequency*sim_time + self.phase
+            self._phase + self.phase
         ) + self.offset
 
-    def velocity(self, sim_time):
+    def velocity(self):
         """Velocity"""
         return self.angular_frequency*self.amplitude*np.cos(
-            self.angular_frequency*sim_time + self.phase
+            self._phase + self.phase
         )
 
 
@@ -100,24 +105,29 @@ class JointController:
         self._sine = sine
         self._pdf = pdf
 
-    def cmds(self, sim_time):
+    def cmds(self):
         """Commands"""
         return {
-            "pos": self._sine.position(sim_time),
-            "vel": self._sine.velocity(sim_time)
+            "pos": self._sine.position(),
+            "vel": self._sine.velocity()
         }
 
     def pdf_terms(self):
         """pdf"""
         return self._pdf
 
-    def update(self, sim_time):
+    def update(self, timestep):
         """Update"""
+        self._sine.update(timestep)
         return {
             "joint": self._joint,
-            "cmd": self.cmds(sim_time),
+            "cmd": self.cmds(),
             "pdf": self.pdf_terms()
         }
+
+    def set_frequency(self, frequency):
+        """Set frequency"""
+        self._sine.angular_frequency = 2*np.pi*frequency
 
 
 class RobotController:
@@ -202,10 +212,10 @@ class RobotController:
         ]
         return cls(robot, joint_controllers_body+joint_controllers_legs)
 
-    def control(self, sim_time):
+    def control(self, time_step):
         """Control"""
         controls = [
-            controller.update(sim_time)
+            controller.update(time_step)
             for controller in self.controllers
         ]
         pybullet.setJointMotorControlArray(
@@ -218,6 +228,11 @@ class RobotController:
             velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
             forces=[ctrl["pdf"]["f"] for ctrl in controls]
         )
+
+    def update_frequency(self, frequency):
+        """Update frequency"""
+        for controller in self.controllers:
+            controller.set_frequency(frequency)
 
 
 def init_engine():
@@ -506,7 +521,11 @@ def main():
             if pybullet.readUserDebugParameter(gait_id) < 0.5
             else "swimming"
         )
-        if gait != new_gait or frequency != new_freq:
+        if frequency != new_freq:
+            gait = new_gait
+            frequency = new_freq
+            controller.update_frequency(frequency)
+        if gait != new_gait:
             gait = new_gait
             frequency = new_freq
             controller = RobotController.salamander(
@@ -516,7 +535,7 @@ def main():
                 frequency=frequency
             )
             pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
-        controller.control(sim_time)
+        controller.control(time_step)
         # Swimming
         if gait == "swimming":
             viscous_swimming(robot, links)
