@@ -24,7 +24,14 @@ def parse_args():
         action='store_true',
         dest='rotating_camera',
         default=False,
-        help='Enable rotating_camera'
+        help='Enable rotating camera'
+    )
+    parser.add_argument(
+        '-t', '--top_camera',
+        action='store_true',
+        dest='top_camera',
+        default=False,
+        help='Enable top view camera'
     )
     parser.add_argument(
         '--fast',
@@ -474,7 +481,8 @@ def main():
     )
 
     # Camera
-    target_pos = camera_view(robot)
+    camera_pitch = -89 if clargs.top_camera else -45
+    target_pos = camera_view(robot, pitch=camera_pitch)
 
     # User parameters
     rtl_id, gait_id, freq_id = user_parameters(gait, frequency)
@@ -519,15 +527,20 @@ def main():
         tot_sim_time += toc_sim - tic_sim
         # Video recording
         if record and not sim_step % 30:
-            yaw = sim_time*360/10 if clargs.rotating_camera else 0
+            camera_yaw = sim_time*360/10 if clargs.rotating_camera else 0
             record_camera(
                 position=pybullet.getBasePositionAndOrientation(robot)[0],
-                yaw=yaw
+                yaw=camera_yaw
             )
         # User camera
         if not clargs.free_camera:
-            yaw = sim_time*360/10 if clargs.rotating_camera else 0
-            target_pos = camera_view(robot, target_pos, yaw=yaw)
+            camera_yaw = sim_time*360/10 if clargs.rotating_camera else 0
+            target_pos = camera_view(
+                robot,
+                target_pos,
+                pitch=camera_pitch,
+                yaw=camera_yaw
+            )
         # Real-time
         toc_rt = time.time()
         if not clargs.fast:
