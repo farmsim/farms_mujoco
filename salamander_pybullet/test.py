@@ -166,7 +166,7 @@ class RobotController:
                 )],
                 sine=SineControl(
                     amplitude= (
-                        float(0.6 if joint_i == 0 else 0.1)
+                        float(0.8 if joint_i == 0 else 0.1)
                         if gait == "walking"
                         else 0.0
                     ),
@@ -184,10 +184,14 @@ class RobotController:
                         else 0
                     ),
                     offset=(
-                        float(0 if joint_i == 0 else 0.1)
+                        float(
+                            0
+                            if joint_i == 0
+                            else 0.1 if joint_i == 1
+                            else np.pi/4
+                        )
                         if gait == "walking"
-                        else -2*np.pi/5 if joint_i == 0
-                        else 0
+                        else (-2*np.pi/5 if joint_i == 0 else 0)
                     )
                 ),
                 pdf=ControlPDF(p=1e-1, d=1e0, f=1e1)
@@ -318,11 +322,7 @@ def camera_view(robot, target_pos=None, **kwargs):
 
 
 def viscous_swimming(robot, links):
-    """Viscous swimming
-
-    TODO: CORRECT LOCAL/WORLD FRAME
-
-    """
+    """Viscous swimming"""
     # Swimming
     for link_i in range(1, 11):
         link_state = pybullet.getLinkState(
