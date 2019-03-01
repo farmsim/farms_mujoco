@@ -221,7 +221,7 @@ def init_engine():
 def init_physics(time_step, gait="walking"):
     """Initialise physics"""
     pybullet.resetSimulation()
-    pybullet.setGravity(0, 0, -9.81 if gait == "walking" else 0)
+    pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
     pybullet.setTimeStep(time_step)
     pybullet.setRealTimeSimulation(0)
     pybullet.setPhysicsEngineParameter(
@@ -385,7 +385,7 @@ def init_simulation(time_step, gait="walking"):
     return robot, links, joints
 
 
-def user_parameters(frequency):
+def user_parameters(gait, frequency):
     """User parameters"""
     rtl_id = pybullet.addUserDebugParameter(
         paramName="Real-time limiter",
@@ -393,11 +393,11 @@ def user_parameters(frequency):
         rangeMax=3,
         startValue=1
     )
-    pybullet.addUserDebugParameter(
+    gait_id = pybullet.addUserDebugParameter(
         paramName="Gait",
         rangeMin=0,
         rangeMax=1,
-        startValue=0
+        startValue=0 if gait == "walking" else 1
     )
     freq_id = pybullet.addUserDebugParameter(
         paramName="Frequency",
@@ -413,7 +413,7 @@ def user_parameters(frequency):
                 rangeMax=10,
                 startValue=0.1
             )
-    return freq_id, rtl_id
+    return rtl_id, gait_id, freq_id
 
 
 def test_debug_info():
@@ -457,7 +457,7 @@ def main():
     init_engine()
 
     # Parameters
-    gait = "swimming"
+    gait = "walking"
     # gait = "swimming"
     time_step = 1e-3
 
@@ -477,7 +477,7 @@ def main():
     target_pos = camera_view(robot)
 
     # User parameters
-    freq_id, rtl_id = user_parameters(frequency)
+    rtl_id, gait_id, freq_id = user_parameters(gait, frequency)
 
     # Video recording
     record = False
@@ -488,12 +488,18 @@ def main():
     # Run simulation
     tic = time.time()
     tot_sim_time = 0
-    for sim_step in range(int(10/time_step)):
+    for sim_step in range(int(100/time_step)):
         tic_rt = time.time()
         sim_time = time_step*sim_step
         # Control
         new_freq = pybullet.readUserDebugParameter(freq_id)
-        if frequency != new_freq:
+        new_gait = (
+            "walking"
+            if pybullet.readUserDebugParameter(gait_id) < 0.5
+            else "swimming"
+        )
+        if gait != new_gait or frequency != new_freq:
+            gait = new_gait
             frequency = new_freq
             controller = RobotController.salamander(
                 robot,
@@ -501,6 +507,7 @@ def main():
                 gait=gait,
                 frequency=frequency
             )
+            pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
         controller.control(sim_time)
         # Swimming
         if gait == "swimming":
