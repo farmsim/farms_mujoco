@@ -304,7 +304,7 @@ class RobotController:
 def init_engine():
     """Initialise engine"""
     print(pybullet.getAPIVersion())
-    pybullet.connect(pybullet.GUI)
+    pybullet.connect(pybullet.GUI, options="--minGraphicsUpdateTimeMs=32000")
     pybullet_path = pybullet_data.getDataPath()
     print("Adding pybullet data path {}".format(pybullet_path))
     pybullet.setAdditionalSearchPath(pybullet_path)
