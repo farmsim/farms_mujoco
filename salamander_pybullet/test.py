@@ -8,6 +8,8 @@ import numpy as np
 import pybullet_data
 import pybullet
 
+import casadi as cas
+
 
 def parse_args():
     """ Parse arguments """
@@ -49,25 +51,29 @@ class SineControl:
     def __init__(self, amplitude, frequency, phase, offset):
         super(SineControl, self).__init__()
         self.amplitude = amplitude
-        self.angular_frequency = 2*np.pi*frequency
+        self._angular_frequency = 2*np.pi*frequency
         self.phase = phase
         self.offset = offset
-        self._phase = 0
 
-    def update(self, time_step):
-        """Update"""
-        self._phase = self._phase + self.angular_frequency*time_step
+    @property
+    def angular_frequency(self):
+        """Angular frequency"""
+        return self._angular_frequency
 
-    def position(self):
+    @angular_frequency.setter
+    def angular_frequency(self, value):
+        self._angular_frequency = value
+
+    def position(self, phase):
         """"Position"""
         return self.amplitude*np.sin(
-            self._phase + self.phase
+            phase + self.phase
         ) + self.offset
 
-    def velocity(self):
+    def velocity(self, phase):
         """Velocity"""
-        return self.angular_frequency*self.amplitude*np.cos(
-            self._phase + self.phase
+        return self._angular_frequency*self.amplitude*np.cos(
+            phase + self.phase
         )
 
 
@@ -105,29 +111,67 @@ class JointController:
         self._sine = sine
         self._pdf = pdf
 
-    def cmds(self):
+    def cmds(self, phase):
         """Commands"""
         return {
-            "pos": self._sine.position(),
-            "vel": self._sine.velocity()
+            "pos": self._sine.position(phase),
+            "vel": self._sine.velocity(phase)
         }
 
-    def pdf_terms(self):
-        """pdf"""
-        return self._pdf
-
-    def update(self, timestep):
+    def update(self, phase):
         """Update"""
-        self._sine.update(timestep)
         return {
             "joint": self._joint,
-            "cmd": self.cmds(),
-            "pdf": self.pdf_terms()
+            "cmd": self.cmds(phase),
+            "pdf": self._pdf
         }
+
+    def angular_frequency(self):
+        """Angular frequency"""
+        return self._sine.angular_frequency
 
     def set_frequency(self, frequency):
         """Set frequency"""
         self._sine.angular_frequency = 2*np.pi*frequency
+
+
+class Network:
+    """Controller network"""
+
+    def __init__(self, controllers, **kwargs):
+        super(Network, self).__init__()
+        size = len(controllers)
+        freqs = cas.MX.sym('freqs', size)
+        ode = {
+            "x": cas.MX.sym('x', size),
+            "p": freqs,
+            "ode": freqs
+            # cas.vertcat(*[
+            #     float(controller.angular_frequency())
+            #     for controller in controllers
+            # ])
+        }
+
+        # Construct a Function that integrates over 4s
+        self.ode = cas.integrator(
+            'oscillator',
+            'cvodes',
+            ode,
+            {
+                "t0": 0,
+                "tf": kwargs.pop("timestep", 1e-3),
+                "jit": True,
+                "step0": 1e-3,
+                "abstol": 1e-3,
+                "reltol": 1e-3
+            },
+        )
+        self.phases = np.zeros(size)
+
+    def control_step(self, freqs):
+        """Control step"""
+        self.phases = np.array(self.ode(x0=self.phases, p=freqs)["xf"][:, 0])
+        return self.phases
 
 
 class RobotController:
@@ -137,6 +181,7 @@ class RobotController:
         super(RobotController, self).__init__()
         self.robot = robot
         self.controllers = joints_controllers
+        self.network = Network(self.controllers)
 
     @classmethod
     def salamander(cls, robot, joints, **kwargs):
@@ -212,12 +257,21 @@ class RobotController:
         ]
         return cls(robot, joint_controllers_body+joint_controllers_legs)
 
-    def control(self, time_step):
+    def control(self, verbose=False):
         """Control"""
-        controls = [
-            controller.update(time_step)
+        phases = self.network.control_step([
+            float(controller.angular_frequency())
             for controller in self.controllers
+        ])
+        if verbose:
+            tic = time.time()
+        controls = [
+            controller.update(phases[i])
+            for i, controller in enumerate(self.controllers)
         ]
+        if verbose:
+            toc = time.time()
+            print("Time to copy phases: {} [s]".format(toc-tic))
         pybullet.setJointMotorControlArray(
             self.robot,
             [ctrl["joint"] for ctrl in controls],
@@ -460,7 +514,7 @@ def test_debug_info():
     )
 
 
-def real_time_handing(time_step, tic_rt, toc_rt, rtl=1.0):
+def real_time_handing(time_step, tic_rt, toc_rt, rtl=1.0, **kwargs):
     """Real-time handling"""
     sleep_rtl = time_step/rtl - (toc_rt - tic_rt)
     rtf = time_step / (toc_rt - tic_rt)
@@ -468,6 +522,15 @@ def real_time_handing(time_step, tic_rt, toc_rt, rtl=1.0):
         time.sleep(sleep_rtl)
     if rtf < 1:
         print("Slower than real-time: {} %".format(100*rtf))
+        time_plugin = kwargs.pop("time_plugin", False)
+        time_control = kwargs.pop("time_control", False)
+        time_sim = kwargs.pop("time_sim", False)
+        if time_plugin:
+            print("  Time in py_plugins: {} [ms]".format(time_plugin))
+        if time_control:
+            print("    Time in control: {} [ms]".format(time_control))
+        if time_sim:
+            print("  Time in simulation: {} [ms]".format(time_sim))
 
 
 def main():
@@ -535,10 +598,14 @@ def main():
                 frequency=frequency
             )
             pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
-        controller.control(time_step)
+        tic_control = time.time()
+        controller.control()
+        time_control = time.time() - tic_control
         # Swimming
         if gait == "swimming":
             viscous_swimming(robot, links)
+        # Time plugins
+        time_plugin = time.time() - tic_rt
         # Physics
         tic_sim = time.time()
         pybullet.stepSimulation()
@@ -565,7 +632,10 @@ def main():
         if not clargs.fast:
             real_time_handing(
                 time_step, tic_rt, toc_rt,
-                rtl=pybullet.readUserDebugParameter(rtl_id)
+                rtl=pybullet.readUserDebugParameter(rtl_id),
+                time_plugin=time_plugin,
+                time_sim=toc_sim-tic_sim,
+                time_control=time_control
             )
     toc = time.time()
 
