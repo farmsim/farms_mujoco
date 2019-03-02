@@ -105,11 +105,12 @@ class ControlPDF(dict):
 class JointController:
     """JointController"""
 
-    def __init__(self, joint, sine, pdf):
+    def __init__(self, joint, sine, pdf, **kwargs):
         super(JointController, self).__init__()
         self._joint = joint
         self._sine = sine
         self._pdf = pdf
+        self._is_body = kwargs.pop("is_body", False)
 
     def cmds(self, phase):
         """Commands"""
@@ -133,6 +134,11 @@ class JointController:
     def set_frequency(self, frequency):
         """Set frequency"""
         self._sine.angular_frequency = 2*np.pi*frequency
+
+    def set_body_offset(self, body_offset):
+        """Set body offset"""
+        if self._is_body:
+            self._sine.offset = body_offset
 
 
 class Network:
@@ -208,7 +214,8 @@ class RobotController:
                 ),
                 pdf=(
                     ControlPDF(p=1e-1, d=1e0, f=1e1)
-                )
+                ),
+                is_body=True
             )
             for joint_i in range(n_body_joints)
         ]
@@ -287,6 +294,11 @@ class RobotController:
         """Update frequency"""
         for controller in self.controllers:
             controller.set_frequency(frequency)
+
+    def update_body_offset(self, body_offset):
+        """Update body offset"""
+        for controller in self.controllers:
+            controller.set_body_offset(body_offset)
 
 
 def init_engine():
@@ -478,8 +490,14 @@ def user_parameters(gait, frequency):
     freq_id = pybullet.addUserDebugParameter(
         paramName="Frequency",
         rangeMin=0,
-        rangeMax=3,
+        rangeMax=5,
         startValue=frequency
+    )
+    body_offset_id = pybullet.addUserDebugParameter(
+        paramName="Body offset",
+        rangeMin=-np.pi/8,
+        rangeMax=np.pi/8,
+        startValue=0
     )
     for part in ["body", "legs"]:
         for pdf in ["p", "d", "f"]:
@@ -489,7 +507,7 @@ def user_parameters(gait, frequency):
                 rangeMax=10,
                 startValue=0.1
             )
-    return rtl_id, gait_id, freq_id
+    return rtl_id, gait_id, freq_id, body_offset_id
 
 
 def test_debug_info():
@@ -551,6 +569,7 @@ def main():
 
     # Controller
     frequency = 1 if gait == "walking" else 2
+    body_offset = 0
     controller = RobotController.salamander(
         robot,
         joints,
@@ -563,7 +582,7 @@ def main():
     target_pos = camera_view(robot, pitch=camera_pitch)
 
     # User parameters
-    rtl_id, gait_id, freq_id = user_parameters(gait, frequency)
+    rtl_id, gait_id, freq_id, body_offset_id = user_parameters(gait, frequency)
 
     # Video recording
     record = False
@@ -579,6 +598,7 @@ def main():
         sim_time = time_step*sim_step
         # Control
         new_freq = pybullet.readUserDebugParameter(freq_id)
+        new_body_offset = pybullet.readUserDebugParameter(body_offset_id)
         new_gait = (
             "walking"
             if pybullet.readUserDebugParameter(gait_id) < 0.5
@@ -588,6 +608,10 @@ def main():
             gait = new_gait
             frequency = new_freq
             controller.update_frequency(frequency)
+        if body_offset != new_body_offset:
+            gait = new_gait
+            body_offset = new_body_offset
+            controller.update_body_offset(body_offset)
         if gait != new_gait:
             gait = new_gait
             frequency = new_freq
