@@ -378,9 +378,19 @@ def get_joints(robot):
 def camera_view(robot, target_pos=None, **kwargs):
     """Camera view"""
     camera_filter = kwargs.pop("camera_filter", 1e-3)
-    distance = kwargs.pop("distance", 1)
-    yaw = kwargs.pop("yaw", 0)
-    pitch = kwargs.pop("pitch", -45)
+    yaw_speed = kwargs.pop("yaw_speed", 0)
+    camInfo = pybullet.getDebugVisualizerCamera()
+    # curTargetPos = camInfo[11]
+    # distance=camInfo[10]
+    # yaw = camInfo[8]
+    # pitch=camInfo[9]
+    # targetPos = [0.95*curTargetPos[0]+0.05*humanPos[0],0.95*curTargetPos[1]+0.05*humanPos[1],curTargetPos[2]]
+    time_step = kwargs.pop("time_step", 1e-3)
+    pitch = kwargs.pop("pitch", camInfo[9])
+    yaw = kwargs.pop("yaw", camInfo[8]) + yaw_speed*time_step
+    distance = kwargs.pop("distance", camInfo[10])
+    # sim_time*360/10 if clargs.rotating_camera else 0
+    # yaw = kwargs.pop("yaw", 0)
     target_pos = (
         (
             (1-camera_filter)*target_pos
@@ -579,7 +589,7 @@ def main():
 
     # Camera
     camera_pitch = -89 if clargs.top_camera else -45
-    target_pos = camera_view(robot, pitch=camera_pitch)
+    target_pos = camera_view(robot, yaw=0, pitch=camera_pitch, distance=1)
 
     # User parameters
     rtl_id, gait_id, freq_id, body_offset_id = user_parameters(gait, frequency)
@@ -644,12 +654,10 @@ def main():
             )
         # User camera
         if not clargs.free_camera:
-            camera_yaw = sim_time*360/10 if clargs.rotating_camera else 0
             target_pos = camera_view(
                 robot,
                 target_pos,
-                pitch=camera_pitch,
-                yaw=camera_yaw
+                yaw_speed=360/10 if clargs.rotating_camera else 0
             )
         # Real-time
         toc_rt = time.time()
