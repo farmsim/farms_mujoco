@@ -152,10 +152,6 @@ class Network:
             "x": cas.MX.sym('x', size),
             "p": freqs,
             "ode": freqs
-            # cas.vertcat(*[
-            #     float(controller.angular_frequency())
-            #     for controller in controllers
-            # ])
         }
 
         # Construct a Function that integrates over 4s
@@ -183,11 +179,11 @@ class Network:
 class RobotController:
     """RobotController"""
 
-    def __init__(self, robot, joints_controllers):
+    def __init__(self, robot, joints_controllers, timestep=1e-3):
         super(RobotController, self).__init__()
         self.robot = robot
         self.controllers = joints_controllers
-        self.network = Network(self.controllers)
+        self.network = Network(self.controllers, timestep=timestep)
 
     @classmethod
     def salamander(cls, robot, joints, **kwargs):
@@ -262,7 +258,11 @@ class RobotController:
             for side_i, side in enumerate(["L", "R"])
             for joint_i in range(3)
         ]
-        return cls(robot, joint_controllers_body+joint_controllers_legs)
+        return cls(
+            robot,
+            joint_controllers_body + joint_controllers_legs,
+            timestep=kwargs.pop("timestep", 1e-3)
+        )
 
     def control(self, verbose=False):
         """Control"""
@@ -310,14 +310,14 @@ def init_engine():
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def init_physics(time_step, gait="walking"):
+def init_physics(timestep, gait="walking"):
     """Initialise physics"""
     pybullet.resetSimulation()
     pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
-    pybullet.setTimeStep(time_step)
+    pybullet.setTimeStep(timestep)
     pybullet.setRealTimeSimulation(0)
     pybullet.setPhysicsEngineParameter(
-        fixedTimeStep=1e-3,
+        fixedTimeStep=timestep,
         numSolverIterations=50
     )
     print("Physics parameters:\n{}".format(
@@ -385,9 +385,9 @@ def camera_view(robot, target_pos=None, **kwargs):
     # yaw = camInfo[8]
     # pitch=camInfo[9]
     # targetPos = [0.95*curTargetPos[0]+0.05*humanPos[0],0.95*curTargetPos[1]+0.05*humanPos[1],curTargetPos[2]]
-    time_step = kwargs.pop("time_step", 1e-3)
+    timestep = kwargs.pop("timestep", 1e-3)
     pitch = kwargs.pop("pitch", camInfo[9])
-    yaw = kwargs.pop("yaw", camInfo[8]) + yaw_speed*time_step
+    yaw = kwargs.pop("yaw", camInfo[8]) + yaw_speed*timestep
     distance = kwargs.pop("distance", camInfo[10])
     # sim_time*360/10 if clargs.rotating_camera else 0
     # yaw = kwargs.pop("yaw", 0)
@@ -468,10 +468,10 @@ def record_camera(position, yaw=0):
     )
 
 
-def init_simulation(time_step, gait="walking"):
+def init_simulation(timestep, gait="walking"):
     """Initialise simulation"""
     # Physics
-    init_physics(time_step, gait)
+    init_physics(timestep, gait)
 
     # Spawn models
     robot, plane = spawn_models()
@@ -542,12 +542,15 @@ def test_debug_info():
     )
 
 
-def real_time_handing(time_step, tic_rt, toc_rt, rtl=1.0, **kwargs):
+def real_time_handing(timestep, tic_rt, toc_rt, rtl=1.0, **kwargs):
     """Real-time handling"""
-    sleep_rtl = time_step/rtl - (toc_rt - tic_rt)
-    rtf = time_step / (toc_rt - tic_rt)
+    sleep_rtl = timestep/rtl - (toc_rt - tic_rt)
+    rtf = timestep / (toc_rt - tic_rt)
+    tic = time.time()
+    sleep_rtl = np.clip(sleep_rtl, a_min=0, a_max=1)
     if sleep_rtl > 0:
-        time.sleep(sleep_rtl)
+        while time.time() - tic < sleep_rtl:
+            time.sleep(0.1*sleep_rtl)
     if rtf < 1:
         print("Slower than real-time: {} %".format(100*rtf))
         time_plugin = kwargs.pop("time_plugin", False)
@@ -642,10 +645,10 @@ def main():
     # Parameters
     gait = "walking"
     # gait = "swimming"
-    time_step = 1e-3
+    timestep = 1e-3
 
     # Initialise
-    robot, links, joints, plane = init_simulation(time_step, gait)
+    robot, links, joints, plane = init_simulation(timestep, gait)
 
     # Create scene
     add_obstacles = False
@@ -659,7 +662,8 @@ def main():
         robot,
         joints,
         gait=gait,
-        frequency=frequency
+        frequency=frequency,
+        timestep=timestep
     )
 
     # Camera
@@ -678,9 +682,9 @@ def main():
     # Run simulation
     tic = time.time()
     tot_sim_time = 0
-    for sim_step in range(int(100/time_step)):
+    for sim_step, _ in enumerate(np.arange(0, 10, timestep)):
         tic_rt = time.time()
-        sim_time = time_step*sim_step
+        sim_time = timestep*sim_step
         # Control
         new_freq = pybullet.readUserDebugParameter(freq_id)
         new_body_offset = pybullet.readUserDebugParameter(body_offset_id)
@@ -732,21 +736,26 @@ def main():
             target_pos = camera_view(
                 robot,
                 target_pos,
-                yaw_speed=360/10 if clargs.rotating_camera else 0
+                yaw_speed=360/10 if clargs.rotating_camera else 0,
+                timestep=timestep
             )
         # Real-time
         toc_rt = time.time()
-        if not clargs.fast:
+        rtl = pybullet.readUserDebugParameter(rtl_id)
+        if not clargs.fast and rtl < 3:
             real_time_handing(
-                time_step, tic_rt, toc_rt,
-                rtl=pybullet.readUserDebugParameter(rtl_id),
+                timestep, tic_rt, toc_rt,
+                rtl=rtl,
                 time_plugin=time_plugin,
                 time_sim=toc_sim-tic_sim,
                 time_control=time_control
             )
     toc = time.time()
 
-    sim_time = time_step*(sim_step+1)
+    keys = pybullet.getKeyboardEvents()
+    print(keys)
+
+    sim_time = timestep*(sim_step+1)
     print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
         sim_time,
         toc-tic,
