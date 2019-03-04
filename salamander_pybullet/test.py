@@ -973,10 +973,12 @@ def main(clargs):
                     time_sim=toc_sim-tic_sim,
                     time_control=time_control
                 )
+        keys = pybullet.getKeyboardEvents()
+        if ord("q") in keys:
+            break
+
     toc = time.time()
 
-    keys = pybullet.getKeyboardEvents()
-    print(keys)
     # Plot contacts
     plt.figure("Contacts")
     for foot_i, foot in enumerate(feet):
