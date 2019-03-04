@@ -233,16 +233,67 @@ class SalamanderController(RobotController):
 
     @classmethod
     def gait(cls, robot, joints, gait, **kwargs):
-        """Salamander controller"""
+        """Salamander gait controller"""
         return (
             cls.walking(robot, joints, **kwargs)
             if gait == "walking" else
             cls.swimming(robot, joints, **kwargs)
+            if gait == "swimming" else
+            cls.standing(robot, joints, **kwargs)
+        )
+
+    @classmethod
+    def standing(cls, robot, joints, **kwargs):
+        """Salamander standing controller"""
+        n_body_joints = kwargs.pop("n_body_joints", 11)
+        joint_controllers_body = [
+            JointController(
+                joint=joints["joint_link_body_{}".format(joint_i+1)],
+                sine=SineControl(
+                    amplitude=0,
+                    frequency=0,
+                    phase=0,
+                    offset=0
+                ),
+                pdf=(
+                    ControlPDF(p=1e-1, d=1e0, f=1e1)
+                ),
+                is_body=True
+            )
+            for joint_i in range(n_body_joints)
+        ]
+        joint_controllers_legs = [
+            JointController(
+                joint=joints["joint_link_leg_{}_{}_{}".format(
+                    leg_i,
+                    side,
+                    joint_i
+                )],
+                sine=SineControl(
+                    amplitude=0.0,
+                    frequency=0,
+                    phase=0,
+                    offset=(
+                        0 if joint_i == 0
+                        else np.pi/16 if joint_i == 1
+                        else np.pi/8
+                    )
+                ),
+                pdf=ControlPDF(p=1e-1, d=1e0, f=1e1)
+            )
+            for leg_i in range(2)
+            for side_i, side in enumerate(["L", "R"])
+            for joint_i in range(3)
+        ]
+        return cls(
+            robot,
+            joint_controllers_body + joint_controllers_legs,
+            timestep=kwargs.pop("timestep", 1e-3)
         )
 
     @classmethod
     def walking(cls, robot, joints, **kwargs):
-        """Salamander controller"""
+        """Salamander walking controller"""
         n_body_joints = kwargs.pop("n_body_joints", 11)
         frequency = kwargs.pop("frequency", 1)
         joint_controllers_body = [
@@ -274,7 +325,7 @@ class SalamanderController(RobotController):
                     amplitude=(
                         0.8
                         if joint_i == 0
-                        else np.pi/16*leg_i if joint_i == 1
+                        else np.pi/16 if joint_i == 1
                         else np.pi/8
                     ),
                     frequency=frequency,
@@ -292,7 +343,7 @@ class SalamanderController(RobotController):
                     ),
                     offset=(
                         0 if joint_i == 0
-                        else np.pi/16*leg_i if joint_i == 1
+                        else np.pi/16 if joint_i == 1
                         else np.pi/8
                     )
                 ),
@@ -310,7 +361,7 @@ class SalamanderController(RobotController):
 
     @classmethod
     def swimming(cls, robot, joints, **kwargs):
-        """Salamander controller"""
+        """Salamander swimming controller"""
         n_body_joints = kwargs.pop("n_body_joints", 11)
         frequency = kwargs.pop("frequency", 1)
         joint_controllers_body = [
@@ -367,7 +418,7 @@ def init_engine():
 def init_physics(timestep, gait="walking"):
     """Initialise physics"""
     pybullet.resetSimulation()
-    pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
+    pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
     pybullet.setTimeStep(timestep)
     pybullet.setRealTimeSimulation(0)
     pybullet.setPhysicsEngineParameter(
@@ -554,8 +605,12 @@ def user_parameters(gait, frequency):
     gait_id = pybullet.addUserDebugParameter(
         paramName="Gait",
         rangeMin=0,
-        rangeMax=1,
-        startValue=0 if gait == "walking" else 1
+        rangeMax=2,
+        startValue=(
+            0 if gait == "standing"
+            else 1 if gait == "walking"
+            else 2
+        )
     )
     freq_id = pybullet.addUserDebugParameter(
         paramName="Frequency",
@@ -731,6 +786,7 @@ def main(clargs):
     init_engine()
 
     # Parameters
+    # gait = "standing"
     gait = "walking"
     # gait = "swimming"
     timestep = 1e-3
@@ -818,8 +874,10 @@ def main(clargs):
             new_freq = pybullet.readUserDebugParameter(freq_id)
             new_body_offset = pybullet.readUserDebugParameter(body_offset_id)
             new_gait = (
-                "walking"
+                "standing"
                 if pybullet.readUserDebugParameter(gait_id) < 0.5
+                else "walking"
+                if 0.5 < pybullet.readUserDebugParameter(gait_id) < 1.5
                 else "swimming"
             )
             if frequency != new_freq:
@@ -838,7 +896,7 @@ def main(clargs):
                     joints,
                     gait
                 )
-                pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
+                pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
             tic_control = time.time()
             controller.control()
             time_control = time.time() - tic_control
