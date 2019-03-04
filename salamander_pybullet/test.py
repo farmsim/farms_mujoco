@@ -562,22 +562,28 @@ def viscous_swimming(robot, links):
         )
 
 
-def record_camera(position, yaw=0):
+def record_camera(position, yaw, pitch, distance):
     """Record camera"""
-    image = pybullet.getCameraImage(
-        width=800,
+    return pybullet.getCameraImage(
+        width=640,
         height=480,
         viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
             cameraTargetPosition=position,
-            distance=1,
+            distance=distance,
             yaw=yaw,
-            pitch=-45,
+            pitch=pitch,
             roll=0,
             upAxisIndex=2
         ),
+        projectionMatrix = pybullet.computeProjectionMatrixFOV(
+            fov=60,
+            aspect=600/360,
+            nearVal=0.1,
+            farVal=5
+        ),
         renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
         flags=pybullet.ER_NO_SEGMENTATION_MASK
-    )
+    )[2]
 
 
 def init_simulation(timestep, gait="walking"):
