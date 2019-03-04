@@ -527,39 +527,39 @@ def camera_view(robot, target_pos=None, **kwargs):
 def viscous_swimming(robot, links):
     """Viscous swimming"""
     # Swimming
+    forces_torques = np.zeros([2, 10, 3])
     for link_i in range(1, 11):
         link_state = pybullet.getLinkState(
             robot,
-            links["link_body_{}".format(link_i+1)],
+            links["link_body_{}".format(link_i)],
             computeLinkVelocity=1,
             computeForwardKinematics=1
         )
-        link_orientation = np.linalg.inv(np.array(
+        link_orientation_inv = np.linalg.inv(np.array(
             pybullet.getMatrixFromQuaternion(link_state[5])
         ).reshape([3, 3]))
-        link_velocity = np.dot(link_orientation, link_state[6])
-        link_angular_velocity = np.dot(link_orientation, link_state[7])
+        link_velocity = np.dot(link_orientation_inv, link_state[6])
+        link_angular_velocity = np.dot(link_orientation_inv, link_state[7])
+        forces_torques[0, link_i-1, :] = (
+            np.array([-1e-1, -1e0, -1e0])*link_velocity
+        )
         pybullet.applyExternalForce(
             robot,
-            links["link_body_{}".format(link_i+1)],
-            forceObj=[
-                -1e-1*link_velocity[0],
-                -1e0*link_velocity[1],
-                -1e0*link_velocity[2],
-            ],
+            links["link_body_{}".format(link_i)],
+            forceObj=forces_torques[0, link_i-1, :],
             posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
+        )
+        forces_torques[1, link_i-1, :] = (
+            np.array([-1e-2, -1e-2, -1e-2])*link_angular_velocity
         )
         pybullet.applyExternalTorque(
             robot,
             links["link_body_{}".format(link_i+1)],
-            torqueObj=[
-                -1e-2*link_angular_velocity[0],
-                -1e-2*link_angular_velocity[1],
-                -1e-2*link_angular_velocity[2]
-            ],
+            torqueObj=forces_torques[1, link_i-1, :],
             flags=pybullet.LINK_FRAME
         )
+    return forces_torques
 
 
 def record_camera(position, yaw, pitch, distance):
@@ -596,8 +596,24 @@ def init_simulation(timestep, gait="walking"):
 
     # Links and joints
     links, joints, _ = get_joints(robot)
-    print("Links ids:\n{}".format(links))
-    print("Joints ids:\n{}".format(joints))
+    print("Links ids:\n{}".format(
+        "\n".join([
+            "  {}: {}".format(
+                name,
+                links[name]
+            )
+            for name in links
+        ])
+    ))
+    print("Joints ids:\n{}".format(
+        "\n".join([
+            "  {}: {}".format(
+                name,
+                joints[name]
+            )
+            for name in joints
+        ])
+    ))
     return robot, links, joints, plane
 
 
