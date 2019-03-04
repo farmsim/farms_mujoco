@@ -172,7 +172,12 @@ class Network:
 
     def control_step(self, freqs):
         """Control step"""
-        self.phases = np.array(self.ode(x0=self.phases, p=freqs)["xf"][:, 0])
+        self.phases = np.array(
+            self.ode(
+                x0=self.phases,
+                p=freqs
+            )["xf"][:, 0]
+        )
         return self.phases
 
 
@@ -223,8 +228,13 @@ class RobotController:
                     joint_i
                 )],
                 sine=SineControl(
-                    amplitude= (
-                        float(0.8 if joint_i == 0 else 0.1)
+                    amplitude=(
+                        float(
+                            0.8
+                            if joint_i == 0
+                            else np.pi/16*leg_i if joint_i == 1
+                            else np.pi/8
+                        )
                         if gait == "walking"
                         else 0.0
                     ),
@@ -236,7 +246,15 @@ class RobotController:
                     phase=(
                         float(
                             - np.pi*np.abs(leg_i-side_i)
-                            - (0 if joint_i == 0 else 0.5*np.pi)
+                            - (
+                                0 if joint_i == 0
+                                else 0.5*np.pi
+                            )
+                            + 0*float(  # Turning
+                                (0.5)*np.pi*np.sign(np.abs(leg_i-side_i) - 0.5)
+                                if joint_i == 2
+                                else 0
+                            )
                         )
                         if gait == "walking"
                         else 0
@@ -245,8 +263,8 @@ class RobotController:
                         float(
                             0
                             if joint_i == 0
-                            else 0.1 if joint_i == 1
-                            else np.pi/4
+                            else np.pi/16*leg_i if joint_i == 1
+                            else np.pi/8
                         )
                         if gait == "walking"
                         else (-2*np.pi/5 if joint_i == 0 else 0)
