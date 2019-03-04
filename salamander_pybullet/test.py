@@ -853,16 +853,18 @@ def main(clargs):
     for joint in joints_sensors:
         pybullet.enableJointForceTorqueSensor(robot, joints[joint])
     # Commands
-    joints_commanded = [
+    joints_commanded_body = [
         "joint_link_body_{}".format(joint_i+1)
         for joint_i in range(11)
-    ] + [
+    ]
+    joints_commanded_legs = [
         "joint_link_leg_{}_{}_{}".format(leg_i, side, joint_i)
         for leg_i in range(2)
         for side in ["L", "R"]
         for joint_i in range(3)
     ]
-    joints_cmds = np.zeros([len(times), len(joints_commanded)])
+    joints_cmds_body = np.zeros([len(times), len(joints_commanded_body)])
+    joints_cmds_legs = np.zeros([len(times), len(joints_commanded_legs)])
     while sim_step < len(times):
         if pybullet.readUserDebugParameter(play_id) < 0.5:
             time.sleep(0.5)
@@ -922,9 +924,13 @@ def main(clargs):
                 [joints[joint] for joint in joints_sensors]
             )
             # Commands
-            joints_cmds[sim_step-1, :] = get_joints_commands(
+            joints_cmds_body[sim_step-1, :] = get_joints_commands(
                 robot,
-                [joints[joint] for joint in joints_commanded]
+                [joints[joint] for joint in joints_commanded_body]
+            )
+            joints_cmds_legs[sim_step-1, :] = get_joints_commands(
+                robot,
+                [joints[joint] for joint in joints_commanded_legs]
             )
             # Video recording
             if record and not sim_step % 30:
@@ -975,9 +981,16 @@ def main(clargs):
         plt.legend()
 
     # Plot Feet forces
-    plt.figure("Motor torques")
-    for joint_i, joint in enumerate(joints_commanded):
-        plt.plot(times, joints_cmds[:, joint_i], label=joint)
+    plt.figure("Body motor torques")
+    for joint_i, joint in enumerate(joints_commanded_body):
+        plt.plot(times, joints_cmds_body[:, joint_i], label=joint)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Torque [Nm]")
+        plt.grid(True)
+        plt.legend()
+    plt.figure("Legs motor torques")
+    for joint_i, joint in enumerate(joints_commanded_legs):
+        plt.plot(times, joints_cmds_legs[:, joint_i], label=joint)
         plt.xlabel("Time [s]")
         plt.ylabel("Torque [Nm]")
         plt.grid(True)
