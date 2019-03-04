@@ -43,6 +43,13 @@ def parse_args():
         default=False,
         help='Remove real-time limiter'
     )
+    parser.add_argument(
+        '--record',
+        action='store_true',
+        dest='record',
+        default=False,
+        help='Record video'
+    )
     return parser.parse_args()
 
 
@@ -822,18 +829,16 @@ def main(clargs):
     user_params = user_parameters(gait, frequency)
     play_id, rtl_id, gait_id, freq_id, body_offset_id = user_params
 
-    # Video recording
-    record = False
-
     # Debug info
     test_debug_info()
 
-    # Run simulation
+    # Simulation time
     tic = time.time()
     tot_sim_time = 0
     times = np.arange(0, 10, timestep)
     forces_torques = np.zeros([len(times), 2, 10, 3])
     sim_step = 0
+
     # Contact sensors
     contact_forces = np.zeros([len(times), 4])
     feet = [
@@ -842,6 +847,7 @@ def main(clargs):
         "link_leg_1_L_3",
         "link_leg_1_R_3"
     ]
+
     # Force-torque sensors
     feet_ft = np.zeros([len(times), 4, 6])
     joints_sensors = [
@@ -852,6 +858,7 @@ def main(clargs):
     ]
     for joint in joints_sensors:
         pybullet.enableJointForceTorqueSensor(robot, joints[joint])
+
     # Commands
     joints_commanded_body = [
         "joint_link_body_{}".format(joint_i+1)
@@ -865,6 +872,13 @@ def main(clargs):
     ]
     joints_cmds_body = np.zeros([len(times), len(joints_commanded_body)])
     joints_cmds_legs = np.zeros([len(times), len(joints_commanded_legs)])
+
+    # Video recording
+    clargs.record = True
+    if clargs.record:
+        record_data = np.zeros([len(times)//25, 480, 640, 4], dtype=np.uint8)
+
+    # Run simulation
     while sim_step < len(times):
         if pybullet.readUserDebugParameter(play_id) < 0.5:
             time.sleep(0.5)
@@ -933,11 +947,12 @@ def main(clargs):
                 [joints[joint] for joint in joints_commanded_legs]
             )
             # Video recording
-            if record and not sim_step % 30:
-                camera_yaw = sim_time*360/10 if clargs.rotating_camera else 0
-                record_camera(
-                    position=pybullet.getBasePositionAndOrientation(robot)[0],
-                    yaw=camera_yaw
+            if clargs.record and not sim_step % 25:
+                record_data[sim_step//25-1, :, :] = record_camera(
+                    position=target_pos,
+                    yaw=sim_time*360/10,
+                    pitch=-30,
+                    distance=1
                 )
             # User camera
             if not clargs.free_camera:
@@ -1007,6 +1022,18 @@ def main(clargs):
     ))
 
     pybullet.disconnect()
+
+    # Record video
+    if clargs.record:
+        import cv2
+        writer = cv2.VideoWriter(
+            'test1.avi',
+            cv2.VideoWriter_fourcc(*'MJPG'),
+            40,
+            (640, 480)
+        )
+        for data in record_data:
+            writer.write(data)
 
 
 def main_parallel():
