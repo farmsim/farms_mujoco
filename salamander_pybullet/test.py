@@ -882,6 +882,15 @@ def main(clargs):
         plt.grid(True)
         plt.legend()
 
+    # Plot Feet forces
+    plt.figure("Motor torques")
+    for joint_i, joint in enumerate(joints_commanded):
+        plt.plot(times, joints_cmds[:, joint_i], label=joint)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Torque [Nm]")
+        plt.grid(True)
+        plt.legend()
+
     # Show plots
     plt.show()
 
