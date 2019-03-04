@@ -896,7 +896,6 @@ def main(clargs):
     joints_cmds_legs = np.zeros([len(times), len(joints_commanded_legs)])
 
     # Video recording
-    clargs.record = True
     if clargs.record:
         record_data = np.zeros([len(times)//25, 480, 640, 4], dtype=np.uint8)
 
