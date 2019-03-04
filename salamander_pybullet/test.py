@@ -662,6 +662,21 @@ def main():
     """Main"""
     # Parse command line arguments
     clargs = parse_args()
+def get_links_contacts(robot, links, ground):
+    """Contacts"""
+    contacts = [
+        pybullet.getContactPoints(robot, ground, link, -1)
+        for link in links
+    ]
+    forces = [
+        np.sum([contact[9] for contact in contacts[link_i]])
+        if contacts
+        else 0
+        for link_i, _ in enumerate(links)
+    ]
+    return contacts, forces
+
+
 
     # Initialise engine
     init_engine()
@@ -710,7 +725,15 @@ def main():
     times = np.arange(0, 10, timestep)
     forces_torques = np.zeros([len(times), 2, 10, 3])
     sim_step = 0
-    while sim_step < len(times) + 1:
+    # Contact sensors
+    contact_forces = np.zeros([len(times), 4])
+    feet = [
+        "link_leg_0_L_3",
+        "link_leg_0_R_3",
+        "link_leg_1_L_3",
+        "link_leg_1_R_3"
+    ]
+    while sim_step < len(times):
         if pybullet.readUserDebugParameter(play_id) < 0.5:
             time.sleep(0.5)
         else:
@@ -756,6 +779,12 @@ def main():
             sim_step += 1
             toc_sim = time.time()
             tot_sim_time += toc_sim - tic_sim
+            # Contacts during walking
+            _, contact_forces[sim_step-1, :] = get_links_contacts(
+                robot,
+                [links[foot] for foot in feet],
+                plane
+            )
             # Video recording
             if record and not sim_step % 30:
                 camera_yaw = sim_time*360/10 if clargs.rotating_camera else 0
@@ -787,7 +816,7 @@ def main():
     keys = pybullet.getKeyboardEvents()
     print(keys)
 
-    sim_time = timestep*(sim_step+1)
+    sim_time = timestep*(sim_step)
     print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
         sim_time,
         toc-tic,
