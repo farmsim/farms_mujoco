@@ -689,6 +689,8 @@ def get_joints_commands(robot, joints):
     ]
 
 
+def main(clargs):
+    """Main"""
     # Initialise engine
     init_engine()
 
@@ -699,6 +701,11 @@ def get_joints_commands(robot, joints):
 
     # Initialise
     robot, links, joints, plane = init_simulation(timestep, gait)
+
+    # Apply motor damping
+    for j in range (pybullet.getNumJoints(robot)):
+        pybullet.changeDynamics(robot, j, linearDamping=0, angularDamping=1)
+        print(pybullet.getJointInfo(robot, j))
 
     # Create scene
     add_obstacles = False
