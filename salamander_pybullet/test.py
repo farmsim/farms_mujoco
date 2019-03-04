@@ -796,8 +796,7 @@ def main(clargs):
 
     # Apply motor damping
     for j in range (pybullet.getNumJoints(robot)):
-        pybullet.changeDynamics(robot, j, linearDamping=0, angularDamping=1)
-        print(pybullet.getJointInfo(robot, j))
+        pybullet.changeDynamics(robot, j, linearDamping=0, angularDamping=1e-2)
 
     # Create scene
     add_obstacles = False
