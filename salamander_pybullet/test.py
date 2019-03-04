@@ -4,6 +4,7 @@ import time
 import argparse
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 import pybullet_data
 import pybullet
