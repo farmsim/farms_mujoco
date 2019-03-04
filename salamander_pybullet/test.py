@@ -873,6 +873,15 @@ def main(clargs):
         plt.grid(True)
         plt.legend()
 
+    # Plot Feet forces
+    plt.figure("Feet forces")
+    for dim in range(3):
+        plt.plot(times, feet_ft[:, 0, dim], label=["x", "y", "z"][dim])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Force [N]")
+        plt.grid(True)
+        plt.legend()
+
     # Show plots
     plt.show()
 
