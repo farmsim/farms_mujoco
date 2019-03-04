@@ -658,10 +658,6 @@ def create_scene(plane):
             )
 
 
-def main():
-    """Main"""
-    # Parse command line arguments
-    clargs = parse_args()
 def get_links_contacts(robot, links, ground):
     """Contacts"""
     contacts = [
@@ -872,5 +868,21 @@ def get_joints_commands(robot, joints):
     pybullet.disconnect()
 
 
+def main_parallel():
+    """Simulation with multiprocessing"""
+    from multiprocessing import Pool
+
+    # Create Pool
+    p = Pool(1)
+
+    # Parse command line arguments
+    clargs = parse_args()
+
+    # Run simulation
+    p.map(main, [clargs])
+    print("Done")
+
+
 if __name__ == '__main__':
-    main()
+    # main2(parse_args())
+    main(parse_args())
