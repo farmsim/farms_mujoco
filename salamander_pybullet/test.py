@@ -485,6 +485,12 @@ def init_simulation(timestep, gait="walking"):
 
 def user_parameters(gait, frequency):
     """User parameters"""
+    play_id = pybullet.addUserDebugParameter(
+        paramName="Play",
+        rangeMin=0,
+        rangeMax=1,
+        startValue=1
+    )
     rtl_id = pybullet.addUserDebugParameter(
         paramName="Real-time limiter",
         rangeMin=1e-3,
@@ -517,7 +523,7 @@ def user_parameters(gait, frequency):
                 rangeMax=10,
                 startValue=0.1
             )
-    return rtl_id, gait_id, freq_id, body_offset_id
+    return play_id, rtl_id, gait_id, freq_id, body_offset_id
 
 
 def test_debug_info():
@@ -671,7 +677,8 @@ def main():
     target_pos = camera_view(robot, yaw=0, pitch=camera_pitch, distance=1)
 
     # User parameters
-    rtl_id, gait_id, freq_id, body_offset_id = user_parameters(gait, frequency)
+    user_params = user_parameters(gait, frequency)
+    play_id, rtl_id, gait_id, freq_id, body_offset_id = user_params
 
     # Video recording
     record = False
@@ -682,74 +689,81 @@ def main():
     # Run simulation
     tic = time.time()
     tot_sim_time = 0
-    for sim_step, _ in enumerate(np.arange(0, 10, timestep)):
-        tic_rt = time.time()
-        sim_time = timestep*sim_step
-        # Control
-        new_freq = pybullet.readUserDebugParameter(freq_id)
-        new_body_offset = pybullet.readUserDebugParameter(body_offset_id)
-        new_gait = (
-            "walking"
-            if pybullet.readUserDebugParameter(gait_id) < 0.5
-            else "swimming"
-        )
-        if frequency != new_freq:
-            gait = new_gait
-            frequency = new_freq
-            controller.update_frequency(frequency)
-        if body_offset != new_body_offset:
-            gait = new_gait
-            body_offset = new_body_offset
-            controller.update_body_offset(body_offset)
-        if gait != new_gait:
-            gait = new_gait
-            frequency = new_freq
-            controller = RobotController.salamander(
-                robot,
-                joints,
-                gait=gait,
-                frequency=frequency
+    times = np.arange(0, 10, timestep)
+    forces_torques = np.zeros([len(times), 2, 10, 3])
+    sim_step = 0
+    while sim_step < len(times) + 1:
+        if pybullet.readUserDebugParameter(play_id) < 0.5:
+            time.sleep(0.5)
+        else:
+            tic_rt = time.time()
+            sim_time = timestep*sim_step
+            # Control
+            new_freq = pybullet.readUserDebugParameter(freq_id)
+            new_body_offset = pybullet.readUserDebugParameter(body_offset_id)
+            new_gait = (
+                "walking"
+                if pybullet.readUserDebugParameter(gait_id) < 0.5
+                else "swimming"
             )
-            pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
-        tic_control = time.time()
-        controller.control()
-        time_control = time.time() - tic_control
-        # Swimming
-        if gait == "swimming":
-            viscous_swimming(robot, links)
-        # Time plugins
-        time_plugin = time.time() - tic_rt
-        # Physics
-        tic_sim = time.time()
-        pybullet.stepSimulation()
-        toc_sim = time.time()
-        tot_sim_time += toc_sim - tic_sim
-        # Video recording
-        if record and not sim_step % 30:
-            camera_yaw = sim_time*360/10 if clargs.rotating_camera else 0
-            record_camera(
-                position=pybullet.getBasePositionAndOrientation(robot)[0],
-                yaw=camera_yaw
-            )
-        # User camera
-        if not clargs.free_camera:
-            target_pos = camera_view(
-                robot,
-                target_pos,
-                yaw_speed=360/10 if clargs.rotating_camera else 0,
-                timestep=timestep
-            )
-        # Real-time
-        toc_rt = time.time()
-        rtl = pybullet.readUserDebugParameter(rtl_id)
-        if not clargs.fast and rtl < 3:
-            real_time_handing(
-                timestep, tic_rt, toc_rt,
-                rtl=rtl,
-                time_plugin=time_plugin,
-                time_sim=toc_sim-tic_sim,
-                time_control=time_control
-            )
+            if frequency != new_freq:
+                gait = new_gait
+                frequency = new_freq
+                controller.update_frequency(frequency)
+            if body_offset != new_body_offset:
+                gait = new_gait
+                body_offset = new_body_offset
+                controller.update_body_offset(body_offset)
+            if gait != new_gait:
+                gait = new_gait
+                frequency = new_freq
+                controller = RobotController.salamander(
+                    robot,
+                    joints,
+                    gait=gait,
+                    frequency=frequency
+                )
+                pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
+            tic_control = time.time()
+            controller.control()
+            time_control = time.time() - tic_control
+            # Swimming
+            if gait == "swimming":
+                forces_torques[sim_step] = viscous_swimming(robot, links)
+            # Time plugins
+            time_plugin = time.time() - tic_rt
+            # Physics
+            tic_sim = time.time()
+            pybullet.stepSimulation()
+            sim_step += 1
+            toc_sim = time.time()
+            tot_sim_time += toc_sim - tic_sim
+            # Video recording
+            if record and not sim_step % 30:
+                camera_yaw = sim_time*360/10 if clargs.rotating_camera else 0
+                record_camera(
+                    position=pybullet.getBasePositionAndOrientation(robot)[0],
+                    yaw=camera_yaw
+                )
+            # User camera
+            if not clargs.free_camera:
+                target_pos = camera_view(
+                    robot,
+                    target_pos,
+                    yaw_speed=360/10 if clargs.rotating_camera else 0,
+                    timestep=timestep
+                )
+            # Real-time
+            toc_rt = time.time()
+            rtl = pybullet.readUserDebugParameter(rtl_id)
+            if not clargs.fast and rtl < 3:
+                real_time_handing(
+                    timestep, tic_rt, toc_rt,
+                    rtl=rtl,
+                    time_plugin=time_plugin,
+                    time_sim=toc_sim-tic_sim,
+                    time_control=time_control
+                )
     toc = time.time()
 
     keys = pybullet.getKeyboardEvents()
