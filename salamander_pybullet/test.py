@@ -685,6 +685,14 @@ def get_joints_force_torque(robot, joints):
     ]
 
 
+def get_joints_commands(robot, joints):
+    """Force-torque on joints"""
+    return [
+        pybullet.getJointState(robot, joint)[3]
+        for joint in joints
+    ]
+
+
     # Initialise engine
     init_engine()
 
@@ -750,6 +758,17 @@ def get_joints_force_torque(robot, joints):
     ]
     for joint in joints_sensors:
         pybullet.enableJointForceTorqueSensor(robot, joints[joint])
+    # Commands
+    joints_commanded = [
+        "joint_link_body_{}".format(joint_i+1)
+        for joint_i in range(11)
+    ] + [
+        "joint_link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+        for leg_i in range(2)
+        for side in ["L", "R"]
+        for joint_i in range(3)
+    ]
+    joints_cmds = np.zeros([len(times), len(joints_commanded)])
     while sim_step < len(times):
         if pybullet.readUserDebugParameter(play_id) < 0.5:
             time.sleep(0.5)
@@ -806,6 +825,11 @@ def get_joints_force_torque(robot, joints):
             feet_ft[sim_step-1, :, :] = get_joints_force_torque(
                 robot,
                 [joints[joint] for joint in joints_sensors]
+            )
+            # Commands
+            joints_cmds[sim_step-1, :] = get_joints_commands(
+                robot,
+                [joints[joint] for joint in joints_commanded]
             )
             # Video recording
             if record and not sim_step % 30:
