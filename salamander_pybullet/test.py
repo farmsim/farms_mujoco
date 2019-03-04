@@ -864,6 +864,17 @@ def main(clargs):
 
     keys = pybullet.getKeyboardEvents()
     print(keys)
+    # Plot contacts
+    plt.figure("Contacts")
+    for foot_i, foot in enumerate(feet):
+        plt.plot(times, contact_forces[:, foot_i], label=foot)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Reaction force [N]")
+        plt.grid(True)
+        plt.legend()
+
+    # Show plots
+    plt.show()
 
     sim_time = timestep*(sim_step)
     print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
