@@ -191,98 +191,6 @@ class RobotController:
         self.controllers = joints_controllers
         self.network = Network(self.controllers, timestep=timestep)
 
-    @classmethod
-    def salamander(cls, robot, joints, **kwargs):
-        """Salamander controller"""
-        n_body_joints = kwargs.pop("n_body_joints", 11)
-        gait = kwargs.pop("gait", "walking")
-        frequency = kwargs.pop("frequency", 1)
-        joint_controllers_body = [
-            JointController(
-                joint=joints["joint_link_body_{}".format(joint_i+1)],
-                sine=SineControl(
-                    amplitude=(
-                        0.2*np.sin(2*np.pi*joint_i/n_body_joints - np.pi/4)
-                        if gait == "walking"
-                        else 0.1+joint_i*0.4/n_body_joints
-                    ),
-                    frequency=frequency,
-                    phase=(
-                        0
-                        if gait == "walking"
-                        else -2*np.pi*joint_i/11
-                    ),
-                    offset=0
-                ),
-                pdf=(
-                    ControlPDF(p=1e-1, d=1e0, f=1e1)
-                ),
-                is_body=True
-            )
-            for joint_i in range(n_body_joints)
-        ]
-        joint_controllers_legs = [
-            JointController(
-                joint=joints["joint_link_leg_{}_{}_{}".format(
-                    leg_i,
-                    side,
-                    joint_i
-                )],
-                sine=SineControl(
-                    amplitude=(
-                        float(
-                            0.8
-                            if joint_i == 0
-                            else np.pi/16*leg_i if joint_i == 1
-                            else np.pi/8
-                        )
-                        if gait == "walking"
-                        else 0.0
-                    ),
-                    frequency=(
-                        float(frequency)
-                        if gait == "walking"
-                        else 0
-                    ),
-                    phase=(
-                        float(
-                            - np.pi*np.abs(leg_i-side_i)
-                            - (
-                                0 if joint_i == 0
-                                else 0.5*np.pi
-                            )
-                            + 0*float(  # Turning
-                                (0.5)*np.pi*np.sign(np.abs(leg_i-side_i) - 0.5)
-                                if joint_i == 2
-                                else 0
-                            )
-                        )
-                        if gait == "walking"
-                        else 0
-                    ),
-                    offset=(
-                        float(
-                            0
-                            if joint_i == 0
-                            else np.pi/16*leg_i if joint_i == 1
-                            else np.pi/8
-                        )
-                        if gait == "walking"
-                        else (-2*np.pi/5 if joint_i == 0 else 0)
-                    )
-                ),
-                pdf=ControlPDF(p=1e-1, d=1e0, f=1e1)
-            )
-            for leg_i in range(2)
-            for side_i, side in enumerate(["L", "R"])
-            for joint_i in range(3)
-        ]
-        return cls(
-            robot,
-            joint_controllers_body + joint_controllers_legs,
-            timestep=kwargs.pop("timestep", 1e-3)
-        )
-
     def control(self, verbose=False):
         """Control"""
         phases = self.network.control_step([
@@ -318,6 +226,133 @@ class RobotController:
         """Update body offset"""
         for controller in self.controllers:
             controller.set_body_offset(body_offset)
+
+
+class SalamanderController(RobotController):
+    """RobotController"""
+
+    @classmethod
+    def gait(cls, robot, joints, gait, **kwargs):
+        """Salamander controller"""
+        return (
+            cls.walking(robot, joints, **kwargs)
+            if gait == "walking" else
+            cls.swimming(robot, joints, **kwargs)
+        )
+
+    @classmethod
+    def walking(cls, robot, joints, **kwargs):
+        """Salamander controller"""
+        n_body_joints = kwargs.pop("n_body_joints", 11)
+        frequency = kwargs.pop("frequency", 1)
+        joint_controllers_body = [
+            JointController(
+                joint=joints["joint_link_body_{}".format(joint_i+1)],
+                sine=SineControl(
+                    amplitude=(
+                        0.2*np.sin(2*np.pi*joint_i/n_body_joints - np.pi/4)
+                    ),
+                    frequency=frequency,
+                    phase=0,
+                    offset=0
+                ),
+                pdf=(
+                    ControlPDF(p=1e-1, d=1e0, f=1e1)
+                ),
+                is_body=True
+            )
+            for joint_i in range(n_body_joints)
+        ]
+        joint_controllers_legs = [
+            JointController(
+                joint=joints["joint_link_leg_{}_{}_{}".format(
+                    leg_i,
+                    side,
+                    joint_i
+                )],
+                sine=SineControl(
+                    amplitude=(
+                        0.8
+                        if joint_i == 0
+                        else np.pi/16*leg_i if joint_i == 1
+                        else np.pi/8
+                    ),
+                    frequency=frequency,
+                    phase=(
+                        - np.pi*np.abs(leg_i-side_i)
+                        - (
+                            0 if joint_i == 0
+                            else 0.5*np.pi
+                        )
+                        + 0*float(  # Turning
+                            (0.5)*np.pi*np.sign(np.abs(leg_i-side_i) - 0.5)
+                            if joint_i == 2
+                            else 0
+                        )
+                    ),
+                    offset=(
+                        0 if joint_i == 0
+                        else np.pi/16*leg_i if joint_i == 1
+                        else np.pi/8
+                    )
+                ),
+                pdf=ControlPDF(p=1e-1, d=1e0, f=1e1)
+            )
+            for leg_i in range(2)
+            for side_i, side in enumerate(["L", "R"])
+            for joint_i in range(3)
+        ]
+        return cls(
+            robot,
+            joint_controllers_body + joint_controllers_legs,
+            timestep=kwargs.pop("timestep", 1e-3)
+        )
+
+    @classmethod
+    def swimming(cls, robot, joints, **kwargs):
+        """Salamander controller"""
+        n_body_joints = kwargs.pop("n_body_joints", 11)
+        frequency = kwargs.pop("frequency", 1)
+        joint_controllers_body = [
+            JointController(
+                joint=joints["joint_link_body_{}".format(joint_i+1)],
+                sine=SineControl(
+                    amplitude=0.1+joint_i*0.4/n_body_joints,
+                    frequency=frequency,
+                    phase=-2*np.pi*joint_i/11,
+                    offset=0
+                ),
+                pdf=(
+                    ControlPDF(p=1e-1, d=1e0, f=1e1)
+                ),
+                is_body=True
+            )
+            for joint_i in range(n_body_joints)
+        ]
+        joint_controllers_legs = [
+            JointController(
+                joint=joints["joint_link_leg_{}_{}_{}".format(
+                    leg_i,
+                    side,
+                    joint_i
+                )],
+                sine=SineControl(
+                    amplitude=0.0,
+                    frequency=0,
+                    phase=0,
+                    offset=-2*np.pi/5 if joint_i == 0 else 0
+                ),
+                pdf=ControlPDF(p=1e-1, d=1e0, f=1e1)
+            )
+            for leg_i in range(2)
+            for side_i, side in enumerate(["L", "R"])
+            for joint_i in range(3)
+        ]
+        return cls(
+            robot,
+            joint_controllers_body + joint_controllers_legs,
+            timestep=kwargs.pop("timestep", 1e-3)
+        )
 
 
 def init_engine():
@@ -716,7 +751,7 @@ def main(clargs):
     # Controller
     frequency = 1 if gait == "walking" else 2
     body_offset = 0
-    controller = RobotController.salamander(
+    controller = SalamanderController.gait(
         robot,
         joints,
         gait=gait,
@@ -798,11 +833,10 @@ def main(clargs):
             if gait != new_gait:
                 gait = new_gait
                 frequency = new_freq
-                controller = RobotController.salamander(
+                controller = SalamanderController.gait(
                     robot,
                     joints,
-                    gait=gait,
-                    frequency=frequency
+                    gait
                 )
                 pybullet.setGravity(0, 0, -9.81 if gait == "walking" else -1e-2)
             tic_control = time.time()
