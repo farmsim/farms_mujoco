@@ -464,7 +464,7 @@ def get_joints(robot):
     #     )
     # }
     links = {
-        info[12].decode("UTF-8"): info[16]
+        info[12].decode("UTF-8"): info[16] + 1
         for info in [
             pybullet.getJointInfo(robot, j)
             for j in range(n_joints)
