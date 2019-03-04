@@ -677,6 +677,13 @@ def get_links_contacts(robot, links, ground):
     return contacts, forces
 
 
+def get_joints_force_torque(robot, joints):
+    """Force-torque on joints"""
+    return [
+        pybullet.getJointState(robot, joint)[2]
+        for joint in joints
+    ]
+
 
     # Initialise engine
     init_engine()
@@ -733,6 +740,16 @@ def get_links_contacts(robot, links, ground):
         "link_leg_1_L_3",
         "link_leg_1_R_3"
     ]
+    # Force-torque sensors
+    feet_ft = np.zeros([len(times), 4, 6])
+    joints_sensors = [
+        "joint_link_leg_0_L_3",
+        "joint_link_leg_0_R_3",
+        "joint_link_leg_1_L_3",
+        "joint_link_leg_1_R_3"
+    ]
+    for joint in joints_sensors:
+        pybullet.enableJointForceTorqueSensor(robot, joints[joint])
     while sim_step < len(times):
         if pybullet.readUserDebugParameter(play_id) < 0.5:
             time.sleep(0.5)
@@ -784,6 +801,11 @@ def get_links_contacts(robot, links, ground):
                 robot,
                 [links[foot] for foot in feet],
                 plane
+            )
+            # Force_torque sensors during walking
+            feet_ft[sim_step-1, :, :] = get_joints_force_torque(
+                robot,
+                [joints[joint] for joint in joints_sensors]
             )
             # Video recording
             if record and not sim_step % 30:
