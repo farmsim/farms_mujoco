@@ -453,7 +453,7 @@ def spawn_models():
     return robot, plane
 
 
-def get_joints(robot):
+def get_joints(robot, base_link="base_link"):
     """Get joints"""
     print("Robot: {}".format(robot))
     n_joints = pybullet.getNumJoints(robot)
@@ -463,20 +463,17 @@ def get_joints(robot):
     joint_info = pybullet.getJointInfo(robot, joint_index)
     print(joint_info)
 
-    # joint_positions = {
-    #     name.decode("UTF-8"): state[0]
-    #     for name, state in zip(
-    #         [pybullet.getJointInfo(robot, j)[1] for j in range(n_joints)],
-    #         pybullet.getJointStates(robot, range(n_joints)),
-    #     )
-    # }
-    links = {
+    # Links
+    # Base link
+    links = {base_link: -1}
+    links.update({
         info[12].decode("UTF-8"): info[16] + 1
         for info in [
             pybullet.getJointInfo(robot, j)
             for j in range(n_joints)
         ]
-    }
+    })
+    # Joints
     joints = {
         info[1].decode("UTF-8"): info[0]
         for info in [
@@ -586,7 +583,7 @@ def record_camera(position, yaw, pitch, distance):
     )[2]
 
 
-def init_simulation(timestep, gait="walking"):
+def init_simulation(timestep, gait="walking", base_link="base_link"):
     """Initialise simulation"""
     # Physics
     init_physics(timestep, gait)
@@ -595,7 +592,7 @@ def init_simulation(timestep, gait="walking"):
     robot, plane = spawn_models()
 
     # Links and joints
-    links, joints, _ = get_joints(robot)
+    links, joints, _ = get_joints(robot, base_link=base_link)
     print("Links ids:\n{}".format(
         "\n".join([
             "  {}: {}".format(
