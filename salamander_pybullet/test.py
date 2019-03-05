@@ -618,13 +618,12 @@ class Simulation:
         gait = kwargs.pop("gait", "walking")
         # gait = "swimming"
         self.timestep = kwargs.pop("timestep", 1e-3)
-        self.times = times = np.arange(0, 100, self.timestep)
+        self.times = np.arange(0, 100, self.timestep)
 
         # Initialise
         self.robot, self.plane = self.init_simulation(
             size=len(self.times),
-            gait=gait,
-            base_link="link_body_0"
+            gait=gait
         )
 
     def get_entities(self):
@@ -636,7 +635,7 @@ class Simulation:
             self.plane.model
         )
 
-    def init_simulation(self, size, gait="walking", base_link="base_link"):
+    def init_simulation(self, size, gait="walking"):
         """Initialise simulation"""
         # Physics
         self.init_physics(gait)
