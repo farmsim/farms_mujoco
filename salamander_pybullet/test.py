@@ -1280,8 +1280,11 @@ def main(clargs):
     tic = time.time()
 
     # Run simulation
+    init_state = pybullet.saveState()
     while sim_step < len(sim.times):
         user_params.update()
+        if not(sim_step % 10000) and sim_step > 0:
+            pybullet.restoreState(init_state)
         if not user_params.play.value:
             time.sleep(0.5)
         else:
