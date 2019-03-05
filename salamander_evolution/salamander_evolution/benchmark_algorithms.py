@@ -10,12 +10,13 @@ class QuadraticFunction:
         super(QuadraticFunction, self).__init__()
         self._dim = dim
         self._slow = slow
-        self._name = "Quadratic Function"
+        self._name = "Step-quadratic Function"
 
     @staticmethod
     def fitness_function(decision_vector):
         """Fitnesss"""
-        return [np.linalg.norm(decision_vector - QuadraticFunction.best_known())]
+        fitness = np.linalg.norm(decision_vector - QuadraticFunction.best_known())
+        return [fitness + (1 if fitness > 1 else 0)]
 
     def fitness(self, decision_vector):
         """Fitnesss"""

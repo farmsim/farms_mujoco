@@ -130,7 +130,8 @@ class SineFitting:
         """Get name"""
         return self._name
 
-    def get_bounds(self):
+    @classmethod
+    def get_bounds():
         """Get bounds"""
         return (
             [0, 0, 0, -100],
