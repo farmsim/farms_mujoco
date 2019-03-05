@@ -736,7 +736,7 @@ class Simulation:
     def get_entities(self):
         """Get simulation entities"""
         return (
-            self.robot.model,
+            self.robot,
             self.robot.links,
             self.robot.joints,
             self.plane.model
@@ -748,7 +748,7 @@ class Simulation:
         self.init_physics(gait)
 
         # Spawn models
-        robot = SalamanderModel.spawn()
+        robot = SalamanderModel.spawn(gait=gait)
         plane = Model.from_urdf(
             "plane.urdf",
             basePosition=[0, 0, -0.1]
@@ -785,8 +785,8 @@ class Model:
     @classmethod
     def from_sdf(cls, sdf, base_link="base_link", **kwargs):
         """Model from SDF"""
-        model = pybullet.loadSDF(sdf, **kwargs)[0]
-        return cls(model, base_link=base_link)
+        model = pybullet.loadSDF(sdf)[0]
+        return cls(model, base_link=base_link, **kwargs)
 
     @classmethod
     def from_urdf(cls, urdf, base_link="base_link", **kwargs):
@@ -880,19 +880,30 @@ class Model:
 class SalamanderModel(Model):
     """Salamander model"""
 
-    def __init__(self, model, base_link):
+    def __init__(self, model, base_link, **kwargs):
         super(SalamanderModel, self).__init__(
             model=model,
             base_link=base_link
         )
+        # Model dynamics
         self.apply_motor_damping()
+        # Controller
+        gait = kwargs.pop("gait", "walking")
+        self.controller = SalamanderController.gait(
+            self.model,
+            self.joints,
+            gait=gait,
+            frequency=kwargs.pop("frequency", 1 if gait == "walking" else 2),
+            timestep=kwargs.pop("timestep", 1e-3)
+        )
 
     @classmethod
-    def spawn(cls):
+    def spawn(cls, **kwargs):
         """Spawn salamander"""
         return cls.from_sdf(
             "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
-            base_link="link_body_0"
+            base_link="link_body_0",
+            **kwargs
         )
 
     def leg_collisions(self, plane, activate=True):
@@ -925,36 +936,32 @@ def main(clargs):
     # Initialise simulation
     timestep = 1e-3
     gait = "walking"
+    frequency = 1
+    body_offset = 0
     sim = Simulation(timestep=timestep, gait=gait)
 
     # Simulation entities
-    robot, links, joints, plane = sim.get_entities()
+    salamander, links, joints, plane = sim.get_entities()
 
     # Remove leg collisions
-    sim.robot.leg_collisions(plane, activate=False)
+    salamander.leg_collisions(plane, activate=False)
 
     # Model information
-    sim.robot.print_dynamics_info()
+    salamander.print_dynamics_info()
 
     # Create scene
     add_obstacles = False
     if add_obstacles:
         create_scene(plane)
 
-    # Controller
-    frequency = 1 if gait == "walking" else 2
-    body_offset = 0
-    controller = SalamanderController.gait(
-        robot,
-        joints,
-        gait=gait,
-        frequency=frequency,
-        timestep=timestep
-    )
-
     # Camera
     camera_pitch = -89 if clargs.top_camera else -45
-    target_pos = camera_view(robot, yaw=0, pitch=camera_pitch, distance=1)
+    target_pos = camera_view(
+        salamander.model,
+        yaw=0,
+        pitch=camera_pitch,
+        distance=1
+    )
 
     # User parameters
     user_params = user_parameters(gait, frequency)
@@ -988,7 +995,7 @@ def main(clargs):
         "joint_link_leg_1_R_3"
     ]
     for joint in joints_sensors:
-        pybullet.enableJointForceTorqueSensor(robot, joints[joint])
+        pybullet.enableJointForceTorqueSensor(salamander.model, joints[joint])
 
     # Commands
     joints_commanded_body = [
@@ -1028,26 +1035,26 @@ def main(clargs):
             if frequency != new_freq:
                 gait = new_gait
                 frequency = new_freq
-                controller.update_frequency(frequency)
+                sim.robot.controller.update_frequency(frequency)
             if body_offset != new_body_offset:
                 gait = new_gait
                 body_offset = new_body_offset
-                controller.update_body_offset(body_offset)
+                sim.robot.controller.update_body_offset(body_offset)
             if gait != new_gait:
                 gait = new_gait
                 frequency = new_freq
-                controller = SalamanderController.gait(
-                    robot,
+                sim.robot.controller = SalamanderController.gait(
+                    salamander.model,
                     joints,
                     gait
                 )
                 pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
             tic_control = time.time()
-            controller.control()
+            sim.robot.controller.control()
             time_control = time.time() - tic_control
             # Swimming
             if gait == "swimming":
-                forces_torques[sim_step] = viscous_swimming(robot, links)
+                forces_torques[sim_step] = viscous_swimming(salamander.model, links)
             # Time plugins
             time_plugin = time.time() - tic_rt
             # Physics
@@ -1058,22 +1065,22 @@ def main(clargs):
             tot_sim_time += toc_sim - tic_sim
             # Contacts during walking
             _, contact_forces[sim_step-1, :] = get_links_contacts(
-                robot,
+                salamander.model,
                 [links[foot] for foot in feet],
                 plane
             )
             # Force_torque sensors during walking
             feet_ft[sim_step-1, :, :] = get_joints_force_torque(
-                robot,
+                salamander.model,
                 [joints[joint] for joint in joints_sensors]
             )
             # Commands
             joints_cmds_body[sim_step-1, :] = get_joints_commands(
-                robot,
+                salamander.model,
                 [joints[joint] for joint in joints_commanded_body]
             )
             joints_cmds_legs[sim_step-1, :] = get_joints_commands(
-                robot,
+                salamander.model,
                 [joints[joint] for joint in joints_commanded_legs]
             )
             # Video recording
@@ -1087,7 +1094,7 @@ def main(clargs):
             # User camera
             if not clargs.free_camera:
                 target_pos = camera_view(
-                    robot,
+                    salamander.model,
                     target_pos,
                     yaw_speed=360/10 if clargs.rotating_camera else 0,
                     timestep=timestep
