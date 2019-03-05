@@ -622,7 +622,8 @@ class Simulation:
 
         # Initialise
         self.robot, self.plane = self.init_simulation(
-            gait,
+            size=len(self.times),
+            gait=gait,
             base_link="link_body_0"
         )
 
@@ -635,13 +636,13 @@ class Simulation:
             self.plane.model
         )
 
-    def init_simulation(self, gait="walking", base_link="base_link"):
+    def init_simulation(self, size, gait="walking", base_link="base_link"):
         """Initialise simulation"""
         # Physics
         self.init_physics(gait)
 
         # Spawn models
-        robot = SalamanderModel.spawn(gait=gait)
+        robot = SalamanderModel.spawn(size, gait=gait)
         plane = Model.from_urdf(
             "plane.urdf",
             basePosition=[0, 0, -0.1]
@@ -773,7 +774,7 @@ class Model:
 class SalamanderModel(Model):
     """Salamander model"""
 
-    def __init__(self, model, base_link, **kwargs):
+    def __init__(self, model, base_link, size, **kwargs):
         super(SalamanderModel, self).__init__(
             model=model,
             base_link=base_link
@@ -789,13 +790,22 @@ class SalamanderModel(Model):
             frequency=kwargs.pop("frequency", 1 if gait == "walking" else 2),
             timestep=kwargs.pop("timestep", 1e-3)
         )
+        self.feet = [
+            "link_leg_0_L_3",
+            "link_leg_0_R_3",
+            "link_leg_1_L_3",
+            "link_leg_1_R_3"
+        ]
+        self.sensors = ModelSensors(self, size)
+        self.motors = ModelMotors(size)
 
     @classmethod
-    def spawn(cls, **kwargs):
+    def spawn(cls, size, **kwargs):
         """Spawn salamander"""
         return cls.from_sdf(
             "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
             base_link="link_body_0",
+            size=size,
             **kwargs
         )
 
@@ -821,6 +831,99 @@ class SalamanderModel(Model):
                 linearDamping=0,
                 angularDamping=angular
             )
+
+
+class ModelSensors:
+    """Model sensors"""
+
+    def __init__(self, salamander, size):  # , sensors
+        super(ModelSensors, self).__init__()
+        # self.sensors = sensors
+        # Contact sensors
+        self.feet = salamander.feet
+        self.contact_forces = np.zeros([size, 4])
+
+        # Force-torque sensors
+        self.feet_ft = np.zeros([size, 4, 6])
+        self.joints_sensors = [
+            "joint_link_leg_0_L_3",
+            "joint_link_leg_0_R_3",
+            "joint_link_leg_1_L_3",
+            "joint_link_leg_1_R_3"
+        ]
+        for joint in self.joints_sensors:
+            pybullet.enableJointForceTorqueSensor(
+                salamander.model,
+                salamander.joints[joint]
+            )
+
+    def plot_contacts(self, times):
+        """Plot sensors"""
+        # Plot contacts
+        plt.figure("Contacts")
+        for foot_i, foot in enumerate(self.feet):
+            plt.plot(times, self.contact_forces[:, foot_i], label=foot)
+            plt.xlabel("Time [s]")
+            plt.ylabel("Reaction force [N]")
+            plt.grid(True)
+            plt.legend()
+
+    def plot_ft(self, times):
+        """Plot force-torque sensors"""
+        # Plot Feet forces
+        plt.figure("Feet forces")
+        for dim in range(3):
+            plt.plot(times, self.feet_ft[:, 0, dim], label=["x", "y", "z"][dim])
+            plt.xlabel("Time [s]")
+            plt.ylabel("Force [N]")
+            plt.grid(True)
+            plt.legend()
+
+
+class ModelMotors:
+    """Model motors"""
+
+    def __init__(self, size):
+        super(ModelMotors, self).__init__()
+        # Commands
+        self.joints_commanded_body = [
+            "joint_link_body_{}".format(joint_i+1)
+            for joint_i in range(11)
+        ]
+        self.joints_commanded_legs = [
+            "joint_link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in ["L", "R"]
+            for joint_i in range(3)
+        ]
+        self.joints_cmds_body = np.zeros([
+            size,
+            len(self.joints_commanded_body)
+        ])
+        self.joints_cmds_legs = np.zeros([
+            size,
+            len(self.joints_commanded_legs)
+        ])
+
+    def plot_body(self, times):
+        """Plot body motors"""
+        plt.figure("Body motor torques")
+        for joint_i, joint in enumerate(self.joints_commanded_body):
+            plt.plot(times, self.joints_cmds_body[:, joint_i], label=joint)
+            plt.xlabel("Time [s]")
+            plt.ylabel("Torque [Nm]")
+            plt.grid(True)
+            plt.legend()
+
+    def plot_legs(self, times):
+        """Plot legs motors"""
+        plt.figure("Legs motor torques")
+        for joint_i, joint in enumerate(self.joints_commanded_legs):
+            plt.plot(times, self.joints_cmds_legs[:, joint_i], label=joint)
+            plt.xlabel("Time [s]")
+            plt.ylabel("Torque [Nm]")
+            plt.grid(True)
+            plt.legend()
 
 
 class Camera:
@@ -1125,7 +1228,6 @@ def main(clargs):
     timestep = 1e-3
     gait = "walking"
     frequency = 1
-    body_offset = 0
     sim = Simulation(timestep=timestep, gait=gait)
 
     # Simulation entities
@@ -1178,40 +1280,6 @@ def main(clargs):
     sim_step = 0
     tic = time.time()
 
-    # Contact sensors
-    contact_forces = np.zeros([len(sim.times), 4])
-    feet = [
-        "link_leg_0_L_3",
-        "link_leg_0_R_3",
-        "link_leg_1_L_3",
-        "link_leg_1_R_3"
-    ]
-
-    # Force-torque sensors
-    feet_ft = np.zeros([len(sim.times), 4, 6])
-    joints_sensors = [
-        "joint_link_leg_0_L_3",
-        "joint_link_leg_0_R_3",
-        "joint_link_leg_1_L_3",
-        "joint_link_leg_1_R_3"
-    ]
-    for joint in joints_sensors:
-        pybullet.enableJointForceTorqueSensor(salamander.model, joints[joint])
-
-    # Commands
-    joints_commanded_body = [
-        "joint_link_body_{}".format(joint_i+1)
-        for joint_i in range(11)
-    ]
-    joints_commanded_legs = [
-        "joint_link_leg_{}_{}_{}".format(leg_i, side, joint_i)
-        for leg_i in range(2)
-        for side in ["L", "R"]
-        for joint_i in range(3)
-    ]
-    joints_cmds_body = np.zeros([len(sim.times), len(joints_commanded_body)])
-    joints_cmds_legs = np.zeros([len(sim.times), len(joints_commanded_legs)])
-
     # Run simulation
     while sim_step < len(sim.times):
         user_params.update()
@@ -1257,24 +1325,34 @@ def main(clargs):
             toc_sim = time.time()
             tot_sim_time += toc_sim - tic_sim
             # Contacts during walking
-            _, contact_forces[sim_step-1, :] = get_links_contacts(
+            _, salamander.sensors.contact_forces[sim_step-1, :] = get_links_contacts(
                 salamander.model,
-                [links[foot] for foot in feet],
+                [links[foot] for foot in salamander.feet],
                 plane
             )
             # Force_torque sensors during walking
-            feet_ft[sim_step-1, :, :] = get_joints_force_torque(
+            salamander.sensors.feet_ft[sim_step-1, :, :] = get_joints_force_torque(
                 salamander.model,
-                [joints[joint] for joint in joints_sensors]
+                [joints[joint] for joint in salamander.sensors.joints_sensors]
             )
             # Commands
-            joints_cmds_body[sim_step-1, :] = get_joints_commands(
-                salamander.model,
-                [joints[joint] for joint in joints_commanded_body]
+            salamander.motors.joints_cmds_body[sim_step-1, :] = (
+                get_joints_commands(
+                    salamander.model,
+                    [
+                        joints[joint]
+                        for joint in salamander.motors.joints_commanded_body
+                    ]
+                )
             )
-            joints_cmds_legs[sim_step-1, :] = get_joints_commands(
-                salamander.model,
-                [joints[joint] for joint in joints_commanded_legs]
+            salamander.motors.joints_cmds_legs[sim_step-1, :] = (
+                get_joints_commands(
+                    salamander.model,
+                    [
+                        joints[joint]
+                        for joint in salamander.motors.joints_commanded_legs
+                    ]
+                )
             )
             # Video recording
             if clargs.record and not sim_step % 25:
@@ -1298,39 +1376,11 @@ def main(clargs):
 
     toc = time.time()
 
-    # Plot contacts
-    plt.figure("Contacts")
-    for foot_i, foot in enumerate(feet):
-        plt.plot(sim.times, contact_forces[:, foot_i], label=foot)
-        plt.xlabel("Time [s]")
-        plt.ylabel("Reaction force [N]")
-        plt.grid(True)
-        plt.legend()
-
-    # Plot Feet forces
-    plt.figure("Feet forces")
-    for dim in range(3):
-        plt.plot(sim.times, feet_ft[:, 0, dim], label=["x", "y", "z"][dim])
-        plt.xlabel("Time [s]")
-        plt.ylabel("Force [N]")
-        plt.grid(True)
-        plt.legend()
-
-    # Plot Feet forces
-    plt.figure("Body motor torques")
-    for joint_i, joint in enumerate(joints_commanded_body):
-        plt.plot(sim.times, joints_cmds_body[:, joint_i], label=joint)
-        plt.xlabel("Time [s]")
-        plt.ylabel("Torque [Nm]")
-        plt.grid(True)
-        plt.legend()
-    plt.figure("Legs motor torques")
-    for joint_i, joint in enumerate(joints_commanded_legs):
-        plt.plot(sim.times, joints_cmds_legs[:, joint_i], label=joint)
-        plt.xlabel("Time [s]")
-        plt.ylabel("Torque [Nm]")
-        plt.grid(True)
-        plt.legend()
+    # Plot
+    salamander.sensors.plot_contacts(sim.times)
+    salamander.sensors.plot_ft(sim.times)
+    salamander.motors.plot_body(sim.times)
+    salamander.motors.plot_legs(sim.times)
 
     # Show plots
     plt.show()
