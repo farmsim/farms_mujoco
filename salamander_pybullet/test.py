@@ -422,21 +422,6 @@ def init_engine():
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def init_physics(timestep, gait="walking"):
-    """Initialise physics"""
-    pybullet.resetSimulation()
-    pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
-    pybullet.setTimeStep(timestep)
-    pybullet.setRealTimeSimulation(0)
-    pybullet.setPhysicsEngineParameter(
-        fixedTimeStep=timestep,
-        numSolverIterations=50
-    )
-    print("Physics parameters:\n{}".format(
-        pybullet.getPhysicsEngineParameters()
-    ))
-
-
 def spawn_models():
     """Spawn models"""
     robot = pybullet.loadSDF(
@@ -581,37 +566,6 @@ def record_camera(position, yaw, pitch, distance):
         renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
         flags=pybullet.ER_NO_SEGMENTATION_MASK
     )[2]
-
-
-def init_simulation(timestep, gait="walking", base_link="base_link"):
-    """Initialise simulation"""
-    # Physics
-    init_physics(timestep, gait)
-
-    # Spawn models
-    robot, plane = spawn_models()
-
-    # Links and joints
-    links, joints, _ = get_joints(robot, base_link=base_link)
-    print("Links ids:\n{}".format(
-        "\n".join([
-            "  {}: {}".format(
-                name,
-                links[name]
-            )
-            for name in links
-        ])
-    ))
-    print("Joints ids:\n{}".format(
-        "\n".join([
-            "  {}: {}".format(
-                name,
-                joints[name]
-            )
-            for name in joints
-        ])
-    ))
-    return robot, links, joints, plane
 
 
 def user_parameters(gait, frequency):
@@ -829,23 +783,97 @@ def print_dynamics_info(robot, links):
         ))
 
 
+class Simulation(object):
+    """Simulation"""
+
+    def __init__(self, **kwargs):
+        super(Simulation, self).__init__()
+        # Initialise engine
+        init_engine()
+
+        # Parameters
+        # gait = "standing"
+        gait = kwargs.pop("gait", "walking")
+        # gait = "swimming"
+        self.timestep = kwargs.pop("timestep", 1e-3)
+
+        # Initialise
+        self.robot, self.links, self.joints, self.plane = self.init_simulation(
+            gait,
+            base_link="link_body_0"
+        )
+
+    def get_entities(self):
+        """Get simulation entities"""
+        return self.robot, self.links, self.joints, self.plane
+
+    def init_simulation(self, gait="walking", base_link="base_link"):
+        """Initialise simulation"""
+        # Physics
+        self.init_physics(gait)
+
+        # Spawn models
+        robot, plane = spawn_models()
+
+        # Links and joints
+        links, joints, _ = get_joints(robot, base_link=base_link)
+        print("Links ids:\n{}".format(
+            "\n".join([
+                "  {}: {}".format(
+                    name,
+                    links[name]
+                )
+                for name in links
+            ])
+        ))
+        print("Joints ids:\n{}".format(
+            "\n".join([
+                "  {}: {}".format(
+                    name,
+                    joints[name]
+                )
+                for name in joints
+            ])
+        ))
+        return robot, links, joints, plane
+
+    def init_physics(self, gait="walking"):
+        """Initialise physics"""
+        pybullet.resetSimulation()
+        pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
+        pybullet.setTimeStep(self.timestep)
+        pybullet.setRealTimeSimulation(0)
+        pybullet.setPhysicsEngineParameter(
+            fixedTimeStep=self.timestep,
+            numSolverIterations=50
+        )
+        print("Physics parameters:\n{}".format(
+            pybullet.getPhysicsEngineParameters()
+        ))
+
+
+class Model(object):
+    """Model"""
+
+    def __init__(self, sdf):
+        super(Model, self).__init__()
+        self.sdf = sdf
+        self.robot = None
+
+
 def main(clargs):
     """Main"""
-    # Initialise engine
-    init_engine()
-
-    # Parameters
-    # gait = "standing"
-    gait = "walking"
-    # gait = "swimming"
+    # Initialise simulation
     timestep = 1e-3
+    gait = "walking"
+    sim = Simulation(timestep=timestep, gait=gait)
 
-    # Initialise
-    robot, links, joints, plane = init_simulation(
-        timestep,
-        gait,
-        base_link="link_body_0"
+    # Simulation entities
+    robot, links, joints, plane = (
+        sim.robot, sim.links, sim.joints, sim.plane
     )
+
+    # Model information
     print_dynamics_info(robot, links)
     print("Robot mass: {} [kg]".format(np.sum([
         pybullet.getDynamicsInfo(robot, links[link])[0]
