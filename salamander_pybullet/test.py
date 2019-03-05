@@ -422,53 +422,6 @@ def init_engine():
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def spawn_models():
-    """Spawn models"""
-    robot = pybullet.loadSDF(
-        "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
-        # useMaximalCoordinates=1
-    )[0]
-    # robot = pybullet.loadSDF(
-    #     "/home/jonathan/.gazebo/models/biorob_centipede/model.sdf"
-    # )[0]
-    plane = pybullet.loadURDF(
-        "plane.urdf",
-        basePosition=[0, 0, -0.1]
-    )
-    return robot, plane
-
-
-def get_joints(robot, base_link="base_link"):
-    """Get joints"""
-    print("Robot: {}".format(robot))
-    n_joints = pybullet.getNumJoints(robot)
-    print("Number of joints: {}".format(n_joints))
-
-    joint_index = 2
-    joint_info = pybullet.getJointInfo(robot, joint_index)
-    print(joint_info)
-
-    # Links
-    # Base link
-    links = {base_link: -1}
-    links.update({
-        info[12].decode("UTF-8"): info[16] + 1
-        for info in [
-            pybullet.getJointInfo(robot, j)
-            for j in range(n_joints)
-        ]
-    })
-    # Joints
-    joints = {
-        info[1].decode("UTF-8"): info[0]
-        for info in [
-            pybullet.getJointInfo(robot, j)
-            for j in range(n_joints)
-        ]
-    }
-    return links, joints, n_joints
-
-
 def camera_view(robot, target_pos=None, **kwargs):
     """Camera view"""
     camera_filter = kwargs.pop("camera_filter", 1e-3)
@@ -798,14 +751,19 @@ class Simulation(object):
         self.timestep = kwargs.pop("timestep", 1e-3)
 
         # Initialise
-        self.robot, self.links, self.joints, self.plane = self.init_simulation(
+        self.robot, self.plane = self.init_simulation(
             gait,
             base_link="link_body_0"
         )
 
     def get_entities(self):
         """Get simulation entities"""
-        return self.robot, self.links, self.joints, self.plane
+        return (
+            self.robot.model,
+            self.robot.links,
+            self.robot.joints,
+            self.plane.model
+        )
 
     def init_simulation(self, gait="walking", base_link="base_link"):
         """Initialise simulation"""
@@ -813,29 +771,15 @@ class Simulation(object):
         self.init_physics(gait)
 
         # Spawn models
-        robot, plane = spawn_models()
-
-        # Links and joints
-        links, joints, _ = get_joints(robot, base_link=base_link)
-        print("Links ids:\n{}".format(
-            "\n".join([
-                "  {}: {}".format(
-                    name,
-                    links[name]
-                )
-                for name in links
-            ])
-        ))
-        print("Joints ids:\n{}".format(
-            "\n".join([
-                "  {}: {}".format(
-                    name,
-                    joints[name]
-                )
-                for name in joints
-            ])
-        ))
-        return robot, links, joints, plane
+        robot = Model.from_sdf(
+            "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
+            base_link="link_body_0"
+        )
+        plane = Model.from_urdf(
+            "plane.urdf",
+            basePosition=[0, 0, -0.1]
+        )
+        return robot, plane
 
     def init_physics(self, gait="walking"):
         """Initialise physics"""
@@ -852,26 +796,89 @@ class Simulation(object):
         ))
 
 
-class Model(object):
-    """Model"""
+class Model:
+    """Simulation model"""
 
-    def __init__(self, sdf):
+    def __init__(self, model, base_link="base_link"):
         super(Model, self).__init__()
-        self.sdf = sdf
-        self.robot = None
+        self.model = model
+        self.links, self.joints, self.n_joints = self.get_joints(
+            self.model,
+            base_link
+        )
+        self.print_information()
+
+    @classmethod
+    def from_sdf(cls, sdf, base_link="base_link", **kwargs):
+        """Model from SDF"""
+        model = pybullet.loadSDF(sdf, **kwargs)[0]
+        return cls(model, base_link=base_link)
+
+    @classmethod
+    def from_urdf(cls, urdf, base_link="base_link", **kwargs):
+        """Model from SDF"""
+        model = pybullet.loadURDF(urdf, **kwargs)
+        return cls(model, base_link=base_link)
+
+    @staticmethod
+    def get_joints(model, base_link="base_link"):
+        """Get joints"""
+        print("Model: {}".format(model))
+        n_joints = pybullet.getNumJoints(model)
+        print("Number of joints: {}".format(n_joints))
+
+        # Links
+        # Base link
+        links = {base_link: -1}
+        links.update({
+            info[12].decode("UTF-8"): info[16] + 1
+            for info in [
+                pybullet.getJointInfo(model, j)
+                for j in range(n_joints)
+            ]
+        })
+        # Joints
+        joints = {
+            info[1].decode("UTF-8"): info[0]
+            for info in [
+                pybullet.getJointInfo(model, j)
+                for j in range(n_joints)
+            ]
+        }
+        return links, joints, n_joints
+
+    def print_information(self):
+        """Print information"""
+        print("Links ids:\n{}".format(
+            "\n".join([
+                "  {}: {}".format(
+                    name,
+                    self.links[name]
+                )
+                for name in self.links
+            ])
+        ))
+        print("Joints ids:\n{}".format(
+            "\n".join([
+                "  {}: {}".format(
+                    name,
+                    self.joints[name]
+                )
+                for name in self.joints
+            ])
+        ))
 
 
 def main(clargs):
     """Main"""
+
     # Initialise simulation
     timestep = 1e-3
     gait = "walking"
     sim = Simulation(timestep=timestep, gait=gait)
 
     # Simulation entities
-    robot, links, joints, plane = (
-        sim.robot, sim.links, sim.joints, sim.plane
-    )
+    robot, links, joints, plane = sim.get_entities()
 
     # Model information
     print_dynamics_info(robot, links)
