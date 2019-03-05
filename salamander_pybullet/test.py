@@ -841,8 +841,29 @@ def main(clargs):
     timestep = 1e-3
 
     # Initialise
-    robot, links, joints, plane = init_simulation(timestep, gait)
+    robot, links, joints, plane = init_simulation(
+        timestep,
+        gait,
+        base_link="link_body_0"
+    )
     print_dynamics_info(robot, links)
+    print("Robot mass: {} [kg]".format(np.sum([
+        pybullet.getDynamicsInfo(robot, links[link])[0]
+        for link in links
+    ])))
+
+    # Remove leg collisions
+    for leg_i in range(2):
+        for side in ["L", "R"]:
+            for joint_i in range(3):
+                link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+                pybullet.setCollisionFilterPair(
+                    bodyUniqueIdA=robot,
+                    bodyUniqueIdB=plane,
+                    linkIndexA=links[link],
+                    linkIndexB=-1,
+                    enableCollision=0
+                )
 
     # Apply motor damping
     for j in range (pybullet.getNumJoints(robot)):
