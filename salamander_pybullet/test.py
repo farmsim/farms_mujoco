@@ -422,43 +422,6 @@ def init_engine():
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def camera_view(robot, target_pos=None, **kwargs):
-    """Camera view"""
-    camera_filter = kwargs.pop("camera_filter", 1e-3)
-    yaw_speed = kwargs.pop("yaw_speed", 0)
-    camInfo = pybullet.getDebugVisualizerCamera()
-    # curTargetPos = camInfo[11]
-    # distance=camInfo[10]
-    # yaw = camInfo[8]
-    # pitch=camInfo[9]
-    # targetPos = [0.95*curTargetPos[0]+0.05*humanPos[0],0.95*curTargetPos[1]+0.05*humanPos[1],curTargetPos[2]]
-    timestep = kwargs.pop("timestep", 1e-3)
-    pitch = kwargs.pop("pitch", camInfo[9])
-    yaw = kwargs.pop("yaw", camInfo[8]) + yaw_speed*timestep
-    distance = kwargs.pop("distance", camInfo[10])
-    # sim_time*360/10 if clargs.rotating_camera else 0
-    # yaw = kwargs.pop("yaw", 0)
-    target_pos = (
-        (
-            (1-camera_filter)*target_pos
-            + camera_filter*np.array(
-                pybullet.getBasePositionAndOrientation(robot)[0]
-            )
-        )
-        if target_pos is not None
-        else np.array(
-            pybullet.getBasePositionAndOrientation(robot)[0]
-        )
-    )
-    pybullet.resetDebugVisualizerCamera(
-        cameraDistance=distance,
-        cameraYaw=yaw,
-        cameraPitch=pitch,
-        cameraTargetPosition=target_pos
-    )
-    return target_pos
-
-
 def viscous_swimming(robot, links):
     """Viscous swimming"""
     # Swimming
@@ -495,30 +458,6 @@ def viscous_swimming(robot, links):
             flags=pybullet.LINK_FRAME
         )
     return forces_torques
-
-
-def record_camera(position, yaw, pitch, distance):
-    """Record camera"""
-    return pybullet.getCameraImage(
-        width=640,
-        height=480,
-        viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
-            cameraTargetPosition=position,
-            distance=distance,
-            yaw=yaw,
-            pitch=pitch,
-            roll=0,
-            upAxisIndex=2
-        ),
-        projectionMatrix = pybullet.computeProjectionMatrixFOV(
-            fov=60,
-            aspect=600/360,
-            nearVal=0.1,
-            farVal=5
-        ),
-        renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
-        flags=pybullet.ER_NO_SEGMENTATION_MASK
-    )[2]
 
 
 def user_parameters(gait, frequency):
@@ -726,6 +665,7 @@ class Simulation:
         gait = kwargs.pop("gait", "walking")
         # gait = "swimming"
         self.timestep = kwargs.pop("timestep", 1e-3)
+        self.times = times = np.arange(0, 100, self.timestep)
 
         # Initialise
         self.robot, self.plane = self.init_simulation(
@@ -930,6 +870,126 @@ class SalamanderModel(Model):
             )
 
 
+class Camera:
+    """Camera"""
+
+    def __init__(self, target_model=None, **kwargs):
+        super(Camera, self).__init__()
+        self.target = target_model
+        cam_info = self.get_camera()
+        self.timestep = kwargs.pop("timestep", 1e-3)
+        self.motion_filter = kwargs.pop("motion_filter", 1e-3)
+        self.yaw = kwargs.pop("yaw", cam_info[8])
+        self.yaw_speed = kwargs.pop("yaw_speed", 0)
+        self.pitch = kwargs.pop("pitch", cam_info[9])
+        self.distance = kwargs.pop("distance", cam_info[10])
+
+    @staticmethod
+    def get_camera():
+        """Get camera information"""
+        return pybullet.getDebugVisualizerCamera()
+
+    def update_yaw(self):
+        """Update yaw"""
+        self.yaw += self.yaw_speed*self.timestep
+
+
+class CameraTarget(Camera):
+    """Camera with target following"""
+
+    def __init__(self, target_model, **kwargs):
+        super(CameraTarget, self).__init__(**kwargs)
+        self.target = target_model
+        self.target_pos = kwargs.pop(
+            "target_pos",
+            np.array(pybullet.getBasePositionAndOrientation(self.target)[0])
+            if self.target is not None
+            else np.array(self.get_camera()[11])
+        )
+
+    def update_target_pos(self):
+        """Update target position"""
+        self.target_pos = (
+            (1-self.motion_filter)*self.target_pos
+            + self.motion_filter*np.array(
+                pybullet.getBasePositionAndOrientation(self.target)[0]
+            )
+        )
+
+
+class UserCamera(CameraTarget):
+    """UserCamera"""
+
+    def __init__(self, target_model, **kwargs):
+        super(UserCamera, self).__init__(target_model, **kwargs)
+        self.update(use_camera=False)
+
+    def update(self, use_camera=True):
+        """Camera view"""
+        if use_camera:
+            self.yaw, self.pitch, self.distance = self.get_camera()[8:11]
+        self.update_yaw()
+        self.update_target_pos()
+        pybullet.resetDebugVisualizerCamera(
+            cameraDistance=self.distance,
+            cameraYaw=self.yaw,
+            cameraPitch=self.pitch,
+            cameraTargetPosition=self.target_pos
+        )
+
+
+class CameraRecord(CameraTarget):
+    """Camera recording"""
+
+    def __init__(self, target_model, size, fps, **kwargs):
+        super(CameraRecord, self).__init__(target_model, **kwargs)
+        self.width = kwargs.pop("width", 640)
+        self.height = kwargs.pop("height", 480)
+        self.fps = fps
+        self.data = np.zeros(
+            [size, self.height, self.width, 4],
+            dtype=np.uint8
+        )
+
+    def record(self, sample):
+        """Record camera"""
+        self.update_yaw()
+        self.update_target_pos()
+        self.data[sample, :, :] = pybullet.getCameraImage(
+            width=self.width,
+            height=self.height,
+            viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
+                cameraTargetPosition=self.target_pos,
+                distance=self.distance,
+                yaw=self.yaw,
+                pitch=self.pitch,
+                roll=0,
+                upAxisIndex=2
+            ),
+            projectionMatrix = pybullet.computeProjectionMatrixFOV(
+                fov=60,
+                aspect=640/480,
+                nearVal=0.1,
+                farVal=5
+            ),
+            renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
+            flags=pybullet.ER_NO_SEGMENTATION_MASK
+        )[2]
+
+    def save(self, filename="video.avi"):
+        """Save recording"""
+        print("Recording video to {}".format(filename))
+        import cv2
+        writer = cv2.VideoWriter(
+            filename,
+            cv2.VideoWriter_fourcc(*'MJPG'),
+            self.fps,
+            (self.width, self.height)
+        )
+        for image in self.data:
+            writer.write(image)
+
+
 def main(clargs):
     """Main"""
 
@@ -955,13 +1015,28 @@ def main(clargs):
         create_scene(plane)
 
     # Camera
-    camera_pitch = -89 if clargs.top_camera else -45
-    target_pos = camera_view(
-        salamander.model,
+    camera = UserCamera(
+        target_model=salamander.model,
         yaw=0,
-        pitch=camera_pitch,
-        distance=1
+        yaw_speed=360/10 if clargs.rotating_camera else 0,
+        pitch=-89 if clargs.top_camera else -45,
+        distance=1,
+        timestep=timestep
     )
+
+    # Video recording
+    if clargs.record:
+        camera_record = CameraRecord(
+            target_model=salamander.model,
+            size=len(sim.times)//25,
+            fps=40,
+            yaw=0,
+            yaw_speed=360/10 if clargs.rotating_camera else 0,
+            pitch=-89 if clargs.top_camera else -45,
+            distance=1,
+            timestep=timestep*25,
+            motion_filter=1e-1
+        )
 
     # User parameters
     user_params = user_parameters(gait, frequency)
@@ -971,14 +1046,13 @@ def main(clargs):
     test_debug_info()
 
     # Simulation time
-    tic = time.time()
     tot_sim_time = 0
-    times = np.arange(0, 10, timestep)
-    forces_torques = np.zeros([len(times), 2, 10, 3])
+    forces_torques = np.zeros([len(sim.times), 2, 10, 3])
     sim_step = 0
+    tic = time.time()
 
     # Contact sensors
-    contact_forces = np.zeros([len(times), 4])
+    contact_forces = np.zeros([len(sim.times), 4])
     feet = [
         "link_leg_0_L_3",
         "link_leg_0_R_3",
@@ -987,7 +1061,7 @@ def main(clargs):
     ]
 
     # Force-torque sensors
-    feet_ft = np.zeros([len(times), 4, 6])
+    feet_ft = np.zeros([len(sim.times), 4, 6])
     joints_sensors = [
         "joint_link_leg_0_L_3",
         "joint_link_leg_0_R_3",
@@ -1008,15 +1082,11 @@ def main(clargs):
         for side in ["L", "R"]
         for joint_i in range(3)
     ]
-    joints_cmds_body = np.zeros([len(times), len(joints_commanded_body)])
-    joints_cmds_legs = np.zeros([len(times), len(joints_commanded_legs)])
-
-    # Video recording
-    if clargs.record:
-        record_data = np.zeros([len(times)//25, 480, 640, 4], dtype=np.uint8)
+    joints_cmds_body = np.zeros([len(sim.times), len(joints_commanded_body)])
+    joints_cmds_legs = np.zeros([len(sim.times), len(joints_commanded_legs)])
 
     # Run simulation
-    while sim_step < len(times):
+    while sim_step < len(sim.times):
         if pybullet.readUserDebugParameter(play_id) < 0.5:
             time.sleep(0.5)
         else:
@@ -1085,20 +1155,10 @@ def main(clargs):
             )
             # Video recording
             if clargs.record and not sim_step % 25:
-                record_data[sim_step//25-1, :, :] = record_camera(
-                    position=target_pos,
-                    yaw=sim_time*360/10,
-                    pitch=-30,
-                    distance=1
-                )
+                camera_record.record(sim_step//25-1)
             # User camera
             if not clargs.free_camera:
-                target_pos = camera_view(
-                    salamander.model,
-                    target_pos,
-                    yaw_speed=360/10 if clargs.rotating_camera else 0,
-                    timestep=timestep
-                )
+                camera.update()
             # Real-time
             toc_rt = time.time()
             rtl = pybullet.readUserDebugParameter(rtl_id)
@@ -1119,7 +1179,7 @@ def main(clargs):
     # Plot contacts
     plt.figure("Contacts")
     for foot_i, foot in enumerate(feet):
-        plt.plot(times, contact_forces[:, foot_i], label=foot)
+        plt.plot(sim.times, contact_forces[:, foot_i], label=foot)
         plt.xlabel("Time [s]")
         plt.ylabel("Reaction force [N]")
         plt.grid(True)
@@ -1128,7 +1188,7 @@ def main(clargs):
     # Plot Feet forces
     plt.figure("Feet forces")
     for dim in range(3):
-        plt.plot(times, feet_ft[:, 0, dim], label=["x", "y", "z"][dim])
+        plt.plot(sim.times, feet_ft[:, 0, dim], label=["x", "y", "z"][dim])
         plt.xlabel("Time [s]")
         plt.ylabel("Force [N]")
         plt.grid(True)
@@ -1137,14 +1197,14 @@ def main(clargs):
     # Plot Feet forces
     plt.figure("Body motor torques")
     for joint_i, joint in enumerate(joints_commanded_body):
-        plt.plot(times, joints_cmds_body[:, joint_i], label=joint)
+        plt.plot(sim.times, joints_cmds_body[:, joint_i], label=joint)
         plt.xlabel("Time [s]")
         plt.ylabel("Torque [Nm]")
         plt.grid(True)
         plt.legend()
     plt.figure("Legs motor torques")
     for joint_i, joint in enumerate(joints_commanded_legs):
-        plt.plot(times, joints_cmds_legs[:, joint_i], label=joint)
+        plt.plot(sim.times, joints_cmds_legs[:, joint_i], label=joint)
         plt.xlabel("Time [s]")
         plt.ylabel("Torque [Nm]")
         plt.grid(True)
@@ -1164,15 +1224,7 @@ def main(clargs):
 
     # Record video
     if clargs.record:
-        import cv2
-        writer = cv2.VideoWriter(
-            'test1.avi',
-            cv2.VideoWriter_fourcc(*'MJPG'),
-            40,
-            (640, 480)
-        )
-        for data in record_data:
-            writer.write(data)
+        camera_record.save("video.avi")
 
 
 def main_parallel():
