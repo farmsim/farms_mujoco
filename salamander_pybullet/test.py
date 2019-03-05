@@ -713,29 +713,6 @@ def get_joints_commands(robot, joints):
     ]
 
 
-def print_dynamics_info(robot, links):
-    """Print dynamics info"""
-    print("Dynamics:")
-    for link in links:
-        dynamics_msg = (
-            "\n      mass: {}"
-            "\n      lateral_friction: {}"
-            "\n      local inertia diagonal: {}"
-            "\n      local inertial pos: {}"
-            "\n      local inertial orn: {}"
-            "\n      restitution: {}"
-            "\n      rolling friction: {}"
-            "\n      spinning friction: {}"
-            "\n      contact damping: {}"
-            "\n      contact stiffness: {}"
-        )
-
-        print("  - {}:{}".format(
-            link,
-            dynamics_msg.format(*pybullet.getDynamicsInfo(robot, links[link]))
-        ))
-
-
 class Simulation(object):
     """Simulation"""
 
@@ -868,6 +845,40 @@ class Model:
             ])
         ))
 
+    def print_dynamics_info(self, links=None):
+        """Print dynamics info"""
+        links = links if links is not None else self.links
+        print("Dynamics:")
+        for link in links:
+            dynamics_msg = (
+                "\n      mass: {}"
+                "\n      lateral_friction: {}"
+                "\n      local inertia diagonal: {}"
+                "\n      local inertial pos: {}"
+                "\n      local inertial orn: {}"
+                "\n      restitution: {}"
+                "\n      rolling friction: {}"
+                "\n      spinning friction: {}"
+                "\n      contact damping: {}"
+                "\n      contact stiffness: {}"
+            )
+
+            print("  - {}:{}".format(
+                link,
+                dynamics_msg.format(*pybullet.getDynamicsInfo(
+                    self.model,
+                    self.links[link]
+                ))
+            ))
+        print("Model mass: {} [kg]".format(self.mass()))
+
+    def mass(self):
+        """Print dynamics"""
+        return np.sum([
+            pybullet.getDynamicsInfo(self.model, self.links[link])[0]
+            for link in self.links
+        ])
+
 
 def main(clargs):
     """Main"""
@@ -881,11 +892,7 @@ def main(clargs):
     robot, links, joints, plane = sim.get_entities()
 
     # Model information
-    print_dynamics_info(robot, links)
-    print("Robot mass: {} [kg]".format(np.sum([
-        pybullet.getDynamicsInfo(robot, links[link])[0]
-        for link in links
-    ])))
+    sim.robot.print_dynamics_info()
 
     # Remove leg collisions
     for leg_i in range(2):
