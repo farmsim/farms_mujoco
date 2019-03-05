@@ -713,7 +713,7 @@ def get_joints_commands(robot, joints):
     ]
 
 
-class Simulation(object):
+class Simulation:
     """Simulation"""
 
     def __init__(self, **kwargs):
@@ -748,10 +748,7 @@ class Simulation(object):
         self.init_physics(gait)
 
         # Spawn models
-        robot = Model.from_sdf(
-            "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
-            base_link="link_body_0"
-        )
+        robot = SalamanderModel.spawn()
         plane = Model.from_urdf(
             "plane.urdf",
             basePosition=[0, 0, -0.1]
@@ -880,6 +877,35 @@ class Model:
         ])
 
 
+class SalamanderModel(Model):
+    """Salamander model"""
+
+    def __init__(self, model, base_link):
+        super(SalamanderModel, self).__init__(model, base_link)
+
+    @classmethod
+    def spawn(cls):
+        """Spawn salamander"""
+        return cls.from_sdf(
+            "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
+            base_link="link_body_0"
+        )
+
+    def leg_collisions(self, plane, activate=True):
+        """Activate/Deactivate leg collisions"""
+        for leg_i in range(2):
+            for side in ["L", "R"]:
+                for joint_i in range(3):
+                    link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+                    pybullet.setCollisionFilterPair(
+                        bodyUniqueIdA=self.model,
+                        bodyUniqueIdB=plane,
+                        linkIndexA=self.links[link],
+                        linkIndexB=-1,
+                        enableCollision=activate
+                    )
+
+
 def main(clargs):
     """Main"""
 
@@ -895,17 +921,7 @@ def main(clargs):
     sim.robot.print_dynamics_info()
 
     # Remove leg collisions
-    for leg_i in range(2):
-        for side in ["L", "R"]:
-            for joint_i in range(3):
-                link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
-                pybullet.setCollisionFilterPair(
-                    bodyUniqueIdA=robot,
-                    bodyUniqueIdB=plane,
-                    linkIndexA=links[link],
-                    linkIndexB=-1,
-                    enableCollision=0
-                )
+    sim.robot.leg_collisions(plane, activate=False)
 
     # Apply motor damping
     for j in range (pybullet.getNumJoints(robot)):
