@@ -881,7 +881,11 @@ class SalamanderModel(Model):
     """Salamander model"""
 
     def __init__(self, model, base_link):
-        super(SalamanderModel, self).__init__(model, base_link)
+        super(SalamanderModel, self).__init__(
+            model=model,
+            base_link=base_link
+        )
+        self.apply_motor_damping()
 
     @classmethod
     def spawn(cls):
@@ -905,6 +909,15 @@ class SalamanderModel(Model):
                         enableCollision=activate
                     )
 
+    def apply_motor_damping(self, angular=1e-2):
+        """Apply motor damping"""
+        for j in range(pybullet.getNumJoints(self.model)):
+            pybullet.changeDynamics(
+                self.model, j,
+                linearDamping=0,
+                angularDamping=angular
+            )
+
 
 def main(clargs):
     """Main"""
@@ -917,15 +930,11 @@ def main(clargs):
     # Simulation entities
     robot, links, joints, plane = sim.get_entities()
 
-    # Model information
-    sim.robot.print_dynamics_info()
-
     # Remove leg collisions
     sim.robot.leg_collisions(plane, activate=False)
 
-    # Apply motor damping
-    for j in range (pybullet.getNumJoints(robot)):
-        pybullet.changeDynamics(robot, j, linearDamping=0, angularDamping=1e-2)
+    # Model information
+    sim.robot.print_dynamics_info()
 
     # Create scene
     add_obstacles = False
