@@ -460,53 +460,6 @@ def viscous_swimming(robot, links):
     return forces_torques
 
 
-def user_parameters(gait, frequency):
-    """User parameters"""
-    play_id = pybullet.addUserDebugParameter(
-        paramName="Play",
-        rangeMin=0,
-        rangeMax=1,
-        startValue=1
-    )
-    rtl_id = pybullet.addUserDebugParameter(
-        paramName="Real-time limiter",
-        rangeMin=1e-3,
-        rangeMax=3,
-        startValue=1
-    )
-    gait_id = pybullet.addUserDebugParameter(
-        paramName="Gait",
-        rangeMin=0,
-        rangeMax=2,
-        startValue=(
-            0 if gait == "standing"
-            else 1 if gait == "walking"
-            else 2
-        )
-    )
-    freq_id = pybullet.addUserDebugParameter(
-        paramName="Frequency",
-        rangeMin=0,
-        rangeMax=5,
-        startValue=frequency
-    )
-    body_offset_id = pybullet.addUserDebugParameter(
-        paramName="Body offset",
-        rangeMin=-np.pi/8,
-        rangeMax=np.pi/8,
-        startValue=0
-    )
-    for part in ["body", "legs"]:
-        for pdf in ["p", "d", "f"]:
-            pybullet.addUserDebugParameter(
-                paramName="{}_{}".format(part, pdf),
-                rangeMin=0,
-                rangeMax=10,
-                startValue=0.1
-            )
-    return play_id, rtl_id, gait_id, freq_id, body_offset_id
-
-
 def test_debug_info():
     """Test debug info"""
     pybullet.addUserDebugLine(
@@ -990,6 +943,181 @@ class CameraRecord(CameraTarget):
             writer.write(image)
 
 
+class DebugParameter:
+    """DebugParameter"""
+
+    def __init__(self, name, val, val_min, val_max):
+        super(DebugParameter, self).__init__()
+        self.name = name
+        self.value = val
+        self.val_min = val_min
+        self.val_max = val_max
+        self._handler = None
+        self.add(self.value)
+
+    def add(self, value):
+        """Add parameter"""
+        if self._handler is None:
+            self._handler = pybullet.addUserDebugParameter(
+                paramName=self.name,
+                rangeMin=self.val_min,
+                rangeMax=self.val_max,
+                startValue=value
+            )
+        else:
+            raise Exception(
+                "Handler for parameter '{}' is already used".format(
+                    self.name
+                )
+            )
+
+    def remove(self):
+        """Remove parameter"""
+        pybullet.removeUserDebugItem(self._handler)
+
+    def get_value(self):
+        """Current value"""
+        return pybullet.readUserDebugParameter(self._handler)
+
+
+class ParameterPlay(DebugParameter):
+    """Play/pause parameter"""
+
+    def __init__(self):
+        super(ParameterPlay, self).__init__("Play", 1, 0, 1)
+        self.value = True
+
+    def update(self):
+        """Update"""
+        self.value = self.get_value() > 0.5
+
+
+class ParameterRTL(DebugParameter):
+    """Real-time limiter"""
+
+    def __init__(self):
+        super(ParameterRTL, self).__init__("Real-time limiter", 1, 1e-3, 3)
+
+    def update(self):
+        """Update"""
+        self.value = self.get_value()
+
+
+class ParameterGait(DebugParameter):
+    """Gait control"""
+
+    def __init__(self, gait):
+        value = 0 if gait == "standing" else 2 if gait == "swimming" else 1
+        super(ParameterGait, self).__init__("Gait", value, 0, 2)
+        self.value = gait
+        self.changed = False
+
+    def update(self):
+        """Update"""
+        previous_value = self.value
+        value = self.get_value()
+        self.value = (
+            "standing"
+            if value < 0.5
+            else "walking"
+            if 0.5 < value < 1.5
+            else "swimming"
+        )
+        self.changed = (self.value != previous_value)
+        if self.changed:
+            print("Gait changed ({} > {})".format(
+                previous_value,
+                self.value
+            ))
+
+
+class ParameterFrequency(DebugParameter):
+    """Frequency control"""
+
+    def __init__(self, frequency):
+        super(ParameterFrequency, self).__init__("Frequency", frequency, 0, 5)
+        self.changed = False
+
+    def update(self):
+        """Update"""
+        previous_value = self.value
+        self.value = self.get_value()
+        self.changed = (self.value != previous_value)
+        if self.changed:
+            print("frequency changed ({} > {})".format(
+                previous_value,
+                self.value
+            ))
+
+
+class ParameterBodyOffset(DebugParameter):
+    """Body offset control"""
+
+    def __init__(self):
+        lim = np.pi/8
+        super(ParameterBodyOffset, self).__init__("Body offset", 0, -lim, lim)
+        self.changed = False
+
+    def update(self):
+        """Update"""
+        previous_value = self.value
+        self.value = self.get_value()
+        self.changed = (self.value != previous_value)
+        if self.changed:
+            print("Body offset changed ({} > {})".format(
+                previous_value,
+                self.value
+            ))
+
+
+class UserParameters:
+    """Parameters control"""
+
+    def __init__(self, gait, frequency):
+        super(UserParameters, self).__init__()
+        self._play = ParameterPlay()
+        self._rtl = ParameterRTL()
+        self._gait = ParameterGait(gait)
+        self._frequency = ParameterFrequency(frequency)
+        self._body_offset = ParameterBodyOffset()
+
+    def update(self):
+        """Update parameters"""
+        for parameter in [
+                self._play,
+                self._rtl,
+                self._gait,
+                self._frequency,
+                self._body_offset
+        ]:
+            parameter.update()
+
+    @property
+    def play(self):
+        """Play"""
+        return self._play
+
+    @property
+    def rtl(self):
+        """Real-time limiter"""
+        return self._rtl
+
+    @property
+    def gait(self):
+        """Gait"""
+        return self._gait
+
+    @property
+    def frequency(self):
+        """Frequency"""
+        return self._frequency
+
+    @property
+    def body_offset(self):
+        """Body offset"""
+        return self._body_offset
+
+
 def main(clargs):
     """Main"""
 
@@ -1039,8 +1167,7 @@ def main(clargs):
         )
 
     # User parameters
-    user_params = user_parameters(gait, frequency)
-    play_id, rtl_id, gait_id, freq_id, body_offset_id = user_params
+    user_params = UserParameters(gait, frequency)
 
     # Debug info
     test_debug_info()
@@ -1087,38 +1214,34 @@ def main(clargs):
 
     # Run simulation
     while sim_step < len(sim.times):
-        if pybullet.readUserDebugParameter(play_id) < 0.5:
+        user_params.update()
+        if not user_params.play.value:
             time.sleep(0.5)
         else:
             tic_rt = time.time()
             sim_time = timestep*sim_step
             # Control
-            new_freq = pybullet.readUserDebugParameter(freq_id)
-            new_body_offset = pybullet.readUserDebugParameter(body_offset_id)
-            new_gait = (
-                "standing"
-                if pybullet.readUserDebugParameter(gait_id) < 0.5
-                else "walking"
-                if 0.5 < pybullet.readUserDebugParameter(gait_id) < 1.5
-                else "swimming"
-            )
-            if frequency != new_freq:
-                gait = new_gait
-                frequency = new_freq
-                sim.robot.controller.update_frequency(frequency)
-            if body_offset != new_body_offset:
-                gait = new_gait
-                body_offset = new_body_offset
-                sim.robot.controller.update_body_offset(body_offset)
-            if gait != new_gait:
-                gait = new_gait
-                frequency = new_freq
+            if user_params.gait.changed:
+                gait = user_params.gait.value
                 sim.robot.controller = SalamanderController.gait(
                     salamander.model,
                     joints,
                     gait
                 )
-                pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
+                pybullet.setGravity(
+                    0, 0, -1e-2 if gait == "swimming" else -9.81
+                )
+                user_params.gait.changed = False
+            if user_params.frequency.changed:
+                sim.robot.controller.update_frequency(
+                    user_params.frequency.value
+                )
+                user_params.frequency.changed = False
+            if user_params.body_offset.changed:
+                sim.robot.controller.update_body_offset(
+                    user_params.body_offset.value
+                )
+                user_params.body_offset.changed = False
             tic_control = time.time()
             sim.robot.controller.control()
             time_control = time.time() - tic_control
@@ -1161,11 +1284,10 @@ def main(clargs):
                 camera.update()
             # Real-time
             toc_rt = time.time()
-            rtl = pybullet.readUserDebugParameter(rtl_id)
-            if not clargs.fast and rtl < 3:
+            if not clargs.fast and user_params.rtl.value < 3:
                 real_time_handing(
                     timestep, tic_rt, toc_rt,
-                    rtl=rtl,
+                    rtl=user_params.rtl.value,
                     time_plugin=time_plugin,
                     time_sim=toc_sim-tic_sim,
                     time_control=time_control
