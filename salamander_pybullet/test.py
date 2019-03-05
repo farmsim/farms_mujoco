@@ -809,6 +809,29 @@ def get_joints_commands(robot, joints):
     ]
 
 
+def print_dynamics_info(robot, links):
+    """Print dynamics info"""
+    print("Dynamics:")
+    for link in links:
+        dynamics_msg = (
+            "\n      mass: {}"
+            "\n      lateral_friction: {}"
+            "\n      local inertia diagonal: {}"
+            "\n      local inertial pos: {}"
+            "\n      local inertial orn: {}"
+            "\n      restitution: {}"
+            "\n      rolling friction: {}"
+            "\n      spinning friction: {}"
+            "\n      contact damping: {}"
+            "\n      contact stiffness: {}"
+        )
+
+        print("  - {}:{}".format(
+            link,
+            dynamics_msg.format(*pybullet.getDynamicsInfo(robot, links[link]))
+        ))
+
+
 def main(clargs):
     """Main"""
     # Initialise engine
@@ -822,6 +845,7 @@ def main(clargs):
 
     # Initialise
     robot, links, joints, plane = init_simulation(timestep, gait)
+    print_dynamics_info(robot, links)
 
     # Apply motor damping
     for j in range (pybullet.getNumJoints(robot)):
