@@ -692,8 +692,8 @@ def real_time_handing(timestep, tic_rt, toc_rt, rtl=1.0, **kwargs):
     if sleep_rtl > 0:
         while time.time() - tic < sleep_rtl:
             time.sleep(0.1*sleep_rtl)
-    if rtf < 1:
-        print("Slower than real-time: {} %".format(100*rtf))
+    if rtf < 0.5:
+        print("Significantly slower than real-time: {} %".format(100*rtf))
         time_plugin = kwargs.pop("time_plugin", False)
         time_control = kwargs.pop("time_control", False)
         time_sim = kwargs.pop("time_sim", False)
