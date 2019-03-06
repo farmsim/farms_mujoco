@@ -171,9 +171,9 @@ class Network:
                 "t0": 0,
                 "tf": kwargs.pop("timestep", 1e-3),
                 "jit": True,
-                "step0": 1e-3,
-                "abstol": 1e-3,
-                "reltol": 1e-3
+                # "step0": 1e-3,
+                # "abstol": 1e-3,
+                # "reltol": 1e-3
             },
         )
         self.phases = np.zeros(size)
