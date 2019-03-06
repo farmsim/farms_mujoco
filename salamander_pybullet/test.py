@@ -311,9 +311,9 @@ class SalamanderControlOptions(dict):
         options["leg_0_phase"] = 0
         options["leg_0_offset"] = 0
 
-        options["leg_1_amplitude"] = np.pi/16
+        options["leg_1_amplitude"] = np.pi/32
         options["leg_1_phase"] = 0.5*np.pi
-        options["leg_1_offset"] = np.pi/16
+        options["leg_1_offset"] = np.pi/32
 
         options["leg_2_amplitude"] = np.pi/8
         options["leg_2_phase"] = 0.5*np.pi
