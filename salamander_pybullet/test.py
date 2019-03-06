@@ -53,6 +53,46 @@ def parse_args():
     return parser.parse_args()
 
 
+class Network:
+    """Controller network"""
+
+    def __init__(self, controllers, timestep):
+        super(Network, self).__init__()
+        size = len(controllers)
+        freqs = cas.MX.sym('freqs', size)
+        ode = {
+            "x": cas.MX.sym('x', size),
+            "p": freqs,
+            "ode": freqs
+        }
+
+        # Construct a Function that integrates over 4s
+        self.ode = cas.integrator(
+            'oscillator',
+            'cvodes',
+            ode,
+            {
+                "t0": 0,
+                "tf": timestep,
+                "jit": True,
+                # "step0": 1e-3,
+                # "abstol": 1e-3,
+                # "reltol": 1e-3
+            },
+        )
+        self.phases = np.zeros(size)
+
+    def control_step(self, freqs):
+        """Control step"""
+        self.phases = np.array(
+            self.ode(
+                x0=self.phases,
+                p=freqs
+            )["xf"][:, 0]
+        )
+        return self.phases
+
+
 class SineControl:
     """SineControl"""
 
@@ -149,50 +189,10 @@ class JointController:
             self._sine.offset = body_offset
 
 
-class Network:
-    """Controller network"""
-
-    def __init__(self, controllers, **kwargs):
-        super(Network, self).__init__()
-        size = len(controllers)
-        freqs = cas.MX.sym('freqs', size)
-        ode = {
-            "x": cas.MX.sym('x', size),
-            "p": freqs,
-            "ode": freqs
-        }
-
-        # Construct a Function that integrates over 4s
-        self.ode = cas.integrator(
-            'oscillator',
-            'cvodes',
-            ode,
-            {
-                "t0": 0,
-                "tf": kwargs.pop("timestep", 1e-3),
-                "jit": True,
-                # "step0": 1e-3,
-                # "abstol": 1e-3,
-                # "reltol": 1e-3
-            },
-        )
-        self.phases = np.zeros(size)
-
-    def control_step(self, freqs):
-        """Control step"""
-        self.phases = np.array(
-            self.ode(
-                x0=self.phases,
-                p=freqs
-            )["xf"][:, 0]
-        )
-        return self.phases
-
-
 class ModelController:
     """ModelController"""
 
-    def __init__(self, model, joints_controllers, timestep=1e-3):
+    def __init__(self, model, joints_controllers, timestep):
         super(ModelController, self).__init__()
         self.model = model
         self.controllers = joints_controllers
@@ -700,16 +700,16 @@ def create_scene(plane):
 class Simulation:
     """Simulation"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, timestep, gait="walking"):
         super(Simulation, self).__init__()
         # Initialise engine
         init_engine()
 
         # Parameters
         # gait = "standing"
-        gait = kwargs.pop("gait", "walking")
+        gait = gait
         # gait = "swimming"
-        self.timestep = kwargs.pop("timestep", 1e-3)
+        self.timestep = timestep
         self.times = np.arange(0, 100, self.timestep)
 
         # Initialise
@@ -733,7 +733,7 @@ class Simulation:
         self.init_physics(gait)
 
         # Spawn models
-        model = SalamanderModel.spawn(size, gait=gait)
+        model = SalamanderModel.spawn(size, self.timestep, gait)
         plane = Model.from_urdf(
             "plane.urdf",
             basePosition=[0, 0, -0.1]
@@ -865,7 +865,7 @@ class Model:
 class SalamanderModel(Model):
     """Salamander model"""
 
-    def __init__(self, identity, base_link, size, **kwargs):
+    def __init__(self, identity, base_link, size, timestep, gait="walking"):
         super(SalamanderModel, self).__init__(
             identity=identity,
             base_link=base_link
@@ -873,12 +873,11 @@ class SalamanderModel(Model):
         # Model dynamics
         self.apply_motor_damping()
         # Controller
-        gait = kwargs.pop("gait", "walking")
         self.controller = SalamanderController.gait(
             self.identity,
             self.joints,
             gait=gait,
-            timestep=kwargs.pop("timestep", 1e-3)
+            timestep=timestep
         )
         self.feet = [
             "link_leg_0_L_3",
@@ -890,13 +889,14 @@ class SalamanderModel(Model):
         self.motors = ModelMotors(size)
 
     @classmethod
-    def spawn(cls, size, **kwargs):
+    def spawn(cls, size, timestep, gait="walking"):
         """Spawn salamander"""
         return cls.from_sdf(
             "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
             base_link="link_body_0",
             size=size,
-            **kwargs
+            timestep=timestep,
+            gait=gait
         )
 
     def leg_collisions(self, plane, activate=True):
@@ -1084,11 +1084,11 @@ class ModelMotors:
 class Camera:
     """Camera"""
 
-    def __init__(self, target_identity=None, **kwargs):
+    def __init__(self, timestep, target_identity=None, **kwargs):
         super(Camera, self).__init__()
         self.target = target_identity
         cam_info = self.get_camera()
-        self.timestep = kwargs.pop("timestep", 1e-3)
+        self.timestep = timestep
         self.motion_filter = kwargs.pop("motion_filter", 1e-3)
         self.yaw = kwargs.pop("yaw", cam_info[8])
         self.yaw_speed = kwargs.pop("yaw_speed", 0)
