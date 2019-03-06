@@ -724,7 +724,7 @@ class Simulation:
             self.model,
             self.model.links,
             self.model.joints,
-            self.plane.model
+            self.plane.identity
         )
 
     def init_simulation(self, size, gait="walking"):
@@ -758,11 +758,11 @@ class Simulation:
 class Model:
     """Simulation model"""
 
-    def __init__(self, model, base_link="base_link"):
+    def __init__(self, identity, base_link="base_link"):
         super(Model, self).__init__()
-        self.model = model
+        self.identity = identity
         self.links, self.joints, self.n_joints = self.get_joints(
-            self.model,
+            self.identity,
             base_link
         )
         self.print_information()
@@ -770,20 +770,20 @@ class Model:
     @classmethod
     def from_sdf(cls, sdf, base_link="base_link", **kwargs):
         """Model from SDF"""
-        model = pybullet.loadSDF(sdf)[0]
-        return cls(model, base_link=base_link, **kwargs)
+        identity = pybullet.loadSDF(sdf)[0]
+        return cls(identity, base_link=base_link, **kwargs)
 
     @classmethod
     def from_urdf(cls, urdf, base_link="base_link", **kwargs):
         """Model from SDF"""
-        model = pybullet.loadURDF(urdf, **kwargs)
-        return cls(model, base_link=base_link)
+        identity = pybullet.loadURDF(urdf, **kwargs)
+        return cls(identity, base_link=base_link)
 
     @staticmethod
-    def get_joints(model, base_link="base_link"):
+    def get_joints(identity, base_link="base_link"):
         """Get joints"""
-        print("Model: {}".format(model))
-        n_joints = pybullet.getNumJoints(model)
+        print("Identity: {}".format(identity))
+        n_joints = pybullet.getNumJoints(identity)
         print("Number of joints: {}".format(n_joints))
 
         # Links
@@ -792,7 +792,7 @@ class Model:
         links.update({
             info[12].decode("UTF-8"): info[16] + 1
             for info in [
-                pybullet.getJointInfo(model, j)
+                pybullet.getJointInfo(identity, j)
                 for j in range(n_joints)
             ]
         })
@@ -800,7 +800,7 @@ class Model:
         joints = {
             info[1].decode("UTF-8"): info[0]
             for info in [
-                pybullet.getJointInfo(model, j)
+                pybullet.getJointInfo(identity, j)
                 for j in range(n_joints)
             ]
         }
@@ -848,7 +848,7 @@ class Model:
             print("  - {}:{}".format(
                 link,
                 dynamics_msg.format(*pybullet.getDynamicsInfo(
-                    self.model,
+                    self.identity,
                     self.links[link]
                 ))
             ))
@@ -857,7 +857,7 @@ class Model:
     def mass(self):
         """Print dynamics"""
         return np.sum([
-            pybullet.getDynamicsInfo(self.model, self.links[link])[0]
+            pybullet.getDynamicsInfo(self.identity, self.links[link])[0]
             for link in self.links
         ])
 
@@ -865,9 +865,9 @@ class Model:
 class SalamanderModel(Model):
     """Salamander model"""
 
-    def __init__(self, model, base_link, size, **kwargs):
+    def __init__(self, identity, base_link, size, **kwargs):
         super(SalamanderModel, self).__init__(
-            model=model,
+            identity=identity,
             base_link=base_link
         )
         # Model dynamics
@@ -875,7 +875,7 @@ class SalamanderModel(Model):
         # Controller
         gait = kwargs.pop("gait", "walking")
         self.controller = SalamanderController.gait(
-            self.model,
+            self.identity,
             self.joints,
             gait=gait,
             timestep=kwargs.pop("timestep", 1e-3)
@@ -906,7 +906,7 @@ class SalamanderModel(Model):
                 for joint_i in range(3):
                     link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
                     pybullet.setCollisionFilterPair(
-                        bodyUniqueIdA=self.model,
+                        bodyUniqueIdA=self.identity,
                         bodyUniqueIdB=plane,
                         linkIndexA=self.links[link],
                         linkIndexB=-1,
@@ -915,9 +915,9 @@ class SalamanderModel(Model):
 
     def apply_motor_damping(self, angular=1e-2):
         """Apply motor damping"""
-        for j in range(pybullet.getNumJoints(self.model)):
+        for j in range(pybullet.getNumJoints(self.identity)):
             pybullet.changeDynamics(
-                self.model, j,
+                self.identity, j,
                 linearDamping=0,
                 angularDamping=angular
             )
@@ -943,32 +943,32 @@ class ModelSensors:
         ]
         for joint in self.joints_sensors:
             pybullet.enableJointForceTorqueSensor(
-                salamander.model,
+                salamander.identity,
                 salamander.joints[joint]
             )
 
-    def update(self, sim_step, model, links, joints, plane):
+    def update(self, sim_step, identity, links, joints, plane):
         """Update sensors"""
-        self.update_contacts(sim_step, model, links, plane)
-        self.update_joints(sim_step, model, joints)
+        self.update_contacts(sim_step, identity, links, plane)
+        self.update_joints(sim_step, identity, joints)
 
-    def update_contacts(self, sim_step, model, links, plane):
+    def update_contacts(self, sim_step, identity, links, plane):
         """Update contact sensors"""
         _, self.contact_forces[sim_step-1, :] = (
-            self.get_links_contacts(model, links, plane)
+            self.get_links_contacts(identity, links, plane)
         )
 
-    def update_joints(self, sim_step, model, joints):
+    def update_joints(self, sim_step, identity, joints):
         """Update force-torque sensors"""
         self.feet_ft[sim_step-1, :, :] = (
-            self.get_joints_force_torque(model, joints)
+            self.get_joints_force_torque(identity, joints)
         )
 
     @staticmethod
-    def get_links_contacts(model, links, ground):
+    def get_links_contacts(identity, links, ground):
         """Contacts"""
         contacts = [
-            pybullet.getContactPoints(model, ground, link, -1)
+            pybullet.getContactPoints(identity, ground, link, -1)
             for link in links
         ]
         forces = [
@@ -980,10 +980,10 @@ class ModelSensors:
         return contacts, forces
 
     @staticmethod
-    def get_joints_force_torque(model, joints):
+    def get_joints_force_torque(identity, joints):
         """Force-torque on joints"""
         return [
-            pybullet.getJointState(model, joint)[2]
+            pybullet.getJointState(identity, joint)[2]
             for joint in joints
         ]
 
@@ -1035,28 +1035,28 @@ class ModelMotors:
             len(self.joints_commanded_legs)
         ])
 
-    def update(self, sim_step, model, joints_body, joints_legs):
+    def update(self, sim_step, identity, joints_body, joints_legs):
         """Update"""
-        self.update_body(sim_step, model, joints_body)
-        self.update_legs(sim_step, model, joints_legs)
+        self.update_body(sim_step, identity, joints_body)
+        self.update_legs(sim_step, identity, joints_legs)
 
-    def update_body(self, sim_step, model, joints):
+    def update_body(self, sim_step, identity, joints):
         """Update"""
         self.joints_cmds_body[sim_step-1, :] = (
-            self.get_joints_commands(model, joints)
+            self.get_joints_commands(identity, joints)
         )
 
-    def update_legs(self, sim_step, model, joints):
+    def update_legs(self, sim_step, identity, joints):
         """Update"""
         self.joints_cmds_legs[sim_step-1, :] = (
-            self.get_joints_commands(model, joints)
+            self.get_joints_commands(identity, joints)
         )
 
     @staticmethod
-    def get_joints_commands(model, joints):
+    def get_joints_commands(identity, joints):
         """Force-torque on joints"""
         return [
-            pybullet.getJointState(model, joint)[3]
+            pybullet.getJointState(identity, joint)[3]
             for joint in joints
         ]
 
@@ -1084,9 +1084,9 @@ class ModelMotors:
 class Camera:
     """Camera"""
 
-    def __init__(self, target_model=None, **kwargs):
+    def __init__(self, target_identity=None, **kwargs):
         super(Camera, self).__init__()
-        self.target = target_model
+        self.target = target_identity
         cam_info = self.get_camera()
         self.timestep = kwargs.pop("timestep", 1e-3)
         self.motion_filter = kwargs.pop("motion_filter", 1e-3)
@@ -1108,9 +1108,9 @@ class Camera:
 class CameraTarget(Camera):
     """Camera with target following"""
 
-    def __init__(self, target_model, **kwargs):
+    def __init__(self, target_identity, **kwargs):
         super(CameraTarget, self).__init__(**kwargs)
-        self.target = target_model
+        self.target = target_identity
         self.target_pos = kwargs.pop(
             "target_pos",
             np.array(pybullet.getBasePositionAndOrientation(self.target)[0])
@@ -1131,8 +1131,8 @@ class CameraTarget(Camera):
 class UserCamera(CameraTarget):
     """UserCamera"""
 
-    def __init__(self, target_model, **kwargs):
-        super(UserCamera, self).__init__(target_model, **kwargs)
+    def __init__(self, target_identity, **kwargs):
+        super(UserCamera, self).__init__(target_identity, **kwargs)
         self.update(use_camera=False)
 
     def update(self, use_camera=True):
@@ -1152,8 +1152,8 @@ class UserCamera(CameraTarget):
 class CameraRecord(CameraTarget):
     """Camera recording"""
 
-    def __init__(self, target_model, size, fps, **kwargs):
-        super(CameraRecord, self).__init__(target_model, **kwargs)
+    def __init__(self, target_identity, size, fps, **kwargs):
+        super(CameraRecord, self).__init__(target_identity, **kwargs)
         self.width = kwargs.pop("width", 640)
         self.height = kwargs.pop("height", 480)
         self.fps = fps
@@ -1409,7 +1409,7 @@ def main(clargs):
 
     # Camera
     camera = UserCamera(
-        target_model=salamander.model,
+        target_identity=salamander.identity,
         yaw=0,
         yaw_speed=360/10 if clargs.rotating_camera else 0,
         pitch=-89 if clargs.top_camera else -45,
@@ -1420,7 +1420,7 @@ def main(clargs):
     # Video recording
     if clargs.record:
         camera_record = CameraRecord(
-            target_model=salamander.model,
+            target_identity=salamander.identity,
             size=len(sim.times)//25,
             fps=40,
             yaw=0,
@@ -1461,7 +1461,7 @@ def main(clargs):
             if user_params.gait.changed:
                 gait = user_params.gait.value
                 sim.model.controller = SalamanderController.gait(
-                    salamander.model,
+                    salamander.identity,
                     joints,
                     gait=gait,
                     timestep=timestep
@@ -1485,7 +1485,7 @@ def main(clargs):
             time_control = time.time() - tic_control
             # Swimming
             if gait == "swimming":
-                forces_torques[sim_step] = viscous_swimming(salamander.model, links)
+                forces_torques[sim_step] = viscous_swimming(salamander.identity, links)
             # Time plugins
             time_plugin = time.time() - tic_rt
             # Physics
@@ -1497,7 +1497,7 @@ def main(clargs):
             # Contacts during walking
             salamander.sensors.update(
                 sim_step=sim_step,
-                model=salamander.model,
+                identity=salamander.identity,
                 links=[links[foot] for foot in salamander.feet],
                 joints=[
                     joints[joint]
@@ -1508,7 +1508,7 @@ def main(clargs):
             # Commands
             salamander.motors.update(
                 sim_step=sim_step,
-                model=salamander.model,
+                identity=salamander.identity,
                 joints_body=[
                     joints[joint]
                     for joint in salamander.motors.joints_commanded_body
