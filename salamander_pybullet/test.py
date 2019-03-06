@@ -189,12 +189,12 @@ class Network:
         return self.phases
 
 
-class RobotController:
-    """RobotController"""
+class ModelController:
+    """ModelController"""
 
-    def __init__(self, robot, joints_controllers, timestep=1e-3):
-        super(RobotController, self).__init__()
-        self.robot = robot
+    def __init__(self, model, joints_controllers, timestep=1e-3):
+        super(ModelController, self).__init__()
+        self.model = model
         self.controllers = joints_controllers
         self.network = Network(self.controllers, timestep=timestep)
 
@@ -214,7 +214,7 @@ class RobotController:
             toc = time.time()
             print("Time to copy phases: {} [s]".format(toc-tic))
         pybullet.setJointMotorControlArray(
-            self.robot,
+            self.model,
             [ctrl["joint"] for ctrl in controls],
             pybullet.POSITION_CONTROL,
             targetPositions=[ctrl["cmd"]["pos"] for ctrl in controls],
@@ -438,14 +438,14 @@ class SalamanderControlOptions(dict):
         ) = vector
 
 
-class SalamanderController(RobotController):
-    """RobotController"""
+class SalamanderController(ModelController):
+    """ModelController"""
 
     @classmethod
-    def gait(cls, robot, joints, gait, timestep, **kwargs):
+    def gait(cls, model, joints, gait, timestep, **kwargs):
         """Salamander controller from gait"""
         return cls.from_options(
-            robot=robot,
+            model=model,
             joints=joints,
             options=(
                 SalamanderControlOptions.walking(frequency=1, **kwargs)
@@ -458,7 +458,7 @@ class SalamanderController(RobotController):
         )
 
     @classmethod
-    def from_options(cls, robot, joints, options, timestep):
+    def from_options(cls, model, joints, options, timestep):
         """Salamander controller from options"""
         n_body_joints = options["n_body_joints"]
         frequency = options["frequency"]
@@ -529,7 +529,7 @@ class SalamanderController(RobotController):
             for joint_i in range(3)
         ]
         return cls(
-            robot,
+            model,
             joint_controllers_body + joint_controllers_legs,
             timestep=timestep
         )
@@ -544,13 +544,13 @@ def init_engine():
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def viscous_swimming(robot, links):
+def viscous_swimming(model, links):
     """Viscous swimming"""
     # Swimming
     forces_torques = np.zeros([2, 10, 3])
     for link_i in range(1, 11):
         link_state = pybullet.getLinkState(
-            robot,
+            model,
             links["link_body_{}".format(link_i)],
             computeLinkVelocity=1,
             computeForwardKinematics=1
@@ -564,7 +564,7 @@ def viscous_swimming(robot, links):
             np.array([-1e-1, -1e0, -1e0])*link_velocity
         )
         pybullet.applyExternalForce(
-            robot,
+            model,
             links["link_body_{}".format(link_i)],
             forceObj=forces_torques[0, link_i-1, :],
             posObj=[0, 0, 0],
@@ -574,7 +574,7 @@ def viscous_swimming(robot, links):
             np.array([-1e-2, -1e-2, -1e-2])*link_angular_velocity
         )
         pybullet.applyExternalTorque(
-            robot,
+            model,
             links["link_body_{}".format(link_i+1)],
             torqueObj=forces_torques[1, link_i-1, :],
             flags=pybullet.LINK_FRAME
@@ -697,37 +697,6 @@ def create_scene(plane):
             )
 
 
-def get_links_contacts(robot, links, ground):
-    """Contacts"""
-    contacts = [
-        pybullet.getContactPoints(robot, ground, link, -1)
-        for link in links
-    ]
-    forces = [
-        np.sum([contact[9] for contact in contacts[link_i]])
-        if contacts
-        else 0
-        for link_i, _ in enumerate(links)
-    ]
-    return contacts, forces
-
-
-def get_joints_force_torque(robot, joints):
-    """Force-torque on joints"""
-    return [
-        pybullet.getJointState(robot, joint)[2]
-        for joint in joints
-    ]
-
-
-def get_joints_commands(robot, joints):
-    """Force-torque on joints"""
-    return [
-        pybullet.getJointState(robot, joint)[3]
-        for joint in joints
-    ]
-
-
 class Simulation:
     """Simulation"""
 
@@ -744,7 +713,7 @@ class Simulation:
         self.times = np.arange(0, 100, self.timestep)
 
         # Initialise
-        self.robot, self.plane = self.init_simulation(
+        self.model, self.plane = self.init_simulation(
             size=len(self.times),
             gait=gait
         )
@@ -752,9 +721,9 @@ class Simulation:
     def get_entities(self):
         """Get simulation entities"""
         return (
-            self.robot,
-            self.robot.links,
-            self.robot.joints,
+            self.model,
+            self.model.links,
+            self.model.joints,
             self.plane.model
         )
 
@@ -764,12 +733,12 @@ class Simulation:
         self.init_physics(gait)
 
         # Spawn models
-        robot = SalamanderModel.spawn(size, gait=gait)
+        model = SalamanderModel.spawn(size, gait=gait)
         plane = Model.from_urdf(
             "plane.urdf",
             basePosition=[0, 0, -0.1]
         )
-        return robot, plane
+        return model, plane
 
     def init_physics(self, gait="walking"):
         """Initialise physics"""
@@ -978,6 +947,46 @@ class ModelSensors:
                 salamander.joints[joint]
             )
 
+    def update(self, sim_step, model, links, joints, plane):
+        """Update sensors"""
+        self.update_contacts(sim_step, model, links, plane)
+        self.update_joints(sim_step, model, joints)
+
+    def update_contacts(self, sim_step, model, links, plane):
+        """Update contact sensors"""
+        _, self.contact_forces[sim_step-1, :] = (
+            self.get_links_contacts(model, links, plane)
+        )
+
+    def update_joints(self, sim_step, model, joints):
+        """Update force-torque sensors"""
+        self.feet_ft[sim_step-1, :, :] = (
+            self.get_joints_force_torque(model, joints)
+        )
+
+    @staticmethod
+    def get_links_contacts(model, links, ground):
+        """Contacts"""
+        contacts = [
+            pybullet.getContactPoints(model, ground, link, -1)
+            for link in links
+        ]
+        forces = [
+            np.sum([contact[9] for contact in contacts[link_i]])
+            if contacts
+            else 0
+            for link_i, _ in enumerate(links)
+        ]
+        return contacts, forces
+
+    @staticmethod
+    def get_joints_force_torque(model, joints):
+        """Force-torque on joints"""
+        return [
+            pybullet.getJointState(model, joint)[2]
+            for joint in joints
+        ]
+
     def plot_contacts(self, times):
         """Plot sensors"""
         # Plot contacts
@@ -1025,6 +1034,31 @@ class ModelMotors:
             size,
             len(self.joints_commanded_legs)
         ])
+
+    def update(self, sim_step, model, joints_body, joints_legs):
+        """Update"""
+        self.update_body(sim_step, model, joints_body)
+        self.update_legs(sim_step, model, joints_legs)
+
+    def update_body(self, sim_step, model, joints):
+        """Update"""
+        self.joints_cmds_body[sim_step-1, :] = (
+            self.get_joints_commands(model, joints)
+        )
+
+    def update_legs(self, sim_step, model, joints):
+        """Update"""
+        self.joints_cmds_legs[sim_step-1, :] = (
+            self.get_joints_commands(model, joints)
+        )
+
+    @staticmethod
+    def get_joints_commands(model, joints):
+        """Force-torque on joints"""
+        return [
+            pybullet.getJointState(model, joint)[3]
+            for joint in joints
+        ]
 
     def plot_body(self, times):
         """Plot body motors"""
@@ -1407,11 +1441,13 @@ def main(clargs):
     tot_sim_time = 0
     forces_torques = np.zeros([len(sim.times), 2, 10, 3])
     sim_step = 0
-    tic = time.time()
 
-    # Run simulation
+    # Final setup
     init_state = pybullet.saveState()
     rendering(1)
+
+    # Run simulation
+    tic = time.time()
     while sim_step < len(sim.times):
         user_params.update()
         if not(sim_step % 10000) and sim_step > 0:
@@ -1424,7 +1460,7 @@ def main(clargs):
             # Control
             if user_params.gait.changed:
                 gait = user_params.gait.value
-                sim.robot.controller = SalamanderController.gait(
+                sim.model.controller = SalamanderController.gait(
                     salamander.model,
                     joints,
                     gait=gait,
@@ -1435,17 +1471,17 @@ def main(clargs):
                 )
                 user_params.gait.changed = False
             if user_params.frequency.changed:
-                sim.robot.controller.update_frequency(
+                sim.model.controller.update_frequency(
                     user_params.frequency.value
                 )
                 user_params.frequency.changed = False
             if user_params.body_offset.changed:
-                sim.robot.controller.update_body_offset(
+                sim.model.controller.update_body_offset(
                     user_params.body_offset.value
                 )
                 user_params.body_offset.changed = False
             tic_control = time.time()
-            sim.robot.controller.control()
+            sim.model.controller.control()
             time_control = time.time() - tic_control
             # Swimming
             if gait == "swimming":
@@ -1459,34 +1495,28 @@ def main(clargs):
             toc_sim = time.time()
             tot_sim_time += toc_sim - tic_sim
             # Contacts during walking
-            _, salamander.sensors.contact_forces[sim_step-1, :] = get_links_contacts(
-                salamander.model,
-                [links[foot] for foot in salamander.feet],
-                plane
-            )
-            # Force_torque sensors during walking
-            salamander.sensors.feet_ft[sim_step-1, :, :] = get_joints_force_torque(
-                salamander.model,
-                [joints[joint] for joint in salamander.sensors.joints_sensors]
+            salamander.sensors.update(
+                sim_step=sim_step,
+                model=salamander.model,
+                links=[links[foot] for foot in salamander.feet],
+                joints=[
+                    joints[joint]
+                    for joint in salamander.sensors.joints_sensors
+                ],
+                plane=plane
             )
             # Commands
-            salamander.motors.joints_cmds_body[sim_step-1, :] = (
-                get_joints_commands(
-                    salamander.model,
-                    [
-                        joints[joint]
-                        for joint in salamander.motors.joints_commanded_body
-                    ]
-                )
-            )
-            salamander.motors.joints_cmds_legs[sim_step-1, :] = (
-                get_joints_commands(
-                    salamander.model,
-                    [
-                        joints[joint]
-                        for joint in salamander.motors.joints_commanded_legs
-                    ]
-                )
+            salamander.motors.update(
+                sim_step=sim_step,
+                model=salamander.model,
+                joints_body=[
+                    joints[joint]
+                    for joint in salamander.motors.joints_commanded_body
+                ],
+                joints_legs=[
+                    joints[joint]
+                    for joint in salamander.motors.joints_commanded_legs
+                ]
             )
             # Video recording
             if clargs.record and not sim_step % 25:
