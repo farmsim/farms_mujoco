@@ -250,12 +250,15 @@ class SalamanderControlOptions(dict):
 
         # General
         options["n_body_joints"] = 11
-        options["n_legs_pairs"] = 2
-        options["gait"] = "standing"
         options["frequency"] = 0
 
         # Body
-        options["body_amplitude"] = 0
+        options["body_amplitude_0"] = 0
+        options["body_amplitude_1"] = 0
+        options["body_stand_amplitude"] = 0
+        options["body_stand_shift"] = 0
+        options["body_phase_0"] = 0
+        options["body_phase_1"] = 0
 
         # Legs
         options["leg_0_amplitude"] = 0
@@ -269,6 +272,9 @@ class SalamanderControlOptions(dict):
         options["leg_2_amplitude"] = 0
         options["leg_2_phase"] = 0
         options["leg_2_offset"] = np.pi/8
+
+        # Additional walking options
+        options["leg_turn"] = 0
 
         # Gains
         options["body_p"] = 1e-1
@@ -291,12 +297,15 @@ class SalamanderControlOptions(dict):
 
         # General
         options["n_body_joints"] = 11
-        options["n_legs_pairs"] = 2
-        options["gait"] = "walking"
         options["frequency"] = 1
 
         # Body
-        options["body_amplitude"] = 0.2
+        options["body_amplitude_0"] = 0.0
+        options["body_amplitude_1"] = 0.0
+        options["body_stand_amplitude"] = 0.2
+        options["body_stand_shift"] = np.pi/4
+        options["body_phase_0"] = 0
+        options["body_phase_1"] = 0
 
         # Legs
         options["leg_0_amplitude"] = 0.8
@@ -312,7 +321,6 @@ class SalamanderControlOptions(dict):
         options["leg_2_offset"] = np.pi/8
 
         # Additional walking options
-        options["body_shift"] = np.pi/4
         options["leg_turn"] = 0
 
         # Gains
@@ -337,31 +345,31 @@ class SalamanderControlOptions(dict):
         # General
         n_body_joints = 11
         options["n_body_joints"] = n_body_joints
-        options["n_legs_pairs"] = 2
-        options["gait"] = "swimming"
         options["frequency"] = 1
 
         # Body
-        for joint_i in range(n_body_joints):
-            options["body_{}_amplitude".format(joint_i)] = (
-                0.1+joint_i*0.4/n_body_joints
-            )
-            options["body_{}_".format(joint_i)] = (
-                -2*np.pi*joint_i/n_body_joints
-            )
+        options["body_amplitude_0"] = 0.1
+        options["body_amplitude_1"] = 0.5
+        options["body_stand_amplitude"] = 0
+        options["body_stand_shift"] = 0
+        options["body_phase_0"] = 2*np.pi
+        options["body_phase_1"] = 0
 
         # Legs
         options["leg_0_amplitude"] = 0
         options["leg_0_phase"] = 0
-        options["leg_0_offset"] = 0
+        options["leg_0_offset"] = -2*np.pi/5
 
         options["leg_1_amplitude"] = 0
         options["leg_1_phase"] = 0
-        options["leg_1_offset"] = np.pi/16
+        options["leg_1_offset"] = 0
 
         options["leg_2_amplitude"] = 0
         options["leg_2_phase"] = 0
-        options["leg_2_offset"] = np.pi/8
+        options["leg_2_offset"] = 0
+
+        # Additional walking options
+        options["leg_turn"] = 0
 
         # Gains
         options["body_p"] = 1e-1
@@ -378,112 +386,91 @@ class SalamanderControlOptions(dict):
 
     def to_vector(self):
         """To vector"""
+        return [
+            self["frequency"],
+            self["body_amplitude_0"],
+            self["body_amplitude_1"],
+            self["body_stand_amplitude"],
+            self["body_stand_shift"],
+            self["body_phase_0"],
+            self["body_phase_1"],
+            self["leg_0_amplitude"],
+            self["leg_0_phase"],
+            self["leg_0_offset"],
+            self["leg_1_amplitude"],
+            self["leg_1_phase"],
+            self["leg_1_offset"],
+            self["leg_2_amplitude"],
+            self["leg_2_phase"],
+            self["leg_2_offset"],
+            self["leg_turn"],
+            self["body_p"],
+            self["body_d"],
+            self["body_f"],
+            self["legs_p"],
+            self["legs_d"],
+            self["legs_f"]
+        ]
 
-    def from_vector(self):
+    def from_vector(self, vector):
         """From vector"""
+        (
+            self["frequency"],
+            self["body_amplitude_0"],
+            self["body_amplitude_1"],
+            self["body_stand_amplitude"],
+            self["body_stand_shift"],
+            self["body_phase_0"],
+            self["body_phase_1"],
+            self["leg_0_amplitude"],
+            self["leg_0_phase"],
+            self["leg_0_offset"],
+            self["leg_1_amplitude"],
+            self["leg_1_phase"],
+            self["leg_1_offset"],
+            self["leg_2_amplitude"],
+            self["leg_2_phase"],
+            self["leg_2_offset"],
+            self["leg_turn"],
+            self["body_p"],
+            self["body_d"],
+            self["body_f"],
+            self["legs_p"],
+            self["legs_d"],
+            self["legs_f"]
+        ) = vector
 
 
 class SalamanderController(RobotController):
     """RobotController"""
 
     @classmethod
-    def gait(cls, robot, joints, gait, timestep, **kwargs):
+    def gait(cls, robot, joints, options, timestep):
         """Salamander gait controller"""
-        return (
-            cls.walking(
-                robot,
-                joints,
-                SalamanderControlOptions.walking(kwargs),
-                timestep
-            )
-            if gait == "walking" else
-            cls.swimming(
-                robot,
-                joints,
-                SalamanderControlOptions.swimming(kwargs),
-                timestep
-            )
-            if gait == "swimming" else
-            cls.standing(
-                robot,
-                joints,
-                SalamanderControlOptions.standing(kwargs),
-                timestep
-            )
-        )
-
-    @classmethod
-    def standing(cls, robot, joints, options, timestep):
-        """Salamander standing controller"""
-        n_body_joints = options["n_body_joints"]
-        joint_controllers_body = [
-            JointController(
-                joint=joints["joint_link_body_{}".format(joint_i+1)],
-                sine=SineControl(
-                    amplitude=options["body_amplitude"],
-                    frequency=options["frequency"],
-                    phase=0,
-                    offset=0
-                ),
-                pdf=(
-                    ControlPDF(
-                        p=options["body_p"],
-                        d=options["body_d"],
-                        f=options["body_f"]
-                    )
-                ),
-                is_body=True
-            )
-            for joint_i in range(n_body_joints)
-        ]
-        joint_controllers_legs = [
-            JointController(
-                joint=joints["joint_link_leg_{}_{}_{}".format(
-                    leg_i,
-                    side,
-                    joint_i
-                )],
-                sine=SineControl(
-                    amplitude=options["leg_{}_amplitude".format(joint_i)],
-                    frequency=options["frequency"],
-                    phase=options["leg_{}_phase".format(joint_i)],
-                    offset=options["leg_{}_offset".format(joint_i)]
-                ),
-                pdf = (
-                    ControlPDF(
-                        p=options["body_p"],
-                        d=options["body_d"],
-                        f=options["body_f"]
-                    )
-                )
-            )
-            for leg_i in range(2)
-            for side_i, side in enumerate(["L", "R"])
-            for joint_i in range(3)
-        ]
-        return cls(
-            robot,
-            joint_controllers_body + joint_controllers_legs,
-            timestep=timestep
-        )
-
-    @classmethod
-    def walking(cls, robot, joints, options, timestep):
-        """Salamander walking controller"""
         n_body_joints = options["n_body_joints"]
         frequency = options["frequency"]
+        amplitudes = np.linspace(
+            options["body_amplitude_0"],
+            options["body_amplitude_1"],
+            n_body_joints
+        )
+        phases = np.linspace(
+            options["body_phase_0"],
+            options["body_phase_1"],
+            n_body_joints
+        )
         joint_controllers_body = [
             JointController(
                 joint=joints["joint_link_body_{}".format(joint_i+1)],
                 sine=SineControl(
-                    amplitude=(
-                        0.2*np.sin(
+                    amplitude=amplitudes[joint_i] + (
+                        options["body_stand_amplitude"]*np.sin(
                             2*np.pi*joint_i/n_body_joints
-                            - options["body_shift"]
+                            - options["body_stand_shift"]
                         )
                     ),
                     frequency=frequency,
-                    phase=0,
+                    phase=phases[joint_i],
                     offset=0
                 ),
                 pdf=(
@@ -523,52 +510,6 @@ class SalamanderController(RobotController):
                     d=options["legs_d"],
                     f=options["legs_f"]
                 )
-            )
-            for leg_i in range(2)
-            for side_i, side in enumerate(["L", "R"])
-            for joint_i in range(3)
-        ]
-        return cls(
-            robot,
-            joint_controllers_body + joint_controllers_legs,
-            timestep=timestep
-        )
-
-    @classmethod
-    def swimming(cls, robot, joints, options, timestep):
-        """Salamander swimming controller"""
-        n_body_joints = options["n_body_joints"]
-        frequency = options["frequency"]
-        joint_controllers_body = [
-            JointController(
-                joint=joints["joint_link_body_{}".format(joint_i+1)],
-                sine=SineControl(
-                    amplitude=0.1+joint_i*0.4/n_body_joints,
-                    frequency=frequency,
-                    phase=-2*np.pi*joint_i/11,
-                    offset=0
-                ),
-                pdf=(
-                    ControlPDF(p=1e-1, d=1e0, f=1e1)
-                ),
-                is_body=True
-            )
-            for joint_i in range(n_body_joints)
-        ]
-        joint_controllers_legs = [
-            JointController(
-                joint=joints["joint_link_leg_{}_{}_{}".format(
-                    leg_i,
-                    side,
-                    joint_i
-                )],
-                sine=SineControl(
-                    amplitude=0.0,
-                    frequency=0,
-                    phase=0,
-                    offset=-2*np.pi/5 if joint_i == 0 else 0
-                ),
-                pdf=ControlPDF(p=1e-1, d=1e0, f=1e1)
             )
             for leg_i in range(2)
             for side_i, side in enumerate(["L", "R"])
@@ -954,9 +895,15 @@ class SalamanderModel(Model):
         self.controller = SalamanderController.gait(
             self.model,
             self.joints,
-            gait=gait,
-            timestep=kwargs.pop("timestep", 1e-3),
-            frequency=kwargs.pop("frequency", 1 if gait == "walking" else 2)
+            # gait=gait,
+            options=(
+                SalamanderControlOptions.walking({"frequency": 1})
+                if gait == "walking"
+                else SalamanderControlOptions.swimming({"frequency": 1})
+                if gait == "swimming"
+                else SalamanderControlOptions.standing()
+            ),
+            timestep=kwargs.pop("timestep", 1e-3)
         )
         self.feet = [
             "link_leg_0_L_3",
@@ -1389,6 +1336,13 @@ class UserParameters:
         return self._body_offset
 
 
+def rendering(render=1):
+    """Enable/disable rendering"""
+    pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, render)
+    pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, render)
+    pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_TINY_RENDERER, render)
+
+
 def main(clargs):
     """Main"""
 
@@ -1397,6 +1351,7 @@ def main(clargs):
     gait = "walking"
     frequency = 1
     sim = Simulation(timestep=timestep, gait=gait)
+    rendering(0)
 
     # Simulation entities
     salamander, links, joints, plane = sim.get_entities()
@@ -1450,6 +1405,7 @@ def main(clargs):
 
     # Run simulation
     init_state = pybullet.saveState()
+    rendering(1)
     while sim_step < len(sim.times):
         user_params.update()
         if not(sim_step % 10000) and sim_step > 0:
@@ -1465,8 +1421,14 @@ def main(clargs):
                 sim.robot.controller = SalamanderController.gait(
                     salamander.model,
                     joints,
-                    gait,
-                    timestep=1e-3
+                    options=(
+                        SalamanderControlOptions.walking({"frequency": 1})
+                        if gait == "walking"
+                        else SalamanderControlOptions.swimming({"frequency": 1})
+                        if gait == "swimming"
+                        else SalamanderControlOptions.standing()
+                    ),
+                    timestep=timestep
                 )
                 pybullet.setGravity(
                     0, 0, -1e-2 if gait == "swimming" else -9.81
