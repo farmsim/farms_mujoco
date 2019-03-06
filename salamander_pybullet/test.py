@@ -179,6 +179,10 @@ class JointController:
         """Angular frequency"""
         return self._sine.angular_frequency
 
+    def get_frequency(self):
+        """Get frequency"""
+        return self._sine.angular_frequency/(2*np.pi)
+
     def set_frequency(self, frequency):
         """Set frequency"""
         self._sine.angular_frequency = 2*np.pi*frequency
@@ -197,6 +201,8 @@ class ModelController:
         self.model = model
         self.controllers = joints_controllers
         self.network = Network(self.controllers, timestep=timestep)
+        self._frequency = self.controllers[0].get_frequency()
+        self._body_offset = 0
 
     def control(self, verbose=False):
         """Control"""
@@ -224,13 +230,29 @@ class ModelController:
             forces=[ctrl["pdf"]["f"] for ctrl in controls]
         )
 
+    def update_gait(self, gait, joints):
+        """Update gait"""
+        controllers_body, controllers_legs = (
+            SalamanderController.joints_controllers(
+                joints=joints,
+                options=SalamanderControlOptions.from_gait(
+                    gait=gait,
+                    frequency=self._frequency,
+                    body_offset=self._body_offset
+                )
+            )
+        )
+        self.controllers = controllers_body + controllers_legs
+
     def update_frequency(self, frequency):
         """Update frequency"""
+        self._frequency = frequency
         for controller in self.controllers:
             controller.set_frequency(frequency)
 
     def update_body_offset(self, body_offset):
         """Update body offset"""
+        self._body_offset = body_offset
         for controller in self.controllers:
             controller.set_body_offset(body_offset)
 
@@ -241,6 +263,17 @@ class SalamanderControlOptions(dict):
     def __init__(self, options):
         super(SalamanderControlOptions, self).__init__()
         self.update(options)
+
+    @classmethod
+    def from_gait(cls, gait, **kwargs):
+        """Salamander control option from gait"""
+        return (
+            cls.walking(frequency=kwargs.pop("frequency", 1), **kwargs)
+            if gait == "walking"
+            else cls.swimming(frequency=kwargs.pop("frequency", 2), **kwargs)
+            if gait == "swimming"
+            else cls.standing()
+        )
 
     @classmethod
     def standing(cls, **kwargs):
@@ -442,24 +475,30 @@ class SalamanderController(ModelController):
     """ModelController"""
 
     @classmethod
-    def gait(cls, model, joints, gait, timestep, **kwargs):
+    def from_gait(cls, model, joints, gait, timestep, **kwargs):
         """Salamander controller from gait"""
         return cls.from_options(
             model=model,
             joints=joints,
-            options=(
-                SalamanderControlOptions.walking(frequency=1, **kwargs)
-                if gait == "walking"
-                else SalamanderControlOptions.swimming(frequency=2, **kwargs)
-                if gait == "swimming"
-                else SalamanderControlOptions.standing(**kwargs)
-            ),
+            options=SalamanderControlOptions.from_gait(gait, **kwargs),
             timestep=timestep
         )
 
     @classmethod
     def from_options(cls, model, joints, options, timestep):
         """Salamander controller from options"""
+        joint_controllers_body, joint_controllers_legs = (
+            cls.joints_controllers(joints, options)
+        )
+        return cls(
+            model,
+            joint_controllers_body + joint_controllers_legs,
+            timestep=timestep
+        )
+
+    @staticmethod
+    def joints_controllers(joints, options):
+        """Controllers"""
         n_body_joints = options["n_body_joints"]
         frequency = options["frequency"]
         amplitudes = np.linspace(
@@ -528,11 +567,7 @@ class SalamanderController(ModelController):
             for side_i, side in enumerate(["L", "R"])
             for joint_i in range(3)
         ]
-        return cls(
-            model,
-            joint_controllers_body + joint_controllers_legs,
-            timestep=timestep
-        )
+        return joint_controllers_body, joint_controllers_legs
 
 
 def init_engine():
@@ -873,7 +908,7 @@ class SalamanderModel(Model):
         # Model dynamics
         self.apply_motor_damping()
         # Controller
-        self.controller = SalamanderController.gait(
+        self.controller = SalamanderController.from_gait(
             self.identity,
             self.joints,
             gait=gait,
@@ -1460,12 +1495,7 @@ def main(clargs):
             # Control
             if user_params.gait.changed:
                 gait = user_params.gait.value
-                sim.model.controller = SalamanderController.gait(
-                    salamander.identity,
-                    joints,
-                    gait=gait,
-                    timestep=timestep
-                )
+                sim.model.controller.update_gait(gait, joints)
                 pybullet.setGravity(
                     0, 0, -1e-2 if gait == "swimming" else -9.81
                 )
