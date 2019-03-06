@@ -243,6 +243,48 @@ class SalamanderControlOptions(dict):
         self.update(options)
 
     @classmethod
+    def standing(cls, additional_options=None):
+        """Standing options"""
+        # Options
+        options = {}
+
+        # General
+        options["n_body_joints"] = 11
+        options["n_legs_pairs"] = 2
+        options["gait"] = "standing"
+        options["frequency"] = 0
+
+        # Body
+        options["body_amplitude"] = 0
+        options["body_shift"] = 0
+
+        # Legs
+        options["leg_0_amplitude"] = 0
+        options["leg_0_phase"] = 0
+        options["leg_0_offset"] = 0
+
+        options["leg_1_amplitude"] = 0
+        options["leg_1_phase"] = 0
+        options["leg_1_offset"] = np.pi/16
+
+        options["leg_2_amplitude"] = 0
+        options["leg_2_phase"] = 0
+        options["leg_2_offset"] = np.pi/8
+
+        # Gains
+        options["body_p"] = 1e-1
+        options["body_d"] = 1e0
+        options["body_f"] = 1e1
+        options["legs_p"] = 1e-1
+        options["legs_d"] = 1e0
+        options["legs_f"] = 1e1
+
+        # Additional options
+        if additional_options:
+            options.update(additional_options)
+        return cls(options)
+
+    @classmethod
     def walking(cls, additional_options=None):
         """Walking options"""
         # Options
@@ -271,6 +313,7 @@ class SalamanderControlOptions(dict):
         options["leg_2_phase"] = 0.5*np.pi
         options["leg_2_offset"] = np.pi/8
 
+        # Additional walking options
         options["leg_turn"] = 0
 
         # Gains
@@ -309,24 +352,33 @@ class SalamanderController(RobotController):
             if gait == "walking" else
             cls.swimming(robot, joints, **kwargs)
             if gait == "swimming" else
-            cls.standing(robot, joints, **kwargs)
+            cls.standing(
+                robot,
+                joints,
+                SalamanderControlOptions.standing(kwargs),
+                timestep
+            )
         )
 
     @classmethod
-    def standing(cls, robot, joints, **kwargs):
+    def standing(cls, robot, joints, options, timestep):
         """Salamander standing controller"""
-        n_body_joints = kwargs.pop("n_body_joints", 11)
+        n_body_joints = options["n_body_joints"]
         joint_controllers_body = [
             JointController(
                 joint=joints["joint_link_body_{}".format(joint_i+1)],
                 sine=SineControl(
-                    amplitude=0,
-                    frequency=0,
-                    phase=0,
+                    amplitude=options["body_amplitude"],
+                    frequency=options["frequency"],
+                    phase=options["body_shift"],
                     offset=0
                 ),
                 pdf=(
-                    ControlPDF(p=1e-1, d=1e0, f=1e1)
+                    ControlPDF(
+                        p=options["body_p"],
+                        d=options["body_d"],
+                        f=options["body_f"]
+                    )
                 ),
                 is_body=True
             )
@@ -340,16 +392,18 @@ class SalamanderController(RobotController):
                     joint_i
                 )],
                 sine=SineControl(
-                    amplitude=0.0,
-                    frequency=0,
-                    phase=0,
-                    offset=(
-                        0 if joint_i == 0
-                        else np.pi/16 if joint_i == 1
-                        else np.pi/8
-                    )
+                    amplitude=options["leg_{}_amplitude".format(joint_i)],
+                    frequency=options["frequency"],
+                    phase=options["leg_{}_phase".format(joint_i)],
+                    offset=options["leg_{}_offset".format(joint_i)]
                 ),
-                pdf=ControlPDF(p=1e-1, d=1e0, f=1e1)
+                pdf = (
+                    ControlPDF(
+                        p=options["body_p"],
+                        d=options["body_d"],
+                        f=options["body_f"]
+                    )
+                )
             )
             for leg_i in range(2)
             for side_i, side in enumerate(["L", "R"])
@@ -358,7 +412,7 @@ class SalamanderController(RobotController):
         return cls(
             robot,
             joint_controllers_body + joint_controllers_legs,
-            timestep=kwargs.pop("timestep", 1e-3)
+            timestep=timestep
         )
 
     @classmethod
