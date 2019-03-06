@@ -243,7 +243,7 @@ class SalamanderControlOptions(dict):
         self.update(options)
 
     @classmethod
-    def standing(cls, additional_options=None):
+    def standing(cls, **kwargs):
         """Standing options"""
         # Options
         options = {}
@@ -285,12 +285,11 @@ class SalamanderControlOptions(dict):
         options["legs_f"] = 1e1
 
         # Additional options
-        if additional_options:
-            options.update(additional_options)
+        options.update(kwargs)
         return cls(options)
 
     @classmethod
-    def walking(cls, additional_options=None):
+    def walking(cls, **kwargs):
         """Walking options"""
         # Options
         options = {}
@@ -332,12 +331,11 @@ class SalamanderControlOptions(dict):
         options["legs_f"] = 1e1
 
         # Additional options
-        if additional_options:
-            options.update(additional_options)
+        options.update(kwargs)
         return cls(options)
 
     @classmethod
-    def swimming(cls, additional_options=None):
+    def swimming(cls, **kwargs):
         """Swimming options"""
         # Options
         options = {}
@@ -380,8 +378,7 @@ class SalamanderControlOptions(dict):
         options["legs_f"] = 1e1
 
         # Additional options
-        if additional_options:
-            options.update(additional_options)
+        options.update(kwargs)
         return cls(options)
 
     def to_vector(self):
@@ -445,8 +442,24 @@ class SalamanderController(RobotController):
     """RobotController"""
 
     @classmethod
-    def gait(cls, robot, joints, options, timestep):
-        """Salamander gait controller"""
+    def gait(cls, robot, joints, gait, timestep, **kwargs):
+        """Salamander controller from gait"""
+        return cls.from_options(
+            robot=robot,
+            joints=joints,
+            options=(
+                SalamanderControlOptions.walking(frequency=1, **kwargs)
+                if gait == "walking"
+                else SalamanderControlOptions.swimming(frequency=2, **kwargs)
+                if gait == "swimming"
+                else SalamanderControlOptions.standing(**kwargs)
+            ),
+            timestep=timestep
+        )
+
+    @classmethod
+    def from_options(cls, robot, joints, options, timestep):
+        """Salamander controller from options"""
         n_body_joints = options["n_body_joints"]
         frequency = options["frequency"]
         amplitudes = np.linspace(
@@ -895,14 +908,7 @@ class SalamanderModel(Model):
         self.controller = SalamanderController.gait(
             self.model,
             self.joints,
-            # gait=gait,
-            options=(
-                SalamanderControlOptions.walking({"frequency": 1})
-                if gait == "walking"
-                else SalamanderControlOptions.swimming({"frequency": 1})
-                if gait == "swimming"
-                else SalamanderControlOptions.standing()
-            ),
+            gait=gait,
             timestep=kwargs.pop("timestep", 1e-3)
         )
         self.feet = [
@@ -1421,13 +1427,7 @@ def main(clargs):
                 sim.robot.controller = SalamanderController.gait(
                     salamander.model,
                     joints,
-                    options=(
-                        SalamanderControlOptions.walking({"frequency": 1})
-                        if gait == "walking"
-                        else SalamanderControlOptions.swimming({"frequency": 1})
-                        if gait == "swimming"
-                        else SalamanderControlOptions.standing()
-                    ),
+                    gait=gait,
                     timestep=timestep
                 )
                 pybullet.setGravity(
