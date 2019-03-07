@@ -742,7 +742,8 @@ class Simulation:
 
         # Parameters
         # gait = "standing"
-        gait = gait
+        self.gait = gait
+        self.frequency = 1
         # gait = "swimming"
         self.timestep = timestep
         self.times = np.arange(0, 100, self.timestep)
@@ -788,6 +789,186 @@ class Simulation:
         print("Physics parameters:\n{}".format(
             pybullet.getPhysicsEngineParameters()
         ))
+
+    def init(self, clargs):
+        """Initialise simulation"""
+        rendering(0)
+
+        # Simulation entities
+        self.salamander, self.links, self.joints, self.plane = (
+            self.get_entities()
+        )
+
+        # Remove leg collisions
+        self.salamander.leg_collisions(self.plane, activate=False)
+
+        # Model information
+        self.salamander.print_dynamics_info()
+
+        # Create scene
+        add_obstacles = False
+        if add_obstacles:
+            create_scene(plane)
+
+        # Camera
+        self.camera = UserCamera(
+            target_identity=self.salamander.identity,
+            yaw=0,
+            yaw_speed=360/10 if clargs.rotating_camera else 0,
+            pitch=-89 if clargs.top_camera else -45,
+            distance=1,
+            timestep=self.timestep
+        )
+
+        # Video recording
+        if clargs.record:
+            self.camera_record = CameraRecord(
+                target_identity=self.salamander.identity,
+                size=len(self.times)//25,
+                fps=40,
+                yaw=0,
+                yaw_speed=360/10 if clargs.rotating_camera else 0,
+                pitch=-89 if clargs.top_camera else -45,
+                distance=1,
+                timestep=self.timestep*25,
+                motion_filter=1e-1
+            )
+
+        # User parameters
+        self.user_params = UserParameters(self.gait, self.frequency)
+
+        # Debug info
+        test_debug_info()
+
+        # Simulation time
+        self.tot_sim_time = 0
+        self.forces_torques = np.zeros([len(self.times), 2, 10, 3])
+        self.sim_step = 0
+
+        # Final setup
+        self.experiment_logger = ExperimentLogger(
+            self.salamander,
+            len(self.times)
+        )
+        self.init_state = pybullet.saveState()
+        rendering(1)
+
+    def run(self, clargs):
+        """Run simulation"""
+        # Run simulation
+        self.tic = time.time()
+        while self.sim_step < len(self.times):
+            self.loop(clargs)
+            keys = pybullet.getKeyboardEvents()
+            if ord("q") in keys:
+                break
+        self.toc = time.time()
+
+    def loop(self, clargs):
+        """Simulation loop"""
+        self.user_params.update()
+        if not(self.sim_step % 10000) and self.sim_step > 0:
+            pybullet.restoreState(self.init_state)
+        if not self.user_params.play.value:
+            time.sleep(0.5)
+        else:
+            self.tic_rt = time.time()
+            self.sim_time = self.timestep*self.sim_step
+            # Control
+            if self.user_params.gait.changed:
+                self.gait = self.user_params.gait.value
+                self.model.controller.update_gait(self.gait, self.joints)
+                pybullet.setGravity(
+                    0, 0, -1e-2 if self.gait == "swimming" else -9.81
+                )
+                self.user_params.gait.changed = False
+            if self.user_params.frequency.changed:
+                self.model.controller.update_frequency(
+                    self.user_params.frequency.value
+                )
+                self.user_params.frequency.changed = False
+            if self.user_params.body_offset.changed:
+                self.model.controller.update_body_offset(
+                    self.user_params.body_offset.value
+                )
+                self.user_params.body_offset.changed = False
+            self.tic_control = time.time()
+            self.model.controller.control()
+            self.time_control = time.time() - self.tic_control
+            # Swimming
+            if self.gait == "swimming":
+                self.forces_torques[self.sim_step] = viscous_swimming(
+                    self.salamander.identity,
+                    self.links
+                )
+            # Time plugins
+            self.time_plugin = time.time() - self.tic_rt
+            # Physics
+            self.tic_sim = time.time()
+            pybullet.stepSimulation()
+            self.sim_step += 1
+            self.toc_sim = time.time()
+            self.tot_sim_time += self.toc_sim - self.tic_sim
+            # Contacts during walking
+            self.salamander.sensors.update(
+                identity=self.salamander.identity,
+                links=[self.links[foot] for foot in self.salamander.feet],
+                joints=[
+                    self.joints[joint]
+                    for joint in self.salamander.sensors.joints_sensors
+                ],
+                plane=self.plane
+            )
+            # Commands
+            self.salamander.motors.update(
+                identity=self.salamander.identity,
+                joints_body=[
+                    self.joints[joint]
+                    for joint in self.salamander.motors.joints_commanded_body
+                ],
+                joints_legs=[
+                    self.joints[joint]
+                    for joint in self.salamander.motors.joints_commanded_legs
+                ]
+            )
+            self.experiment_logger.update(self.sim_step-1)
+            # Video recording
+            if clargs.record and not self.sim_step % 25:
+                self.camera_record.record(self.sim_step//25-1)
+            # User camera
+            if not clargs.free_camera:
+                self.camera.update()
+            # Real-time
+            self.toc_rt = time.time()
+            if not clargs.fast and self.user_params.rtl.value < 3:
+                real_time_handing(
+                    self.timestep, self.tic_rt, self.toc_rt,
+                    rtl=self.user_params.rtl.value,
+                    time_plugin=self.time_plugin,
+                    time_sim=self.toc_sim-self.tic_sim,
+                    time_control=self.time_control
+                )
+
+    def end(self, clargs):
+        """Terminate simulation"""
+        # Plot
+        self.experiment_logger.plot_all(self.times)
+        plt.show()
+
+        # Simulation information
+        self.sim_time = self.timestep*(self.sim_step)
+        print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
+            self.sim_time,
+            self.toc-self.tic,
+            self.tot_sim_time
+        ))
+
+        # Disconnect from simulation
+        pybullet.disconnect()
+
+        # Record video
+        if clargs.record:
+            self.camera_record.save("video.avi")
 
 
 class Model:
@@ -1492,174 +1673,10 @@ class MotorsLogger:
 
 def main(clargs):
     """Main"""
-
-    # Initialise simulation
-    timestep = 1e-3
-    gait = "walking"
-    frequency = 1
-    sim = Simulation(timestep=timestep, gait=gait)
-    rendering(0)
-
-    # Simulation entities
-    salamander, links, joints, plane = sim.get_entities()
-
-    # Remove leg collisions
-    salamander.leg_collisions(plane, activate=False)
-
-    # Model information
-    salamander.print_dynamics_info()
-
-    # Create scene
-    add_obstacles = False
-    if add_obstacles:
-        create_scene(plane)
-
-    # Camera
-    camera = UserCamera(
-        target_identity=salamander.identity,
-        yaw=0,
-        yaw_speed=360/10 if clargs.rotating_camera else 0,
-        pitch=-89 if clargs.top_camera else -45,
-        distance=1,
-        timestep=timestep
-    )
-
-    # Video recording
-    if clargs.record:
-        camera_record = CameraRecord(
-            target_identity=salamander.identity,
-            size=len(sim.times)//25,
-            fps=40,
-            yaw=0,
-            yaw_speed=360/10 if clargs.rotating_camera else 0,
-            pitch=-89 if clargs.top_camera else -45,
-            distance=1,
-            timestep=timestep*25,
-            motion_filter=1e-1
-        )
-
-    # User parameters
-    user_params = UserParameters(gait, frequency)
-
-    # Debug info
-    test_debug_info()
-
-    # Simulation time
-    tot_sim_time = 0
-    forces_torques = np.zeros([len(sim.times), 2, 10, 3])
-    sim_step = 0
-
-    # Final setup
-    experiment_logger = ExperimentLogger(salamander, len(sim.times))
-    init_state = pybullet.saveState()
-    rendering(1)
-
-    # Run simulation
-    tic = time.time()
-    while sim_step < len(sim.times):
-        user_params.update()
-        if not(sim_step % 10000) and sim_step > 0:
-            pybullet.restoreState(init_state)
-        if not user_params.play.value:
-            time.sleep(0.5)
-        else:
-            tic_rt = time.time()
-            sim_time = timestep*sim_step
-            # Control
-            if user_params.gait.changed:
-                gait = user_params.gait.value
-                sim.model.controller.update_gait(gait, joints)
-                pybullet.setGravity(
-                    0, 0, -1e-2 if gait == "swimming" else -9.81
-                )
-                user_params.gait.changed = False
-            if user_params.frequency.changed:
-                sim.model.controller.update_frequency(
-                    user_params.frequency.value
-                )
-                user_params.frequency.changed = False
-            if user_params.body_offset.changed:
-                sim.model.controller.update_body_offset(
-                    user_params.body_offset.value
-                )
-                user_params.body_offset.changed = False
-            tic_control = time.time()
-            sim.model.controller.control()
-            time_control = time.time() - tic_control
-            # Swimming
-            if gait == "swimming":
-                forces_torques[sim_step] = viscous_swimming(salamander.identity, links)
-            # Time plugins
-            time_plugin = time.time() - tic_rt
-            # Physics
-            tic_sim = time.time()
-            pybullet.stepSimulation()
-            sim_step += 1
-            toc_sim = time.time()
-            tot_sim_time += toc_sim - tic_sim
-            # Contacts during walking
-            salamander.sensors.update(
-                identity=salamander.identity,
-                links=[links[foot] for foot in salamander.feet],
-                joints=[
-                    joints[joint]
-                    for joint in salamander.sensors.joints_sensors
-                ],
-                plane=plane
-            )
-            # Commands
-            salamander.motors.update(
-                identity=salamander.identity,
-                joints_body=[
-                    joints[joint]
-                    for joint in salamander.motors.joints_commanded_body
-                ],
-                joints_legs=[
-                    joints[joint]
-                    for joint in salamander.motors.joints_commanded_legs
-                ]
-            )
-            experiment_logger.update(sim_step-1)
-            # Video recording
-            if clargs.record and not sim_step % 25:
-                camera_record.record(sim_step//25-1)
-            # User camera
-            if not clargs.free_camera:
-                camera.update()
-            # Real-time
-            toc_rt = time.time()
-            if not clargs.fast and user_params.rtl.value < 3:
-                real_time_handing(
-                    timestep, tic_rt, toc_rt,
-                    rtl=user_params.rtl.value,
-                    time_plugin=time_plugin,
-                    time_sim=toc_sim-tic_sim,
-                    time_control=time_control
-                )
-        keys = pybullet.getKeyboardEvents()
-        if ord("q") in keys:
-            break
-
-    toc = time.time()
-
-    # Plot
-    experiment_logger.plot_all(sim.times)
-    plt.show()
-
-    # Simulation information
-    sim_time = timestep*(sim_step)
-    print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
-        sim_time,
-        toc-tic,
-        tot_sim_time
-    ))
-
-    # Disconnect from simulation
-    pybullet.disconnect()
-
-    # Record video
-    if clargs.record:
-        camera_record.save("video.avi")
+    sim = Simulation(timestep=1e-3, gait="walking")
+    sim.init(clargs)
+    sim.run(clargs)
+    sim.end(clargs)
 
 
 def main_parallel():
