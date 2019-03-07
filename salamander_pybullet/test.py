@@ -1389,6 +1389,13 @@ class ExperimentLogger:
         self.sensors.update(iteration)
         self.motors.update(iteration)
 
+    def plot_all(self, sim_times):
+        """Plot all"""
+        self.sensors.plot_contacts(sim_times)
+        self.sensors.plot_ft(sim_times)
+        self.motors.plot_body(sim_times)
+        self.motors.plot_legs(sim_times)
+
 
 class SensorsLogger:
     """Sensors logger"""
@@ -1636,14 +1643,10 @@ def main(clargs):
     toc = time.time()
 
     # Plot
-    experiment_logger.sensors.plot_contacts(sim.times)
-    experiment_logger.sensors.plot_ft(sim.times)
-    experiment_logger.motors.plot_body(sim.times)
-    experiment_logger.motors.plot_legs(sim.times)
-
-    # Show plots
+    experiment_logger.plot_all(sim.times)
     plt.show()
 
+    # Simulation information
     sim_time = timestep*(sim_step)
     print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
         sim_time,
@@ -1651,6 +1654,7 @@ def main(clargs):
         tot_sim_time
     ))
 
+    # Disconnect from simulation
     pybullet.disconnect()
 
     # Record video
