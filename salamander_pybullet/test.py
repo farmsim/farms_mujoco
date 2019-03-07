@@ -1671,11 +1671,21 @@ class MotorsLogger:
             plt.legend()
 
 
-def main(clargs):
+def main(clargs=None):
     """Main"""
+
+    # Parse command line arguments
+    if not clargs:
+        clargs = parse_args()
+
+    # Setup simulation
     sim = Simulation(timestep=1e-3, gait="walking")
     sim.init(clargs)
+
+    # Run simulation
     sim.run(clargs)
+
+    # Show results
     sim.end(clargs)
 
 
@@ -1683,17 +1693,17 @@ def main_parallel():
     """Simulation with multiprocessing"""
     from multiprocessing import Pool
 
-    # Create Pool
-    p = Pool(1)
-
     # Parse command line arguments
     clargs = parse_args()
 
+    # Create Pool
+    pool = Pool(2)
+
     # Run simulation
-    p.map(main, [clargs])
+    pool.map(main, [clargs, clargs])
     print("Done")
 
 
 if __name__ == '__main__':
-    # main2(parse_args())
-    main(parse_args())
+    # main_parallel()
+    main()
