@@ -783,7 +783,10 @@ class Simulation:
         pybullet.setRealTimeSimulation(0)
         pybullet.setPhysicsEngineParameter(
             fixedTimeStep=self.timestep,
-            numSolverIterations=50
+            numSolverIterations=50,
+            erp=0,
+            contactERP=0,
+            frictionERP=0
         )
         print("Physics parameters:\n{}".format(
             pybullet.getPhysicsEngineParameters()
