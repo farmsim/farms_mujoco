@@ -104,7 +104,7 @@ def main():
             # "reltol": 1e-3
         }
     )
-    freqs_vals = np.ones(n_dim)
+    freqs_vals = 2*np.pi*np.ones(n_dim)
     phases_vals = 3e-1*np.pi*(2*np.random.ranf(n_dim)-1)
     time_tot = 10
     times = np.arange(0, time_tot, timestep)
