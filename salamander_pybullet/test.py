@@ -573,7 +573,11 @@ class SalamanderController(ModelController):
 def init_engine():
     """Initialise engine"""
     print(pybullet.getAPIVersion())
-    pybullet.connect(pybullet.GUI, options="--minGraphicsUpdateTimeMs=32000")
+    pybullet.connect(
+        pybullet.GUI,
+        # options="--enable_experimental_opencl"
+        # options="--opengl2"  #  --minGraphicsUpdateTimeMs=32000
+    )
     pybullet_path = pybullet_data.getDataPath()
     print("Adding pybullet data path {}".format(pybullet_path))
     pybullet.setAdditionalSearchPath(pybullet_path)
@@ -735,10 +739,11 @@ def create_scene(plane):
 class Simulation:
     """Simulation"""
 
-    def __init__(self, timestep, gait="walking"):
+    def __init__(self, timestep, clargs, gait="walking"):
         super(Simulation, self).__init__()
         # Initialise engine
         init_engine()
+        rendering(0)
 
         # Parameters
         # gait = "standing"
@@ -750,6 +755,8 @@ class Simulation:
 
         # Initialise
         self.model, self.plane = self.init_simulation(gait=gait)
+        self.init(clargs)
+        rendering(1)
 
     def get_entities(self):
         """Get simulation entities"""
@@ -792,7 +799,6 @@ class Simulation:
 
     def init(self, clargs):
         """Initialise simulation"""
-        rendering(0)
 
         # Simulation entities
         self.salamander, self.links, self.joints, self.plane = (
@@ -1679,8 +1685,7 @@ def main(clargs=None):
         clargs = parse_args()
 
     # Setup simulation
-    sim = Simulation(timestep=1e-3, gait="walking")
-    sim.init(clargs)
+    sim = Simulation(timestep=1e-3, clargs=clargs, gait="walking")
 
     # Run simulation
     sim.run(clargs)
