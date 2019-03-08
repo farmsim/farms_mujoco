@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 def main():
     """Main"""
     timestep = 1e-3
-    n_dim = 30
+    n_dim = 10
     freqs = np.array([
         cas.SX.sym("freqs_{}".format(i))
         for i in range(n_dim)
@@ -28,8 +28,8 @@ def main():
     for i in range(n_dim-1):
         coupling_weights_vals[i, i+1] = 3e2
         coupling_weights_vals[i+1, i] = 3e2
-        phases_desired_vals[i, i+1] = 0
-        phases_desired_vals[i+1, i] = 0
+        phases_desired_vals[i, i+1] = -0.1
+        phases_desired_vals[i+1, i] = 0.1
     for i in range(n_dim-2):
         coupling_weights_vals[i, i+2] = 0
         coupling_weights_vals[i+2, i] = 0
@@ -59,7 +59,7 @@ def main():
     ode = (
         freqs
         + np.sum(
-            coupling_weights*np.sin(phase_diff-phases_desired),
+            coupling_weights*np.sin(phase_diff+phases_desired),
             axis=1
         )
     )
@@ -105,7 +105,7 @@ def main():
         }
     )
     freqs_vals = np.ones(n_dim)
-    phases_vals = 10*np.pi*np.random.ranf(n_dim)
+    phases_vals = 1e-1*np.pi*np.random.ranf(n_dim)
     time_tot = 1
     times = np.arange(0, time_tot, timestep)
     phases_logs = np.zeros([len(times), n_dim])
