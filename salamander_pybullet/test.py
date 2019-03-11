@@ -56,8 +56,30 @@ def parse_args():
 class Network:
     """Controller network"""
 
-    def __init__(self, controllers, timestep):
+    def __init__(self, state, ode):
         super(Network, self).__init__()
+        self._state = state
+        self._ode = ode
+
+    @property
+    def state(self):
+        """State"""
+        return self._state
+
+    def integrate(self, parameters):
+        """Control step"""
+        self._state = np.array(
+            self._ode(
+                x0=self._state,
+                p=parameters
+            )["xf"][:, 0]
+        )
+
+
+class IndependentOscillators(Network):
+    """Independent oscillators"""
+
+    def __init__(self, controllers, timestep):
         size = len(controllers)
         freqs = cas.MX.sym('freqs', size)
         ode = {
@@ -65,31 +87,31 @@ class Network:
             "p": freqs,
             "ode": freqs
         }
-
-        # Construct a Function that integrates over 4s
-        self.ode = cas.integrator(
-            'oscillator',
-            'cvodes',
-            ode,
-            {
-                "t0": 0,
-                "tf": timestep,
-                "jit": True,
-                # "step0": 1e-3,
-                # "abstol": 1e-3,
-                # "reltol": 1e-3
-            },
+        super(IndependentOscillators, self).__init__(
+            state=np.zeros(size),
+            ode=cas.integrator(
+                'oscillator',
+                'cvodes',
+                ode,
+                {
+                    "t0": 0,
+                    "tf": timestep,
+                    "jit": True,
+                    # "step0": 1e-3,
+                    # "abstol": 1e-3,
+                    # "reltol": 1e-3
+                },
+            )
         )
-        self.phases = np.zeros(size)
+
+    @property
+    def phases(self):
+        """Oscillator phases"""
+        return self._state
 
     def control_step(self, freqs):
         """Control step"""
-        self.phases = np.array(
-            self.ode(
-                x0=self.phases,
-                p=freqs
-            )["xf"][:, 0]
-        )
+        self.integrate(freqs)
         return self.phases
 
 
@@ -200,7 +222,10 @@ class ModelController:
         super(ModelController, self).__init__()
         self.model = model
         self.controllers = joints_controllers
-        self.network = Network(self.controllers, timestep=timestep)
+        self.network = IndependentOscillators(
+            self.controllers,
+            timestep=timestep
+        )
         self._frequency = self.controllers[0].get_frequency()
         self._body_offset = 0
 
