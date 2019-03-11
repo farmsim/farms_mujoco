@@ -6,10 +6,10 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
+import casadi as cas
+
 import pybullet_data
 import pybullet
-
-import casadi as cas
 
 
 def parse_args():
@@ -61,7 +61,7 @@ class Network:
         size = len(controllers)
         freqs = cas.MX.sym('freqs', size)
         ode = {
-            "x": cas.MX.sym('x', size),
+            "x": cas.MX.sym('phases', size),
             "p": freqs,
             "ode": freqs
         }
@@ -1564,18 +1564,16 @@ class ExperimentLogger:
         super(ExperimentLogger, self).__init__()
         self.sim_size = sim_size
         self.model = model
-        self.network = np.zeros([
-            sim_size,
-            len(model.controller.network.phases)
-        ])
         self.sensors = SensorsLogger(model, sim_size)
         # [SensorsLogger(model) for sensor in model.sensors]
         self.motors = MotorsLogger(model, sim_size)
+        self.phases = PhasesLogger(model, sim_size)
 
     def update(self, iteration):
         """Update sensors at iteration"""
         self.sensors.update(iteration)
         self.motors.update(iteration)
+        self.phases.update(iteration)
 
     def plot_all(self, sim_times):
         """Plot all"""
@@ -1583,6 +1581,7 @@ class ExperimentLogger:
         self.sensors.plot_ft(sim_times)
         self.motors.plot_body(sim_times)
         self.motors.plot_legs(sim_times)
+        self.phases.plot(sim_times)
 
 
 class SensorsLogger:
@@ -1690,6 +1689,48 @@ class MotorsLogger:
             )
             plt.xlabel("Time [s]")
             plt.ylabel("Torque [Nm]")
+            plt.grid(True)
+            plt.legend()
+
+
+class PhasesLogger:
+    """Phases logger"""
+
+    def __init__(self, model, size):
+        super(PhasesLogger, self).__init__()
+        self.model = model
+        self.size = size
+        self.phases_log = np.zeros([
+            size,
+            *np.shape(model.controller.network.phases)
+        ])
+        self.oscillator_names = [
+            "body_{}".format(i)
+            for i in range(11)
+        ] +  [
+            "leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in enumerate(["L", "R"])
+            for joint_i in range(3)
+        ]
+
+    def update(self, iteration):
+        """Update phase logs"""
+        self.phases_log[iteration, :] = (
+            self.model.controller.network.phases[:, 0]
+        )
+
+    def plot(self, times):
+        """Plot body phases"""
+        plt.figure("Oscillator phases")
+        for phase_i, phase in enumerate(self.oscillator_names):
+            plt.plot(
+                times,
+                self.phases_log[:len(times), phase_i],
+                label=phase
+            )
+            plt.xlabel("Time [s]")
+            plt.ylabel("Phase [rad]")
             plt.grid(True)
             plt.legend()
 
