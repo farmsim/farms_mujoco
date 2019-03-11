@@ -739,7 +739,7 @@ def create_scene(plane):
 class Simulation:
     """Simulation"""
 
-    def __init__(self, timestep, clargs, gait="walking"):
+    def __init__(self, timestep, duration, clargs, gait="walking"):
         super(Simulation, self).__init__()
         # Initialise engine
         init_engine()
@@ -751,7 +751,7 @@ class Simulation:
         self.frequency = 1
         # gait = "swimming"
         self.timestep = timestep
-        self.times = np.arange(0, 100, self.timestep)
+        self.times = np.arange(0, duration, self.timestep)
 
         # Initialise
         self.model, self.plane = self.init_simulation(gait=gait)
@@ -875,6 +875,7 @@ class Simulation:
             if ord("q") in keys:
                 break
         self.toc = time.time()
+        self.times_simulated = self.times[:self.sim_step]
 
     def loop(self, clargs):
         """Simulation loop"""
@@ -958,7 +959,7 @@ class Simulation:
     def end(self, clargs):
         """Terminate simulation"""
         # Plot
-        self.experiment_logger.plot_all(self.times)
+        self.experiment_logger.plot_all(self.times_simulated)
         plt.show()
 
         # Simulation information
@@ -1611,7 +1612,11 @@ class SensorsLogger:
         # Plot contacts
         plt.figure("Contacts")
         for foot_i, foot in enumerate(self.feet):
-            plt.plot(times, self.contact_forces[:, foot_i], label=foot)
+            plt.plot(
+                times,
+                self.contact_forces[:len(times), foot_i],
+                label=foot
+            )
             plt.xlabel("Time [s]")
             plt.ylabel("Reaction force [N]")
             plt.grid(True)
@@ -1622,7 +1627,11 @@ class SensorsLogger:
         # Plot Feet forces
         plt.figure("Feet forces")
         for dim in range(3):
-            plt.plot(times, self.feet_ft[:, 0, dim], label=["x", "y", "z"][dim])
+            plt.plot(
+                times,
+                self.feet_ft[:len(times), 0, dim],
+                label=["x", "y", "z"][dim]
+            )
             plt.xlabel("Time [s]")
             plt.ylabel("Force [N]")
             plt.grid(True)
@@ -1660,7 +1669,11 @@ class MotorsLogger:
         """Plot body motors"""
         plt.figure("Body motor torques")
         for joint_i, joint in enumerate(self.joints_commanded_body):
-            plt.plot(times, self.joints_cmds_body[:, joint_i], label=joint)
+            plt.plot(
+                times,
+                self.joints_cmds_body[:len(times), joint_i],
+                label=joint
+            )
             plt.xlabel("Time [s]")
             plt.ylabel("Torque [Nm]")
             plt.grid(True)
@@ -1670,7 +1683,11 @@ class MotorsLogger:
         """Plot legs motors"""
         plt.figure("Legs motor torques")
         for joint_i, joint in enumerate(self.joints_commanded_legs):
-            plt.plot(times, self.joints_cmds_legs[:, joint_i], label=joint)
+            plt.plot(
+                times,
+                self.joints_cmds_legs[:len(times), joint_i],
+                label=joint
+            )
             plt.xlabel("Time [s]")
             plt.ylabel("Torque [Nm]")
             plt.grid(True)
@@ -1685,7 +1702,12 @@ def main(clargs=None):
         clargs = parse_args()
 
     # Setup simulation
-    sim = Simulation(timestep=1e-3, clargs=clargs, gait="walking")
+    sim = Simulation(
+        timestep=1e-3,
+        duration=100,
+        clargs=clargs,
+        gait="walking"
+    )
 
     # Run simulation
     sim.run(clargs)
