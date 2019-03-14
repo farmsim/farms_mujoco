@@ -53,13 +53,23 @@ def parse_args():
     return parser.parse_args()
 
 
+def bodyjoint2index(joint_i):
+    """body2index"""
+    return joint_i
+
+
+def legjoint2index(leg_i, side_i, joint_i, offset=11):
+    """legjoint2index"""
+    return offset + leg_i*3*2 + side_i*3 + joint_i
+
+
 class Network:
     """Controller network"""
 
-    def __init__(self, state, ode):
+    def __init__(self, state, integrator):
         super(Network, self).__init__()
         self._state = state
-        self._ode = ode
+        self._integrator = integrator
 
     @property
     def state(self):
@@ -69,7 +79,7 @@ class Network:
     def integrate(self, parameters):
         """Control step"""
         self._state = np.array(
-            self._ode(
+            self._integrator(
                 x0=self._state,
                 p=parameters
             )["xf"][:, 0]
@@ -89,7 +99,7 @@ class IndependentOscillators(Network):
         }
         super(IndependentOscillators, self).__init__(
             state=np.zeros(size),
-            ode=cas.integrator(
+            integrator=cas.integrator(
                 'oscillator',
                 'cvodes',
                 ode,
@@ -115,14 +125,431 @@ class IndependentOscillators(Network):
         return self.phases
 
 
+class SalamanderNetwork(Network):
+    """Salamander network"""
+
+    def __init__(self, phases, freqs, weights, phases_desired, integrator):
+        self.freqs, self.weights, self.phases_desired = (
+            freqs,
+            weights,
+            phases_desired
+        )
+        super(SalamanderNetwork, self).__init__(
+            state=phases,
+            integrator=integrator
+        )
+
+    @classmethod
+    def from_gait(cls, gait, timestep, phases=None):
+        """ Salamander network from gait"""
+        return (
+            cls.swimming(timestep, phases)
+            if gait == "swimming"
+            else cls.walking(timestep, phases)
+        )
+
+    @classmethod
+    def walking(cls, timestep, phases=None):
+        """Default salamander network"""
+        n_dim_body = 11
+        n_dim_legs = 2*2*3
+        n_dim = n_dim_body + n_dim_legs
+        weights = np.zeros([n_dim, n_dim])
+        phases_desired = np.zeros([n_dim, n_dim])
+        # Body
+        for i in range(10):
+            weights[i, i+1] = 3e2
+            weights[i+1, i] = 3e2
+            phases_desired[i, i+1] = 0  # -2*np.pi/n_dim_body
+            phases_desired[i+1, i] = 0  # 2*np.pi/n_dim_body
+        # Legs
+        for leg_i in range(2):
+            for side_i in range(2):
+                # 0 - 1
+                weights[
+                    legjoint2index(leg_i, side_i, 0),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 3e2
+                weights[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 0)
+                ] = 3e2
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 0),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 0.5*np.pi
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 0)
+                ] = -0.5*np.pi
+                # 1 - 2
+                weights[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 2)
+                ] = 3e2
+                weights[
+                    legjoint2index(leg_i, side_i, 2),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 3e2
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 2)
+                ] = 0
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 2),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 0
+        # # Opposite leg interaction
+        # for leg_i in range(2):
+        #     # 0 - 1
+        #     weights[
+        #         legjoint2index(leg_i, 0, 0),
+        #         legjoint2index(leg_i, 1, 0)
+        #     ] = 3e2
+        #     weights[
+        #         legjoint2index(leg_i, 1, 0),
+        #         legjoint2index(leg_i, 0, 0)
+        #     ] = 3e2
+        #     phases_desired[
+        #         legjoint2index(leg_i, 0, 0),
+        #         legjoint2index(leg_i, 1, 0)
+        #     ] = np.pi
+        #     phases_desired[
+        #         legjoint2index(leg_i, 1, 0),
+        #         legjoint2index(leg_i, 0, 0)
+        #     ] = -np.pi
+        # # Following leg interaction
+        # for side_i in range(2):
+        #     # 0 - 1
+        #     weights[
+        #         legjoint2index(0, side_i, 0),
+        #         legjoint2index(1, side_i, 0)
+        #     ] = 3e2
+        #     weights[
+        #         legjoint2index(1, side_i, 0),
+        #         legjoint2index(0, side_i, 0)
+        #     ] = 3e2
+        #     phases_desired[
+        #         legjoint2index(0, side_i, 0),
+        #         legjoint2index(1, side_i, 0)
+        #     ] = np.pi
+        #     phases_desired[
+        #         legjoint2index(1, side_i, 0),
+        #         legjoint2index(0, side_i, 0)
+        #     ] = -np.pi
+        # Body-legs interaction
+        for side_i in range(2):
+            # Forelimbs
+            weights[
+                bodyjoint2index(1),
+                legjoint2index(0, side_i, 0)
+            ] = 3e2
+            weights[
+                legjoint2index(0, side_i, 0),
+                bodyjoint2index(1)
+            ] = 3e2
+            phases_desired[
+                bodyjoint2index(1),
+                legjoint2index(0, side_i, 0)
+            ] = side_i*np.pi  # 0.5*np.pi
+            phases_desired[
+                legjoint2index(0, side_i, 0),
+                bodyjoint2index(1)
+            ] = -side_i*np.pi  # -0.5*np.pi
+            # Hind limbs
+            weights[
+                bodyjoint2index(4),
+                legjoint2index(1, side_i, 0)
+            ] = 3e2
+            weights[
+                legjoint2index(1, side_i, 0),
+                bodyjoint2index(4)
+            ] = 3e2
+            phases_desired[
+                bodyjoint2index(4),
+                legjoint2index(1, side_i, 0)
+            ] = (side_i-1)*np.pi  # -0.5*np.pi
+            phases_desired[
+                legjoint2index(1, side_i, 0),
+                bodyjoint2index(4)
+            ] = (side_i-1)*np.pi  # 0.5*np.pi
+        freqs = 2*np.pi*np.ones(n_dim_body)
+        if phases is None:
+            phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
+        weights, phase_desired, integrator = cls.gen_integrator(
+            timestep,
+            n_dim,
+            weights,
+            phases_desired
+        )
+        return cls(phases, freqs, weights, phase_desired, integrator)
+
+    @classmethod
+    def swimming(cls, timestep, phases=None):
+        """Default salamander network"""
+        n_dim_body = 11
+        n_dim_legs = 2*2*3
+        n_dim = n_dim_body + n_dim_legs
+        weights = np.zeros([n_dim, n_dim])
+        phases_desired = np.zeros([n_dim, n_dim])
+        # Body
+        for i in range(10):
+            weights[i, i+1] = 3e2
+            weights[i+1, i] = 3e2
+            phases_desired[i, i+1] = 2*np.pi/n_dim_body
+            phases_desired[i+1, i] = -2*np.pi/n_dim_body
+        # Legs
+        for leg_i in range(2):
+            for side_i in range(2):
+                # 0 - 1
+                weights[
+                    legjoint2index(leg_i, side_i, 0),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 3e2
+                weights[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 0)
+                ] = 3e2
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 0),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 0
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 0)
+                ] = 0
+                # 1 - 2
+                weights[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 2)
+                ] = 3e2
+                weights[
+                    legjoint2index(leg_i, side_i, 2),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 3e2
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 1),
+                    legjoint2index(leg_i, side_i, 2)
+                ] = 0
+                phases_desired[
+                    legjoint2index(leg_i, side_i, 2),
+                    legjoint2index(leg_i, side_i, 1)
+                ] = 0
+        # # Opposite leg interaction
+        # for leg_i in range(2):
+        #     # 0 - 1
+        #     weights[
+        #         legjoint2index(leg_i, 0, 0),
+        #         legjoint2index(leg_i, 1, 0)
+        #     ] = 3e2
+        #     weights[
+        #         legjoint2index(leg_i, 1, 0),
+        #         legjoint2index(leg_i, 0, 0)
+        #     ] = 3e2
+        #     phases_desired[
+        #         legjoint2index(leg_i, 0, 0),
+        #         legjoint2index(leg_i, 1, 0)
+        #     ] = np.pi
+        #     phases_desired[
+        #         legjoint2index(leg_i, 1, 0),
+        #         legjoint2index(leg_i, 0, 0)
+        #     ] = -np.pi
+        # # Following leg interaction
+        # for side_i in range(2):
+        #     # 0 - 1
+        #     weights[
+        #         legjoint2index(0, side_i, 0),
+        #         legjoint2index(1, side_i, 0)
+        #     ] = 3e2
+        #     weights[
+        #         legjoint2index(1, side_i, 0),
+        #         legjoint2index(0, side_i, 0)
+        #     ] = 3e2
+        #     phases_desired[
+        #         legjoint2index(0, side_i, 0),
+        #         legjoint2index(1, side_i, 0)
+        #     ] = np.pi
+        #     phases_desired[
+        #         legjoint2index(1, side_i, 0),
+        #         legjoint2index(0, side_i, 0)
+        #     ] = -np.pi
+        # Body-legs interaction
+        for side_i in range(2):
+            # Forelimbs
+            weights[
+                bodyjoint2index(1),
+                legjoint2index(0, side_i, 0)
+            ] = 3e2
+            weights[
+                legjoint2index(0, side_i, 0),
+                bodyjoint2index(1)
+            ] = 3e2
+            phases_desired[
+                bodyjoint2index(1),
+                legjoint2index(0, side_i, 0)
+            ] = 0  # 0.5*np.pi
+            phases_desired[
+                legjoint2index(0, side_i, 0),
+                bodyjoint2index(1)
+            ] = 0  # -0.5*np.pi
+            # Hind limbs
+            weights[
+                bodyjoint2index(4),
+                legjoint2index(1, side_i, 0)
+            ] = 3e2
+            weights[
+                legjoint2index(1, side_i, 0),
+                bodyjoint2index(4)
+            ] = 3e2
+            phases_desired[
+                bodyjoint2index(4),
+                legjoint2index(1, side_i, 0)
+            ] = 0  # -0.5*np.pi
+            phases_desired[
+                legjoint2index(1, side_i, 0),
+                bodyjoint2index(4)
+            ] = 0  # 0.5*np.pi
+        freqs = 2*np.pi*np.ones(n_dim_body)
+        if phases is None:
+            phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
+        weights, phase_desired, integrator = cls.gen_integrator(
+            timestep,
+            n_dim,
+            weights,
+            phases_desired
+        )
+        return cls(phases, freqs, weights, phase_desired, integrator)
+
+    @staticmethod
+    def gen_integrator(timestep, n_joints, weights, phases_desired):
+        """Generate controller"""
+        oscillator_names = np.array(
+            [
+                "body_{}".format(i)
+                for i in range(11)
+            ] + [
+                "legs_{}_{}_{}".format(leg_i, side, joint_i)
+                for leg_i in range(2)
+                for side in ["L", "R"]
+                for joint_i in range(3)
+            ]
+        )
+        freqs_sym = np.array([
+            cas.SX.sym(oscillator)
+            for oscillator in oscillator_names
+        ])
+        phases_sym = np.array([
+            [cas.SX.sym("phase_{}".format(oscillator))]
+            for oscillator in oscillator_names
+        ])
+        coupling_weights_dense = np.array([
+            [
+                cas.SX.sym("w_{}_{}".format(oscillator_0, oscillator_1))
+                if weights[i, j] != 0
+                else 0  # cas.SX.sym("0")
+                for j, oscillator_1 in enumerate(oscillator_names)
+            ] for i, oscillator_0 in enumerate(oscillator_names)
+        ])
+        phases_desired_dense = np.array([
+            [
+                cas.SX.sym("theta_d_{}_{}".format(i, j))
+                if weights[i, j] != 0
+                else 0  # cas.SX.sym("0")
+                for j in range(n_joints)
+            ] for i in range(n_joints)
+        ])
+        print("phases:\n{}".format(phases_sym))
+        phase_repeat = np.repeat(phases_sym, n_joints, axis=1)
+        print("phases_repeat:\n{}".format(phase_repeat))
+        phase_diff_sym = phase_repeat.T-phase_repeat
+        print("phases_diff:\n{}".format(phase_diff_sym))
+        ode = (
+            freqs_sym + np.sum(
+                coupling_weights_dense*np.sin(
+                    phase_diff_sym + phases_desired_dense
+                ),
+                axis=1
+            )
+        )
+        print("ODE:\n{}".format(ode))
+
+        print("Phases:\n{}".format(phases_sym.T))
+        print("Freqs:\n{}".format(freqs_sym))
+        # print("Coupling weights:\n{}".format(coupling_weights))
+        coupling_weights_sym = np.array([
+            coupling_weights_dense[i, j]
+            for i in range(n_joints)
+            for j in range(n_joints)
+            if isinstance(coupling_weights_dense[i, j], cas.SX)
+        ])
+        phases_desired_sym = np.array([
+            phases_desired_dense[i, j]
+            for i in range(n_joints)
+            for j in range(n_joints)
+            if isinstance(coupling_weights_dense[i, j], cas.SX)
+        ])
+        print("Coupling weights sym:\n{}".format(coupling_weights_sym))
+        # Integrator
+        integrator = cas.integrator(
+            'oscillator_network',
+            'cvodes',
+            {
+                "x": phases_sym,
+                "p": cas.vertcat(
+                    freqs_sym,
+                    coupling_weights_sym,
+                    phases_desired_sym
+                ),
+                "ode": ode
+            },
+            {
+                "t0": 0,
+                "tf": timestep,
+                "jit": True,
+                # "step0": 1e-3,
+                # "abstol": 1e-3,
+                # "reltol": 1e-3
+            }
+        )
+        weights = [
+            weights[i, j]
+            for i in range(n_joints)
+            for j in range(n_joints)
+            if isinstance(coupling_weights_dense[i, j], cas.SX)
+        ]
+        phases_desired = [
+            phases_desired[i, j]
+            for i in range(n_joints)
+            for j in range(n_joints)
+            if isinstance(coupling_weights_dense[i, j], cas.SX)
+        ]
+        return weights, phases_desired, integrator
+
+    @property
+    def phases(self):
+        """Oscillator phases"""
+        return self._state
+
+    def control_step(self, freqs):
+        """Control step"""
+        self.integrate(np.concatenate(
+            [
+                freqs,
+                self.weights,
+                self.phases_desired
+            ],
+            axis=0
+        ))
+        return self.phases
+
+
 class SineControl:
     """SineControl"""
 
-    def __init__(self, amplitude, frequency, phase, offset):
+    def __init__(self, amplitude, frequency, offset):
         super(SineControl, self).__init__()
         self.amplitude = amplitude
         self._angular_frequency = 2*np.pi*frequency
-        self.phase = phase
         self.offset = offset
 
     @property
@@ -136,15 +563,11 @@ class SineControl:
 
     def position(self, phase):
         """"Position"""
-        return self.amplitude*np.sin(
-            phase + self.phase
-        ) + self.offset
+        return self.amplitude*np.sin(phase) + self.offset
 
     def velocity(self, phase):
         """Velocity"""
-        return self._angular_frequency*self.amplitude*np.cos(
-            phase + self.phase
-        )
+        return self._angular_frequency*self.amplitude*np.cos(phase)
 
 
 class ControlPDF(dict):
@@ -222,10 +645,11 @@ class ModelController:
         super(ModelController, self).__init__()
         self.model = model
         self.controllers = joints_controllers
-        self.network = IndependentOscillators(
-            self.controllers,
-            timestep=timestep
-        )
+        # self.network = IndependentOscillators(
+        #     self.controllers,
+        #     timestep=timestep
+        # )
+        self.network = SalamanderNetwork.walking(timestep, phases=None)
         self._frequency = self.controllers[0].get_frequency()
         self._body_offset = 0
 
@@ -254,20 +678,6 @@ class ModelController:
             velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
             forces=[ctrl["pdf"]["f"] for ctrl in controls]
         )
-
-    def update_gait(self, gait, joints):
-        """Update gait"""
-        controllers_body, controllers_legs = (
-            SalamanderController.joints_controllers(
-                joints=joints,
-                options=SalamanderControlOptions.from_gait(
-                    gait=gait,
-                    frequency=self._frequency,
-                    body_offset=self._body_offset
-                )
-            )
-        )
-        self.controllers = controllers_body + controllers_legs
 
     def update_frequency(self, frequency):
         """Update frequency"""
@@ -315,20 +725,15 @@ class SalamanderControlOptions(dict):
         options["body_amplitude_1"] = 0
         options["body_stand_amplitude"] = 0
         options["body_stand_shift"] = 0
-        options["body_phase_0"] = 0
-        options["body_phase_1"] = 0
 
         # Legs
         options["leg_0_amplitude"] = 0
-        options["leg_0_phase"] = 0
         options["leg_0_offset"] = 0
 
         options["leg_1_amplitude"] = 0
-        options["leg_1_phase"] = 0
         options["leg_1_offset"] = np.pi/16
 
         options["leg_2_amplitude"] = 0
-        options["leg_2_phase"] = 0
         options["leg_2_offset"] = np.pi/8
 
         # Additional walking options
@@ -361,20 +766,15 @@ class SalamanderControlOptions(dict):
         options["body_amplitude_1"] = 0.0
         options["body_stand_amplitude"] = 0.2
         options["body_stand_shift"] = np.pi/4
-        options["body_phase_0"] = 0
-        options["body_phase_1"] = 0
 
         # Legs
         options["leg_0_amplitude"] = 0.8
-        options["leg_0_phase"] = 0
         options["leg_0_offset"] = 0
 
         options["leg_1_amplitude"] = np.pi/32
-        options["leg_1_phase"] = 0.5*np.pi
         options["leg_1_offset"] = np.pi/32
 
         options["leg_2_amplitude"] = np.pi/8
-        options["leg_2_phase"] = 0.5*np.pi
         options["leg_2_offset"] = np.pi/8
 
         # Additional walking options
@@ -408,20 +808,15 @@ class SalamanderControlOptions(dict):
         options["body_amplitude_1"] = 0.5
         options["body_stand_amplitude"] = 0
         options["body_stand_shift"] = 0
-        options["body_phase_0"] = 2*np.pi
-        options["body_phase_1"] = 0
 
         # Legs
         options["leg_0_amplitude"] = 0
-        options["leg_0_phase"] = 0
         options["leg_0_offset"] = -2*np.pi/5
 
         options["leg_1_amplitude"] = 0
-        options["leg_1_phase"] = 0
         options["leg_1_offset"] = 0
 
         options["leg_2_amplitude"] = 0
-        options["leg_2_phase"] = 0
         options["leg_2_offset"] = 0
 
         # Additional walking options
@@ -447,16 +842,11 @@ class SalamanderControlOptions(dict):
             self["body_amplitude_1"],
             self["body_stand_amplitude"],
             self["body_stand_shift"],
-            self["body_phase_0"],
-            self["body_phase_1"],
             self["leg_0_amplitude"],
-            self["leg_0_phase"],
             self["leg_0_offset"],
             self["leg_1_amplitude"],
-            self["leg_1_phase"],
             self["leg_1_offset"],
             self["leg_2_amplitude"],
-            self["leg_2_phase"],
             self["leg_2_offset"],
             self["leg_turn"],
             self["body_p"],
@@ -475,16 +865,11 @@ class SalamanderControlOptions(dict):
             self["body_amplitude_1"],
             self["body_stand_amplitude"],
             self["body_stand_shift"],
-            self["body_phase_0"],
-            self["body_phase_1"],
             self["leg_0_amplitude"],
-            self["leg_0_phase"],
             self["leg_0_offset"],
             self["leg_1_amplitude"],
-            self["leg_1_phase"],
             self["leg_1_offset"],
             self["leg_2_amplitude"],
-            self["leg_2_phase"],
             self["leg_2_offset"],
             self["leg_turn"],
             self["body_p"],
@@ -509,6 +894,25 @@ class SalamanderController(ModelController):
             timestep=timestep
         )
 
+    def update_gait(self, gait, joints, timestep):
+        """Update gait"""
+        controllers_body, controllers_legs = (
+            SalamanderController.joints_controllers(
+                joints=joints,
+                options=SalamanderControlOptions.from_gait(
+                    gait=gait,
+                    frequency=self._frequency,
+                    body_offset=self._body_offset
+                )
+            )
+        )
+        self.controllers = controllers_body + controllers_legs
+        self.network = SalamanderNetwork.from_gait(
+            gait,
+            timestep,
+            phases=self.network.phases
+        )
+
     @classmethod
     def from_options(cls, model, joints, options, timestep):
         """Salamander controller from options"""
@@ -531,11 +935,6 @@ class SalamanderController(ModelController):
             options["body_amplitude_1"],
             n_body_joints
         )
-        phases = np.linspace(
-            options["body_phase_0"],
-            options["body_phase_1"],
-            n_body_joints
-        )
         joint_controllers_body = [
             JointController(
                 joint=joints["joint_link_body_{}".format(joint_i+1)],
@@ -547,7 +946,6 @@ class SalamanderController(ModelController):
                         )
                     ),
                     frequency=frequency,
-                    phase=phases[joint_i],
                     offset=0
                 ),
                 pdf=(
@@ -571,15 +969,15 @@ class SalamanderController(ModelController):
                 sine=SineControl(
                     amplitude=options["leg_{}_amplitude".format(joint_i)],
                     frequency=frequency,
-                    phase=(
-                        - np.pi*np.abs(leg_i-side_i)
-                        - options["leg_{}_phase".format(joint_i)]
-                        + options["leg_turn"]*float(  # Turning
-                            (0.5)*np.pi*np.sign(np.abs(leg_i-side_i) - 0.5)
-                            if joint_i == 2
-                            else 0
-                        )
-                    ),
+                    # phase=(
+                    #     - np.pi*np.abs(leg_i-side_i)
+                    #     - options["leg_{}_phase".format(joint_i)]
+                    #     + options["leg_turn"]*float(  # Turning
+                    #         (0.5)*np.pi*np.sign(np.abs(leg_i-side_i) - 0.5)
+                    #         if joint_i == 2
+                    #         else 0
+                    #     )
+                    # ),
                     offset=options["leg_{}_offset".format(joint_i)]
                 ),
                 pdf=ControlPDF(
@@ -911,7 +1309,11 @@ class Simulation:
         # Control
         if self.user_params.gait.changed:
             self.gait = self.user_params.gait.value
-            self.model.controller.update_gait(self.gait, self.joints)
+            self.model.controller.update_gait(
+                self.gait,
+                self.joints,
+                self.timestep
+            )
             pybullet.setGravity(
                 0, 0, -1e-2 if self.gait == "swimming" else -9.81
             )
@@ -1743,7 +2145,7 @@ class PhasesLogger:
         ] +  [
             "leg_{}_{}_{}".format(leg_i, side, joint_i)
             for leg_i in range(2)
-            for side in enumerate(["L", "R"])
+            for side in ["L", "R"]
             for joint_i in range(3)
         ]
 
@@ -1755,8 +2157,12 @@ class PhasesLogger:
 
     def plot(self, times):
         """Plot body phases"""
-        plt.figure("Oscillator phases")
+
         for phase_i, phase in enumerate(self.oscillator_names):
+            if "body" in phase:
+                plt.figure("Oscillator body phases")
+            else:
+                plt.figure("Oscillator legs phases")
             plt.plot(
                 times,
                 self.phases_log[:len(times), phase_i],
