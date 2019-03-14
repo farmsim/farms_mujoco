@@ -873,6 +873,8 @@ class Simulation:
 
         # Simulation time
         self.tot_sim_time = 0
+        self.tot_ctrl_time = 0
+        self.tot_log_time = 0
         self.forces_torques = np.zeros([len(self.times), 2, 10, 3])
         self.sim_step = 0
 
@@ -927,6 +929,7 @@ class Simulation:
         self.tic_control = time.time()
         self.model.controller.control()
         self.time_control = time.time() - self.tic_control
+        self.tot_ctrl_time += self.time_control
         # Swimming
         if self.gait == "swimming":
             self.forces_torques[self.sim_step] = viscous_swimming(
@@ -963,7 +966,10 @@ class Simulation:
                 for joint in self.salamander.motors.joints_commanded_legs
             ]
         )
+        tic_log = time.time()
         self.experiment_logger.update(self.sim_step-1)
+        time_log = time.time() - tic_log
+        self.tot_log_time += time_log
         # Video recording
         if clargs.record and not self.sim_step % 25:
             self.camera_record.record(self.sim_step//25-1)
@@ -989,11 +995,13 @@ class Simulation:
 
         # Simulation information
         self.sim_time = self.timestep*(self.sim_step)
-        print("Time to simulate {} [s]: {} [s] ({} [s] in Bullet)".format(
+        print("Time to simulate {} [s]: {} [s]".format(
             self.sim_time,
             self.toc-self.tic,
-            self.tot_sim_time
         ))
+        print("  Bullet physics: {} [s]".format(self.tot_sim_time))
+        print("  Controller: {} [s]".format(self.tot_ctrl_time))
+        print("  Logging: {} [s]".format(self.tot_log_time))
 
         # Disconnect from simulation
         pybullet.disconnect()
