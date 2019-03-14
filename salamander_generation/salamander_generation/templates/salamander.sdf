@@ -1,7 +1,0 @@
-<?xml version="1.0" ?>
-<sdf version="1.6">
-  <include>
-    <uri>model://{{base_model}}</uri>
-    {{plugins|indent(4)}}
-  </include>
-</sdf>

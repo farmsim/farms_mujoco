@@ -1,2 +1,0 @@
-"""Salamander description"""
-
