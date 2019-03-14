@@ -1270,9 +1270,13 @@ class Simulation:
         test_debug_info()
 
         # Simulation time
+        self.tot_plugin_time = 0
         self.tot_sim_time = 0
         self.tot_ctrl_time = 0
+        self.tot_sensors_time = 0
         self.tot_log_time = 0
+        self.tot_camera_time = 0
+        self.tot_waitrt_time = 0
         self.forces_torques = np.zeros([len(self.times), 2, 10, 3])
         self.sim_step = 0
 
@@ -1288,17 +1292,22 @@ class Simulation:
         """Run simulation"""
         # Run simulation
         self.tic = time.time()
+        loop_time = 0
         while self.sim_step < len(self.times):
-            self.user_params.update()
+            if not(self.sim_step % 100):
+                self.user_params.update()
+                keys = pybullet.getKeyboardEvents()
+                if ord("q") in keys:
+                    break
             if not(self.sim_step % 10000) and self.sim_step > 0:
                 pybullet.restoreState(self.init_state)
             if not self.user_params.play.value:
                 time.sleep(0.5)
             else:
+                tic_loop = time.time()
                 self.loop(clargs)
-            keys = pybullet.getKeyboardEvents()
-            if ord("q") in keys:
-                break
+                loop_time += time.time() - tic_loop
+        print("Loop time: {} [s]".format(loop_time))
         self.toc = time.time()
         self.times_simulated = self.times[:self.sim_step]
 
@@ -1328,10 +1337,6 @@ class Simulation:
                 self.user_params.body_offset.value
             )
             self.user_params.body_offset.changed = False
-        self.tic_control = time.time()
-        self.model.controller.control()
-        self.time_control = time.time() - self.tic_control
-        self.tot_ctrl_time += self.time_control
         # Swimming
         if self.gait == "swimming":
             self.forces_torques[self.sim_step] = viscous_swimming(
@@ -1340,6 +1345,12 @@ class Simulation:
             )
         # Time plugins
         self.time_plugin = time.time() - self.tic_rt
+        self.tot_plugin_time += self.time_plugin
+        # Control
+        self.tic_control = time.time()
+        self.model.controller.control()
+        self.time_control = time.time() - self.tic_control
+        self.tot_ctrl_time += self.time_control
         # Physics
         self.tic_sim = time.time()
         pybullet.stepSimulation()
@@ -1347,6 +1358,7 @@ class Simulation:
         self.toc_sim = time.time()
         self.tot_sim_time += self.toc_sim - self.tic_sim
         # Contacts during walking
+        tic_sensors = time.time()
         self.salamander.sensors.update(
             identity=self.salamander.identity,
             links=[self.links[foot] for foot in self.salamander.feet],
@@ -1368,18 +1380,23 @@ class Simulation:
                 for joint in self.salamander.motors.joints_commanded_legs
             ]
         )
+        time_sensors = time.time() - tic_sensors
+        self.tot_sensors_time += time_sensors
         tic_log = time.time()
         self.experiment_logger.update(self.sim_step-1)
         time_log = time.time() - tic_log
         self.tot_log_time += time_log
-        # Video recording
+        # Camera
+        tic_camera = time.time()
         if clargs.record and not self.sim_step % 25:
             self.camera_record.record(self.sim_step//25-1)
         # User camera
-        if not clargs.free_camera:
+        if not self.sim_step % 10 and not clargs.free_camera:
             self.camera.update()
+        self.tot_camera_time += time.time() - tic_camera
         # Real-time
         self.toc_rt = time.time()
+        tic_rt = time.time()
         if not clargs.fast and self.user_params.rtl.value < 3:
             real_time_handing(
                 self.timestep, self.tic_rt, self.toc_rt,
@@ -1388,25 +1405,39 @@ class Simulation:
                 time_sim=self.toc_sim-self.tic_sim,
                 time_control=self.time_control
             )
+        self.tot_waitrt_time = time.time() - tic_rt
 
     def end(self, clargs):
         """Terminate simulation"""
-        # Plot
-        self.experiment_logger.plot_all(self.times_simulated)
-        plt.show()
-
         # Simulation information
-        self.sim_time = self.timestep*(self.sim_step)
+        self.sim_time = self.timestep*self.sim_step
         print("Time to simulate {} [s]: {} [s]".format(
             self.sim_time,
             self.toc-self.tic,
         ))
+        print("  Plugin: {} [s]".format(self.tot_plugin_time))
         print("  Bullet physics: {} [s]".format(self.tot_sim_time))
         print("  Controller: {} [s]".format(self.tot_ctrl_time))
+        print("  Sensors: {} [s]".format(self.tot_sensors_time))
         print("  Logging: {} [s]".format(self.tot_log_time))
+        print("  Camera: {} [s]".format(self.tot_camera_time))
+        print("  Wait real-time: {} [s]".format(self.tot_waitrt_time))
+        print("  Sum: {} [s]".format(
+            self.tot_plugin_time
+            + self.tot_sim_time
+            + self.tot_ctrl_time
+            + self.tot_sensors_time
+            + self.tot_log_time
+            + self.tot_camera_time
+            + self.tot_waitrt_time
+        ))
 
         # Disconnect from simulation
         pybullet.disconnect()
+
+        # Plot
+        self.experiment_logger.plot_all(self.times_simulated)
+        plt.show()
 
         # Record video
         if clargs.record:
@@ -1698,7 +1729,7 @@ class Camera:
         self.target = target_identity
         cam_info = self.get_camera()
         self.timestep = timestep
-        self.motion_filter = kwargs.pop("motion_filter", 1e-3)
+        self.motion_filter = kwargs.pop("motion_filter", 1e-2)
         self.yaw = kwargs.pop("yaw", cam_info[8])
         self.yaw_speed = kwargs.pop("yaw_speed", 0)
         self.pitch = kwargs.pop("pitch", cam_info[9])
@@ -2184,7 +2215,7 @@ def main(clargs=None):
     # Setup simulation
     sim = Simulation(
         timestep=1e-3,
-        duration=100,
+        duration=10,
         clargs=clargs,
         gait="walking"
     )
