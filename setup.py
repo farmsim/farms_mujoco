@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ Setup script """
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
@@ -13,7 +13,8 @@ setup(
     # license="BSD",
     keywords="farms simulation bullet",
     # url="",
-    packages=['farms_bullet'],
+    # packages=['farms_bullet'],
+    packages=find_packages(),
     # long_description=read('README'),
     # classifiers=[
     #     "Development Status :: 3 - Alpha",
