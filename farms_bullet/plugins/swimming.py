@@ -1,5 +1,9 @@
 """Swimming"""
 
+import numpy as np
+import pybullet
+
+
 def viscous_swimming(model, links):
     """Viscous swimming"""
     # Swimming
