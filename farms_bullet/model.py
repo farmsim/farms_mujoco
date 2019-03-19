@@ -3,7 +3,7 @@
 import numpy as np
 
 import pybullet
-
+import os
 from .sensors import ModelSensors
 from .motors import ModelMotors
 from .control import SalamanderController
@@ -146,7 +146,7 @@ class SalamanderModel(Model):
     def spawn(cls, timestep, gait="walking"):
         """Spawn salamander"""
         return cls.from_sdf(
-            "/home/jonathan/.gazebo/models/biorob_salamander/model.sdf",
+            "{}/.farms/models/biorob_salamander/model.sdf".format(os.environ['HOME']),
             base_link="link_body_0",
             timestep=timestep,
             gait=gait
