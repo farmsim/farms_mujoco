@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 import pybullet
 
-from .parse_args import parse_args
 from .plugins.swimming import viscous_swimming
 from .simulator import init_engine, real_time_handing
 from .debug import test_debug_info
@@ -26,7 +25,7 @@ class Simulation:
     def __init__(self, options):
         super(Simulation, self).__init__()
         # Initialise engine
-        init_engine()
+        init_engine(options.headless)
         rendering(0)
 
         # Parameters
@@ -75,18 +74,23 @@ class Simulation:
             create_scene(self.plane)
 
         # Camera
-        self.camera_skips = 10
-        self.camera = UserCamera(
-            target_identity=self.salamander.identity,
-            yaw=0,
-            yaw_speed=360/10*self.camera_skips if options.rotating_camera else 0,
-            pitch=-89 if options.top_camera else -45,
-            distance=1,
-            timestep=self.timestep
-        )
+        if not options.headless:
+            self.camera_skips = 10
+            self.camera = UserCamera(
+                target_identity=self.salamander.identity,
+                yaw=0,
+                yaw_speed=(
+                    360/10*self.camera_skips
+                    if options.rotating_camera
+                    else 0
+                ),
+                pitch=-89 if options.top_camera else -45,
+                distance=1,
+                timestep=self.timestep
+            )
 
         # Video recording
-        if options.record:
+        if options.record and not options.headless:
             self.camera_record = CameraRecord(
                 target_identity=self.salamander.identity,
                 size=len(self.times)//25,
@@ -156,15 +160,16 @@ class Simulation:
         self.tic = time.time()
         loop_time = 0
         while self.sim_step < len(self.times):
-            if not(self.sim_step % 100):
-                self.user_params.update()
-                keys = pybullet.getKeyboardEvents()
-                if ord("q") in keys:
-                    break
-            if not(self.sim_step % 10000) and self.sim_step > 0:
-                pybullet.restoreState(self.init_state)
-            if not self.user_params.play.value:
-                time.sleep(0.5)
+            if not options.headless:
+                if not self.sim_step % 100:
+                    self.user_params.update()
+                    keys = pybullet.getKeyboardEvents()
+                    if ord("q") in keys:
+                        break
+                if not(self.sim_step % 10000) and self.sim_step > 0:
+                    pybullet.restoreState(self.init_state)
+                if not self.user_params.play.value:
+                    time.sleep(0.5)
             else:
                 tic_loop = time.time()
                 self.loop(options)
@@ -250,11 +255,12 @@ class Simulation:
         self.tot_log_time += time_log
         # Camera
         tic_camera = time.time()
-        if options.record and not self.sim_step % 25:
-            self.camera_record.record(self.sim_step//25-1)
-        # User camera
-        if not self.sim_step % self.camera_skips and not options.free_camera:
-            self.camera.update()
+        if not options.headless:
+            if options.record and not self.sim_step % 25:
+                self.camera_record.record(self.sim_step//25-1)
+            # User camera
+            if not self.sim_step % self.camera_skips and not options.free_camera:
+                self.camera.update()
         self.tot_camera_time += time.time() - tic_camera
         # Real-time
         self.toc_rt = time.time()
@@ -302,7 +308,7 @@ class Simulation:
         plt.show()
 
         # Record video
-        if options.record:
+        if options.record and not options.headless:
             self.camera_record.save("video.avi")
 
 

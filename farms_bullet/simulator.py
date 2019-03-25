@@ -8,11 +8,11 @@ import pybullet
 import pybullet_data
 
 
-def init_engine():
+def init_engine(headless=False):
     """Initialise engine"""
     print(pybullet.getAPIVersion())
     pybullet.connect(
-        pybullet.GUI,
+        pybullet.DIRECT if headless else pybullet.GUI,
         # options="--enable_experimental_opencl"
         # options="--opengl2"  #  --minGraphicsUpdateTimeMs=32000
     )

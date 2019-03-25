@@ -16,6 +16,7 @@ class SimulationOptions(dict):
         self["top_camera"] = kwargs.pop("top_camera", False)
         self["fast"] = kwargs.pop("fast", False)
         self["record"] = kwargs.pop("record", False)
+        self["headless"] = kwargs.pop("headless", False)
 
     @classmethod
     def with_clargs(cls, **kwargs):
@@ -30,6 +31,7 @@ class SimulationOptions(dict):
             top_camera=kwargs.pop("top_camera", clargs.top_camera),
             fast=kwargs.pop("fast", clargs.fast),
             record=kwargs.pop("record", clargs.record),
+            headless=kwargs.pop("headless", clargs.headless),
             **kwargs
         )
 
@@ -72,3 +74,8 @@ class SimulationOptions(dict):
     def record(self):
         """Record simulation to video"""
         return self["record"]
+
+    @property
+    def headless(self):
+        """Headless simulation instead of using GUI"""
+        return self["headless"]
