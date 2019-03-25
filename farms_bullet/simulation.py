@@ -23,7 +23,7 @@ from .simulation_options import SimulationOptions
 class Simulation:
     """Simulation"""
 
-    def __init__(self, timestep, duration, options, gait="walking"):
+    def __init__(self, options):
         super(Simulation, self).__init__()
         # Initialise engine
         init_engine()
@@ -31,14 +31,14 @@ class Simulation:
 
         # Parameters
         # gait = "standing"
-        self.gait = gait
+        self.gait = options.gait
         self.frequency = 1
         # gait = "swimming"
-        self.timestep = timestep
-        self.times = np.arange(0, duration, self.timestep)
+        self.timestep = options.timestep
+        self.times = np.arange(0, options.duration, self.timestep)
 
         # Initialise
-        self.model, self.plane = self.init_simulation(gait=gait)
+        self.model, self.plane = self.init_simulation(gait=options.gait)
         self.init_experiment(options)
         rendering(1)
 
@@ -306,19 +306,15 @@ class Simulation:
             self.camera_record.save("video.avi")
 
 
-def main():
+def main(options=None):
     """Main"""
 
     # Parse command line arguments
-    options = SimulationOptions.with_clargs()
+    if not options:
+        options = SimulationOptions.with_clargs()
 
     # Setup simulation
-    sim = Simulation(
-        timestep=1e-3,
-        duration=10,
-        options=options,
-        gait="walking"
-    )
+    sim = Simulation(options=options)
 
     # Run simulation
     sim.run(options)
