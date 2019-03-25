@@ -19,10 +19,41 @@ from .camera import UserCamera, CameraRecord
 from. logging import ExperimentLogger
 
 
+class SimulationOptions:
+    """Simulation options"""
+
+    def __init__(self, parse_clargs=True, **kwargs):
+        super(SimulationOptions, self).__init__()
+        self.timestep = kwargs.pop("timestep", 1e-3)
+        self.duration = kwargs.pop("duration", 10)
+        self.gait = kwargs.pop("gait", "walking")
+        self.free_camera = kwargs.pop("free_camera", False)
+        self.rotating_camera = kwargs.pop("rotating_camera", False)
+        self.top_camera = kwargs.pop("top_camera", False)
+        self.fast = kwargs.pop("fast", False)
+        self.record = kwargs.pop("record", False)
+
+    @classmethod
+    def with_clargs(cls, **kwargs):
+        """Create simulation options and consider command-line arguments"""
+        clargs = parse_args()
+        return cls(
+            free_camera=kwargs.pop("free_camera", clargs.free_camera),
+            rotating_camera=kwargs.pop(
+                "rotating_camera",
+                clargs.rotating_camera
+            ),
+            top_camera=kwargs.pop("top_camera", clargs.top_camera),
+            fast=kwargs.pop("fast", clargs.fast),
+            record=kwargs.pop("record", clargs.record),
+            **kwargs
+        )
+
+
 class Simulation:
     """Simulation"""
 
-    def __init__(self, timestep, duration, clargs, gait="walking"):
+    def __init__(self, timestep, duration, options, gait="walking"):
         super(Simulation, self).__init__()
         # Initialise engine
         init_engine()
@@ -38,17 +69,8 @@ class Simulation:
 
         # Initialise
         self.model, self.plane = self.init_simulation(gait=gait)
-        self.init(clargs)
+        self.init_experiment(options)
         rendering(1)
-
-    def get_entities(self):
-        """Get simulation entities"""
-        return (
-            self.model,
-            self.model.links,
-            self.model.joints,
-            self.plane.identity
-        )
 
     def init_simulation(self, gait="walking"):
         """Initialise simulation"""
@@ -63,24 +85,7 @@ class Simulation:
         )
         return model, plane
 
-    def init_physics(self, gait="walking"):
-        """Initialise physics"""
-        pybullet.resetSimulation()
-        pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
-        pybullet.setTimeStep(self.timestep)
-        pybullet.setRealTimeSimulation(0)
-        pybullet.setPhysicsEngineParameter(
-            fixedTimeStep=self.timestep,
-            numSolverIterations=50,
-            erp=0,
-            contactERP=0,
-            frictionERP=0
-        )
-        print("Physics parameters:\n{}".format(
-            pybullet.getPhysicsEngineParameters()
-        ))
-
-    def init(self, clargs):
+    def init_experiment(self, options):
         """Initialise simulation"""
 
         # Simulation entities
@@ -104,21 +109,21 @@ class Simulation:
         self.camera = UserCamera(
             target_identity=self.salamander.identity,
             yaw=0,
-            yaw_speed=360/10*self.camera_skips if clargs.rotating_camera else 0,
-            pitch=-89 if clargs.top_camera else -45,
+            yaw_speed=360/10*self.camera_skips if options.rotating_camera else 0,
+            pitch=-89 if options.top_camera else -45,
             distance=1,
             timestep=self.timestep
         )
 
         # Video recording
-        if clargs.record:
+        if options.record:
             self.camera_record = CameraRecord(
                 target_identity=self.salamander.identity,
                 size=len(self.times)//25,
                 fps=40,
                 yaw=0,
-                yaw_speed=360/10 if clargs.rotating_camera else 0,
-                pitch=-89 if clargs.top_camera else -45,
+                yaw_speed=360/10 if options.rotating_camera else 0,
+                pitch=-89 if options.top_camera else -45,
                 distance=1,
                 timestep=self.timestep*25,
                 motion_filter=1e-1
@@ -149,7 +154,33 @@ class Simulation:
         self.init_state = pybullet.saveState()
         rendering(1)
 
-    def run(self, clargs):
+    def get_entities(self):
+        """Get simulation entities"""
+        return (
+            self.model,
+            self.model.links,
+            self.model.joints,
+            self.plane.identity
+        )
+
+    def init_physics(self, gait="walking"):
+        """Initialise physics"""
+        pybullet.resetSimulation()
+        pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
+        pybullet.setTimeStep(self.timestep)
+        pybullet.setRealTimeSimulation(0)
+        pybullet.setPhysicsEngineParameter(
+            fixedTimeStep=self.timestep,
+            numSolverIterations=50,
+            erp=0,
+            contactERP=0,
+            frictionERP=0
+        )
+        print("Physics parameters:\n{}".format(
+            pybullet.getPhysicsEngineParameters()
+        ))
+
+    def run(self, options):
         """Run simulation"""
         # Run simulation
         self.tic = time.time()
@@ -166,13 +197,13 @@ class Simulation:
                 time.sleep(0.5)
             else:
                 tic_loop = time.time()
-                self.loop(clargs)
+                self.loop(options)
                 loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
         self.toc = time.time()
         self.times_simulated = self.times[:self.sim_step]
 
-    def loop(self, clargs):
+    def loop(self, options):
         """Simulation loop"""
         self.tic_rt = time.time()
         self.sim_time = self.timestep*self.sim_step
@@ -249,16 +280,16 @@ class Simulation:
         self.tot_log_time += time_log
         # Camera
         tic_camera = time.time()
-        if clargs.record and not self.sim_step % 25:
+        if options.record and not self.sim_step % 25:
             self.camera_record.record(self.sim_step//25-1)
         # User camera
-        if not self.sim_step % self.camera_skips and not clargs.free_camera:
+        if not self.sim_step % self.camera_skips and not options.free_camera:
             self.camera.update()
         self.tot_camera_time += time.time() - tic_camera
         # Real-time
         self.toc_rt = time.time()
         tic_rt = time.time()
-        if not clargs.fast and self.user_params.rtl.value < 3:
+        if not options.fast and self.user_params.rtl.value < 3:
             real_time_handing(
                 self.timestep, self.tic_rt, self.toc_rt,
                 rtl=self.user_params.rtl.value,
@@ -268,7 +299,7 @@ class Simulation:
             )
         self.tot_waitrt_time = time.time() - tic_rt
 
-    def end(self, clargs):
+    def end(self, options):
         """Terminate simulation"""
         # Simulation information
         self.sim_time = self.timestep*self.sim_step
@@ -301,30 +332,29 @@ class Simulation:
         plt.show()
 
         # Record video
-        if clargs.record:
+        if options.record:
             self.camera_record.save("video.avi")
 
 
-def main(clargs=None):
+def main():
     """Main"""
 
     # Parse command line arguments
-    if not clargs:
-        clargs = parse_args()
+    options = SimulationOptions.with_clargs()
 
     # Setup simulation
     sim = Simulation(
         timestep=1e-3,
         duration=10,
-        clargs=clargs,
+        options=options,
         gait="walking"
     )
 
     # Run simulation
-    sim.run(clargs)
+    sim.run(options)
 
     # Show results
-    sim.end(clargs)
+    sim.end(options)
 
 
 def main_parallel():
@@ -332,13 +362,13 @@ def main_parallel():
     from multiprocessing import Pool
 
     # Parse command line arguments
-    clargs = parse_args()
+    options = SimulationOptions.with_clargs()
 
     # Create Pool
     pool = Pool(2)
 
     # Run simulation
-    pool.map(main, [clargs, clargs])
+    pool.map(main, [options, options])
     print("Done")
 
 
