@@ -170,10 +170,9 @@ class Simulation:
                     pybullet.restoreState(self.init_state)
                 if not self.user_params.play.value:
                     time.sleep(0.5)
-            else:
-                tic_loop = time.time()
-                self.loop(options)
-                loop_time += time.time() - tic_loop
+            tic_loop = time.time()
+            self.loop(options)
+            loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
         self.toc = time.time()
         self.times_simulated = self.times[:self.sim_step]
@@ -320,12 +319,15 @@ def main(options=None):
         options = SimulationOptions.with_clargs()
 
     # Setup simulation
+    print("Creating simulation")
     sim = Simulation(options=options)
 
     # Run simulation
+    print("Running simulation")
     sim.run(options)
 
     # Show results
+    print("Analysing simulation")
     sim.end(options)
 
 
