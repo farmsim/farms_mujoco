@@ -41,4 +41,11 @@ def parse_args():
         default=False,
         help='Record video'
     )
+    parser.add_argument(
+        '--headless',
+        action='store_true',
+        dest='headless',
+        default=False,
+        help='Headless mode instead of using GUI'
+    )
     return parser.parse_args()
