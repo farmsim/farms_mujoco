@@ -17,7 +17,7 @@ def run_simulation(options):
         sim.experiment_logger.positions.data[-1]
         - sim.experiment_logger.positions.data[0]
     )
-    torques_sum = sim.experiment_logger.motors.joints_cmds().sum()
+    torques_sum = (np.abs(sim.experiment_logger.motors.joints_cmds())).sum()
     print("Distance traveled: {} [m]".format(distance_traveled))
     print("Torques sum: {} [Nm]".format(torques_sum))
     return [
@@ -68,7 +68,7 @@ def plot_result(results, index, xnew, ynew, figure_name, label):
 def main():
     """Main"""
     frequencies = np.linspace(0, 3, 10)
-    body_amplitudes = np.linspace(0, 0.3, 10)
+    body_amplitudes = np.linspace(0, 0.5, 10)
     simulations_options = [
         SimulationOptions.with_clargs(
             headless=True,
