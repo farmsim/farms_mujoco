@@ -56,6 +56,31 @@ class SalamanderEvolution:
         return ([0, 0], [3, 0.5])
 
 
+class DummyProblem:
+    """Salamander evolution"""
+
+    def __init__(self):
+        super(DummyProblem, self).__init__()
+        self._name = "Salamander evolution"
+
+    # Return number of objectives
+    def get_nobj(self):
+        return 2
+
+    def fitness(self, decision_vector):
+        """Fitnesss"""
+        return [0, 0]
+
+    def get_name(self):
+        """Get name"""
+        return self._name
+
+    @staticmethod
+    def get_bounds():
+        """Get bounds"""
+        return ([0, 0], [3, 0.5])
+
+
 def evolution_island(population, algorithm, n_population=None):
     """Evolve population"""
     if not population:
@@ -120,8 +145,7 @@ def plot_results(populations):
     for i, population in enumerate(populations):
         print(population)
         fits, vectors = population.get_f(), population.get_x()
-        ndf, dl, dc, ndr = pg.fast_non_dominated_sorting(fits)
-        print(ndf)
+        # ndf, dl, dc, ndr = pg.fast_non_dominated_sorting(fits)
         # pg.plot_non_dominated_fronts(population.get_f())
         plt.figure("Fitness")
         plt.plot(
@@ -143,10 +167,59 @@ def plot_results(populations):
     plt.ylabel("Body standing wave amplitude [rad]")
     plt.legend()
     plt.grid(True)
-    plt.show()
 
 
-def main(load_data=False):
+def plot_complete(population):
+    """Plot results"""
+    fits, vectors = population.get_f(), population.get_x()
+    ndf, dl, dc, ndr = pg.fast_non_dominated_sorting(fits)
+    # pg.plot_non_dominated_fronts(population.get_f())
+
+    markers = list(reversed(["C{}o".format(i) for i, _ in enumerate(ndf)]))
+    for i, _ndf in enumerate(reversed(ndf)):
+        plt.figure("NDF Fitness")
+        plt.plot(fits[_ndf, 0], fits[_ndf, 1], markers[i], label=i)
+
+        plt.figure("NDF Decisions")
+        plt.plot(vectors[_ndf, 0], vectors[_ndf, 1], markers[i], label=i)
+
+    plt.figure("NDF Fitness")
+    plt.xlabel("Distance [m]")
+    plt.ylabel("Total torque consumption [Nm/s]")
+    plt.legend()
+    plt.grid(True)
+
+    plt.figure("NDF Decisions")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Body standing wave amplitude [rad]")
+    plt.legend()
+    plt.grid(True)
+
+
+def study_ndf(populations):
+    """Study populations"""
+    results = [
+        [pop.get_x(), pop.get_f()]
+        for pop in populations
+    ]
+    final_size = sum([len(result[0]) for result in results])
+    final_pop = pg.population(
+        prob=DummyProblem(),
+        size=final_size
+    )
+    individual_count = 0
+    for result in results:
+        for individual, decision_vector in enumerate(result[0]):
+            final_pop.set_xf(
+                individual_count,
+                decision_vector,
+                np.array(result[1][individual])
+            )
+            individual_count += 1
+    plot_complete(final_pop)
+
+
+def main(load_data=True):
     """Main"""
     if not load_data:
         populations = evolution(
@@ -161,6 +234,8 @@ def main(load_data=False):
             with open(filename, "rb") as log_file:
                 populations[pop_i] = pickle.load(log_file)
     plot_results(populations)
+    study_ndf(populations)
+    plt.show()
 
 
 if __name__ == '__main__':
