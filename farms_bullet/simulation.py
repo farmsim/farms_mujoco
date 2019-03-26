@@ -32,6 +32,7 @@ class Simulation:
         # gait = "standing"
         self.gait = options.gait
         self.frequency = options.frequency
+        self.body_stand_amplitude = options.body_stand_amplitude
         # gait = "swimming"
         self.timestep = options.timestep
         self.times = np.arange(0, options.duration, self.timestep)
@@ -49,7 +50,8 @@ class Simulation:
         # Spawn models
         model = SalamanderModel.spawn(
             self.timestep, gait,
-            frequency=self.frequency
+            frequency=self.frequency,
+            body_stand_amplitude=self.body_stand_amplitude
         )
         plane = Model.from_urdf(
             "plane.urdf",

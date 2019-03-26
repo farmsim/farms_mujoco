@@ -188,7 +188,7 @@ class SalamanderControlOptions(dict):
         # Body
         options["body_amplitude_0"] = 0
         options["body_amplitude_1"] = 0
-        options["body_stand_amplitude"] = 0
+        options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
         options["body_stand_shift"] = 0
 
         # Legs
@@ -229,7 +229,10 @@ class SalamanderControlOptions(dict):
         # Body
         options["body_amplitude_0"] = 0.0
         options["body_amplitude_1"] = 0.0
-        options["body_stand_amplitude"] = 0.2
+        options["body_stand_amplitude"] = kwargs.pop(
+            "body_stand_amplitude",
+            0.2
+        )
         options["body_stand_shift"] = np.pi/4
 
         # Legs
@@ -271,7 +274,7 @@ class SalamanderControlOptions(dict):
         # Body
         options["body_amplitude_0"] = 0.1
         options["body_amplitude_1"] = 0.5
-        options["body_stand_amplitude"] = 0
+        options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
         options["body_stand_shift"] = 0
 
         # Legs

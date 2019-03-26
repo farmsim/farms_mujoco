@@ -18,6 +18,7 @@ class SimulationOptions(dict):
         self["record"] = kwargs.pop("record", False)
         self["headless"] = kwargs.pop("headless", False)
         self["frequency"] = kwargs.pop("frequency", 1)
+        self["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0.2)
 
     @classmethod
     def with_clargs(cls, **kwargs):
@@ -40,6 +41,11 @@ class SimulationOptions(dict):
     def frequency(self):
         """Model frequency"""
         return self["frequency"]
+
+    @property
+    def body_stand_amplitude(self):
+        """Model body amplitude"""
+        return self["body_stand_amplitude"]
 
     @property
     def timestep(self):
