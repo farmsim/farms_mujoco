@@ -142,6 +142,13 @@ class MotorsLogger:
             self.model.motors.joints_cmds_legs
         )
 
+    def joints_cmds(self):
+        """Joints commands"""
+        return np.concatenate((
+            self.joints_cmds_body,
+            self.joints_cmds_legs
+        ), axis=1)
+
     def plot_body(self, times):
         """Plot body motors"""
         plt.figure("Body motor torques")
