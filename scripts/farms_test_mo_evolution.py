@@ -55,26 +55,37 @@ class SalamanderEvolution:
         return ([0, 0], [3, 0.5])
 
 
-def evolution_island(population=None, seed=0):
+def evolution_island(population, algorithm):
     """Evolve population"""
-    problem = SalamanderEvolution()
-    algorithm = pg.algorithm(pg.moead(gen=1, neighbours=5, seed=seed))
-    if not population:
-        population = pg.population(problem, size=10)
     return algorithm.evolve(population)
 
 
-def evolution(n_generations=2):
+def evolution(n_generations=2, n_population=8):
     """Evolution"""
-    n_generations = 2
     pool = Pool(4)
-    populations = [None for _ in range(4)]
+    algorithms = (
+        [
+            pg.algorithm(pg.moead(gen=1, neighbours=n_population-1, seed=seed))
+            for seed in range(2)
+        ] + [
+            pg.algorithm(pg.nsga2(gen=1, seed=seed))
+            for seed in range(2)
+        ]
+    )
+    populations = [None for _ in algorithms]
     for _ in range(n_generations):
         populations = pool.starmap(
             evolution_island,
             [
-                (pop, i)
-                for i, pop in enumerate(populations)
+                (
+                    pop if pop else pg.population(
+                        SalamanderEvolution(),
+                        size=n_population
+                    ),
+                    algo
+                )
+                for (pop, algo)
+                in zip(populations, algorithms)
             ]
         )
     return populations
@@ -114,7 +125,7 @@ def plot_results(populations):
 
 def main():
     """Main"""
-    populations = evolution(n_generations=2)
+    populations = evolution(n_generations=2, n_population=8)
     plot_results(populations)
 
 
