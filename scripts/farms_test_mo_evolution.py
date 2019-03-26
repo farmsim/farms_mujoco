@@ -7,6 +7,7 @@ from farms_bullet.simulation_options import SimulationOptions
 from farms_bullet.model_options import ModelOptions
 import numpy as np
 import pygmo as pg
+import matplotlib.pyplot as plt
 
 
 class SalamanderEvolution:
@@ -34,6 +35,7 @@ class SalamanderEvolution:
         sim = Simulation(self.simulation_options, model_options)
         print("Running for parameters:\n{}".format(decision_vector))
         sim.run()
+        sim.end()
         distance_traveled = np.linalg.norm(
             sim.experiment_logger.positions.data[-1]
             - sim.experiment_logger.positions.data[0]
@@ -62,22 +64,58 @@ def evolution_island(population=None, seed=0):
     return algorithm.evolve(population)
 
 
-def main():
-    """Main"""
+def evolution(n_generations=2):
+    """Evolution"""
+    n_generations = 2
     pool = Pool(4)
     populations = [None for _ in range(4)]
-    populations = pool.starmap(
-        evolution_island,
-        [
-            (pop, i)
-            for i, pop in enumerate(populations)
-        ]
-    )
-    for population in populations:
+    for _ in range(n_generations):
+        populations = pool.starmap(
+            evolution_island,
+            [
+                (pop, i)
+                for i, pop in enumerate(populations)
+            ]
+        )
+    return populations
+
+
+def plot_results(populations):
+    """Plot results"""
+    markers = ["r.", "g.", "b.", "k."]
+    for i, population in enumerate(populations):
         print(population)
         fits, vectors = population.get_f(), population.get_x()
         ndf, dl, dc, ndr = pg.fast_non_dominated_sorting(fits)
         print(ndf)
+        # pg.plot_non_dominated_fronts(population.get_f())
+        plt.figure("Fitness")
+        plt.plot(
+            fits[:, 0], fits[:, 1],
+            markers[i], label="Population_{}".format(i)
+        )
+        plt.figure("Decisions")
+        plt.plot(
+            vectors[:, 0], vectors[:, 1],
+            markers[i], label="Population_{}".format(i)
+        )
+    plt.figure("Fitness")
+    plt.xlabel("Distance [m]")
+    plt.ylabel("Total torque consumption [Nm/s]")
+    plt.legend()
+    plt.grid(True)
+    plt.figure("Decisions")
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Body standing wave amplitude [rad]")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def main():
+    """Main"""
+    populations = evolution(n_generations=2)
+    plot_results(populations)
 
 
 if __name__ == '__main__':
