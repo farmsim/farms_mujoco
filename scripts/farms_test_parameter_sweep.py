@@ -17,6 +17,7 @@ def run_simulation(simulation_options, model_options):
         model_options=model_options
     )
     sim.run()
+    sim.end()
     distance_traveled = np.linalg.norm(
         sim.experiment_logger.positions.data[-1]
         - sim.experiment_logger.positions.data[0]

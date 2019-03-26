@@ -285,6 +285,16 @@ class Simulation:
             )
         self.tot_waitrt_time = time.time() - tic_rt
 
+    def postprocess(self):
+        """Plot after simulation"""
+        # Plot
+        self.experiment_logger.plot_all(self.times_simulated)
+        plt.show()
+
+        # Record video
+        if self.sim_options.record and not self.sim_options.headless:
+            self.camera_record.save("video.avi")
+
     def end(self):
         """Terminate simulation"""
         # Simulation information
@@ -313,14 +323,6 @@ class Simulation:
         # Disconnect from simulation
         pybullet.disconnect()
 
-        # Plot
-        self.experiment_logger.plot_all(self.times_simulated)
-        plt.show()
-
-        # Record video
-        if self.sim_options.record and not self.sim_options.headless:
-            self.camera_record.save("video.avi")
-
 
 def main(sim_options=None, model_options=None):
     """Main"""
@@ -344,6 +346,7 @@ def main(sim_options=None, model_options=None):
 
     # Show results
     print("Analysing simulation")
+    sim.postprocess()
     sim.end()
 
 
