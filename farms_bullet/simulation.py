@@ -16,7 +16,8 @@ from .model import Model, SalamanderModel
 from .interface import UserParameters
 from .camera import UserCamera, CameraRecord
 from. logging import ExperimentLogger
-from .simulation_options import SimulationOptions, ModelOptions
+from .simulation_options import SimulationOptions
+from .model_options import ModelOptions
 
 
 class Simulation:

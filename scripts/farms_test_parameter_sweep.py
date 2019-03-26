@@ -3,7 +3,8 @@
 
 from multiprocessing import Pool
 from farms_bullet.simulation import Simulation
-from farms_bullet.simulation_options import SimulationOptions, ModelOptions
+from farms_bullet.simulation_options import SimulationOptions
+from farms_bullet.model_options import ModelOptions
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
