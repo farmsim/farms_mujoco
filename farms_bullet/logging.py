@@ -11,6 +11,7 @@ class ExperimentLogger:
         super(ExperimentLogger, self).__init__()
         self.sim_size = sim_size
         self.model = model
+        self.positions = PositionLogger(model, sim_size)
         self.sensors = SensorsLogger(model, sim_size)
         # [SensorsLogger(model) for sensor in model.sensors]
         self.motors = MotorsLogger(model, sim_size)
@@ -18,17 +19,47 @@ class ExperimentLogger:
 
     def update(self, iteration):
         """Update sensors at iteration"""
+        self.positions.update(iteration)
         self.sensors.update(iteration)
         self.motors.update(iteration)
         self.phases.update(iteration)
 
     def plot_all(self, sim_times):
         """Plot all"""
+        self.positions.plot(sim_times)
         self.sensors.plot_contacts(sim_times)
         self.sensors.plot_ft(sim_times)
         self.motors.plot_body(sim_times)
         self.motors.plot_legs(sim_times)
         self.phases.plot(sim_times)
+
+
+class PositionLogger:
+    """Position logger of the base link of a model"""
+
+    def __init__(self, model, size):
+        super(PositionLogger, self).__init__()
+        self.model = model
+        self.size = size
+        self.data = np.zeros([size, 3])
+
+    def update(self, iteration):
+        """Update phase logs"""
+        self.data[iteration, :] = self.model.get_position()
+
+    def plot(self, times, figure_name="Model position"):
+        """Plot body phases"""
+        plt.figure(figure_name)
+        plt.plot(
+            self.data[:len(times), 0],
+            self.data[:len(times), 1]
+        )
+        plt.axis('equal')
+        plt.xlabel("Position X [m]")
+        plt.ylabel("Position Y [m]")
+        plt.grid(True)
+        plt.legend()
+
 
 
 class SensorsLogger:
@@ -110,6 +141,13 @@ class MotorsLogger:
         self.joints_cmds_legs[iteration, :] = (
             self.model.motors.joints_cmds_legs
         )
+
+    def joints_cmds(self):
+        """Joints commands"""
+        return np.concatenate((
+            self.joints_cmds_body,
+            self.joints_cmds_legs
+        ), axis=1)
 
     def plot_body(self, times):
         """Plot body motors"""

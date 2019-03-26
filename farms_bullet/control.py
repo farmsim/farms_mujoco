@@ -183,12 +183,12 @@ class SalamanderControlOptions(dict):
 
         # General
         options["n_body_joints"] = 11
-        options["frequency"] = 0
+        options["frequency"] = kwargs.pop("frequency", 0)
 
         # Body
         options["body_amplitude_0"] = 0
         options["body_amplitude_1"] = 0
-        options["body_stand_amplitude"] = 0
+        options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
         options["body_stand_shift"] = 0
 
         # Legs
@@ -224,12 +224,15 @@ class SalamanderControlOptions(dict):
 
         # General
         options["n_body_joints"] = 11
-        options["frequency"] = 1
+        options["frequency"] = kwargs.pop("frequency", 1)
 
         # Body
         options["body_amplitude_0"] = 0.0
         options["body_amplitude_1"] = 0.0
-        options["body_stand_amplitude"] = 0.2
+        options["body_stand_amplitude"] = kwargs.pop(
+            "body_stand_amplitude",
+            0.2
+        )
         options["body_stand_shift"] = np.pi/4
 
         # Legs
@@ -266,12 +269,12 @@ class SalamanderControlOptions(dict):
         # General
         n_body_joints = 11
         options["n_body_joints"] = n_body_joints
-        options["frequency"] = 1
+        options["frequency"] = kwargs.pop("frequency", 2)
 
         # Body
         options["body_amplitude_0"] = 0.1
         options["body_amplitude_1"] = 0.5
-        options["body_stand_amplitude"] = 0
+        options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
         options["body_stand_shift"] = 0
 
         # Legs

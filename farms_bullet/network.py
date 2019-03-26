@@ -456,7 +456,7 @@ class SalamanderNetwork(Network):
             {
                 "t0": 0,
                 "tf": timestep,
-                "jit": True,
+                "jit": False,
                 # "step0": 1e-3,
                 # "abstol": 1e-3,
                 # "reltol": 1e-3

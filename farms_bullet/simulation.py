@@ -31,7 +31,8 @@ class Simulation:
         # Parameters
         # gait = "standing"
         self.gait = options.gait
-        self.frequency = 1
+        self.frequency = options.frequency
+        self.body_stand_amplitude = options.body_stand_amplitude
         # gait = "swimming"
         self.timestep = options.timestep
         self.times = np.arange(0, options.duration, self.timestep)
@@ -47,7 +48,11 @@ class Simulation:
         self.init_physics(gait)
 
         # Spawn models
-        model = SalamanderModel.spawn(self.timestep, gait)
+        model = SalamanderModel.spawn(
+            self.timestep, gait,
+            frequency=self.frequency,
+            body_stand_amplitude=self.body_stand_amplitude
+        )
         plane = Model.from_urdf(
             "plane.urdf",
             basePosition=[0, 0, -0.1]
@@ -170,11 +175,11 @@ class Simulation:
                     pybullet.restoreState(self.init_state)
                 if not self.user_params.play.value:
                     time.sleep(0.5)
-            else:
-                tic_loop = time.time()
-                self.loop(options)
-                loop_time += time.time() - tic_loop
+            tic_loop = time.time()
+            self.loop(options)
+            loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
+        print("Frequency: {} [Hz]".format(self.frequency))
         self.toc = time.time()
         self.times_simulated = self.times[:self.sim_step]
 
@@ -320,12 +325,15 @@ def main(options=None):
         options = SimulationOptions.with_clargs()
 
     # Setup simulation
+    print("Creating simulation")
     sim = Simulation(options=options)
 
     # Run simulation
+    print("Running simulation")
     sim.run(options)
 
     # Show results
+    print("Analysing simulation")
     sim.end(options)
 
 
