@@ -72,6 +72,12 @@ def evolution(n_generations=2, n_population=8):
             for seed in range(2)
         ]
     )
+    # algorithms = (
+    #     [
+    #         pg.algorithm(pg.ihs(gen=1, seed=seed))
+    #         for seed in range(4)
+    #     ]
+    # )
     populations = [None for _ in algorithms]
     for _ in range(n_generations):
         populations = pool.starmap(
