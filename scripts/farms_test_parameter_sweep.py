@@ -4,15 +4,19 @@
 from multiprocessing import Pool
 from farms_bullet.simulation import Simulation
 from farms_bullet.simulation_options import SimulationOptions
+from farms_bullet.model_options import ModelOptions
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
 
 
-def run_simulation(options):
+def run_simulation(simulation_options, model_options):
     """Run simulation"""
-    sim = Simulation(options=options)
-    sim.run(options)
+    sim = Simulation(
+        simulation_options=simulation_options,
+        model_options=model_options
+    )
+    sim.run()
     distance_traveled = np.linalg.norm(
         sim.experiment_logger.positions.data[-1]
         - sim.experiment_logger.positions.data[0]
@@ -21,8 +25,8 @@ def run_simulation(options):
     print("Distance traveled: {} [m]".format(distance_traveled))
     print("Torques sum: {} [Nm]".format(torques_sum))
     return [
-        sim.frequency,
-        sim.body_stand_amplitude,
+        sim.model_options.frequency,
+        sim.model_options.body_stand_amplitude,
         distance_traveled,
         torques_sum,
         distance_traveled/torques_sum,
@@ -62,18 +66,19 @@ def plot_result(results, index, xnew, ynew, figure_name, label):
     cbar = plt.colorbar()
     cbar.set_label(label)
     # cbar.set_clim(0, 3)
-    
 
 
 def main():
     """Main"""
     frequencies = np.linspace(0, 3, 10)
     body_amplitudes = np.linspace(0, 0.5, 10)
-    simulations_options = [
-        SimulationOptions.with_clargs(
-            headless=True,
-            fast=True,
-            duration=2,
+    simulation_options = SimulationOptions.with_clargs(
+        headless=True,
+        fast=True,
+        duration=2
+    )
+    models_options = [
+        ModelOptions(
             frequency=frequency,
             body_stand_amplitude=body_stand_amplitude
         )
@@ -81,7 +86,15 @@ def main():
         for body_stand_amplitude in body_amplitudes
     ]
     pool = Pool(4)
-    results = np.array(pool.map(run_simulation, simulations_options))
+    results = np.array(
+        pool.starmap(
+            run_simulation,
+            [
+                (simulation_options, model_options)
+                for model_options in models_options
+            ]
+        )
+    )
     print("DONE: Completed parameter sweep")
     print(results)
     plot_result(
