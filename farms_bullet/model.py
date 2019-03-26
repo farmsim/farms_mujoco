@@ -115,11 +115,15 @@ class Model:
             for link in self.links
         ])
 
+    def get_position(self):
+        """Get position"""
+        return pybullet.getLinkState(self.identity, 0)[0]
+
 
 class SalamanderModel(Model):
     """Salamander model"""
 
-    def __init__(self, identity, base_link, timestep, gait="walking"):
+    def __init__(self, identity, base_link, timestep, gait="walking", **kwargs):
         super(SalamanderModel, self).__init__(
             identity=identity,
             base_link=base_link
@@ -131,7 +135,8 @@ class SalamanderModel(Model):
             self.identity,
             self.joints,
             gait=gait,
-            timestep=timestep
+            timestep=timestep,
+            **kwargs
         )
         self.feet = [
             "link_leg_0_L_3",
@@ -143,13 +148,14 @@ class SalamanderModel(Model):
         self.motors = ModelMotors()
 
     @classmethod
-    def spawn(cls, timestep, gait="walking"):
+    def spawn(cls, timestep, gait="walking", **kwargs):
         """Spawn salamander"""
         return cls.from_sdf(
             "{}/.farms/models/biorob_salamander/model.sdf".format(os.environ['HOME']),
             base_link="link_body_0",
             timestep=timestep,
-            gait=gait
+            gait=gait,
+            **kwargs
         )
 
     def leg_collisions(self, plane, activate=True):

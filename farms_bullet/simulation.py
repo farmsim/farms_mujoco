@@ -31,7 +31,7 @@ class Simulation:
         # Parameters
         # gait = "standing"
         self.gait = options.gait
-        self.frequency = 1
+        self.frequency = options.frequency
         # gait = "swimming"
         self.timestep = options.timestep
         self.times = np.arange(0, options.duration, self.timestep)
@@ -47,7 +47,10 @@ class Simulation:
         self.init_physics(gait)
 
         # Spawn models
-        model = SalamanderModel.spawn(self.timestep, gait)
+        model = SalamanderModel.spawn(
+            self.timestep, gait,
+            frequency=self.frequency
+        )
         plane = Model.from_urdf(
             "plane.urdf",
             basePosition=[0, 0, -0.1]
@@ -174,6 +177,7 @@ class Simulation:
             self.loop(options)
             loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
+        print("Frequency: {} [Hz]".format(self.frequency))
         self.toc = time.time()
         self.times_simulated = self.times[:self.sim_step]
 

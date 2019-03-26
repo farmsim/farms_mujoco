@@ -183,7 +183,7 @@ class SalamanderControlOptions(dict):
 
         # General
         options["n_body_joints"] = 11
-        options["frequency"] = 0
+        options["frequency"] = kwargs.pop("frequency", 0)
 
         # Body
         options["body_amplitude_0"] = 0
@@ -224,7 +224,7 @@ class SalamanderControlOptions(dict):
 
         # General
         options["n_body_joints"] = 11
-        options["frequency"] = 1
+        options["frequency"] = kwargs.pop("frequency", 1)
 
         # Body
         options["body_amplitude_0"] = 0.0
@@ -266,7 +266,7 @@ class SalamanderControlOptions(dict):
         # General
         n_body_joints = 11
         options["n_body_joints"] = n_body_joints
-        options["frequency"] = 1
+        options["frequency"] = kwargs.pop("frequency", 2)
 
         # Body
         options["body_amplitude_0"] = 0.1
