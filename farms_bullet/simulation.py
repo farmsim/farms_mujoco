@@ -16,30 +16,32 @@ from .model import Model, SalamanderModel
 from .interface import UserParameters
 from .camera import UserCamera, CameraRecord
 from. logging import ExperimentLogger
-from .simulation_options import SimulationOptions
+from .simulation_options import SimulationOptions, ModelOptions
 
 
 class Simulation:
     """Simulation"""
 
-    def __init__(self, options):
+    def __init__(self, simulation_options, model_options):
         super(Simulation, self).__init__()
+
+        # Options
+        self.sim_options = simulation_options
+        self.model_options = model_options
+
         # Initialise engine
-        init_engine(options.headless)
+        init_engine(self.sim_options.headless)
         rendering(0)
 
         # Parameters
-        # gait = "standing"
-        self.gait = options.gait
-        self.frequency = options.frequency
-        self.body_stand_amplitude = options.body_stand_amplitude
-        # gait = "swimming"
-        self.timestep = options.timestep
-        self.times = np.arange(0, options.duration, self.timestep)
+        self.timestep = self.sim_options.timestep
+        self.times = np.arange(0, self.sim_options.duration, self.timestep)
 
         # Initialise
-        self.model, self.plane = self.init_simulation(gait=options.gait)
-        self.init_experiment(options)
+        self.model, self.plane = self.init_simulation(
+            gait=self.model_options.gait
+        )
+        self.init_experiment()
         rendering(1)
 
     def init_simulation(self, gait="walking"):
@@ -50,8 +52,8 @@ class Simulation:
         # Spawn models
         model = SalamanderModel.spawn(
             self.timestep, gait,
-            frequency=self.frequency,
-            body_stand_amplitude=self.body_stand_amplitude
+            frequency=self.model_options.frequency,
+            body_stand_amplitude=self.model_options.body_stand_amplitude
         )
         plane = Model.from_urdf(
             "plane.urdf",
@@ -59,7 +61,7 @@ class Simulation:
         )
         return model, plane
 
-    def init_experiment(self, options):
+    def init_experiment(self):
         """Initialise simulation"""
 
         # Simulation entities
@@ -79,37 +81,40 @@ class Simulation:
             create_scene(self.plane)
 
         # Camera
-        if not options.headless:
+        if not self.sim_options.headless:
             self.camera_skips = 10
             self.camera = UserCamera(
                 target_identity=self.salamander.identity,
                 yaw=0,
                 yaw_speed=(
                     360/10*self.camera_skips
-                    if options.rotating_camera
+                    if self.sim_options.rotating_camera
                     else 0
                 ),
-                pitch=-89 if options.top_camera else -45,
+                pitch=-89 if self.sim_options.top_camera else -45,
                 distance=1,
                 timestep=self.timestep
             )
 
         # Video recording
-        if options.record and not options.headless:
+        if self.sim_options.record and not self.sim_options.headless:
             self.camera_record = CameraRecord(
                 target_identity=self.salamander.identity,
                 size=len(self.times)//25,
                 fps=40,
                 yaw=0,
-                yaw_speed=360/10 if options.rotating_camera else 0,
-                pitch=-89 if options.top_camera else -45,
+                yaw_speed=360/10 if self.sim_options.rotating_camera else 0,
+                pitch=-89 if self.sim_options.top_camera else -45,
                 distance=1,
                 timestep=self.timestep*25,
                 motion_filter=1e-1
             )
 
         # User parameters
-        self.user_params = UserParameters(self.gait, self.frequency)
+        self.user_params = UserParameters(
+            self.model_options.gait,
+            self.model_options.frequency
+        )
 
         # Debug info
         test_debug_info()
@@ -159,13 +164,13 @@ class Simulation:
             pybullet.getPhysicsEngineParameters()
         ))
 
-    def run(self, options):
+    def run(self):
         """Run simulation"""
         # Run simulation
         self.tic = time.time()
         loop_time = 0
         while self.sim_step < len(self.times):
-            if not options.headless:
+            if not self.sim_options.headless:
                 if not self.sim_step % 100:
                     self.user_params.update()
                     keys = pybullet.getKeyboardEvents()
@@ -176,27 +181,26 @@ class Simulation:
                 if not self.user_params.play.value:
                     time.sleep(0.5)
             tic_loop = time.time()
-            self.loop(options)
+            self.loop()
             loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
-        print("Frequency: {} [Hz]".format(self.frequency))
         self.toc = time.time()
         self.times_simulated = self.times[:self.sim_step]
 
-    def loop(self, options):
+    def loop(self):
         """Simulation loop"""
         self.tic_rt = time.time()
         self.sim_time = self.timestep*self.sim_step
         # Control
         if self.user_params.gait.changed:
-            self.gait = self.user_params.gait.value
+            self.model_options.gait = self.user_params.gait.value
             self.model.controller.update_gait(
-                self.gait,
+                self.model_options.gait,
                 self.joints,
                 self.timestep
             )
             pybullet.setGravity(
-                0, 0, -1e-2 if self.gait == "swimming" else -9.81
+                0, 0, -1e-2 if self.model_options.gait == "swimming" else -9.81
             )
             self.user_params.gait.changed = False
         if self.user_params.frequency.changed:
@@ -210,7 +214,7 @@ class Simulation:
             )
             self.user_params.body_offset.changed = False
         # Swimming
-        if self.gait == "swimming":
+        if self.model_options.gait == "swimming":
             self.forces_torques[self.sim_step] = viscous_swimming(
                 self.salamander.identity,
                 self.links
@@ -260,17 +264,17 @@ class Simulation:
         self.tot_log_time += time_log
         # Camera
         tic_camera = time.time()
-        if not options.headless:
-            if options.record and not self.sim_step % 25:
+        if not self.sim_options.headless:
+            if self.sim_options.record and not self.sim_step % 25:
                 self.camera_record.record(self.sim_step//25-1)
             # User camera
-            if not self.sim_step % self.camera_skips and not options.free_camera:
+            if not self.sim_step % self.camera_skips and not self.sim_options.free_camera:
                 self.camera.update()
         self.tot_camera_time += time.time() - tic_camera
         # Real-time
         self.toc_rt = time.time()
         tic_rt = time.time()
-        if not options.fast and self.user_params.rtl.value < 3:
+        if not self.sim_options.fast and self.user_params.rtl.value < 3:
             real_time_handing(
                 self.timestep, self.tic_rt, self.toc_rt,
                 rtl=self.user_params.rtl.value,
@@ -280,7 +284,7 @@ class Simulation:
             )
         self.tot_waitrt_time = time.time() - tic_rt
 
-    def end(self, options):
+    def end(self):
         """Terminate simulation"""
         # Simulation information
         self.sim_time = self.timestep*self.sim_step
@@ -313,28 +317,33 @@ class Simulation:
         plt.show()
 
         # Record video
-        if options.record and not options.headless:
+        if self.sim_options.record and not self.sim_options.headless:
             self.camera_record.save("video.avi")
 
 
-def main(options=None):
+def main(sim_options=None, model_options=None):
     """Main"""
 
     # Parse command line arguments
-    if not options:
-        options = SimulationOptions.with_clargs()
+    if not sim_options:
+        simulation_options = SimulationOptions.with_clargs()
+    if not model_options:
+        model_options = ModelOptions()
 
     # Setup simulation
     print("Creating simulation")
-    sim = Simulation(options=options)
+    sim = Simulation(
+        simulation_options=simulation_options,
+        model_options=model_options
+    )
 
     # Run simulation
     print("Running simulation")
-    sim.run(options)
+    sim.run()
 
     # Show results
     print("Analysing simulation")
-    sim.end(options)
+    sim.end()
 
 
 def main_parallel():
@@ -342,13 +351,13 @@ def main_parallel():
     from multiprocessing import Pool
 
     # Parse command line arguments
-    options = SimulationOptions.with_clargs()
+    sim_options = SimulationOptions.with_clargs()
 
     # Create Pool
     pool = Pool(2)
 
     # Run simulation
-    pool.map(main, [options, options])
+    pool.map(main, [sim_options, sim_options])
     print("Done")
 
 
