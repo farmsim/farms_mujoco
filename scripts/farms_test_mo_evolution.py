@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Test salamander multi-objective evolutions"""
 
+import pickle
 from multiprocessing import Pool
 from farms_bullet.simulation import Simulation
 from farms_bullet.simulation_options import SimulationOptions
@@ -55,51 +56,66 @@ class SalamanderEvolution:
         return ([0, 0], [3, 0.5])
 
 
-def evolution_island(population, algorithm):
+def evolution_island(population, algorithm, n_population=None):
     """Evolve population"""
+    if not population:
+        population = pg.population(
+            SalamanderEvolution(),
+            size=n_population
+        )
     return algorithm.evolve(population)
 
 
-def evolution(n_generations=2, n_population=8):
+def evolution(n_generations_out=2, n_generations_in=2, n_population=8):
     """Evolution"""
     pool = Pool(4)
     algorithms = (
         [
-            pg.algorithm(pg.moead(gen=1, neighbours=n_population-1, seed=seed))
+            pg.algorithm(pg.moead(
+                gen=n_generations_in,
+                neighbours=n_population-1,
+                seed=seed
+            ))
             for seed in range(2)
         ] + [
-            pg.algorithm(pg.nsga2(gen=1, seed=seed))
+            pg.algorithm(pg.nsga2(gen=n_generations_in, seed=seed))
+            for seed in range(2)
+        ] + [
+            pg.algorithm(pg.ihs(gen=n_generations_in, seed=seed))
             for seed in range(2)
         ]
     )
-    # algorithms = (
-    #     [
-    #         pg.algorithm(pg.ihs(gen=1, seed=seed))
-    #         for seed in range(4)
-    #     ]
-    # )
     populations = [None for _ in algorithms]
-    for _ in range(n_generations):
+    for gen_i in range(n_generations_out):
         populations = pool.starmap(
             evolution_island,
             [
                 (
-                    pop if pop else pg.population(
-                        SalamanderEvolution(),
-                        size=n_population
-                    ),
+                    pop,
                     algo
+                ) if pop else (
+                    None,
+                    algo,
+                    n_population
                 )
                 for (pop, algo)
                 in zip(populations, algorithms)
             ]
         )
+        # Save data
+        for pop_i, population in enumerate(populations):
+            filename = "./Results/pop_{}_gen_{}.pickle".format(
+                pop_i,
+                gen_i
+            )
+            with open(filename, "wb+") as output:
+                pickle.dump(population, output)
     return populations
 
 
 def plot_results(populations):
     """Plot results"""
-    markers = ["r.", "g.", "b.", "k."]
+    markers = ["C{}o".format(i) for i, _ in enumerate(populations)]
     for i, population in enumerate(populations):
         print(population)
         fits, vectors = population.get_f(), population.get_x()
@@ -131,7 +147,16 @@ def plot_results(populations):
 
 def main():
     """Main"""
-    populations = evolution(n_generations=2, n_population=8)
+    populations = evolution(
+        n_generations_out=5,
+        n_generations_in=1,
+        n_population=8
+    )
+    # populations = [None for pop_i in range(6)]
+    # for pop_i in range(6):
+    #     filename = "./Results/pop_{}_gen_{}.pickle".format(pop_i, 4)
+    #     with open(filename, "rb") as log_file:
+    #         populations[pop_i] = pickle.load(log_file)
     plot_results(populations)
 
 
