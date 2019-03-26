@@ -39,22 +39,19 @@ class Simulation:
         self.times = np.arange(0, self.sim_options.duration, self.timestep)
 
         # Initialise
-        self.model, self.plane = self.init_simulation(
-            gait=self.model_options.gait
-        )
+        self.model, self.plane = self.init_simulation()
         self.init_experiment()
         rendering(1)
 
-    def init_simulation(self, gait="walking"):
+    def init_simulation(self):
         """Initialise simulation"""
         # Physics
-        self.init_physics(gait)
+        self.init_physics()
 
         # Spawn models
         model = SalamanderModel.spawn(
-            self.timestep, gait,
-            frequency=self.model_options.frequency,
-            body_stand_amplitude=self.model_options.body_stand_amplitude
+            self.timestep,
+            **self.model_options
         )
         plane = Model.from_urdf(
             "plane.urdf",
@@ -148,8 +145,9 @@ class Simulation:
             self.plane.identity
         )
 
-    def init_physics(self, gait="walking"):
+    def init_physics(self):
         """Initialise physics"""
+        gait = self.model_options.gait
         pybullet.resetSimulation()
         pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
         pybullet.setTimeStep(self.timestep)
@@ -285,6 +283,16 @@ class Simulation:
             )
         self.tot_waitrt_time = time.time() - tic_rt
 
+    def postprocess(self):
+        """Plot after simulation"""
+        # Plot
+        self.experiment_logger.plot_all(self.times_simulated)
+        plt.show()
+
+        # Record video
+        if self.sim_options.record and not self.sim_options.headless:
+            self.camera_record.save("video.avi")
+
     def end(self):
         """Terminate simulation"""
         # Simulation information
@@ -313,14 +321,6 @@ class Simulation:
         # Disconnect from simulation
         pybullet.disconnect()
 
-        # Plot
-        self.experiment_logger.plot_all(self.times_simulated)
-        plt.show()
-
-        # Record video
-        if self.sim_options.record and not self.sim_options.headless:
-            self.camera_record.save("video.avi")
-
 
 def main(sim_options=None, model_options=None):
     """Main"""
@@ -344,6 +344,7 @@ def main(sim_options=None, model_options=None):
 
     # Show results
     print("Analysing simulation")
+    sim.postprocess()
     sim.end()
 
 

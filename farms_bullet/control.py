@@ -186,20 +186,20 @@ class SalamanderControlOptions(dict):
         options["frequency"] = kwargs.pop("frequency", 0)
 
         # Body
-        options["body_amplitude_0"] = 0
-        options["body_amplitude_1"] = 0
+        options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0)
+        options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0)
         options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
-        options["body_stand_shift"] = 0
+        options["body_stand_shift"] = kwargs.pop("body_stand_shift", 0)
 
         # Legs
-        options["leg_0_amplitude"] = 0
-        options["leg_0_offset"] = 0
+        options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0)
+        options["leg_0_offset"] = kwargs.pop("leg_0_offset", 0)
 
-        options["leg_1_amplitude"] = 0
-        options["leg_1_offset"] = np.pi/16
+        options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", 0)
+        options["leg_1_offset"] = kwargs.pop("leg_1_offset", np.pi/16)
 
-        options["leg_2_amplitude"] = 0
-        options["leg_2_offset"] = np.pi/8
+        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", 0)
+        options["leg_2_offset"] = kwargs.pop("leg_2_offset", np.pi/8)
 
         # Additional walking options
         options["leg_turn"] = 0
@@ -227,23 +227,23 @@ class SalamanderControlOptions(dict):
         options["frequency"] = kwargs.pop("frequency", 1)
 
         # Body
-        options["body_amplitude_0"] = 0.0
-        options["body_amplitude_1"] = 0.0
+        options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0)
+        options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0)
         options["body_stand_amplitude"] = kwargs.pop(
             "body_stand_amplitude",
             0.2
         )
-        options["body_stand_shift"] = np.pi/4
+        options["body_stand_shift"] = kwargs.pop("body_stand_shift", np.pi/4)
 
         # Legs
-        options["leg_0_amplitude"] = 0.8
-        options["leg_0_offset"] = 0
+        options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0.8)
+        options["leg_0_offset"] = kwargs.pop("leg_0_offset", 0)
 
-        options["leg_1_amplitude"] = np.pi/32
-        options["leg_1_offset"] = np.pi/32
+        options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", np.pi/32)
+        options["leg_1_offset"] = kwargs.pop("leg_1_offset", np.pi/32)
 
-        options["leg_2_amplitude"] = np.pi/8
-        options["leg_2_offset"] = np.pi/8
+        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", np.pi/8)
+        options["leg_2_offset"] = kwargs.pop("leg_2_offset", np.pi/8)
 
         # Additional walking options
         options["leg_turn"] = 0
@@ -272,20 +272,20 @@ class SalamanderControlOptions(dict):
         options["frequency"] = kwargs.pop("frequency", 2)
 
         # Body
-        options["body_amplitude_0"] = 0.1
-        options["body_amplitude_1"] = 0.5
+        options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0.1)
+        options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0.5)
         options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
-        options["body_stand_shift"] = 0
+        options["body_stand_shift"] = kwargs.pop("body_stand_shift", 0)
 
         # Legs
-        options["leg_0_amplitude"] = 0
-        options["leg_0_offset"] = -2*np.pi/5
+        options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0)
+        options["leg_0_offset"] = kwargs.pop("leg_0_offset", -2*np.pi/5)
 
-        options["leg_1_amplitude"] = 0
-        options["leg_1_offset"] = 0
+        options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", 0)
+        options["leg_1_offset"] = kwargs.pop("leg_1_offset", 0)
 
-        options["leg_2_amplitude"] = 0
-        options["leg_2_offset"] = 0
+        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", 0)
+        options["leg_2_offset"] = kwargs.pop("leg_2_offset", 0)
 
         # Additional walking options
         options["leg_turn"] = 0
