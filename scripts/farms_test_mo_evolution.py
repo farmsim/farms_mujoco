@@ -81,14 +81,28 @@ class DummyProblem:
         return ([0, 0], [3, 0.5])
 
 
-def evolution_island(population, algorithm, n_population=None):
+def evolution_island(population, algorithm):
     """Evolve population"""
-    if not population:
-        population = pg.population(
-            SalamanderEvolution(),
-            size=n_population
-        )
     return algorithm.evolve(population)
+
+
+def gen_populations(n_population):
+    """Generate populations"""
+    return pg.population(
+        SalamanderEvolution(),
+        size=n_population
+    )
+
+
+def save_populations(populations, gen_i):
+    """Save populations"""
+    for pop_i, population in enumerate(populations):
+        filename = "./Results/pop_{}_gen_{}.pickle".format(
+            pop_i,
+            gen_i
+        )
+        with open(filename, "wb+") as output:
+            pickle.dump(population, output)
 
 
 def evolution(n_gen_out=2, n_gen_in=2, n_population=8, log_data=True):
@@ -110,38 +124,29 @@ def evolution(n_gen_out=2, n_gen_in=2, n_population=8, log_data=True):
             for seed in range(2)
         ]
     )
-    populations = [None for _ in algorithms]
+    populations = pool.map(
+        gen_populations,
+        [n_population for _ in algorithms]
+    )
+    save_populations(populations, 0)
     for gen_i in range(n_gen_out):
         populations = pool.starmap(
             evolution_island,
             [
-                (
-                    pop,
-                    algo
-                ) if pop else (
-                    None,
-                    algo,
-                    n_population
-                )
-                for (pop, algo)
-                in zip(populations, algorithms)
+                (pop, algo)
+                for (pop, algo) in zip(populations, algorithms)
             ]
         )
         # Save data
         if log_data:
-            for pop_i, population in enumerate(populations):
-                filename = "./Results/pop_{}_gen_{}.pickle".format(
-                    pop_i,
-                    gen_i
-                )
-                with open(filename, "wb+") as output:
-                    pickle.dump(population, output)
+            save_populations(populations, gen_i+1)
     return populations
 
 
 def plot_results(populations):
     """Plot results"""
-    markers = ["C{}o".format(i) for i, _ in enumerate(populations)]
+    markers = ["C{}o".format(i%10) for i, _ in enumerate(populations)]
+    print(markers)
     for i, population in enumerate(populations):
         print(population)
         fits, vectors = population.get_f(), population.get_x()
@@ -217,9 +222,10 @@ def study_ndf(populations):
             )
             individual_count += 1
     plot_complete(final_pop)
+    pg.plot_non_dominated_fronts(final_pop.get_f())
 
 
-def main(load_data=True):
+def main(load_data=False):
     """Main"""
     if not load_data:
         populations = evolution(
@@ -228,11 +234,17 @@ def main(load_data=True):
             n_population=8
         )
     else:
-        populations = [None for pop_i in range(6)]
-        for pop_i in range(6):
-            filename = "./Results/pop_{}_gen_{}.pickle".format(pop_i, 4)
-            with open(filename, "rb") as log_file:
-                populations[pop_i] = pickle.load(log_file)
+        populations = [
+            None for pop_i in range(6)
+            for gen_i in range(5)
+        ]
+        count = 0
+        for gen_i in range(5):
+            for pop_i in range(6):
+                filename = "./Results/pop_{}_gen_{}.pickle".format(pop_i, gen_i)
+                with open(filename, "rb") as log_file:
+                    populations[count] = pickle.load(log_file)
+                    count += 1
     plot_results(populations)
     study_ndf(populations)
     plt.show()
