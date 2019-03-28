@@ -22,14 +22,15 @@ def ode(_time, phases, freqs, coupling_weights, phases_desired, n_dim):
 def main():
     """Main"""
     timestep = 1e-3
-    freqs = 2*np.pi*np.ones(11 + 2*2*3)
+    freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
     times = np.arange(0, 10, 1e-3)
 
     # Casadi integration
     phases_cas = np.zeros([len(times)+1, len(freqs)])
     network = SalamanderNetwork.from_gait("walking", timestep=timestep)
     tic = time.time()
-    for i, _ in enumerate(times):
+    for i, _time in enumerate(times):
+        freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
         phases_cas[i+1, :] = network.control_step(freqs)[:, 0]
     print("Casadi integration took {} [s]".format(time.time() - tic))
 
@@ -39,9 +40,9 @@ def main():
     )
     phases_num = np.zeros([len(times)+1, len(freqs)])
     phases = np.zeros([len(freqs)])
-
     tic = time.time()
     for i, _time in enumerate(times):
+        freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
         phases += timestep*ode(
             _time, phases, freqs, weights, phases_desired, n_dim
         )
@@ -53,12 +54,13 @@ def main():
     for method in methods:
         phases_sci = np.zeros([len(times)+1, len(freqs)])
         phases = np.zeros([len(freqs)])
-        r = integrate.ode(ode).set_integrator(method)
+        r = integrate.ode(ode)
+        r.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
         r.set_initial_value(phases, 0)
         r.set_f_params(freqs, weights, phases_desired, n_dim)
         tic = time.time()
         for i, _time in enumerate(times):
-            freqs = 2*np.pi*np.ones(11 + 2*2*3) + np.sin(_time)
+            freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
             r.set_f_params(freqs, weights, phases_desired, n_dim)
             phases_sci[i+1, :] = r.integrate(r.t+timestep)
         print("Scipy integration took {} [s] with {}".format(
