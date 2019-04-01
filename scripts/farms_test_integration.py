@@ -4,6 +4,7 @@ import time
 from farms_bullet.network import SalamanderNetwork
 import numpy as np
 from scipy import integrate
+import scipy
 import sympy as sp
 from sympy.utilities.autowrap import ufuncify
 import matplotlib.pyplot as plt
@@ -20,18 +21,23 @@ def ode(_, phases, freqs, coupling_weights, phases_desired, n_dim):
     )
 
 
-def ode2(_, phases, freqs, coupling_weights, phases_desired):
+def ode_sparse(_, phases, freqs, coupling_weights, phases_desired, n_dim):
     """Network ODE"""
+    phase_repeat = np.repeat(np.array([phases]).T, n_dim, axis=1)
+    return freqs + coupling_weights.multiply(
+        np.sin(phase_repeat.T-phase_repeat + phases_desired)
+    ).sum(axis=1).A1
+
+
+def ode2(_, phases, freqs, weights, phases_desired):
+    """Network ODE"""
+    size = len(phases)
     _ode = [
-        freq + sum([
-            weight*sp.sin(phase2 - phase + phase_desired)
-            for phase2, weight, phase_desired in zip(
-                phases, weights, phases_d
-            )
+        freqs[i] + sum([
+            weights[i, j]*sp.sin(phases[j] - phases[i] + phases_desired[i, j])
+            for j in range(size)
         ])
-        for phase, freq, weights, phases_d in zip(
-            phases, freqs, coupling_weights, phases_desired
-        )
+        for i in range(size)
     ]
     return _ode
 
@@ -39,12 +45,12 @@ def ode2(_, phases, freqs, coupling_weights, phases_desired):
 class System:
     """ODE system for integration"""
 
-    def __init__(self, times, state, ode_fun, *args, method="lsoda"):
+    def __init__(self, times, state, ode_fun, *args, jac=None, method="lsoda"):
         super(System, self).__init__()
         self._state = state
         self.timestep = times[1] - times[0]
         self.ode_fun = ode_fun
-        self.ode = integrate.ode(ode_fun)
+        self.ode = integrate.ode(ode_fun, jac=jac)
         self.ode.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
         self.ode.set_initial_value(self._state, 0)
         self.ode.set_f_params(*args)
@@ -97,6 +103,12 @@ class System:
         expr = ode2(
             _time, phases, freqs, coupling_weights_sym, phases_desired_sym
         )
+        # jac = [
+        #     [
+        #         sp.diff(exp, phase)
+        #         for phase in phases
+        #     ] for exp in expr
+        # ]
         print("\nODE:\n")
         for exp in expr:
             sp.pretty_print(exp)
@@ -118,7 +130,8 @@ class System:
         # print(" ")
         return cls(
             times, phases_num, _ode,
-            freqs_num, weights_num, phases_desired_num
+            freqs_num, weights_num, phases_desired_num,
+            jac=None
         )
 
     def step(self, *args):
@@ -168,6 +181,33 @@ def test_numpy_euler(times):
 
     # Plot results
     plt.figure("Numpy")
+    plt.plot(times, phases_num[:-1])
+    plt.xlabel("Time [s]")
+    plt.ylabel("Phases [rad]")
+    plt.grid()
+
+
+def test_numpy_euler_sparse(times):
+    """Numpy Euler"""
+    freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
+    timestep = times[1] - times[0]
+    n_dim, _phases, _freqs, weights, phases_desired = (
+        SalamanderNetwork.walking_parameters()
+    )
+    phases_num = np.zeros([len(times)+1, len(freqs)])
+    phases = np.zeros([len(freqs)])
+    weights = scipy.sparse.csr_matrix(weights)
+    tic = time.time()
+    for i, _time in enumerate(times):
+        freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
+        phases += timestep*ode_sparse(
+            _time, phases, freqs, weights, phases_desired, n_dim
+        )
+        phases_num[i+1, :] = phases
+    print("Numpy (sparse) integration took {} [s]".format(time.time() - tic))
+
+    # Plot results
+    plt.figure("Numpy_sparse")
     plt.plot(times, phases_num[:-1])
     plt.xlabel("Time [s]")
     plt.ylabel("Phases [rad]")
@@ -247,7 +287,8 @@ def main():
 
     # test_casadi(times)
     test_numpy_euler(times)
-    test_scipy(times, methods=["lsoda"])
+    # test_numpy_euler_sparse(times)
+    # test_scipy(times, methods=["lsoda"])
     test_sympy(times)
 
     plt.show()
