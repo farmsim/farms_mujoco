@@ -28,7 +28,7 @@ class Simulation:
 
         # Options
         self.sim_options = simulation_options
-        self.model_options = model_options
+        self.animat_options = model_options
 
         # Initialise engine
         init_engine(self.sim_options.headless)
@@ -38,51 +38,37 @@ class Simulation:
         self.timestep = self.sim_options.timestep
         self.times = np.arange(0, self.sim_options.duration, self.timestep)
 
-        # Initialise
-        self.model, self.plane = self.init_simulation()
-        self.init_experiment()
-        rendering(1)
-
-    def init_simulation(self):
-        """Initialise simulation"""
-        # Physics
+        # Initialise physics
         self.init_physics()
 
-        # Spawn models
-        model = SalamanderModel.spawn(
-            self.timestep,
-            **self.model_options
-        )
-        plane = Model.from_urdf(
-            "plane.urdf",
-            basePosition=[0, 0, -0.1]
-        )
-        return model, plane
+        # Initialise models
+        self.spawn_models()
+        self.init_animat()
 
-    def init_experiment(self):
-        """Initialise simulation"""
+        # Simulation
+        self.init_arena()
+        self.init_camera()
+        self.init_debug()
+        self.init_times()
 
-        # Simulation entities
-        self.salamander, self.links, self.joints, self.plane = (
-            self.get_entities()
-        )
+        # Simulation state
+        self.init_state = pybullet.saveState()
+        rendering(1)
 
-        # Remove leg collisions
-        self.salamander.leg_collisions(self.plane, activate=False)
-
-        # Model information
-        self.salamander.print_dynamics_info()
-
+    def init_arena(self):
+        """Initialise arena"""
         # Create scene
         add_obstacles = False
         if add_obstacles:
             create_scene(self.plane)
 
+    def init_camera(self):
+        """Initialise camera"""
         # Camera
         if not self.sim_options.headless:
             self.camera_skips = 10
             self.camera = UserCamera(
-                target_identity=self.salamander.identity,
+                target_identity=self.animat.identity,
                 yaw=0,
                 yaw_speed=(
                     360/10*self.camera_skips
@@ -97,7 +83,7 @@ class Simulation:
         # Video recording
         if self.sim_options.record and not self.sim_options.headless:
             self.camera_record = CameraRecord(
-                target_identity=self.salamander.identity,
+                target_identity=self.animat.identity,
                 size=len(self.times)//25,
                 fps=40,
                 yaw=0,
@@ -108,16 +94,19 @@ class Simulation:
                 motion_filter=1e-1
             )
 
+    def init_debug(self):
+        """Initialise debug"""
         # User parameters
         self.user_params = UserParameters(
-            self.model_options.gait,
-            self.model_options.frequency
+            self.animat_options.gait,
+            self.animat_options.frequency
         )
 
         # Debug info
         test_debug_info()
 
-        # Simulation time
+    def init_times(self):
+        """Initialise times"""
         self.tot_plugin_time = 0
         self.tot_sim_time = 0
         self.tot_ctrl_time = 0
@@ -128,26 +117,9 @@ class Simulation:
         self.forces_torques = np.zeros([len(self.times), 2, 10, 3])
         self.sim_step = 0
 
-        # Final setup
-        self.experiment_logger = ExperimentLogger(
-            self.salamander,
-            len(self.times)
-        )
-        self.init_state = pybullet.saveState()
-        rendering(1)
-
-    def get_entities(self):
-        """Get simulation entities"""
-        return (
-            self.model,
-            self.model.links,
-            self.model.joints,
-            self.plane.identity
-        )
-
     def init_physics(self):
         """Initialise physics"""
-        gait = self.model_options.gait
+        gait = self.animat_options.gait
         pybullet.resetSimulation()
         pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
         pybullet.setTimeStep(self.timestep)
@@ -190,77 +162,16 @@ class Simulation:
         """Simulation loop"""
         self.tic_rt = time.time()
         self.sim_time = self.timestep*self.sim_step
-        # Control
-        if self.user_params.gait.changed:
-            self.model_options.gait = self.user_params.gait.value
-            self.model.controller.update_gait(
-                self.model_options.gait,
-                self.joints,
-                self.timestep
-            )
-            pybullet.setGravity(
-                0, 0, -1e-2 if self.model_options.gait == "swimming" else -9.81
-            )
-            self.user_params.gait.changed = False
-        if self.user_params.frequency.changed:
-            self.model.controller.update_frequency(
-                self.user_params.frequency.value
-            )
-            self.user_params.frequency.changed = False
-        if self.user_params.body_offset.changed:
-            self.model.controller.update_body_offset(
-                self.user_params.body_offset.value
-            )
-            self.user_params.body_offset.changed = False
-        # Swimming
-        if self.model_options.gait == "swimming":
-            self.forces_torques[self.sim_step] = viscous_swimming(
-                self.salamander.identity,
-                self.links
-            )
-        # Time plugins
-        self.time_plugin = time.time() - self.tic_rt
-        self.tot_plugin_time += self.time_plugin
-        # Control
-        self.tic_control = time.time()
-        self.model.controller.control()
-        self.time_control = time.time() - self.tic_control
-        self.tot_ctrl_time += self.time_control
+        # Control animat
+        self.animat_control()
         # Physics
         self.tic_sim = time.time()
         pybullet.stepSimulation()
         self.sim_step += 1
         self.toc_sim = time.time()
         self.tot_sim_time += self.toc_sim - self.tic_sim
-        # Contacts during walking
-        tic_sensors = time.time()
-        self.salamander.sensors.update(
-            identity=self.salamander.identity,
-            links=[self.links[foot] for foot in self.salamander.feet],
-            joints=[
-                self.joints[joint]
-                for joint in self.salamander.sensors.joints_sensors
-            ],
-            plane=self.plane
-        )
-        # Commands
-        self.salamander.motors.update(
-            identity=self.salamander.identity,
-            joints_body=[
-                self.joints[joint]
-                for joint in self.salamander.motors.joints_commanded_body
-            ],
-            joints_legs=[
-                self.joints[joint]
-                for joint in self.salamander.motors.joints_commanded_legs
-            ]
-        )
-        time_sensors = time.time() - tic_sensors
-        self.tot_sensors_time += time_sensors
-        tic_log = time.time()
-        self.experiment_logger.update(self.sim_step-1)
-        time_log = time.time() - tic_log
-        self.tot_log_time += time_log
+        # Animat logging
+        self.animat_logging()
         # Camera
         tic_camera = time.time()
         if not self.sim_options.headless:
@@ -322,6 +233,132 @@ class Simulation:
         pybullet.disconnect()
 
 
+class SalamanderSimulation(Simulation):
+    """Salamander simulation"""
+
+    def __init__(self, simulation_options, model_options):
+        self.animat, self.links, self.joints, self.plane = 4*[None]
+        super(SalamanderSimulation, self).__init__(
+            simulation_options=simulation_options,
+            model_options=model_options
+        )
+
+    def spawn_models(self):
+        """Initialise simulation"""
+        # Spawn models
+        self.animat = SalamanderModel.spawn(
+            self.timestep,
+            **self.animat_options
+        )
+        self.plane = Model.from_urdf(
+            "plane.urdf",
+            basePosition=[0, 0, -0.1]
+        )
+
+    def init_animat(self):
+        """Initialise animat"""
+        # Simulation entities
+        self.links, self.joints, self.plane = (
+            self.get_entities()
+        )
+
+        # Remove leg collisions
+        self.animat.leg_collisions(self.plane, activate=False)
+
+        # Model information
+        self.animat.print_dynamics_info()
+
+        # Logging
+        self.experiment_logger = ExperimentLogger(
+            self.animat,
+            len(self.times)
+        )
+
+    def get_entities(self):
+        """Get simulation entities"""
+        return (
+            self.animat.links,
+            self.animat.joints,
+            self.plane.identity
+        )
+
+    def animat_control(self):
+        """Control animat"""
+        # Control
+        if self.user_params.gait.changed:
+            self.animat_options.gait = self.user_params.gait.value
+            self.animat.controller.update_gait(
+                self.animat_options.gait,
+                self.joints,
+                self.timestep
+            )
+            pybullet.setGravity(
+                0, 0, -1e-2 if self.animat_options.gait == "swimming" else -9.81
+            )
+            self.user_params.gait.changed = False
+        if self.user_params.frequency.changed:
+            self.animat.controller.update_frequency(
+                self.user_params.frequency.value
+            )
+            self.user_params.frequency.changed = False
+        if self.user_params.body_offset.changed:
+            self.animat.controller.update_body_offset(
+                self.user_params.body_offset.value
+            )
+            self.user_params.body_offset.changed = False
+        # Swimming
+        if self.animat_options.gait == "swimming":
+            self.forces_torques[self.sim_step] = viscous_swimming(
+                self.animat.identity,
+                self.links
+            )
+        # Time plugins
+        self.time_plugin = time.time() - self.tic_rt
+        self.tot_plugin_time += self.time_plugin
+        # Control
+        self.tic_control = time.time()
+        self.animat.controller.control()
+        self.time_control = time.time() - self.tic_control
+        self.tot_ctrl_time += self.time_control
+
+    def animat_logging(self):
+        """Animat logging"""
+        # Contacts during walking
+        tic_sensors = time.time()
+        self.animat.sensors.update(
+            identity=self.animat.identity,
+            links=[self.links[foot] for foot in self.animat.feet],
+            joints=[
+                self.joints[joint]
+                for joint in self.animat.sensors.joints_sensors
+            ],
+            plane=self.plane
+        )
+        # Commands
+        self.animat.motors.update(
+            identity=self.animat.identity,
+            joints_body=[
+                self.joints[joint]
+                for joint in self.animat.motors.joints_commanded_body
+            ],
+            joints_legs=[
+                self.joints[joint]
+                for joint in self.animat.motors.joints_commanded_legs
+            ]
+        )
+        time_sensors = time.time() - tic_sensors
+        self.tot_sensors_time += time_sensors
+        tic_log = time.time()
+        self.experiment_logger.update(self.sim_step-1)
+        time_log = time.time() - tic_log
+        self.tot_log_time += time_log
+
+
+def run_simon():
+    """Run Simon's experiment"""
+    pass
+
+
 def main(sim_options=None, model_options=None):
     """Main"""
 
@@ -333,7 +370,7 @@ def main(sim_options=None, model_options=None):
 
     # Setup simulation
     print("Creating simulation")
-    sim = Simulation(
+    sim = SalamanderSimulation(
         simulation_options=simulation_options,
         model_options=model_options
     )
