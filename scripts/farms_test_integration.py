@@ -8,8 +8,6 @@ import scipy
 import sympy as sp
 from sympy.utilities.autowrap import autowrap
 from sympy.utilities.autowrap import ufuncify
-from sympy.utilities.autowrap import binary_function
-from sympy import symbols, IndexedBase, Idx, Eq
 import matplotlib.pyplot as plt
 
 
@@ -38,152 +36,107 @@ def ode_sym(_, phases, freqs, weights, phases_desired, size, **kwargs):
     weights_num = kwargs.pop("weights_num", None)
     if sparse and weights_num is None:
         raise Exception("weights_num must be provided if sparse")
-    # _ode = freqs - sp.Matrix([sum([
-    #         (
-    #             weights[i, j]
-    #             if not sparse or weights_num[i, j]**2 > 1e-3
-    #             else 0
-    #         )*sp.sin(phases[i] - phases[j] - phases_desired[i, j])
-    #         for j in range(size)
-    #     ])
-    #     for i in range(size)
-    # ])
-    if sparse:
-        weights = [
-            [
+    _ode = freqs - sp.Matrix([
+        sum([
+            (
                 weights[i, j]
-                if weights_num[i, j]**2 > 1e-3
+                if not sparse or weights_num[i, j]**2 > 1e-3
                 else 0
-                for j in range(size)
-            ]
-            for i in range(size)
-        ]
-    weights = sp.Matrix(weights)
-    _phase_matrix = sp.Matrix([
-        [
-            sp.sin(phases[j] - phases[i] + phases_desired[i, j])
+            )*sp.sin(phases[i] - phases[j] - phases_desired[i, j])
             for j in range(size)
-        ]
+        ])
         for i in range(size)
     ])
-    _ode = freqs + sp.dense.matrix_multiply_elementwise(
-        weights,
-        _phase_matrix
-    )*sp.ones(freqs.shape[0], 1)
     return _ode
 
 
 class System:
     """ODE system for integration"""
 
-    def __init__(self, times, state, ode_fun, *args, jac=None, method="lsoda"):
+    def __init__(self, times, state, ode_fun, method="lsoda", **kwargs):
         super(System, self).__init__()
         self._state = state
         self.timestep = times[1] - times[0]
         self._ode_fun = ode_fun
-        self._ode_jac = jac
-        if not jac:
+        self._ode_jac = kwargs.pop("jac", None)
+        if self._ode_jac is None:
             self.ode = integrate.ode(self.ode_fun)  # , jac=jac
         else:
             self.ode = integrate.ode(self.ode_fun, jac=self.ode_jac)
-        # self.ode.set_integrator(method)
-        self.ode.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
+        self.ode.set_integrator(method)
+        # self.ode.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
         self.ode.set_initial_value(self._state, t=0)
-        self.ode.set_f_params(*args)
-        self.ode.set_jac_params(*args[1:])
+        self.ode.set_f_params(kwargs.pop("fun_args", None))
+        if self._ode_jac is not None:
+            self.ode.set_jac_params(kwargs.pop("jac_args", None))
 
     @classmethod
     def from_sympy(cls, times, weights_num, phases_desired_num, **kwargs):
         """ODE from sympy"""
-        verbose = kwargs.pop("verbose", False)
         n_dim = 11 + 2*2*3
-        phases_num = np.zeros([n_dim, 1])
-        freqs_num = kwargs.pop("freqs_num", np.zeros([n_dim, 1]))
-        # timestep = times[1] - times[0]
         _time = sp.symbols("t")
-        # coupling_weights = sp.SparseMatrix(sp.MatrixSymbol("W", n_dim, n_dim))
-        freqs = sp.MatrixSymbol("f", n_dim, 1)
         phases = sp.MatrixSymbol("theta", n_dim, 1)
-        dphases = sp.MatrixSymbol("dtheta", n_dim, 1)
-        phases_desired = sp.MatrixSymbol("theta_d", n_dim, n_dim)
-        # phases_desired_sym = sp.Matrix(phases_desired)
-        jacobian = sp.MatrixSymbol("jac", n_dim, n_dim)
-        coupling_weights = sp.MatrixSymbol("W", n_dim, n_dim)
-        # coupling_weights_sym = sp.Matrix(coupling_weights)
-        # coupling_weights_sparse = sp.Matrix(coupling_weights)
-        # for i in range(n_dim):
-        #     for j in range(n_dim):
-        #         coupling_weights_sparse[i, j] = (
-        #             coupling_weights[i, j]
-        #             if weights_num[i, j]**2 > 1e-6
-        #             else 0
-        #         )
-
-        # # Expression
-        # expr_sym = ode_sym(
-        #     _time,
-        #     sp.symbols(["theta_{}".format(i) for i in range(n_dim)]),
-        #     sp.symbols(["f_{}".format(i) for i in range(n_dim)]),
-        #     sp.MatrixSymbol("W", n_dim, n_dim),
-        #     sp.MatrixSymbol("theta_d", n_dim, n_dim),
-        #     n_dim,
-        #     weights_num
-        # )
-        # print("")
-        # for exp in expr_sym:
-        #     sp.pretty_print(exp)
-        # print("")
+        ode_params = (
+            sp.MatrixSymbol("f", n_dim, 1),
+            sp.MatrixSymbol("W", n_dim, n_dim),
+            sp.MatrixSymbol("theta_d", n_dim, n_dim)
+        )
 
         expr = sp.Matrix(ode_sym(
-            _time, phases, freqs,
-            coupling_weights, phases_desired,
-            n_dim, sparse=True, weights_num=weights_num
+            _time, phases, *ode_params,
+            size=n_dim, sparse=True, weights_num=weights_num
         ))
 
+        _ode, _ode_jac = cls.generate_ode(
+            expr=expr,
+            fun_args=(_time, phases, *ode_params),
+            jac_args=(_time, phases, *ode_params[1:]),
+            dx=phases,
+            **kwargs
+        )
+
+        return cls(
+            times=times,
+            state=np.zeros([n_dim, 1]),
+            ode_fun=_ode,
+            fun_args=(
+                kwargs.pop("freqs_num", np.zeros([n_dim, 1])),
+                weights_num,
+                phases_desired_num
+            ),
+            jac=_ode_jac,
+            jac_args=(weights_num, phases_desired_num)
+        )
+
+    @staticmethod
+    def generate_ode(expr, **kwargs):
+        """Generate ODE integrator"""
+        verbose = kwargs.pop("verbose", False)
+        method = kwargs.pop("method", "autowrap")
+        use_jacobian = kwargs.pop("use_jacobian", True)
+        backend = kwargs.pop("backend", ["numpy"])  # "math" is faster?
+        fun_args = kwargs.pop("fun_args", None)
+        jac_args = kwargs.pop("jac_args", None)
         if verbose:
             print("\nODE:\n")
             for exp in expr:
                 sp.pretty_print(exp)
-            print("")
-        # for exp in expr:
-        #     sp.pretty_print(exp)
-        # expr = Eq(dphases, freqs + sp.Matrix([
-        #     sum([
-        #         coupling_weights_sparse[i, j]*sp.sin(
-        #             phases[i] - phases[j] + phases_desired[i, j]
-        #         )
-        #         for j in range(n_dim)
-        #     ]) for i in range(n_dim)
-        # ]))
-        # sp.pretty_print(expr)
-        # print(" ")
-
-        method = kwargs.pop("method", "autowrap")
-        use_jacobian = kwargs.pop("use_jacobian", True)
-        backend = kwargs.pop("backend", ["numpy"])  # "math" is faster?
-        if verbose:
-            print("Using {} method for generating integrator".format(method))
-            print("Use jacobian: {}".format(use_jacobian))
+            print("\nUsing {} method for generating integrator".format(method))
+            print("Use jacobian: {}\n".format(use_jacobian))
 
         if use_jacobian:
-            jac_expr = expr.jacobian(phases)
+            jac_expr = expr.jacobian(kwargs.pop("dx", None))
 
         # ODE
         if method == "lambdify":
             _ode = sp.lambdify(
-                (
-                    _time, phases,
-                    freqs, coupling_weights, phases_desired
-                ),
+                fun_args,
                 expr,
-                modules=backend  # "math" is faster?
+                modules=backend
             )
             _ode_jac = (
                 sp.lambdify(
-                    (
-                        _time, phases,
-                        coupling_weights, phases_desired
-                    ),
+                    jac_args,
                     jac_expr,
                     modules=backend
                 )
@@ -192,10 +145,7 @@ class System:
         elif method == "ufuncify":
             # NOT WORKING
             _ode = ufuncify(
-                args=(
-                    _time, phases,
-                    freqs, coupling_weights, phases_desired
-                ),
+                args=fun_args,
                 expr=expr,
                 backend="numpy"
             )
@@ -203,10 +153,7 @@ class System:
         elif method == "autowrap":
             _ode = autowrap(
                 expr,
-                args=(
-                    _time, phases, freqs,
-                    coupling_weights, phases_desired  # , dphases
-                ),
+                args=fun_args,
                 tempdir="./temp",
                 language="C",
                 backend="cython",
@@ -215,10 +162,7 @@ class System:
             _ode_jac = (
                 autowrap(
                     jac_expr,
-                    args=(
-                        _time, phases,
-                        coupling_weights, phases_desired  # , dphases
-                    ),
+                    args=jac_args,
                     tempdir="./temp_jac",
                     language="C",
                     backend="cython",
@@ -229,11 +173,7 @@ class System:
             )
         else:
             raise Exception("Unknown method for integrator creation")
-        return cls(
-            times, phases_num, _ode,
-            freqs_num, weights_num, phases_desired_num,
-            jac=_ode_jac
-        )
+        return _ode, _ode_jac
 
     def step(self, *args):
         """Step ODE"""
@@ -337,26 +277,26 @@ def test_scipy(times, methods=None):
     if not methods:
         methods = ["vode", "zvode", "lsoda", "dopri5", "dop853"]
     timestep = times[1] - times[0]
-    n_dim, _phases, _freqs, weights, phases_desired = (
+    n_dim, _, _, weights, phases_desired = (
         SalamanderNetwork.walking_parameters()
     )
     for method in methods:
         phases_sci = np.zeros([len(times)+1, len(freqs)])
         phases = np.zeros([len(freqs)])
-        r = integrate.ode(ode)
-        # r.set_integrator(method)
-        r.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
-        r.set_initial_value(phases, 0)
-        r.set_f_params(freqs, weights, phases_desired, n_dim)
+        _ode = integrate.ode(ode)
+        _ode.set_integrator(method)
+        # _ode.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
+        _ode.set_initial_value(phases, 0)
+        _ode.set_f_params(freqs, weights, phases_desired, n_dim)
         tic = time.time()
         for i, _time in enumerate(times):
-            r.set_f_params(
+            _ode.set_f_params(
                 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1),
                 weights,
                 phases_desired,
                 n_dim
             )
-            phases_sci[i+1, :] = r.integrate(r.t+timestep)
+            phases_sci[i+1, :] = _ode.integrate(_ode.t+timestep)
         print("Scipy integration took {} [s] with {}".format(
             time.time() - tic,
             method
@@ -384,7 +324,10 @@ def test_sympy(times):
     tic = time.time()
     for i, _time in enumerate(times):
         phases_sym[i+1, :] = sys.step(
-            2*np.pi*10*np.ones([11 + 2*2*3, 1], dtype=np.float64)*(np.sin(_time)+1),
+            2*np.pi*10*np.ones(
+                [11 + 2*2*3, 1],
+                dtype=np.float64
+            )*(np.sin(_time)+1),
             weights,
             phases_desired
         )[:, 0]
@@ -400,157 +343,9 @@ def test_sympy(times):
     plt.grid()
 
 
-# def test_sympy_tensor():
-#     """Test sympy tensor"""
-#     from sympy.utilities.autowrap import autowrap
-#     from sympy import symbols, IndexedBase, Idx, Eq
-#     A, x, y = map(IndexedBase, ['A', 'x', 'y'])
-#     m, n = symbols('m n', integer=True)
-#     i = Idx('i', m)
-#     j = Idx('j', n)
-#     instruction = Eq(y[i], A[i, j]*x[j])
-#     sp.pretty_print(instruction)
-
-
-# def test_sympy_compilation():
-#     """Test sympy tensor"""
-#     freq = sp.MatrixSymbol("f", 2, 1)
-#     w = sp.MatrixSymbol("W", 2, 2)
-#     phase = sp.MatrixSymbol("theta", 2, 1)
-#     dphase = sp.MatrixSymbol("dtheta", 2, 1)
-#     phase_d = sp.MatrixSymbol("theta_d", 2, 2)
-#     instruction = Eq(dphase, freq + sp.Matrix([
-#             sum([
-#                 w[i, j]*sp.sin(phase[i] - phase[j] + phase_d[i, j])
-#                 for j in range(2)
-#             ]) for i in range(2)
-#         ])
-#     )
-#     # instruction = Eq(y[i], A[i, j]*B[i, j]*x[j]*sp.sin(i))
-#     # instruction = Eq(
-#     #     [dphase[i], phase[i]],
-#     #     [
-#     #         freq[i] + w[i, j]*sp.sin(phase[i] - phase[j] + phase_d[i, j]),
-#     #         phase[i]
-#     #     ]
-#     #  )
-#     sp.pretty_print(instruction)
-#     # matvec = autowrap(
-#     #     instruction,
-#     #     language="C",
-#     #     backend="cython",
-#     #     tempdir="./temp",
-#     #     args=(A, B, x, y)
-#     # )
-#     matvec = autowrap(
-#         instruction,
-#         # language="C",
-#         # backend="cython",
-#         tempdir="./temp",
-#         args=(phase, freq, w, phase_d, dphase)
-#     )
-#     # matvec = binary_function(
-#     #     "f",
-#     #     A[i, j]*B[i, j]*x[j],
-#     #     language="C",
-#     #     backend="cython",
-#     #     tempdir="./temp",
-#     #     args=(A, B, x, y)
-#     # )
-#     # matvec = ufuncify(
-#     #     args=(A, B, x),
-#     #     expr=A[i, j]*B[i, j]*x[j],
-#     #     language="C",
-#     #     backend="cython",
-#     #     tempdir="./temp",
-#     # )
-#     print("FUNCTION READY")
-#     np_type = np.float64
-#     phase = np.ones([2, 1], dtype=np_type)
-#     freq = np.ones([2, 1], dtype=np_type)
-#     w = np.ones([2, 2], dtype=np_type)
-#     phase_d = np.ones([2, 2], dtype=np_type)
-#     tic = time.time()
-#     for i in range(1000):
-#         pass
-#     print("Time: {} [s]".format(time.time() - tic))
-#     tic = time.time()
-#     for i in range(10000):
-#         res = matvec(phase, freq, w, phase_d)
-#     print("Time: {} [s]".format(time.time() - tic))
-#     sp.pretty_print(res)
-
-
-# def test_sympy_compilation2():
-#     """Test sympy tensor"""
-#     from sympy.utilities.autowrap import autowrap
-#     from sympy import symbols, IndexedBase, Idx, Eq
-#     # freq = sp.IndexedBase("f", shape=(2,))
-#     # w = sp.IndexedBase("W", shape=(2, 2))
-#     # phase = sp.IndexedBase("theta", shape=(2))
-#     # dphase = sp.IndexedBase("dtheta", shape=(2))
-#     # phase_d = sp.IndexedBase("theta_d", shape=(2, 2))
-#     A = sp.IndexedBase("A", shape=(2, 2))
-#     B = sp.IndexedBase("B", shape=(2, 2))
-#     x = sp.IndexedBase("x", shape=(2,))
-#     y = sp.IndexedBase("y", shape=(2,))
-#     # m, n = symbols('m n', integer=True)
-#     i = Idx('i', 2)
-#     j = Idx('j', 2)
-#     instruction = Eq(y[i], (A[i, j]*B[i, j])*x[j]*sp.sin(i))
-#     # instruction = Eq(y[i], A[i, j]*B[i, j]*x[j]*sp.sin(i))
-#     # instruction = Eq(
-#     #     [dphase[i], phase[i]],
-#     #     [
-#     #         freq[i] + w[i, j]*sp.sin(phase[i] - phase[j] + phase_d[i, j]),
-#     #         phase[i]
-#     #     ]
-#     #  )
-#     sp.pretty_print(instruction)
-#     # matvec = autowrap(
-#     #     instruction,
-#     #     language="C",
-#     #     backend="cython",
-#     #     tempdir="./temp",
-#     #     args=(A, B, x, y)
-#     # )
-#     matvec = autowrap(
-#         instruction,
-#         language="C",
-#         backend="cython",
-#         tempdir="./temp",
-#         args=(A, B, x, y)
-#     )
-#     # matvec = binary_function(
-#     #     "f",
-#     #     A[i, j]*B[i, j]*x[j],
-#     #     language="C",
-#     #     backend="cython",
-#     #     tempdir="./temp",
-#     #     args=(A, B, x, y)
-#     # )
-#     # matvec = ufuncify(
-#     #     args=(A, B, x),
-#     #     expr=A[i, j]*B[i, j]*x[j],
-#     #     language="C",
-#     #     backend="cython",
-#     #     tempdir="./temp",
-#     # )
-#     np_type = np.float64
-#     M = np.ones([2, 2], dtype=np_type)
-#     print("FUNCTION READY")
-#     res = np.zeros(2, dtype=np_type)
-#     res = matvec(
-#         M,
-#         M.T,
-#         np.ones(2, dtype=np_type)
-#     )
-#     sp.pretty_print(res)
-
-
 def main():
     """Main"""
-    times = np.arange(0, 0.1, 1e-3)
+    times = np.arange(0, 10, 1e-3)
 
     test_casadi(times)
     test_numpy_euler(times)
