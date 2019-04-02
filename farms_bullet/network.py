@@ -451,6 +451,31 @@ class SalamanderNetwork(Network):
         ])
         print("Coupling weights sym:\n{}".format(coupling_weights_sym))
         # Integrator
+        dt = 1e-3
+        # opts = {
+        #     'tf': dt,
+        #     # "nonlinear_solver_iteration": "functional",
+        #     "grid": [0, dt],
+        #     "ad_weight": 1.0,
+        #     # "linear_multistep_method": "adams",
+        #     # "fsens_all_at_once": True,
+        #     # "max_multistep_order": 1,
+        #     # "sensitivity_method": "staggered",
+        #     # "linear_solver": "csparse",
+        #     # "steps_per_checkpoint": 1,
+        #     'jit': False,
+        #     'jac_penalty': 0,
+        #     "number_of_finite_elements": 1,
+        #     "inputs_check": False,
+        #     "enable_jacobian": True,
+        #     "enable_reverse": True,
+        #     "enable_fd":True,
+        #     "print_time": False,
+        #     "print_stats": False,
+        #     # "reltol": 1e-3,
+        #     # "abstol": 1e-3,
+        #     'expand': True
+        # }
         integrator = cas.integrator(
             'oscillator_network',
             'cvodes',
@@ -473,8 +498,15 @@ class SalamanderNetwork(Network):
                 # "reltol": 1e-3
                 # "enable_jacobian": False,
                 # "number_of_finite_elements": 1
+                # "print_stats": True,
+                # "verbose": True,
+                # "enable_fd": True,
+                # "enable_jacobian": False,
+                # "step0": 1e-4
             }
         )
+        # integrator.print_options()
+        # integrator.setOption("exact_jacobian", "false")
         weights = [
             weights[i, j]
             for i in range(n_joints)
