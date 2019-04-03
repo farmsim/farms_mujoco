@@ -156,11 +156,54 @@ class ArenaScaffold(FlooredArena):
 class Interfaces:
     """Interfaces (GUI, camera, video)"""
 
-    def __init__(self, camera, paramters=None, video=None):
+    def __init__(self, camera=None, user_params=None, video=None):
         super(Interfaces, self).__init__()
         self.camera = camera
-        self.paramters = paramters
+        self.user_params = user_params
         self.video = video
+        self.camera_skips = 10
+
+    def init_camera(self, target_identity, timestep, **kwargs):
+        """Initialise camera"""
+        # Camera
+        self.camera = UserCamera(
+            target_identity=target_identity,
+            yaw=0,
+            yaw_speed=(
+                360/10*self.camera_skips
+                if kwargs.pop("rotating_camera", False)
+                else 0
+            ),
+            pitch=-89 if kwargs.pop("top_camera", False) else -45,
+            distance=1,
+            timestep=timestep
+        )
+
+    def init_video(self, target_identity, timestep, size, **kwargs):
+        """Init video"""
+        # Video recording
+        self.video = CameraRecord(
+            target_identity=target_identity,
+            size=size,
+            fps=kwargs.pop("fps", 40),
+            yaw=kwargs.pop("yaw", 0),
+            yaw_speed=360/10 if kwargs.pop("rotating_camera", False) else 0,
+            pitch=-89 if kwargs.pop("top_camera", False) else -45,
+            distance=1,
+            timestep=timestep,
+            motion_filter=1e-1
+        )
+
+    def init_debug(self, animat_options):
+        """Initialise debug"""
+        # User parameters
+        self.user_params = UserParameters(
+            animat_options.gait,
+            animat_options.frequency
+        )
+
+        # Debug info
+        test_debug_info()
 
 
 class SimulationProfiler:
@@ -276,12 +319,12 @@ class SalamanderExperiment(Experiment):
 class Simulation:
     """Simulation"""
 
-    def __init__(self, simulation_options, model_options):
+    def __init__(self, simulation_options, animat_options):
         super(Simulation, self).__init__()
 
         # Options
         self.sim_options = simulation_options
-        self.animat_options = model_options
+        self.animat_options = animat_options
 
         # Initialise engine
         init_engine(self.sim_options.headless)
@@ -306,9 +349,26 @@ class Simulation:
         self.animat.model.leg_collisions(self.plane.identity, activate=False)
         self.animat.model.print_dynamics_info()
 
+        # Interface
+        self.interface = Interfaces()
+        if not self.sim_options.headless:
+            self.interface.init_camera(
+                target_identity=self.animat.identity,
+                timestep=self.timestep,
+                rotating_camera=self.sim_options.rotating_camera,
+                top_camera=self.sim_options.top_camera
+            )
+            self.interface.init_debug(animat_options=self.animat_options)
+        if self.sim_options.record and not self.sim_options.headless:
+            self.interface.init_video(
+                target_identity=self.animat.identity,
+                timestep=self.timestep*25,
+                size=len(self.times)//25,
+                rotating_camera=self.sim_options.rotating_camera,
+                top_camera=self.sim_options.top_camera
+            )
+
         # Simulation
-        self.init_camera()
-        self.init_debug()
         self.profile = SimulationProfiler(self.sim_options.duration)
         self.forces_torques = np.zeros([len(self.times), 2, 10, 3])
         self.sim_step = 0
@@ -316,49 +376,6 @@ class Simulation:
         # Simulation state
         self.init_state = pybullet.saveState()
         rendering(1)
-
-    def init_camera(self):
-        """Initialise camera"""
-        # Camera
-        if not self.sim_options.headless:
-            self.camera_skips = 10
-            self.camera = UserCamera(
-                target_identity=self.animat.identity,
-                yaw=0,
-                yaw_speed=(
-                    360/10*self.camera_skips
-                    if self.sim_options.rotating_camera
-                    else 0
-                ),
-                pitch=-89 if self.sim_options.top_camera else -45,
-                distance=1,
-                timestep=self.timestep
-            )
-
-        # Video recording
-        if self.sim_options.record and not self.sim_options.headless:
-            self.camera_record = CameraRecord(
-                target_identity=self.animat.identity,
-                size=len(self.times)//25,
-                fps=40,
-                yaw=0,
-                yaw_speed=360/10 if self.sim_options.rotating_camera else 0,
-                pitch=-89 if self.sim_options.top_camera else -45,
-                distance=1,
-                timestep=self.timestep*25,
-                motion_filter=1e-1
-            )
-
-    def init_debug(self):
-        """Initialise debug"""
-        # User parameters
-        self.user_params = UserParameters(
-            self.animat_options.gait,
-            self.animat_options.frequency
-        )
-
-        # Debug info
-        test_debug_info()
 
     def init_physics(self):
         """Initialise physics"""
@@ -386,13 +403,13 @@ class Simulation:
         while self.sim_step < len(self.times):
             if not self.sim_options.headless:
                 if not self.sim_step % 100:
-                    self.user_params.update()
+                    self.interface.user_params.update()
                     keys = pybullet.getKeyboardEvents()
                     if ord("q") in keys:
                         break
                 if not(self.sim_step % 10000) and self.sim_step > 0:
                     pybullet.restoreState(self.init_state)
-                if not self.user_params.play.value:
+                if not self.interface.user_params.play.value:
                     time.sleep(0.5)
             tic_loop = time.time()
             self.loop()
@@ -421,16 +438,19 @@ class Simulation:
             if self.sim_options.record and not self.sim_step % 25:
                 self.camera_record.record(self.sim_step//25-1)
             # User camera
-            if not self.sim_step % self.camera_skips and not self.sim_options.free_camera:
-                self.camera.update()
+            if (
+                    not self.sim_step % self.interface.camera_skips
+                    and not self.sim_options.free_camera
+            ):
+                self.interface.camera.update()
         self.profile.camera_time += time.time() - tic_camera
         # Real-time
         self.toc_rt = time.time()
         tic_rt = time.time()
-        if not self.sim_options.fast and self.user_params.rtl.value < 3:
+        if not self.sim_options.fast and self.interface.user_params.rtl.value < 3:
             real_time_handing(
                 self.timestep, self.tic_rt, self.toc_rt,
-                rtl=self.user_params.rtl.value,
+                rtl=self.interface.user_params.rtl.value,
                 time_plugin=self.time_plugin,
                 time_sim=self.toc_sim-self.tic_sim,
                 time_control=self.time_control
@@ -461,17 +481,17 @@ class Simulation:
 class SalamanderSimulation(Simulation):
     """Salamander simulation"""
 
-    def __init__(self, simulation_options, model_options):
+    def __init__(self, simulation_options, animat_options):
         super(SalamanderSimulation, self).__init__(
             simulation_options=simulation_options,
-            model_options=model_options
+            animat_options=animat_options
         )
 
     def animat_control(self):
         """Control animat"""
         # Control
-        if self.user_params.gait.changed:
-            self.animat_options.gait = self.user_params.gait.value
+        if self.interface.user_params.gait.changed:
+            self.animat_options.gait = self.interface.user_params.gait.value
             self.animat.model.controller.update_gait(
                 self.animat_options.gait,
                 self.animat.joints,
@@ -480,17 +500,17 @@ class SalamanderSimulation(Simulation):
             pybullet.setGravity(
                 0, 0, -1e-2 if self.animat_options.gait == "swimming" else -9.81
             )
-            self.user_params.gait.changed = False
-        if self.user_params.frequency.changed:
+            self.interface.user_params.gait.changed = False
+        if self.interface.user_params.frequency.changed:
             self.animat.model.controller.update_frequency(
-                self.user_params.frequency.value
+                self.interface.user_params.frequency.value
             )
-            self.user_params.frequency.changed = False
-        if self.user_params.body_offset.changed:
+            self.interface.user_params.frequency.changed = False
+        if self.interface.user_params.body_offset.changed:
             self.animat.model.controller.update_body_offset(
-                self.user_params.body_offset.value
+                self.interface.user_params.body_offset.value
             )
-            self.user_params.body_offset.changed = False
+            self.interface.user_params.body_offset.changed = False
         # Swimming
         if self.animat_options.gait == "swimming":
             self.forces_torques[self.sim_step] = viscous_swimming(
@@ -544,20 +564,20 @@ def run_simon():
     pass
 
 
-def main(sim_options=None, model_options=None):
+def main(sim_options=None, animat_options=None):
     """Main"""
 
     # Parse command line arguments
     if not sim_options:
         simulation_options = SimulationOptions.with_clargs()
-    if not model_options:
-        model_options = ModelOptions()
+    if not animat_options:
+        animat_options = ModelOptions()
 
     # Setup simulation
     print("Creating simulation")
     sim = SalamanderSimulation(
         simulation_options=simulation_options,
-        model_options=model_options
+        animat_options=animat_options
     )
 
     # Run simulation
