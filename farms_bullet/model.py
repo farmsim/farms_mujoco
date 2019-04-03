@@ -1,9 +1,10 @@
 """Model"""
 
+import os
+
 import numpy as np
 
 import pybullet
-import os
 from .sensors import ModelSensors
 from .motors import ModelMotors
 from .control import SalamanderController
