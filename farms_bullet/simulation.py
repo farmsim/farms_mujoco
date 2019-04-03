@@ -72,10 +72,12 @@ class Animat(SimulationElement):
 class Salamander(Animat):
     """Salamander animat"""
 
-    def __init__(self, options, timestep):
+    def __init__(self, options, timestep, n_iterations):
         super(Salamander, self).__init__(options)
         self.model = None
         self.timestep = timestep
+        self.logger = None
+        self.n_iterations = n_iterations
 
     def spawn(self):
         """Spawn"""
@@ -84,6 +86,10 @@ class Salamander(Animat):
             **self.options
         )
         self._identity = self.model.identity
+        self.logger = ExperimentLogger(
+            self.model,
+            self.n_iterations
+        )
 
     @property
     def links(self):
@@ -97,9 +103,61 @@ class Salamander(Animat):
 
     def step(self):
         """Step"""
+        self.animat_physics()
+        self.animat_control()
 
     def log(self):
         """Log"""
+        self.animat_logging()
+
+    def animat_physics(self):
+        """Animat physics"""
+        # Swimming
+        forces = None
+        if self.options.gait == "swimming":
+            forces = viscous_swimming(
+                self.identity,
+                self.links
+            )
+        return forces
+
+    def animat_control(self):
+        """Control animat"""
+        # Control
+        tic_control = time.time()
+        self.model.controller.control()
+        time_control = time.time() - tic_control
+        return time_control
+
+    def animat_logging(self, sim_step):
+        """Animat logging"""
+        # Contacts during walking
+        tic_sensors = time.time()
+        self.model.sensors.update(
+            identity=self.identity,
+            links=[self.links[foot] for foot in self.model.feet],
+            joints=[
+                self.joints[joint]
+                for joint in self.model.sensors.joints_sensors
+            ]
+        )
+        # Commands
+        self.model.motors.update(
+            identity=self.identity,
+            joints_body=[
+                self.joints[joint]
+                for joint in self.model.motors.joints_commanded_body
+            ],
+            joints_legs=[
+                self.joints[joint]
+                for joint in self.model.motors.joints_commanded_legs
+            ]
+        )
+        time_sensors = time.time() - tic_sensors
+        tic_log = time.time()
+        self.logger.update(sim_step-1)
+        time_log = time.time() - tic_log
+        return time_sensors, time_log
 
 
 class Floor(SimulationElement):
@@ -108,13 +166,15 @@ class Floor(SimulationElement):
     def __init__(self, position):
         super(Floor, self).__init__()
         self._position = position
+        self.model = None
 
     def spawn(self):
         """Spawn floor"""
-        self._identity = Model.from_urdf(
+        self.model = Model.from_urdf(
             "plane.urdf",
             basePosition=self._position
         )
+        self._identity = self.model.identity
 
 
 class Arena:
@@ -214,6 +274,7 @@ class SimulationProfiler:
         self.sim_duration = sim_duration
         self.plugin_time = 0
         self.sim_time = 0
+        self.physics_time = 0
         self.ctrl_time = 0
         self.sensors_time = 0
         self.log_time = 0
@@ -224,6 +285,7 @@ class SimulationProfiler:
         """Reset"""
         self.plugin_time = 0
         self.sim_time = 0
+        self.physics_time = 0
         self.ctrl_time = 0
         self.sensors_time = 0
         self.log_time = 0
@@ -234,7 +296,7 @@ class SimulationProfiler:
         """Total time"""
         return (
             self.plugin_time
-            + self.sim_time
+            + self.physics_time
             + self.ctrl_time
             + self.sensors_time
             + self.log_time
@@ -249,7 +311,7 @@ class SimulationProfiler:
             self.sim_time,
         ))
         print("  Plugin: {} [s]".format(self.plugin_time))
-        print("  Bullet physics: {} [s]".format(self.sim_time))
+        print("  Bullet physics: {} [s]".format(self.physics_time))
         print("  Controller: {} [s]".format(self.ctrl_time))
         print("  Sensors: {} [s]".format(self.sensors_time))
         print("  Logging: {} [s]".format(self.log_time))
@@ -257,7 +319,7 @@ class SimulationProfiler:
         print("  Wait real-time: {} [s]".format(self.waitrt_time))
         print("  Sum: {} [s]".format(
             self.plugin_time
-            + self.sim_time
+            + self.physics_time
             + self.ctrl_time
             + self.sensors_time
             + self.log_time
@@ -281,14 +343,10 @@ class Experiment:
         """Elements in experiment"""
         return [self.animat, self.arena]
 
-    def spawn(self):
+    def _spawn(self):
         """Spawn"""
         for element in self.elements():
             element.spawn()
-        self.logger = ExperimentLogger(
-            self.animat.model,
-            self.n_iterations
-        )
 
     def step(self):
         """Step"""
@@ -304,22 +362,159 @@ class Experiment:
 class SalamanderExperiment(Experiment):
     """Salamander experiment"""
 
-    def __init__(self, timestep, n_iterations, **kwargs):
+    def __init__(self, sim_options, n_iterations, **kwargs):
+        self.animat_options = kwargs.pop("animat_options", ModelOptions())
         super(SalamanderExperiment, self).__init__(
             animat=Salamander(
-                kwargs.pop("animat_options", ModelOptions()),
-                timestep
+                self.animat_options,
+                sim_options.timestep,
+                n_iterations
             ),
             arena=FlooredArena(),
-            timestep=timestep,
+            timestep=sim_options.timestep,
             n_iterations=n_iterations
         )
+        self.sim_options = sim_options
+        self.interface = Interfaces()
+        self.simulation_state = None
+        self.profile = SimulationProfiler(self.sim_options.duration)
+        self.forces_torques = np.zeros([n_iterations, 2, 10, 3])
+
+    def spawn(self):
+        """Spawn"""
+        # Elements
+        self._spawn()
+        self.animat.model.sensors.plane = self.arena.floor.identity
+        # Interface
+        if not self.sim_options.headless:
+            self.interface.init_camera(
+                target_identity=self.animat.identity,
+                timestep=self.timestep,
+                rotating_camera=self.sim_options.rotating_camera,
+                top_camera=self.sim_options.top_camera
+            )
+            self.interface.init_debug(animat_options=self.animat_options)
+        if self.sim_options.record and not self.sim_options.headless:
+            self.interface.init_video(
+                target_identity=self.animat.identity,
+                timestep=self.timestep*25,
+                size=self.n_iterations//25,
+                rotating_camera=self.sim_options.rotating_camera,
+                top_camera=self.sim_options.top_camera
+            )
+
+    def save(self):
+        """Save experiment state"""
+        self.simulation_state = pybullet.saveState()
+
+    def pre_step(self, sim_step):
+        """New step"""
+        play = self.interface.user_params.play.value
+        if not sim_step % 100:
+            self.interface.user_params.update()
+        if not(sim_step % 10000) and sim_step > 0:
+            pybullet.restoreState(self.simulation_state)
+        if not play:
+            time.sleep(0.5)
+            self.interface.user_params.update()
+        return play
+
+    def step(self, sim_step):
+        """Simulation step"""
+        self.tic_rt = time.time()
+        self.sim_time = self.timestep*sim_step
+
+        # Time plugins
+        self.animat_interface()
+        external_forces = self.animat.animat_physics()
+        if external_forces is not None:
+            self.forces_torques[sim_step] = external_forces
+        self.time_plugin = time.time() - self.tic_rt
+        self.profile.plugin_time += self.time_plugin
+        # Control animat
+        time_control = self.animat.animat_control()
+        self.profile.ctrl_time += time_control
+        # Physics
+        self.tic_sim = time.time()
+        pybullet.stepSimulation()
+        self.toc_sim = time.time()
+        sim_step += 1
+        self.profile.physics_time += self.toc_sim - self.tic_sim
+        # Animat logging
+        time_sensors, time_log = self.animat.animat_logging(sim_step)
+        self.profile.sensors_time += time_sensors
+        self.profile.log_time += time_log
+        # Camera
+        tic_camera = time.time()
+        if not self.sim_options.headless:
+            if self.sim_options.record and not sim_step % 25:
+                self.camera_record.record(sim_step//25-1)
+            # User camera
+            if (
+                    not sim_step % self.interface.camera_skips
+                    and not self.sim_options.free_camera
+            ):
+                self.interface.camera.update()
+        self.profile.camera_time += time.time() - tic_camera
+        # Real-time
+        self.toc_rt = time.time()
+        tic_rt = time.time()
+        if not self.sim_options.fast and self.interface.user_params.rtl.value < 3:
+            real_time_handing(
+                self.timestep, self.tic_rt, self.toc_rt,
+                rtl=self.interface.user_params.rtl.value,
+                time_plugin=self.time_plugin,
+                time_sim=self.toc_sim-self.tic_sim,
+                time_control=time_control
+            )
+        self.profile.waitrt_time = time.time() - tic_rt
+
+    def animat_interface(self):
+        """Animat interface"""
+        # Control
+        if self.interface.user_params.gait.changed:
+            self.animat_options.gait = self.interface.user_params.gait.value
+            self.animat.model.controller.update_gait(
+                self.animat_options.gait,
+                self.animat.joints,
+                self.timestep
+            )
+            pybullet.setGravity(
+                0, 0, -1e-2 if self.animat_options.gait == "swimming" else -9.81
+            )
+            self.interface.user_params.gait.changed = False
+        if self.interface.user_params.frequency.changed:
+            self.animat.model.controller.update_frequency(
+                self.interface.user_params.frequency.value
+            )
+            self.interface.user_params.frequency.changed = False
+        if self.interface.user_params.body_offset.changed:
+            self.animat.model.controller.update_body_offset(
+                self.interface.user_params.body_offset.value
+            )
+            self.interface.user_params.body_offset.changed = False
+
+    def postprocess(self):
+        """Plot after simulation"""
+        # Plot
+        self.animat.logger.plot_all(self.times_simulated)
+        plt.show()
+
+        # Record video
+        if self.sim_options.record and not self.sim_options.headless:
+            self.camera_record.save("video.avi")
+
+    def end(self, sim_step, sim_time):
+        """Terminate experiment"""
+        self.profile.sim_duration = self.timestep*sim_step
+        self.profile.sim_time = sim_time
+        self.profile.print_times()
 
 
 class Simulation:
     """Simulation"""
 
-    def __init__(self, simulation_options, animat_options):
+    def __init__(self, experiment, simulation_options, animat_options):
         super(Simulation, self).__init__()
 
         # Options
@@ -338,43 +533,18 @@ class Simulation:
         self.init_physics()
 
         # Initialise models
-        self.experiment = SalamanderExperiment(
-            self.timestep,
-            len(self.times),
-            animat_options=self.animat_options
-        )
+        self.experiment = experiment
         self.experiment.spawn()
         self.animat = self.experiment.animat
-        self.plane = self.experiment.arena.floor.identity
-        self.animat.model.leg_collisions(self.plane.identity, activate=False)
+        self.animat.model.leg_collisions(
+            self.experiment.arena.floor.identity,
+            activate=False
+        )
         self.animat.model.print_dynamics_info()
 
-        # Interface
-        self.interface = Interfaces()
-        if not self.sim_options.headless:
-            self.interface.init_camera(
-                target_identity=self.animat.identity,
-                timestep=self.timestep,
-                rotating_camera=self.sim_options.rotating_camera,
-                top_camera=self.sim_options.top_camera
-            )
-            self.interface.init_debug(animat_options=self.animat_options)
-        if self.sim_options.record and not self.sim_options.headless:
-            self.interface.init_video(
-                target_identity=self.animat.identity,
-                timestep=self.timestep*25,
-                size=len(self.times)//25,
-                rotating_camera=self.sim_options.rotating_camera,
-                top_camera=self.sim_options.top_camera
-            )
-
         # Simulation
-        self.profile = SimulationProfiler(self.sim_options.duration)
-        self.forces_torques = np.zeros([len(self.times), 2, 10, 3])
         self.sim_step = 0
 
-        # Simulation state
-        self.init_state = pybullet.saveState()
         rendering(1)
 
     def init_physics(self):
@@ -400,80 +570,27 @@ class Simulation:
         # Run simulation
         self.tic = time.time()
         loop_time = 0
+        play = True
         while self.sim_step < len(self.times):
             if not self.sim_options.headless:
-                if not self.sim_step % 100:
-                    self.interface.user_params.update()
-                    keys = pybullet.getKeyboardEvents()
-                    if ord("q") in keys:
-                        break
-                if not(self.sim_step % 10000) and self.sim_step > 0:
-                    pybullet.restoreState(self.init_state)
-                if not self.interface.user_params.play.value:
-                    time.sleep(0.5)
-            tic_loop = time.time()
-            self.loop()
-            loop_time += time.time() - tic_loop
+                keys = pybullet.getKeyboardEvents()
+                if ord("q") in keys:
+                    break
+                play = self.experiment.pre_step(self.sim_step)
+            if play:
+                tic_loop = time.time()
+                self.experiment.step(self.sim_step)
+                self.sim_step += 1
+                # self.experiment.log()
+                loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
         self.toc = time.time()
-        self.times_simulated = self.times[:self.sim_step]
-
-    def loop(self):
-        """Simulation loop"""
-        self.tic_rt = time.time()
-        self.sim_time = self.timestep*self.sim_step
-        # Control animat
-        self.animat_control()
-        # Physics
-        self.tic_sim = time.time()
-        pybullet.stepSimulation()
-        self.sim_step += 1
-        self.toc_sim = time.time()
-        self.profile.sim_time += self.toc_sim - self.tic_sim
-        # Animat logging
-        self.animat_logging()
-        # Camera
-        tic_camera = time.time()
-        if not self.sim_options.headless:
-            if self.sim_options.record and not self.sim_step % 25:
-                self.camera_record.record(self.sim_step//25-1)
-            # User camera
-            if (
-                    not self.sim_step % self.interface.camera_skips
-                    and not self.sim_options.free_camera
-            ):
-                self.interface.camera.update()
-        self.profile.camera_time += time.time() - tic_camera
-        # Real-time
-        self.toc_rt = time.time()
-        tic_rt = time.time()
-        if not self.sim_options.fast and self.interface.user_params.rtl.value < 3:
-            real_time_handing(
-                self.timestep, self.tic_rt, self.toc_rt,
-                rtl=self.interface.user_params.rtl.value,
-                time_plugin=self.time_plugin,
-                time_sim=self.toc_sim-self.tic_sim,
-                time_control=self.time_control
-            )
-        self.profile.waitrt_time = time.time() - tic_rt
-
-    def postprocess(self):
-        """Plot after simulation"""
-        # Plot
-        self.experiment.logger.plot_all(self.times_simulated)
-        plt.show()
-
-        # Record video
-        if self.sim_options.record and not self.sim_options.headless:
-            self.camera_record.save("video.avi")
+        self.experiment.times_simulated = self.times[:self.sim_step]
 
     def end(self):
         """Terminate simulation"""
-        # Simulation information
-        self.profile.sim_duration = self.timestep*self.sim_step
-        self.profile.sim_time = self.toc - self.tic
-        self.profile.print_times()
-
+        # End experiment
+        self.experiment.end(self.sim_step, self.toc - self.tic)
         # Disconnect from simulation
         pybullet.disconnect()
 
@@ -482,81 +599,18 @@ class SalamanderSimulation(Simulation):
     """Salamander simulation"""
 
     def __init__(self, simulation_options, animat_options):
+        experiment = SalamanderExperiment(
+            simulation_options,
+            len(np.arange(
+                0, simulation_options.duration, simulation_options.timestep
+            )),
+            animat_options=animat_options
+        )
         super(SalamanderSimulation, self).__init__(
+            experiment=experiment,
             simulation_options=simulation_options,
             animat_options=animat_options
         )
-
-    def animat_control(self):
-        """Control animat"""
-        # Control
-        if self.interface.user_params.gait.changed:
-            self.animat_options.gait = self.interface.user_params.gait.value
-            self.animat.model.controller.update_gait(
-                self.animat_options.gait,
-                self.animat.joints,
-                self.timestep
-            )
-            pybullet.setGravity(
-                0, 0, -1e-2 if self.animat_options.gait == "swimming" else -9.81
-            )
-            self.interface.user_params.gait.changed = False
-        if self.interface.user_params.frequency.changed:
-            self.animat.model.controller.update_frequency(
-                self.interface.user_params.frequency.value
-            )
-            self.interface.user_params.frequency.changed = False
-        if self.interface.user_params.body_offset.changed:
-            self.animat.model.controller.update_body_offset(
-                self.interface.user_params.body_offset.value
-            )
-            self.interface.user_params.body_offset.changed = False
-        # Swimming
-        if self.animat_options.gait == "swimming":
-            self.forces_torques[self.sim_step] = viscous_swimming(
-                self.animat.identity,
-                self.animat.links
-            )
-        # Time plugins
-        self.time_plugin = time.time() - self.tic_rt
-        self.profile.plugin_time += self.time_plugin
-        # Control
-        self.tic_control = time.time()
-        self.animat.model.controller.control()
-        self.time_control = time.time() - self.tic_control
-        self.profile.ctrl_time += self.time_control
-
-    def animat_logging(self):
-        """Animat logging"""
-        # Contacts during walking
-        tic_sensors = time.time()
-        self.animat.model.sensors.update(
-            identity=self.animat.identity,
-            links=[self.animat.links[foot] for foot in self.animat.model.feet],
-            joints=[
-                self.animat.joints[joint]
-                for joint in self.animat.model.sensors.joints_sensors
-            ],
-            plane=self.plane.identity
-        )
-        # Commands
-        self.animat.model.motors.update(
-            identity=self.animat.identity,
-            joints_body=[
-                self.animat.joints[joint]
-                for joint in self.animat.model.motors.joints_commanded_body
-            ],
-            joints_legs=[
-                self.animat.joints[joint]
-                for joint in self.animat.model.motors.joints_commanded_legs
-            ]
-        )
-        time_sensors = time.time() - tic_sensors
-        self.profile.sensors_time += time_sensors
-        tic_log = time.time()
-        self.experiment.logger.update(self.sim_step-1)
-        time_log = time.time() - tic_log
-        self.profile.log_time += time_log
 
 
 def run_simon():
@@ -586,7 +640,7 @@ def main(sim_options=None, animat_options=None):
 
     # Show results
     print("Analysing simulation")
-    sim.postprocess()
+    sim.experiment.postprocess()
     sim.end()
 
 
