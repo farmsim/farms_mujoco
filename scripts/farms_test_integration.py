@@ -3,6 +3,8 @@
 import time
 from farms_bullet.network import SalamanderNetwork
 import numpy as np
+# import autograd.numpy as np
+# from autograd import jacobian
 from scipy import integrate
 import scipy
 import sympy as sp
@@ -271,7 +273,7 @@ def test_numpy_euler_sparse(times):
     plt.grid()
 
 
-def test_scipy(times, methods=None):
+def test_scipy_ode(times, methods=None):
     """Scipy"""
     freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
     if not methods:
@@ -283,20 +285,30 @@ def test_scipy(times, methods=None):
     for method in methods:
         phases_sci = np.zeros([len(times)+1, len(freqs)])
         phases = np.zeros([len(freqs)])
-        _ode = integrate.ode(ode)
+        # jac = jacobian(ode, 1)
+        # print(jac(0, phases, freqs, weights, phases_desired, n_dim))
+        _ode = integrate.ode(ode)  # , jac=jac
         _ode.set_integrator(method)
         # _ode.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
         _ode.set_initial_value(phases, 0)
         _ode.set_f_params(freqs, weights, phases_desired, n_dim)
+        # _ode.set_jac_params(freqs, weights, phases_desired, n_dim)
         tic = time.time()
         for i, _time in enumerate(times):
+            freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
             _ode.set_f_params(
-                2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1),
+                freqs,
                 weights,
                 phases_desired,
                 n_dim
             )
-            phases_sci[i+1, :] = _ode.integrate(_ode.t+timestep)
+            # _ode.set_jac_params(
+            #     freqs,
+            #     weights,
+            #     phases_desired,
+            #     n_dim
+            # )
+            phases_sci[i+1, :] = _ode.integrate(_ode.t+timestep)  # , step=True
         print("Scipy integration took {} [s] with {}".format(
             time.time() - tic,
             method
@@ -310,8 +322,110 @@ def test_scipy(times, methods=None):
         plt.grid()
 
 
-def test_sympy(times):
+class ODEFunction:
+    """ODE function"""
+
+    def __init__(self, ode_fun, args):
+        super(ODEFunction, self).__init__()
+        self.ode = ode_fun
+        self.args = args
+
+    def set_args(self, args):
+        """Set function arguments"""
+        self.args = args
+
+    def fun(self, current_time, state):
+        """ODE function"""
+        return self.ode(current_time, state, *self.args)
+
+
+def test_scipy_new(times, methods=None):
+    """Scipy"""
+    freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
+    if not methods:
+        methods = ["vode", "zvode", "lsoda", "dopri5", "dop853"]
+    timestep = times[1] - times[0]
+    n_dim, _, _, weights, phases_desired = (
+        SalamanderNetwork.walking_parameters()
+    )
+    for method in methods:
+        phases_sci = np.zeros([len(times)+1, len(freqs)])
+        phases = np.zeros([len(freqs)])
+        _ode_fun = ODEFunction(ode, (freqs, weights, phases_desired, n_dim))
+        _ode = method(_ode_fun.fun, 0, phases, 1e3)
+        tic = time.time()
+        for i, _time in enumerate(times):
+            freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
+            _ode_fun.set_args((
+                2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1),
+                weights,
+                phases_desired,
+                n_dim
+            ))
+            _ode.step()
+            print(_ode.t)
+            phases_sci[i+1, :] = _ode.y
+            # _ode.set_jac_params(
+            #     freqs,
+            #     weights,
+            #     phases_desired,
+            #     n_dim
+            # )
+            # phases_sci[i+1, :] = _ode.integrate(_ode.t+timestep)
+        print("Scipy integration took {} [s] with {}".format(
+            time.time() - tic,
+            method
+        ))
+
+        # Plot results
+        plt.figure("Scipy ({})".format(method))
+        plt.plot(times, phases_sci[:-1])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid()
+
+
+def test_scipy_odeint(times):
+    """Scipy"""
+    freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
+    timestep = times[1] - times[0]
+    n_dim, _, _, weights, phases_desired = (
+        SalamanderNetwork.walking_parameters()
+    )
+    phases_sci = np.zeros([len(times)+1, len(freqs)])
+    phases = np.zeros([len(freqs)])
+    tic = time.time()
+    for i, _time in enumerate(times):
+        freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
+        _res, _ = scipy.integrate.odeint(
+            func=ode,
+            y0=phases,
+            t=[0, timestep],
+            args=(
+                2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1),
+                weights,
+                phases_desired,
+                n_dim
+            ),
+            tfirst=True
+        )
+        phases_sci[i+1, :] = _res
+    print("Scipy integration took {} [s] with odeint".format(
+        time.time() - tic
+    ))
+
+    # Plot results
+    plt.figure("Scipy (odeint)")
+    plt.plot(times, phases_sci[:-1])
+    plt.xlabel("Time [s]")
+    plt.ylabel("Phases [rad]")
+    plt.grid()
+
+
+def test_sympy(times, methods=None):
     """Test sympy"""
+    if not methods:
+        methods = ["vode", "lsoda", "dopri5", "dop853"]
     _, _phases, _freqs, weights, phases_desired = (
         SalamanderNetwork.walking_parameters()
     )
@@ -321,37 +435,42 @@ def test_sympy(times):
     phases_sym = np.zeros([len(times)+1, n_dim], dtype=np.float64)
     weights = np.array(weights, dtype=np.float64)
     phases_desired = np.array(phases_desired, dtype=np.float64)
-    tic = time.time()
-    for i, _time in enumerate(times):
-        phases_sym[i+1, :] = sys.step(
-            2*np.pi*10*np.ones(
-                [11 + 2*2*3, 1],
-                dtype=np.float64
-            )*(np.sin(_time)+1),
-            weights,
-            phases_desired
-        )[:, 0]
-    print("Scipy/Sympy integration took {} [s]".format(
-        time.time() - tic
-    ))
+    for method in methods:
+        sys.ode.set_integrator(method)
+        tic = time.time()
+        for i, _time in enumerate(times):
+            phases_sym[i+1, :] = sys.step(
+                2*np.pi*10*np.ones(
+                    [11 + 2*2*3, 1],
+                    dtype=np.float64
+                )*(np.sin(_time)+1),
+                weights,
+                phases_desired
+            )[:, 0]
+        print("Scipy/Sympy integration took {} [s] with {}".format(
+            time.time() - tic,
+            method
+        ))
 
-    # Plot results
-    plt.figure("Scipy/sympy")
-    plt.plot(times, phases_sym[:-1])
-    plt.xlabel("Time [s]")
-    plt.ylabel("Phases [rad]")
-    plt.grid()
+        # Plot results
+        plt.figure("Scipy/sympy with {}".format(method))
+        plt.plot(times, phases_sym[:-1])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid()
 
 
 def main():
     """Main"""
     times = np.arange(0, 10, 1e-3)
 
-    test_casadi(times)
-    test_numpy_euler(times)
-    test_numpy_euler_sparse(times)
-    test_scipy(times)
-    # test_scipy(times, methods=["lsoda"])
+    # test_casadi(times)
+    # test_numpy_euler(times)
+    # test_numpy_euler_sparse(times)
+    test_scipy_ode(times)
+    # test_scipy_ode(times, methods=["lsoda"])
+    # test_scipy_new(times, methods=[scipy.integrate.LSODA])
+    # test_scipy_odeint(times)
     test_sympy(times)
 
     plt.show()
