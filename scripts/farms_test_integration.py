@@ -436,7 +436,8 @@ def test_sympy(times, methods=None):
     weights = np.array(weights, dtype=np.float64)
     phases_desired = np.array(phases_desired, dtype=np.float64)
     for method in methods:
-        sys.ode.set_integrator(method)
+        sys.ode.set_initial_value(_phases, t=0)
+        # sys.ode.set_integrator(method, atol=1e-3, rtol=1e-3, nsteps=10)
         tic = time.time()
         for i, _time in enumerate(times):
             phases_sym[i+1, :] = sys.step(
