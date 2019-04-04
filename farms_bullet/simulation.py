@@ -217,7 +217,14 @@ class SimonAnimat(Animat):
             f_position=[0, 0, 0],
             mass=1
         )
-        links = [
+        # Upper legs
+        upper_legs_positions = np.array([
+            [0.05, 0.04, -0.02],
+            [0.05, -0.04, -0.02],
+            [-0.05, 0.04, -0.02],
+            [-0.05, -0.04, -0.02]
+        ])
+        upper_legs = [
             AnimatLink(
                 size=[0.02, 0.02, 0.04],
                 geometry=pybullet.GEOM_BOX,
@@ -227,17 +234,31 @@ class SimonAnimat(Animat):
                 f_orientation=[0, 0, 0],
                 joint_axis=[1, 0, 0],
                 mass=0.1
-            ) for position in [
-                [0.05, 0.04, -0.02],
-                [0.05, -0.04, -0.02],
-                [-0.05, 0.04, -0.02],
-                [-0.05, -0.04, -0.02]
-            ]
+            ) for position in upper_legs_positions
         ]
-        links[0].parent = 0
-        links[1].parent = 0
-        links[2].parent = 0
-        links[3].parent = 0
+        upper_legs[0].parent = 0
+        upper_legs[1].parent = 0
+        upper_legs[2].parent = 0
+        upper_legs[3].parent = 0
+        # Lower legs
+        lower_legs = [
+            AnimatLink(
+                size=[0.02, 0.02, 0.04],
+                geometry=pybullet.GEOM_BOX,
+                position=upper_pos - np.array([0, 0, 0.04]),
+                orientation=[0, 0, 0],
+                f_position=[0, 0, 0],
+                f_orientation=[0, 0, 0],
+                joint_axis=[1, 0, 0],
+                mass=0.1
+            ) for upper_pos in upper_legs_positions
+        ]
+        lower_legs[0].parent = 1
+        lower_legs[1].parent = 2
+        lower_legs[2].parent = 3
+        lower_legs[3].parent = 4
+        links = upper_legs + lower_legs
+        # Create body
         self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
@@ -255,14 +276,16 @@ class SimonAnimat(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
-        pybullet.changeDynamics(
-            self.identity,
-            -1,
-            spinningFriction=0.001,
-            rollingFriction=0.001,
-            linearDamping=0.0
-        )
         n_joints = pybullet.getNumJoints(self.identity)
+        for joint in range(n_joints):
+            pybullet.changeDynamics(
+                self.identity,
+                joint,
+                spinningFriction=0.1,
+                rollingFriction=0.1,
+                linearDamping=0.1,
+                jointDamping=0.05
+            )
         print("Number of joints: {}".format(n_joints))
         for joint in range(n_joints):
             pybullet.resetJointState(
@@ -682,7 +705,7 @@ class SimonExperiment(Experiment):
             self.animat.identity,
             np.arange(n_joints),
             pybullet.TORQUE_CONTROL,
-            forces=np.ones(n_joints)
+            forces=0.2*np.ones(n_joints)
         )
         # pybullet.setJointMotorControlArray(
         #     self.animat.identity,
@@ -691,7 +714,7 @@ class SimonExperiment(Experiment):
         #     forces=np.zeros(n_joints)
         # )
         pybullet.stepSimulation()
-        return time.sleep(1e-2)
+        return time.sleep(1e-3)
 
 
 class Simulation:
