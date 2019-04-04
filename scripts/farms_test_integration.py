@@ -133,13 +133,13 @@ class System:
         if method == "lambdify":
             _ode = sp.lambdify(
                 fun_args,
-                expr,
+                sp.cse(expr),
                 modules=backend
             )
             _ode_jac = (
                 sp.lambdify(
                     jac_args,
-                    jac_expr,
+                    sp.cse(jac_expr),
                     modules=backend
                 )
                 if use_jacobian else None
@@ -157,8 +157,8 @@ class System:
                 expr,
                 args=fun_args,
                 tempdir="./temp",
-                language="C",
-                backend="cython",
+                # language="C",
+                # backend="cython",
                 verbose=False
             )
             _ode_jac = (
@@ -166,8 +166,8 @@ class System:
                     jac_expr,
                     args=jac_args,
                     tempdir="./temp_jac",
-                    language="C",
-                    backend="cython",
+                    # language="C",
+                    # backend="cython",
                     verbose=False
                 )
                 if use_jacobian
@@ -466,7 +466,7 @@ def main():
     times = np.arange(0, 10, 1e-3)
 
     # test_casadi(times)
-    # test_numpy_euler(times)
+    test_numpy_euler(times)
     # test_numpy_euler_sparse(times)
     test_scipy_ode(times)
     # test_scipy_ode(times, methods=["lsoda"])
