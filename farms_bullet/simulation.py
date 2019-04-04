@@ -183,13 +183,14 @@ class AnimatLink:
             collisionFramePosition=self.position,
             collisionFrameOrientation=self.orientation
         )
+        color = kwargs.pop("color", None)
         self.visual = pybullet.createVisualShape(
             self.geometry,
             halfExtents=self.size,
             visualFramePosition=self.position,
             visualFrameOrientation=self.orientation,
-            rgbaColor=kwargs.pop("mass", [0, 1, 0, 1])
-        )
+            rgbaColor=color
+        ) if color is not None else -1
 
         # Joint
         self.joint_type = kwargs.pop("joint_type", pybullet.JOINT_REVOLUTE)
@@ -228,7 +229,7 @@ class SimonAnimat(Animat):
             )
         ]
         links[0].parent = 0
-        arenaId = pybullet.createMultiBody(
+        self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
@@ -245,6 +246,23 @@ class SimonAnimat(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
+        pybullet.changeDynamics(
+            self.identity,
+            -1,
+            spinningFriction=0.001,
+            rollingFriction=0.001,
+            linearDamping=0.0
+        )
+        for joint in range (pybullet.getNumJoints(self.identity)):
+            pybullet.setJointMotorControl2(
+                self.identity,
+                joint,
+                pybullet.TORQUE_CONTROL,
+                force=0
+            )
+
+        pybullet.setGravity(0,0,-10)
+        pybullet.setRealTimeSimulation(1)
 
 
 class Floor(SimulationElement):
@@ -747,7 +765,6 @@ class SimonSimulation(Simulation):
             simulation_options=simulation_options,
             animat_options=animat_options
         )
-        self.experiment.spawn()
 
 
 def run_simon(sim_options=None, animat_options=None):
