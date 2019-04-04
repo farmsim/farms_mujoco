@@ -184,17 +184,18 @@ class AnimatLink:
             collisionFrameOrientation=self.orientation
         )
         color = kwargs.pop("color", None)
-        self.visual = pybullet.createVisualShape(
+        self.visual = -1 if color is None else pybullet.createVisualShape(
             self.geometry,
             halfExtents=self.size,
             visualFramePosition=self.position,
             visualFrameOrientation=self.orientation,
             rgbaColor=color
-        ) if color is not None else -1
+        )
 
         # Joint
         self.joint_type = kwargs.pop("joint_type", pybullet.JOINT_REVOLUTE)
         self.joint_axis = kwargs.pop("joint_axis", [0, 0, 1])
+
 
 class SimonAnimat(Animat):
     """Documentation for SimonAnimat"""
@@ -209,26 +210,34 @@ class SimonAnimat(Animat):
         """Spawn"""
         print("Spawning animat")
         base_link = AnimatLink(
-            size=[0.5, 0.3, 0.1],
+            size=[0.1, 0.05, 0.03],
             geometry=pybullet.GEOM_BOX,
-            position=[0, 0, 0.1],
+            position=[0, 0, 0],
             orientation=[0, 0, 0],
-            f_position=[0, 0.5, 0],
+            f_position=[0, 0, 0],
             mass=1
         )
         links = [
             AnimatLink(
-                size=[0.5, 0.3, 0.1],
+                size=[0.02, 0.02, 0.04],
                 geometry=pybullet.GEOM_BOX,
-                position=[0, 0, 0.5],
+                position=position,
                 orientation=[0, 0, 0],
-                f_position=[0, 0, 0.5],
-                f_orientation=[0, 0, 0.5],
+                f_position=[0, 0, 0],
+                f_orientation=[0, 0, 0],
                 joint_axis=[1, 0, 0],
-                mass=1,
-            )
+                mass=0.1
+            ) for position in [
+                [0.05, 0.04, -0.02],
+                [0.05, -0.04, -0.02],
+                [-0.05, 0.04, -0.02],
+                [-0.05, -0.04, -0.02]
+            ]
         ]
         links[0].parent = 0
+        links[1].parent = 0
+        links[2].parent = 0
+        links[3].parent = 0
         self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
@@ -253,16 +262,42 @@ class SimonAnimat(Animat):
             rollingFriction=0.001,
             linearDamping=0.0
         )
-        for joint in range (pybullet.getNumJoints(self.identity)):
-            pybullet.setJointMotorControl2(
+        n_joints = pybullet.getNumJoints(self.identity)
+        print("Number of joints: {}".format(n_joints))
+        for joint in range(n_joints):
+            pybullet.resetJointState(
                 self.identity,
                 joint,
-                pybullet.TORQUE_CONTROL,
-                force=0
+                targetValue=0,
+                targetVelocity=0
             )
+        # pybullet.setJointMotorControlArray(
+        #     self.identity,
+        #     np.arange(n_joints),
+        #     pybullet.POSITION_CONTROL,
+        #     targetPositions=np.ones(n_joints),
+        #     forces=1e3*np.ones(n_joints)
+        # )
+        # pybullet.setJointMotorControlArray(
+        #     self.identity,
+        #     np.arange(n_joints),
+        #     pybullet.TORQUE_CONTROL,
+        #     # targetPositions=np.ones(n_joints),
+        #     forces=1e1*np.ones(n_joints)
+        # )
+        pybullet.setJointMotorControlArray(
+            self.identity,
+            np.arange(n_joints),
+            pybullet.VELOCITY_CONTROL,
+            forces=np.zeros(n_joints)
+        )
 
-        pybullet.setGravity(0,0,-10)
-        pybullet.setRealTimeSimulation(1)
+        pybullet.setGravity(0,0,-9.81)
+        # pybullet.setRealTimeSimulation(1)
+
+        pybullet.getNumJoints(self.identity)
+        for i in range(pybullet.getNumJoints(self.identity)):
+            print(pybullet.getJointInfo(self.identity, i))
 
 
 class Floor(SimulationElement):
@@ -642,6 +677,19 @@ class SimonExperiment(Experiment):
 
     def step(self, sim_step):
         """Step"""
+        n_joints = pybullet.getNumJoints(self.animat.identity)
+        pybullet.setJointMotorControlArray(
+            self.animat.identity,
+            np.arange(n_joints),
+            pybullet.TORQUE_CONTROL,
+            forces=np.ones(n_joints)
+        )
+        # pybullet.setJointMotorControlArray(
+        #     self.animat.identity,
+        #     np.arange(n_joints),
+        #     pybullet.VELOCITY_CONTROL,
+        #     forces=np.zeros(n_joints)
+        # )
         pybullet.stepSimulation()
         return time.sleep(1e-2)
 
