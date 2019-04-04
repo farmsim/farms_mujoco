@@ -160,6 +160,93 @@ class Salamander(Animat):
         return time_sensors, time_log
 
 
+class AnimatLink:
+    """Animat link"""
+
+    def __init__(self, **kwargs):
+        super(AnimatLink, self).__init__()
+        self.size = kwargs.pop("size", [0.1, 0.1, 0.1])
+        self.geometry = kwargs.pop("geometry", pybullet.GEOM_BOX)
+        self.position = kwargs.pop("position", [0, 0, 0])
+        self.orientation = pybullet.getQuaternionFromEuler(
+            kwargs.pop("orientation", [0, 0, 0])
+        )
+        self.f_position = kwargs.pop("f_position", [0, 0, 0])
+        self.f_orientation = pybullet.getQuaternionFromEuler(
+            kwargs.pop("f_orientation", [0, 0, 0])
+        )
+        self.mass = kwargs.pop("mass", 0)
+        self.parent = kwargs.pop("parent", None)
+        self.collision = pybullet.createCollisionShape(
+            self.geometry,
+            halfExtents=self.size,
+            collisionFramePosition=self.position,
+            collisionFrameOrientation=self.orientation
+        )
+        self.visual = pybullet.createVisualShape(
+            self.geometry,
+            halfExtents=self.size,
+            visualFramePosition=self.position,
+            visualFrameOrientation=self.orientation,
+            rgbaColor=kwargs.pop("mass", [0, 1, 0, 1])
+        )
+
+        # Joint
+        self.joint_type = kwargs.pop("joint_type", pybullet.JOINT_REVOLUTE)
+        self.joint_axis = kwargs.pop("joint_axis", [0, 0, 1])
+
+class SimonAnimat(Animat):
+    """Documentation for SimonAnimat"""
+
+    def __init__(self, options, timestep, n_iterations):
+        super(SimonAnimat, self).__init__(options)
+        self.timestep = timestep
+        self.n_iterations = n_iterations
+        self.logger = None
+
+    def spawn(self):
+        """Spawn"""
+        print("Spawning animat")
+        base_link = AnimatLink(
+            size=[0.5, 0.3, 0.1],
+            geometry=pybullet.GEOM_BOX,
+            position=[0, 0, 0.1],
+            orientation=[0, 0, 0],
+            f_position=[0, 0.5, 0],
+            mass=1
+        )
+        links = [
+            AnimatLink(
+                size=[0.5, 0.3, 0.1],
+                geometry=pybullet.GEOM_BOX,
+                position=[0, 0, 0.5],
+                orientation=[0, 0, 0],
+                f_position=[0, 0, 0.5],
+                f_orientation=[0, 0, 0.5],
+                joint_axis=[1, 0, 0],
+                mass=1,
+            )
+        ]
+        links[0].parent = 0
+        arenaId = pybullet.createMultiBody(
+            baseMass=base_link.mass,
+            baseCollisionShapeIndex=base_link.collision,
+            baseVisualShapeIndex=base_link.visual,
+            basePosition=[0, 0, 0.5],
+            baseOrientation=pybullet.getQuaternionFromEuler([1, 0, 0]),
+            linkMasses=[link.mass for link in links],
+            linkCollisionShapeIndices=[link.collision for link in links],
+            linkVisualShapeIndices=[link.visual for link in links],
+            linkPositions=[link.position for link in links],
+            linkOrientations=[link.orientation for link in links],
+            linkInertialFramePositions=[link.f_position for link in links],
+            linkInertialFrameOrientations=[link.f_orientation for link in links],
+            linkParentIndices=[link.parent for link in links],
+            linkJointTypes=[link.joint_type for link in links],
+            linkJointAxis=[link.joint_axis for link in links]
+        )
+
+
 class Floor(SimulationElement):
     """Floor"""
 
@@ -348,6 +435,10 @@ class Experiment:
         for element in self.elements():
             element.spawn()
 
+    def spawn(self):
+        """Spawn"""
+        self._spawn()
+
     def step(self):
         """Step"""
         for element in self.elements():
@@ -511,6 +602,32 @@ class SalamanderExperiment(Experiment):
         self.profile.print_times()
 
 
+class SimonExperiment(Experiment):
+    """Simon experiment"""
+
+    def __init__(self, sim_options, n_iterations, **kwargs):
+        self.animat_options = kwargs.pop("animat_options", ModelOptions())
+        super(SimonExperiment, self).__init__(
+            animat=SimonAnimat(
+                self.animat_options,
+                sim_options.timestep,
+                n_iterations
+            ),
+            arena=FlooredArena(),
+            timestep=sim_options.timestep,
+            n_iterations=n_iterations
+        )
+
+    def pre_step(self, sim_step):
+        """New step"""
+        return True
+
+    def step(self, sim_step):
+        """Step"""
+        pybullet.stepSimulation()
+        return time.sleep(1e-2)
+
+
 class Simulation:
     """Simulation"""
 
@@ -536,11 +653,6 @@ class Simulation:
         self.experiment = experiment
         self.experiment.spawn()
         self.animat = self.experiment.animat
-        self.animat.model.leg_collisions(
-            self.experiment.arena.floor.identity,
-            activate=False
-        )
-        self.animat.model.print_dynamics_info()
 
         # Simulation
         self.sim_step = 0
@@ -612,10 +724,56 @@ class SalamanderSimulation(Simulation):
             animat_options=animat_options
         )
 
+        self.animat.model.leg_collisions(
+            self.experiment.arena.floor.identity,
+            activate=False
+        )
+        self.animat.model.print_dynamics_info()
 
-def run_simon():
+
+class SimonSimulation(Simulation):
+    """Simon experiment simulation"""
+
+    def __init__(self, simulation_options, animat_options):
+        experiment = SimonExperiment(
+            simulation_options,
+            len(np.arange(
+                0, simulation_options.duration, simulation_options.timestep
+            )),
+            animat_options=animat_options
+        )
+        super(SimonSimulation, self).__init__(
+            experiment=experiment,
+            simulation_options=simulation_options,
+            animat_options=animat_options
+        )
+        self.experiment.spawn()
+
+
+def run_simon(sim_options=None, animat_options=None):
     """Run Simon's experiment"""
-    pass
+
+    # Parse command line arguments
+    if not sim_options:
+        simulation_options = SimulationOptions.with_clargs()
+    if not animat_options:
+        animat_options = ModelOptions()
+
+    # Setup simulation
+    print("Creating simulation")
+    sim = SimonSimulation(
+        simulation_options=simulation_options,
+        animat_options=animat_options
+    )
+
+    # Run simulation
+    print("Running simulation")
+    sim.run()
+
+    # # Show results
+    # print("Analysing simulation")
+    # sim.experiment.postprocess()
+    # sim.end()
 
 
 def main(sim_options=None, animat_options=None):
