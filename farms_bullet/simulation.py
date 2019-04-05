@@ -165,7 +165,16 @@ class AnimatLink:
 
     def __init__(self, **kwargs):
         super(AnimatLink, self).__init__()
-        self.size = kwargs.pop("size", [0.1, 0.1, 0.1])
+        additional_kwargs = {}
+        self.size = kwargs.pop("size", None)
+        self.radius = kwargs.pop("radius", None)
+        self.height = kwargs.pop("height", None)
+        if self.size is not None:
+            additional_kwargs["halfExtents"] = self.size
+        if self.radius is not None:
+            additional_kwargs["radius"] = self.radius
+        if self.height is not None:
+            additional_kwargs["height"] = self.height
         self.geometry = kwargs.pop("geometry", pybullet.GEOM_BOX)
         self.position = kwargs.pop("position", [0, 0, 0])
         self.orientation = pybullet.getQuaternionFromEuler(
@@ -177,19 +186,20 @@ class AnimatLink:
         )
         self.mass = kwargs.pop("mass", 0)
         self.parent = kwargs.pop("parent", None)
+        self.frame_position = kwargs.pop("frame_position", [0, 0, 0])
         self.collision = pybullet.createCollisionShape(
             self.geometry,
-            halfExtents=self.size,
-            collisionFramePosition=self.position,
-            collisionFrameOrientation=self.orientation
+            collisionFramePosition=self.frame_position,
+            collisionFrameOrientation=self.orientation,
+            **additional_kwargs
         )
         color = kwargs.pop("color", None)
         self.visual = -1 if color is None else pybullet.createVisualShape(
             self.geometry,
-            halfExtents=self.size,
-            visualFramePosition=self.position,
+            visualFramePosition=self.frame_position,
             visualFrameOrientation=self.orientation,
-            rgbaColor=color
+            rgbaColor=color,
+            **additional_kwargs
         )
 
         # Joint
@@ -210,28 +220,29 @@ class SimonAnimat(Animat):
         """Spawn"""
         print("Spawning animat")
         base_link = AnimatLink(
-            size=[0.1, 0.05, 0.03],
+            size=[0.1, 0.05, 0.02],
             geometry=pybullet.GEOM_BOX,
             position=[0, 0, 0],
             orientation=[0, 0, 0],
             f_position=[0, 0, 0],
-            mass=1
+            mass=0.3
         )
         # Upper legs
         upper_legs_positions = np.array([
-            [0.05, 0.04, -0.02],
-            [0.05, -0.04, -0.02],
-            [-0.05, 0.04, -0.02],
-            [-0.05, -0.04, -0.02]
+            [0.1, 0.08, 0.01],
+            [0.1, -0.08, 0.01],
+            [-0.1, 0.08, 0.01],
+            [-0.1, -0.08, 0.01]
         ])
         upper_legs = [
             AnimatLink(
-                size=[0.02, 0.02, 0.04],
+                size=[0.02, 0.02, 0.02],
                 geometry=pybullet.GEOM_BOX,
                 position=position,
                 orientation=[0, 0, 0],
-                f_position=[0, 0, 0],
+                f_position=position,
                 f_orientation=[0, 0, 0],
+                frame_position=[0, 0, -0.02],
                 joint_axis=[1, 0, 0],
                 mass=0.1
             ) for position in upper_legs_positions
@@ -243,13 +254,16 @@ class SimonAnimat(Animat):
         # Lower legs
         lower_legs = [
             AnimatLink(
-                size=[0.02, 0.02, 0.04],
-                geometry=pybullet.GEOM_BOX,
-                position=upper_pos, # + np.array([0, 0, -0.04]),
+                # size=[0.02, 0.02, 0.04],
+                geometry=pybullet.GEOM_CAPSULE,
+                radius=0.02,
+                height=0.02,
+                position=[0, 0, -0.03],
                 orientation=[0, 0, 0],
-                f_position=[0, 0, 0],
+                f_position=[0, 0, -0.03],
                 f_orientation=[0, 0, 0],
-                joint_axis=[1, 0, 0],
+                frame_position=[0, 0, -0.03],
+                joint_axis=[0, 1, 0],
                 mass=0.1
             ) for upper_pos in upper_legs_positions
         ]
@@ -263,7 +277,7 @@ class SimonAnimat(Animat):
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=[0, 0, 0.5],
+            basePosition=[0, 0, 1.0],
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
             linkMasses=[link.mass for link in links],
             linkCollisionShapeIndices=[link.collision for link in links],
@@ -281,10 +295,11 @@ class SimonAnimat(Animat):
             pybullet.changeDynamics(
                 self.identity,
                 joint,
+                lateralFriction=1,
                 spinningFriction=0.1,
                 rollingFriction=0.1,
                 linearDamping=0.1,
-                jointDamping=0.05
+                jointDamping=0.01
             )
         print("Number of joints: {}".format(n_joints))
         for joint in range(n_joints):
@@ -712,8 +727,8 @@ class SimonExperiment(Experiment):
         target_velocities = np.zeros(n_joints)
         joint_control = int((1e-3 * sim_step) % n_joints)
         target_positions[joint_control] = (
-            0.1 if 200 < sim_step % 1000 < 500
-            else -0.1 if 500 < sim_step % 1000 < 800
+            0.3 if 100 < (sim_step % 1000) < 400
+            else -0.3 if 600 < (sim_step % 1000) < 900
             else 0
         )
         pybullet.setJointMotorControlArray(
@@ -722,7 +737,7 @@ class SimonExperiment(Experiment):
             pybullet.POSITION_CONTROL,
             targetPositions=target_positions,
             targetVelocities=target_velocities,
-            forces=np.ones(n_joints)
+            forces=10*np.ones(n_joints)
         )
         pybullet.stepSimulation()
         sim_step += 1
