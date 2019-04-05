@@ -295,11 +295,11 @@ class SimonAnimat(Animat):
             pybullet.changeDynamics(
                 self.identity,
                 joint,
-                lateralFriction=1,
-                spinningFriction=0.1,
-                rollingFriction=0.1,
-                linearDamping=0.1,
-                jointDamping=0.01
+                lateralFriction=1e-2,
+                spinningFriction=1e-2,
+                rollingFriction=1e-2,
+                linearDamping=1e-2,
+                jointDamping=1e-2
             )
         print("Number of joints: {}".format(n_joints))
         for joint in range(n_joints):
@@ -726,19 +726,41 @@ class SimonExperiment(Experiment):
         target_positions = np.zeros(n_joints)
         target_velocities = np.zeros(n_joints)
         joint_control = int((1e-3 * sim_step) % n_joints)
+        _sim_step = sim_step % 1000
         target_positions[joint_control] = (
-            0.3 if 100 < (sim_step % 1000) < 400
-            else -0.3 if 600 < (sim_step % 1000) < 900
+            0.3*(_sim_step-100)/300 if 100 < _sim_step < 400
+            else -0.3*(_sim_step-600)/300 if 600 < _sim_step < 900
             else 0
         )
+        joints_states = pybullet.getJointStates(
+            self.animat.identity,
+            np.arange(n_joints)
+        )
+        joints_positions = np.array([
+            joints_states[joint][0]
+            for joint in range(n_joints)
+        ])
+        joints_velocity = np.array([
+            joints_states[joint][1]
+            for joint in range(n_joints)
+        ])
         pybullet.setJointMotorControlArray(
             self.animat.identity,
             np.arange(n_joints),
-            pybullet.POSITION_CONTROL,
-            targetPositions=target_positions,
-            targetVelocities=target_velocities,
-            forces=10*np.ones(n_joints)
+            pybullet.TORQUE_CONTROL,
+            forces=(
+                1e1*(target_positions - joints_positions)
+                - 1e-2*joints_velocity
+            )
         )
+        # pybullet.setJointMotorControlArray(
+        #     self.animat.identity,
+        #     np.arange(n_joints),
+        #     pybullet.POSITION_CONTROL,
+        #     targetPositions=target_positions,
+        #     targetVelocities=target_velocities,
+        #     forces=10*np.ones(n_joints)
+        # )
         pybullet.stepSimulation()
         sim_step += 1
         return time.sleep(1e-3)
