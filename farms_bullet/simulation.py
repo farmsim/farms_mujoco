@@ -207,6 +207,36 @@ class ContactSensor:
         ])
 
 
+class JointsStatesSensor(Sensor):
+    """Joint state sensor"""
+
+    def __init__(self, model_id, joints, enable_ft=False):
+        super(JointsStatesSensor, self).__init__()
+        self._model_id = model_id
+        self._joints = joints
+        self._enable_ft = enable_ft
+        self._state = None
+        if self._enable_ft:
+            for joint in self._joints:
+                pybullet.enableJointForceTorqueSensor(
+                    self._model_id,
+                    joint
+                )
+
+    def update(self):
+        """Update sensor"""
+        self._state = pybullet.getJointStates(self._model_id, self._joints)
+        self._data = np.array([
+            [
+                self._state[joint_i][0],
+                self._state[joint_i][1]
+            ] + list(self._state[joint_i][2]) + [
+                self._state[joint_i][3]
+            ]
+            for joint_i, state in enumerate(self._state)
+        ])
+
+
 class Sensors(dict):
     """Sensors"""
 
@@ -797,12 +827,19 @@ class SimonExperiment(Experiment):
         # print("CONSTRAINT INSERTED")
 
         # Sensors
+        n_joints = pybullet.getNumJoints(self.animat.identity)
         self.animat.sensors = [
             ContactSensor(
                 self.animat.identity, 1+2*i,
                 self.arena.floor.identity, -1
             )
             for i in range(4)
+        ] + [
+            JointsStatesSensor(
+                self.animat.identity,
+                np.arange(n_joints),
+                enable_ft=True
+            )
         ]
         self.logger = np.zeros([self.n_iterations, 4])
 
@@ -812,8 +849,8 @@ class SimonExperiment(Experiment):
 
     def step(self, sim_step):
         """Step"""
-        for i in range(4):
-            self.animat.sensors[i].update()
+        for sensor in self.animat.sensors:
+            sensor.update()
         contacts_sensors = [
             self.animat.sensors[i].get_normal_force()
             for i in range(4)
