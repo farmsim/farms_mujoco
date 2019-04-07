@@ -160,6 +160,61 @@ class Salamander(Animat):
         return time_sensors, time_log
 
 
+class Sensor:
+    """Sensor base class for simulation elements"""
+    def __init__(self):
+        super(Sensor, self).__init__()
+        self._data = None
+
+    def update(self):
+        """Update"""
+
+    @property
+    def data(self):
+        """Sensor data"""
+        return self._data
+
+
+class ContactSensor:
+    """Model sensors"""
+
+    def __init__(self, animat_id, animat_link, target_id, target_link):
+        super(ContactSensor, self).__init__()
+        self.animat_id = animat_id
+        self.animat_link = animat_link
+        self.target_id = target_id
+        self.target_link = target_link
+
+    def update(self):
+        """Update sensors"""
+        self._contacts = pybullet.getContactPoints(
+            self.animat_id,
+            self.target_id,
+            self.animat_link,
+            self.target_link
+        )
+
+    def get_normal_force(self):
+        """Get force"""
+        return np.sum([contact[9] for contact in self._contacts])
+
+    def get_lateral_friction(self):
+        """Get force"""
+        return np.sum([
+            contact[10]*np.array(contact[11])
+            + contact[11]*np.array(contact[12])
+            for contact in self._contacts
+        ])
+
+
+class Sensors(dict):
+    """Sensors"""
+
+    def __init__(self, sensors):
+        super(Sensors, self).__init__()
+        self.sensors = sensors
+
+
 class AnimatLink:
     """Animat link"""
 
@@ -215,6 +270,7 @@ class SimonAnimat(Animat):
         self.timestep = timestep
         self.n_iterations = n_iterations
         self.logger = None
+        self.sensors = None
 
     def spawn(self):
         """Spawn"""
@@ -277,7 +333,7 @@ class SimonAnimat(Animat):
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=[0, 0, 1.0],
+            basePosition=[0, 0, 0],
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
             linkMasses=[link.mass for link in links],
             linkCollisionShapeIndices=[link.collision for link in links],
@@ -290,6 +346,7 @@ class SimonAnimat(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
+        # Joints dynamics
         n_joints = pybullet.getNumJoints(self.identity)
         for joint in range(n_joints):
             pybullet.changeDynamics(
@@ -541,6 +598,9 @@ class Experiment:
         for element in self.elements():
             element.log()
 
+    def end(self):
+        """delete"""
+
 
 class SalamanderExperiment(Experiment):
     """Salamander experiment"""
@@ -709,6 +769,42 @@ class SimonExperiment(Experiment):
             timestep=sim_options.timestep,
             n_iterations=n_iterations
         )
+        self.logger = None
+
+    def spawn(self):
+        """Spawn"""
+        self._spawn()
+
+        # # Feet constraints - Closed chain
+        # print("ATTEMPTING TO INSERT CONSTRAINT")
+        # feet_positions = np.array([
+        #     [0.1, 0.08, 0.01],
+        #     [0.1, -0.08, 0.01],
+        #     [-0.1, 0.08, 0.01],
+        #     [-0.1, -0.08, 0.01]
+        # ])
+        # cid = [None for _ in feet_positions]
+        # for i, pos in enumerate(feet_positions):
+        #     cid[i] = pybullet.createConstraint(
+        #         self.arena.floor.identity, -1,
+        #         self.animat.identity, 1 + 2*i,
+        #         pybullet.JOINT_POINT2POINT,  # JOINT_PRISMATIC,  # JOINT_POINT2POINT
+        #         [0.0, 0.0, 1.0],
+        #         [0.0, 0.0, 0.0],
+        #         [0.0, 0.0, 0.0]
+        #     )
+        #     pybullet.changeConstraint(cid[i], maxForce=1e-1)
+        # print("CONSTRAINT INSERTED")
+
+        # Sensors
+        self.animat.sensors = [
+            ContactSensor(
+                self.animat.identity, 1+2*i,
+                self.arena.floor.identity, -1
+            )
+            for i in range(4)
+        ]
+        self.logger = np.zeros([self.n_iterations, 4])
 
     def pre_step(self, sim_step):
         """New step"""
@@ -716,6 +812,14 @@ class SimonExperiment(Experiment):
 
     def step(self, sim_step):
         """Step"""
+        for i in range(4):
+            self.animat.sensors[i].update()
+        contacts_sensors = [
+            self.animat.sensors[i].get_normal_force()
+            for i in range(4)
+        ]
+        # print("Sensors contact forces: {}".format(contacts_sensors))
+        self.logger[sim_step, :] = contacts_sensors
         n_joints = pybullet.getNumJoints(self.animat.identity)
         # pybullet.setJointMotorControlArray(
         #     self.animat.identity,
@@ -763,7 +867,15 @@ class SimonExperiment(Experiment):
         # )
         pybullet.stepSimulation()
         sim_step += 1
-        return time.sleep(1e-3)
+        time.sleep(1e-3)
+
+    def end(self, step, time):
+        """delete"""
+        plt.figure("Sensor data")
+        times = np.arange(0, step*self.timestep, self.timestep)
+        for i in range(4):
+            plt.plot(times, self.logger[:step, i])
+        plt.show()
 
 
 class Simulation:
@@ -906,6 +1018,7 @@ def run_simon(sim_options=None, animat_options=None):
     # Run simulation
     print("Running simulation")
     sim.run()
+    sim.end()
 
     # # Show results
     # print("Analysing simulation")
