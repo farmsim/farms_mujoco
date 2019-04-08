@@ -922,6 +922,92 @@ class JointsStatesLogger(SensorLogger):
         plt.ylabel("Torque [Nm]")
 
 
+class LinkStateLogger(SensorLogger):
+    """Link state logger"""
+
+    def plot(self, times, figure=None, label=None):
+        """Plot"""
+        self.plot_positions(
+            times=times,
+            figure=figure,
+            label="pos" if label is None else label
+        )
+        self.plot_linear_velocities(
+            times=times,
+            local=False,
+            figure=figure+"_local",
+            label="linear_vel_local" if label is None else label
+        )
+        self.plot_linear_velocities(
+            times=times,
+            local=False,
+            figure=figure+"_global",
+            label="linal_vel_global" if label is None else label
+        )
+        self.plot_angular_velocities(
+            times=times,
+            local=False,
+            figure=figure,
+            label="angular_vel" if label is None else label
+        )
+
+    def plot_data(self, times, data_ids, labels=None, **kwargs):
+        """Plot data"""
+        figure = kwargs.pop("figure", None)
+        if figure is not None:
+            plt.figure(figure)
+        for data_i, data_id in enumerate(data_ids):
+            plt.plot(
+                times,
+                self._data[:len(times), data_id],
+                label=labels[data_i]
+            )
+        plt.grid(True)
+        plt.legend()
+
+    def plot_lin_vel_local(self, times, data_ids, labels=None, **kwargs):
+        """Plot linear velocity in local frame"""
+
+    def plot_positions(self, times, **kwargs):
+        """Plot positions"""
+        figure = kwargs.pop("figure", "") + "_position"
+        label = kwargs.pop("label", "pos")
+        self.plot_data(
+            times=times,
+            data_ids=[0, 1, 2],
+            figure=figure,
+            labels=[label + "_" + element for element in ["x", "y", "z"]]
+        )
+        plt.xlabel("Time [s]")
+        plt.ylabel("Position [rad]")
+
+    def plot_linear_velocities(self, times, local=True, **kwargs):
+        """Plot velocities"""
+        figure = kwargs.pop("figure", "") + "_linear_velocity"
+        label = kwargs.pop("label", "pos")
+        self.plot_data(
+            times=times,
+            data_ids=[7, 8, 9],
+            figure=figure,
+            labels=[label + "_" + element for element in ["x", "y", "z"]]
+        )
+        plt.xlabel("Time [s]")
+        plt.ylabel("Velocity [m/s]")
+
+    def plot_angular_velocities(self, times, **kwargs):
+        """Plot velocities"""
+        figure = kwargs.pop("figure", "") + "_angular_velocity"
+        label = kwargs.pop("label", "pos")
+        self.plot_data(
+            times=times,
+            data_ids=[10, 11, 12],
+            figure=figure,
+            labels=[label + "_" + element for element in ["x", "y", "z"]]
+        )
+        plt.xlabel("Time [s]")
+        plt.ylabel("Angular velocity [rad/s]")
+
+
 class SensorsLogger(dict):
     """Sensors logging"""
 
@@ -933,6 +1019,8 @@ class SensorsLogger(dict):
                 if isinstance(sensor, JointsStatesSensor)
                 else SensorLogger(sensor, n_iterations)
                 if isinstance(sensor, ContactSensor)
+                else LinkStateLogger(sensor, n_iterations)
+                if isinstance(sensor, LinkStateSensor)
                 else SensorLogger(sensor, n_iterations)
             )
             for sensor in self._sensors
@@ -1014,6 +1102,11 @@ class SimonExperiment(Experiment):
                 self.animat.identity,
                 np.arange(n_joints),
                 enable_ft=True
+            )
+        ] + [
+            LinkStateSensor(
+                self.animat.identity,
+                0,  # Base link
             )
         ]
 
