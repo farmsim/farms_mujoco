@@ -184,7 +184,7 @@ class ContactSensor(Sensor):
         self.animat_link = animat_link
         self.target_id = target_id
         self.target_link = target_link
-        self._data = np.zeros(1)
+        self._data = np.zeros(4)
 
     def update(self):
         """Update sensors"""
@@ -194,7 +194,10 @@ class ContactSensor(Sensor):
             self.animat_link,
             self.target_link
         )
-        self._data = self.get_normal_force()
+        self._data = np.concatenate(
+            [[self.get_normal_force()], self.get_lateral_friction()],
+            axis=0
+        )
 
     def get_normal_force(self):
         """Get force"""
@@ -203,10 +206,10 @@ class ContactSensor(Sensor):
     def get_lateral_friction(self):
         """Get force"""
         return np.sum([
-            contact[10]*np.array(contact[11])
-            + contact[11]*np.array(contact[12])
+            contact[10]*np.array(contact[11])  # Lateral friction dir 1
+            # + contact[11]*np.array(contact[12])  # Lateral friction dir 2
             for contact in self._contacts
-        ])
+        ], axis=0) if self._contacts else np.zeros(3)
 
 
 class JointsStatesSensor(Sensor):
