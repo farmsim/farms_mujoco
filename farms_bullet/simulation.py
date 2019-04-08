@@ -20,6 +20,14 @@ from .simulation_options import SimulationOptions
 from .model_options import ModelOptions
 
 
+def global2local(vector_global, orientation):
+    """Vector in global frame to local frame"""
+    orientation_inv = np.linalg.inv(np.array(
+        pybullet.getMatrixFromQuaternion(orientation)
+    ).reshape([3, 3]))
+    return np.dot(orientation_inv, vector_global)
+
+
 class SimulationElement:
     """Documentation for SimulationElement"""
 
@@ -857,7 +865,10 @@ class JointsStatesLogger(SensorLogger):
             plt.plot(
                 times,
                 self._data[:len(times), sensor, data_id],
-                label="sensor_{}".format(sensor)
+                label=(
+                    label + "_" if label is not None else ""
+                    + "sensor_{}".format(sensor)
+                )
             )
         plt.grid(True)
         plt.legend()
@@ -934,7 +945,7 @@ class LinkStateLogger(SensorLogger):
         )
         self.plot_linear_velocities(
             times=times,
-            local=False,
+            local=True,
             figure=figure+"_local",
             label="linear_vel_local" if label is None else label
         )
@@ -946,14 +957,19 @@ class LinkStateLogger(SensorLogger):
         )
         self.plot_angular_velocities(
             times=times,
-            local=False,
             figure=figure,
-            label="angular_vel" if label is None else label
+            local=True,
+            label="angular_vel_local" if label is None else label
+        )
+        self.plot_angular_velocities(
+            times=times,
+            figure=figure,
+            local=False,
+            label="angular_vel_global" if label is None else label
         )
 
-    def plot_data(self, times, data_ids, labels=None, **kwargs):
+    def plot_data(self, times, data_ids, figure=None, labels=None):
         """Plot data"""
-        figure = kwargs.pop("figure", None)
         if figure is not None:
             plt.figure(figure)
         for data_i, data_id in enumerate(data_ids):
@@ -965,8 +981,23 @@ class LinkStateLogger(SensorLogger):
         plt.grid(True)
         plt.legend()
 
-    def plot_lin_vel_local(self, times, data_ids, labels=None, **kwargs):
+    def plot_local_data(self, times, data, figure=None, **kwargs):
         """Plot linear velocity in local frame"""
+        if figure is not None:
+            plt.figure(figure)
+        data_local = np.array([
+            global2local(data[i], self._data[i, 3:7])
+            for i, _ in enumerate(times)
+        ]).T
+        labels = kwargs.pop("labels", ["x", "y", "z"])
+        for data_i, data_id in enumerate(data_local):
+            plt.plot(
+                times,
+                data_id,
+                label=labels[data_i]
+            )
+        plt.grid(True)
+        plt.legend()
 
     def plot_positions(self, times, **kwargs):
         """Plot positions"""
@@ -981,29 +1012,45 @@ class LinkStateLogger(SensorLogger):
         plt.xlabel("Time [s]")
         plt.ylabel("Position [rad]")
 
-    def plot_linear_velocities(self, times, local=True, **kwargs):
+    def plot_linear_velocities(self, times, local=False, **kwargs):
         """Plot velocities"""
         figure = kwargs.pop("figure", "") + "_linear_velocity"
         label = kwargs.pop("label", "pos")
-        self.plot_data(
-            times=times,
-            data_ids=[7, 8, 9],
-            figure=figure,
-            labels=[label + "_" + element for element in ["x", "y", "z"]]
-        )
+        if local:
+            self.plot_local_data(
+                times=times,
+                data=self._data[:, 7:10],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
+        else:
+            self.plot_data(
+                times=times,
+                data_ids=[7, 8, 9],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
         plt.xlabel("Time [s]")
         plt.ylabel("Velocity [m/s]")
 
-    def plot_angular_velocities(self, times, **kwargs):
+    def plot_angular_velocities(self, times, local=False, **kwargs):
         """Plot velocities"""
         figure = kwargs.pop("figure", "") + "_angular_velocity"
         label = kwargs.pop("label", "pos")
-        self.plot_data(
-            times=times,
-            data_ids=[10, 11, 12],
-            figure=figure,
-            labels=[label + "_" + element for element in ["x", "y", "z"]]
-        )
+        if local:
+            self.plot_local_data(
+                times=times,
+                data=self._data[:, 10:],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
+        else:
+            self.plot_data(
+                times=times,
+                data_ids=[10, 11, 12],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
         plt.xlabel("Time [s]")
         plt.ylabel("Angular velocity [rad/s]")
 
