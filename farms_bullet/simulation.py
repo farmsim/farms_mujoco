@@ -175,7 +175,7 @@ class Sensor:
         return self._data
 
 
-class ContactSensor:
+class ContactSensor(Sensor):
     """Model sensors"""
 
     def __init__(self, animat_id, animat_link, target_id, target_link):
@@ -184,6 +184,7 @@ class ContactSensor:
         self.animat_link = animat_link
         self.target_id = target_id
         self.target_link = target_link
+        self._data = np.zeros(1)
 
     def update(self):
         """Update sensors"""
@@ -193,6 +194,7 @@ class ContactSensor:
             self.animat_link,
             self.target_link
         )
+        self._data = self.get_normal_force()
 
     def get_normal_force(self):
         """Get force"""
@@ -222,6 +224,7 @@ class JointsStatesSensor(Sensor):
                     self._model_id,
                     joint
                 )
+        self._data = np.zeros([len(joints), 9])
 
     def update(self):
         """Update sensor"""
@@ -299,7 +302,6 @@ class SimonAnimat(Animat):
         super(SimonAnimat, self).__init__(options)
         self.timestep = timestep
         self.n_iterations = n_iterations
-        self.logger = None
         self.sensors = None
 
     def spawn(self):
@@ -784,6 +786,155 @@ class SalamanderExperiment(Experiment):
         self.profile.print_times()
 
 
+class SensorLogger:
+    """Sensor logger"""
+
+    def __init__(self, sensor, n_iterations):
+        super(SensorLogger, self).__init__()
+        self._sensor = sensor
+        self._data = np.zeros(
+            [n_iterations] + list(np.shape(self._sensor.data))
+        )
+
+    @property
+    def data(self):
+        """Log data"""
+        return self._data
+
+    def update(self, step):
+        """Update log"""
+        self._data[step, :] = self._sensor.data
+
+    def plot(self, times, figure=None, label=None):
+        """Plot"""
+        if figure is not None:
+            plt.figure(figure)
+        for data in self._data.T:
+            plt.plot(times, data[:len(times)], label=label)
+        plt.grid(True)
+        plt.legend()
+
+
+class JointsStatesLogger(SensorLogger):
+    """Joints states logger"""
+
+    def plot(self, times, figure=None, label=None):
+        """Plot"""
+        self.plot_positions(times, figure, label=label)
+        self.plot_velocities(times, figure, label=label)
+        self.plot_forces(times, figure, label=label)
+        self.plot_torques(times, figure, label=label)
+        self.plot_torque_cmds(times, figure, label=label)
+
+    def plot_data(self, times, data_id, label=None):
+        """Plot data"""
+        n_sensors = np.shape(self._data)[1]
+        for sensor in range(n_sensors):
+            plt.plot(
+                times,
+                self._data[:len(times), sensor, data_id],
+                label="sensor_{}".format(sensor)
+            )
+        plt.grid(True)
+        plt.legend()
+
+    def plot_data_norm(self, times, data_ids, label=None):
+        """Plot data"""
+        n_sensors = np.shape(self._data)[1]
+        for sensor in range(n_sensors):
+            data = self.data[:len(times), sensor, data_ids]
+            data_norm = np.sqrt(np.sum(data**2, axis=1))
+            plt.plot(
+                times,
+                data_norm,
+                label=(
+                    label
+                    if label is not None
+                    else "sensor"
+                    + "_{}".format(sensor)
+                )
+            )
+        plt.grid(True)
+        plt.legend()
+
+    def plot_positions(self, times, figure=None, label=None):
+        """Plot positions"""
+        if figure is not None:
+            plt.figure(figure+"_positions")
+        self.plot_data(times, 0, label=label)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Position [rad]")
+
+    def plot_velocities(self, times, figure=None, label=None):
+        """Plot velocities"""
+        if figure is not None:
+            plt.figure(figure+"_velocities")
+        self.plot_data(times, 1, label=label)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Angular velocity [rad/s]")
+
+    def plot_forces(self, times, figure=None, label=None):
+        """Plot forces"""
+        if figure is not None:
+            plt.figure(figure+"_forces")
+        self.plot_data_norm(times, [2, 3, 4], label=label)
+        plt.xlabel("Times [s]")
+        plt.ylabel("Force norm [N]")
+
+    def plot_torques(self, times, figure=None, label=None):
+        """Plot torques"""
+        if figure is not None:
+            plt.figure(figure+"_torques")
+        self.plot_data_norm(times, [5, 6, 7], label=label)
+        plt.xlabel("Times [s]")
+        plt.ylabel("Torque norm [N]")
+
+    def plot_torque_cmds(self, times, figure=None, label=None):
+        """Plot torque commands"""
+        if figure is not None:
+            plt.figure(figure+"_torque_cmds")
+        self.plot_data(times, 8, label=label)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Torque [Nm]")
+
+
+class SensorsLogger(dict):
+    """Sensors logging"""
+
+    def __init__(self, sensors, n_iterations):
+        self._sensors = sensors
+        super(SensorsLogger, self).__init__({
+            sensor: (
+                JointsStatesLogger(sensor, n_iterations)
+                if isinstance(sensor, JointsStatesSensor)
+                else SensorLogger(sensor, n_iterations)
+                if isinstance(sensor, ContactSensor)
+                else SensorLogger(sensor, n_iterations)
+            )
+            for sensor in self._sensors
+        })
+
+    def update_logs(self, sim_step):
+        """Update sensors logs"""
+        for sensor in self._sensors:
+            self[sensor].update(sim_step)
+
+    def plot_all(self, times):
+        """Plot all sensors logs"""
+        for sensor_i, sensor in enumerate(self._sensors):
+            figure_name = (
+                "contacts"
+                if isinstance(sensor, ContactSensor)
+                else str(sensor)
+            )
+            label = (
+                "contact_{}".format(sensor_i)
+                if isinstance(sensor, ContactSensor)
+                else None
+            )
+            self[sensor].plot(times, figure=figure_name, label=label)
+
+
 class SimonExperiment(Experiment):
     """Simon experiment"""
 
@@ -823,7 +974,7 @@ class SimonExperiment(Experiment):
         #         [0.0, 0.0, 0.0],
         #         [0.0, 0.0, 0.0]
         #     )
-        #     pybullet.changeConstraint(cid[i], maxForce=1e-1)
+        #     pybullet.changeConstraint(cid[i], maxForce=1e5)
         # print("CONSTRAINT INSERTED")
 
         # Sensors
@@ -841,7 +992,9 @@ class SimonExperiment(Experiment):
                 enable_ft=True
             )
         ]
-        self.logger = np.zeros([self.n_iterations, 4])
+
+        # logger
+        self.logger = SensorsLogger(self.animat.sensors, self.n_iterations)
 
     def pre_step(self, sim_step):
         """New step"""
@@ -856,7 +1009,8 @@ class SimonExperiment(Experiment):
             for i in range(4)
         ]
         # print("Sensors contact forces: {}".format(contacts_sensors))
-        self.logger[sim_step, :] = contacts_sensors
+        # self.logger[sim_step, :] = contacts_sensors
+        self.logger.update_logs(sim_step)
         n_joints = pybullet.getNumJoints(self.animat.identity)
         # pybullet.setJointMotorControlArray(
         #     self.animat.identity,
@@ -906,12 +1060,12 @@ class SimonExperiment(Experiment):
         sim_step += 1
         time.sleep(1e-3)
 
-    def end(self, step, time):
+    def end(self, sim_step, sim_time):
         """delete"""
-        plt.figure("Sensor data")
-        times = np.arange(0, step*self.timestep, self.timestep)
-        for i in range(4):
-            plt.plot(times, self.logger[:step, i])
+        print("Time taken: {} [s]".format(sim_time))
+        self.logger.plot_all(
+            np.linspace(0, (sim_step-1)*self.timestep, sim_step)
+        )
         plt.show()
 
 
