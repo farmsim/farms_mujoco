@@ -243,6 +243,27 @@ class JointsStatesSensor(Sensor):
         ])
 
 
+class LinkStateSensor(Sensor):
+    """Links states sensor"""
+
+    def __init__(self, model_id, link):
+        super(LinkStateSensor, self).__init__()
+        self._model_id = model_id
+        self._link = link
+        self._state = None
+        self._data = np.zeros(13)
+
+    def update(self):
+        """Update sensor"""
+        self._state = pybullet.getLinkState(
+            bodyUniqueId=self._model_id,
+            linkIndex=self._link,
+            computeLinkVelocity=1,
+            computeForwardKinematics=1
+        )
+        self._data = np.concatenate(self._state[4:])
+
+
 class Sensors(dict):
     """Sensors"""
 
