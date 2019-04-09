@@ -11,6 +11,7 @@ import sympy as sp
 from sympy.utilities.autowrap import autowrap
 from sympy.utilities.autowrap import ufuncify
 import matplotlib.pyplot as plt
+from farms_bullet.cy_controller import odefun, rk4_ode
 
 
 def ode(_, phases, freqs, coupling_weights, phases_desired, n_dim):
@@ -22,6 +23,15 @@ def ode(_, phases, freqs, coupling_weights, phases_desired, n_dim):
         ),
         axis=1
     )
+
+
+def rk4(fun, timestep, t_n, state, *fun_params):
+    """Runge-Kutta step integration"""
+    k_1 = timestep*fun(t_n, state, *fun_params)
+    k_2 = timestep*fun(t_n+0.5*timestep, state+0.5*k_1, *fun_params)
+    k_3 = timestep*fun(t_n+0.5*timestep, state+0.5*k_2, *fun_params)
+    k_4 = timestep*fun(t_n+timestep, state+k_3, *fun_params)
+    return (k_1+2*k_2+2*k_3+k_4)/6
 
 
 def ode_sparse(_, phases, freqs, coupling_weights, phases_desired, n_dim):
@@ -236,10 +246,39 @@ def test_numpy_euler(times):
             weights, phases_desired, n_dim
         )
         phases_num[i+1, :] = phases
-    print("Numpy integration took {} [s]".format(time.time() - tic))
+    print("Numpy/Euler integration took {} [s]".format(time.time() - tic))
 
     # Plot results
     plt.figure("Numpy")
+    plt.plot(times, phases_num[:-1])
+    plt.xlabel("Time [s]")
+    plt.ylabel("Phases [rad]")
+    plt.grid()
+
+
+def test_numpy_rk(times):
+    """Numpy Euler"""
+    dtype = np.float64
+    freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
+    timestep = times[1] - times[0]
+    n_dim, _phases, _freqs, weights, phases_desired = (
+        SalamanderNetwork.walking_parameters()
+    )
+    phases_num = np.zeros([len(times)+1, len(freqs)], dtype=dtype)
+    phases = np.zeros([len(freqs)], dtype=dtype)
+    tic = time.time()
+    for i, _time in enumerate(times):
+        phases += rk4(
+            ode, timestep,
+            0, phases,
+            2*np.pi*10*np.ones(11 + 2*2*3, dtype=dtype)*(np.sin(_time)+1),
+            weights, phases_desired, n_dim
+        )
+        phases_num[i+1, :] = phases
+    print("RK4 integration took {} [s]".format(time.time() - tic))
+
+    # Plot results
+    plt.figure("RK4")
     plt.plot(times, phases_num[:-1])
     plt.xlabel("Time [s]")
     plt.ylabel("Phases [rad]")
@@ -461,18 +500,59 @@ def test_sympy(times, methods=None):
         plt.grid()
 
 
+def test_cython(times):
+    """Test Cython integration"""
+    _, __, __, weights, phases_desired = (
+        SalamanderNetwork.walking_parameters()
+    )
+    dtype = np.float64
+    n_dim = 11 + 2*2*3
+    timestep = times[1] - times[0]
+    state = np.zeros([n_dim], dtype=dtype)
+    weights = np.array(weights, dtype=dtype)
+    phi = np.array(phases_desired, dtype=dtype)
+    phases_cy = np.zeros([len(times)+1, n_dim], dtype=dtype)
+
+    tic = time.time()
+    phases_cy[0, :] = state
+    for i, _time in enumerate(times):
+        rk4_ode(
+            odefun,
+            timestep,
+            state,
+            2*np.pi*10*np.ones(
+                n_dim,
+                dtype=dtype
+            )*(np.sin(_time)+1),
+            weights,
+            phi,
+            n_dim
+        )
+        phases_cy[i+1, :] = state
+    print("Cython/RK4 integration took {} [s]".format(time.time() - tic))
+
+    # Plot results
+    plt.figure("Cython")
+    plt.plot(times, phases_cy[:-1])
+    plt.xlabel("Time [s]")
+    plt.ylabel("Phases [rad]")
+    plt.grid()
+
+
 def main():
     """Main"""
     times = np.arange(0, 10, 1e-3)
 
     # test_casadi(times)
     test_numpy_euler(times)
+    test_numpy_rk(times)
+    test_cython(times)
     # test_numpy_euler_sparse(times)
-    test_scipy_ode(times)
+    # test_scipy_ode(times)
     # test_scipy_ode(times, methods=["lsoda"])
     # test_scipy_new(times, methods=[scipy.integrate.LSODA])
     # test_scipy_odeint(times)
-    test_sympy(times)
+    # test_sympy(times)
 
     plt.show()
 
