@@ -402,7 +402,6 @@ def test_scipy_new(times, methods=None):
                 n_dim
             ))
             _ode.step()
-            print(_ode.t)
             phases_sci[i+1, :] = _ode.y
             # _ode.set_jac_params(
             #     freqs,
@@ -543,16 +542,16 @@ def main():
     """Main"""
     times = np.arange(0, 10, 1e-3)
 
-    # test_casadi(times)
+    test_casadi(times)
     test_numpy_euler(times)
     test_numpy_rk(times)
-    test_cython(times)
-    # test_numpy_euler_sparse(times)
-    # test_scipy_ode(times)
+    test_numpy_euler_sparse(times)
+    test_scipy_ode(times)
     # test_scipy_ode(times, methods=["lsoda"])
-    # test_scipy_new(times, methods=[scipy.integrate.LSODA])
+    test_scipy_new(times, methods=[scipy.integrate.LSODA])
     # test_scipy_odeint(times)
-    # test_sympy(times)
+    test_sympy(times)
+    test_cython(times)
 
     plt.show()
 
