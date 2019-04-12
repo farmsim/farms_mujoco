@@ -190,19 +190,21 @@ class PhasesLogger:
             *np.shape(model.controller.network.phases)
         ])
         self.oscillator_names = [
-            "body_{}".format(i)
+            "body_{}_{}".format(i, side)
             for i in range(11)
+            for side in range(2)
         ] +  [
-            "leg_{}_{}_{}".format(leg_i, side, joint_i)
+            "leg_{}_{}_{}_{}".format(leg_i, side, joint_i, _side)
             for leg_i in range(2)
             for side in ["L", "R"]
+            for _side in range(2)
             for joint_i in range(3)
         ]
 
     def update(self, iteration):
         """Update phase logs"""
         self.phases_log[iteration, :] = (
-            self.model.controller.network.phases[:, 0]
+            self.model.controller.network.phases
         )
 
     def plot(self, times):

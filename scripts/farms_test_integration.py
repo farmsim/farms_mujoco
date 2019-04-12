@@ -1,7 +1,7 @@
 """Test integration"""
 
 import time
-from farms_bullet.controllers.network import SalamanderNetwork
+from farms_bullet.controllers.casadi import SalamanderCasADiNetwork
 import numpy as np
 # import autograd.numpy as np
 # from autograd import jacobian
@@ -217,7 +217,7 @@ def test_casadi(times):
     freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
     timestep = times[1] - times[0]
     phases_cas = np.zeros([len(times)+1, len(freqs)])
-    network = SalamanderNetwork.from_gait("walking", timestep=timestep)
+    network = SalamanderCasADiNetwork.from_gait("walking", timestep=timestep)
     tic = time.time()
     for i, _time in enumerate(times):
         freqs = 2*np.pi*10*np.ones(11 + 2*2*3)*(np.sin(_time)+1)
@@ -237,7 +237,7 @@ def test_numpy_euler(times):
     freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
     timestep = times[1] - times[0]
     n_dim, _phases, _freqs, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     phases_num = np.zeros([len(times)+1, len(freqs)])
     phases = np.zeros([len(freqs)])
@@ -265,7 +265,7 @@ def test_numpy_rk(times):
     freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
     timestep = times[1] - times[0]
     n_dim, _phases, _freqs, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     phases_num = np.zeros([len(times)+1, len(freqs)], dtype=dtype)
     phases = np.zeros([len(freqs)], dtype=dtype)
@@ -293,7 +293,7 @@ def test_numpy_euler_sparse(times):
     freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
     timestep = times[1] - times[0]
     n_dim, _phases, _freqs, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     phases_num = np.zeros([len(times)+1, len(freqs)])
     phases = np.zeros([len(freqs)])
@@ -322,7 +322,7 @@ def test_scipy_ode(times, methods=None):
         methods = ["vode", "zvode", "lsoda", "dopri5", "dop853"]
     timestep = times[1] - times[0]
     n_dim, _, _, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     for method in methods:
         phases_sci = np.zeros([len(times)+1, len(freqs)])
@@ -388,7 +388,7 @@ def test_scipy_new(times, methods=None):
         methods = ["vode", "zvode", "lsoda", "dopri5", "dop853"]
     timestep = times[1] - times[0]
     n_dim, _, _, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     for method in methods:
         phases_sci = np.zeros([len(times)+1, len(freqs)])
@@ -431,7 +431,7 @@ def test_scipy_odeint(times):
     freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
     timestep = times[1] - times[0]
     n_dim, _, _, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     phases_sci = np.zeros([len(times)+1, len(freqs)])
     phases = np.zeros([len(freqs)])
@@ -468,7 +468,7 @@ def test_sympy(times, methods=None):
     if not methods:
         methods = ["vode", "lsoda", "dopri5", "dop853"]
     _, _phases, _freqs, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     n_dim = 11 + 2*2*3
     _phases = np.zeros([n_dim, 1], dtype=np.float64)
@@ -505,7 +505,7 @@ def test_sympy(times, methods=None):
 def test_cython(times):
     """Test Cython integration"""
     _, __, __, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     dtype = np.float64
     n_dim = 11 + 2*2*3
@@ -544,7 +544,7 @@ def test_cython(times):
 def test_cython_sparse(times):
     """Test Cython integration"""
     _, __, __, weights, phases_desired = (
-        SalamanderNetwork.walking_parameters()
+        SalamanderCasADiNetwork.walking_parameters()
     )
     dtype = np.float64
     n_dim = 11 + 2*2*3

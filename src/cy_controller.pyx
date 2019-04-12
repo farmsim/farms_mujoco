@@ -13,7 +13,7 @@ cimport numpy as np
 
 from libc.math cimport sin
 # from libc.stdlib cimport malloc, free
-from cython.parallel import prange
+# from cython.parallel import prange
 
 
 ctypedef double CTYPE
@@ -34,7 +34,7 @@ cpdef void odefun(
 ) nogil:
     """ODE"""
     cdef int i, j, n_dim_c = n_dim
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         dstate[i] = freqs[i]
         for j in range(n_dim_c):
             dstate[i] += weights[i, j]*sin(
@@ -65,19 +65,19 @@ cpdef void rk4_ode(
     cdef CTYPE[:] k_2_2 = np.empty([n_dim], dtype=DTYPE)
     cdef CTYPE[:] k_3_2 = np.empty([n_dim], dtype=DTYPE)
     fun(k_1, state, freqs, weights, phi, n_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_1[i] = timestep*k_1[i]
         k_1_2[i] = state[i]+0.5*k_1[i]
     fun(k_2, k_1_2, freqs, weights, phi, n_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_2[i] = timestep*k_2[i]
         k_2_2[i] = state[i]+0.5*k_2[i]
     fun(k_3, k_2_2, freqs, weights, phi, n_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_3[i] = timestep*k_3[i]
         k_3_2[i] = state[i]+k_3[i]
     fun(k_4, k_3_2, freqs, weights, phi, n_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_4[i] = timestep*k_4[i]
         state[i] = state[i] + (k_1[i]+2*k_2[i]+2*k_3[i]+k_4[i])/6.
 
@@ -97,13 +97,13 @@ cpdef void odefun_sparse(
 ) nogil:
     """ODE"""
     cdef int i, j, n_dim_c = n_dim, c_dim_c = c_dim
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         dstate[i] = freqs[i]
     for j in range(c_dim_c):
         dstate[connectivity[j][0]] += connection[j][0]*sin(
             state[connectivity[j][1]]
             - state[connectivity[j][0]]
-            + connection[j][1]
+            - connection[j][1]
         )
 
 
@@ -131,18 +131,18 @@ cpdef void rk4_ode_sparse(
     cdef CTYPE[:] k_2_2 = np.empty([n_dim], dtype=DTYPE)
     cdef CTYPE[:] k_3_2 = np.empty([n_dim], dtype=DTYPE)
     fun(k_1, state, freqs, connectivity, connection, n_dim_c, c_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_1[i] = timestep*k_1[i]
         k_1_2[i] = state[i]+0.5*k_1[i]
     fun(k_2, k_1_2, freqs, connectivity, connection, n_dim_c, c_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_2[i] = timestep*k_2[i]
         k_2_2[i] = state[i]+0.5*k_2[i]
     fun(k_3, k_2_2, freqs, connectivity, connection, n_dim_c, c_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_3[i] = timestep*k_3[i]
         k_3_2[i] = state[i]+k_3[i]
     fun(k_4, k_3_2, freqs, connectivity, connection, n_dim_c, c_dim_c)
-    for i in prange(n_dim_c, nogil=True):
+    for i in range(n_dim_c):  # , nogil=True):
         k_4[i] = timestep*k_4[i]
         state[i] = state[i] + (k_1[i]+2*k_2[i]+2*k_3[i]+k_4[i])/6.
