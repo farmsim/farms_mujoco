@@ -1,7 +1,7 @@
 """Test integration"""
 
 import time
-from farms_bullet.network import SalamanderNetwork
+from farms_bullet.controllers.network import SalamanderNetwork
 import numpy as np
 # import autograd.numpy as np
 # from autograd import jacobian
@@ -11,7 +11,10 @@ import sympy as sp
 from sympy.utilities.autowrap import autowrap
 from sympy.utilities.autowrap import ufuncify
 import matplotlib.pyplot as plt
-from farms_bullet.cy_controller import odefun, rk4_ode
+from farms_bullet.cy_controller import (
+    odefun, rk4_ode,
+    odefun_sparse, rk4_ode_sparse
+)
 
 
 def ode(_, phases, freqs, coupling_weights, phases_desired, n_dim):
@@ -535,7 +538,57 @@ def test_cython(times):
     plt.plot(times, phases_cy[:-1])
     plt.xlabel("Time [s]")
     plt.ylabel("Phases [rad]")
-    plt.grid()
+    plt.grid(True)
+
+
+def test_cython_sparse(times):
+    """Test Cython integration"""
+    _, __, __, weights, phases_desired = (
+        SalamanderNetwork.walking_parameters()
+    )
+    dtype = np.float64
+    n_dim = 11 + 2*2*3
+    timestep = times[1] - times[0]
+    state = np.zeros([n_dim], dtype=dtype)
+    weights = np.array(weights, dtype=dtype)
+    phi = np.array(phases_desired, dtype=dtype)
+    phases_cy = np.zeros([len(times)+1, n_dim], dtype=dtype)
+    connectivity = []
+    connections = []
+    for i in range(n_dim):
+        for j in range(n_dim):
+            if weights[i, j]**2 > 1e-6:
+                connectivity.append([i, j])
+                connections.append([weights[i, j], phi[i, j]])
+    connectivity = np.array(connectivity, dtype=np.uintc)
+    connections = np.array(connections, dtype=dtype)
+    c_dim = np.shape(connectivity)[0]
+
+    tic = time.time()
+    phases_cy[0, :] = state
+    for i, _time in enumerate(times):
+        rk4_ode_sparse(
+            odefun_sparse,
+            timestep,
+            state,
+            2*np.pi*10*np.ones(
+                n_dim,
+                dtype=dtype
+            )*(np.sin(_time)+1),
+            connectivity,
+            connections,
+            n_dim,
+            c_dim
+        )
+        phases_cy[i+1, :] = state
+    print("Cython/RK4 integration took {} [s]".format(time.time() - tic))
+
+    # Plot results
+    plt.figure("Cython sparse")
+    plt.plot(times, phases_cy[:-1])
+    plt.xlabel("Time [s]")
+    plt.ylabel("Phases [rad]")
+    plt.grid(True)
 
 
 def main():
@@ -552,6 +605,7 @@ def main():
     # test_scipy_odeint(times)
     test_sympy(times)
     test_cython(times)
+    test_cython_sparse(times)
 
     plt.show()
 
