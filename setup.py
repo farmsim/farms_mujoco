@@ -33,7 +33,7 @@ setup(
     ext_modules=cythonize([
         Extension(
             "farms_bullet.cy_controller",
-            ["src/controller.pyx"],
+            ["src/cy_controller.pyx"],
             include_dirs=[np.get_include()],
             extra_compile_args=['-O3'],  # , '-fopenmp'
             extra_link_args=['-O3']  # , '-fopenmp'
