@@ -7,17 +7,14 @@ import matplotlib.pyplot as plt
 
 import pybullet
 
-from .plugins.swimming import viscous_swimming
 from .simulator import init_engine, real_time_handing
-from .debug import test_debug_info
-from .arenas import create_scene
 from .render import rendering
-from .model import Model, SalamanderModel
 from .interface import UserParameters
-from .camera import UserCamera, CameraRecord
-from. logging import ExperimentLogger
 from .simulation_options import SimulationOptions
 from .model_options import ModelOptions
+<<<<<<< HEAD
+from .sensors.sensor import JointsStatesSensor, ContactSensor, LinkStateSensor
+=======
 
 
 class Simulation:
@@ -366,3 +363,4 @@ def main_parallel():
 if __name__ == '__main__':
     # main_parallel()
     main()
+>>>>>>> master

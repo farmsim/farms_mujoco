@@ -1,12 +1,13 @@
 """Model"""
 
+import os
+
 import numpy as np
 
 import pybullet
-import os
-from .sensors import ModelSensors
-from .motors import ModelMotors
-from .control import SalamanderController
+from ..sensors.model_sensors import ModelSensors
+from ..motors.motors import ModelMotors
+from ..controllers.control import SalamanderController
 
 
 class Model:

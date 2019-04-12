@@ -1,8 +1,62 @@
 """Interface"""
 
 import numpy as np
-
 import pybullet
+from .camera import UserCamera, CameraRecord
+from .debug import test_debug_info
+
+
+class Interfaces:
+    """Interfaces (GUI, camera, video)"""
+
+    def __init__(self, camera=None, user_params=None, video=None):
+        super(Interfaces, self).__init__()
+        self.camera = camera
+        self.user_params = user_params
+        self.video = video
+        self.camera_skips = 10
+
+    def init_camera(self, target_identity, timestep, **kwargs):
+        """Initialise camera"""
+        # Camera
+        self.camera = UserCamera(
+            target_identity=target_identity,
+            yaw=0,
+            yaw_speed=(
+                360/10*self.camera_skips
+                if kwargs.pop("rotating_camera", False)
+                else 0
+            ),
+            pitch=-89 if kwargs.pop("top_camera", False) else -45,
+            distance=1,
+            timestep=timestep
+        )
+
+    def init_video(self, target_identity, timestep, size, **kwargs):
+        """Init video"""
+        # Video recording
+        self.video = CameraRecord(
+            target_identity=target_identity,
+            size=size,
+            fps=kwargs.pop("fps", 40),
+            yaw=kwargs.pop("yaw", 0),
+            yaw_speed=360/10 if kwargs.pop("rotating_camera", False) else 0,
+            pitch=-89 if kwargs.pop("top_camera", False) else -45,
+            distance=1,
+            timestep=timestep,
+            motion_filter=1e-1
+        )
+
+    def init_debug(self, animat_options):
+        """Initialise debug"""
+        # User parameters
+        self.user_params = UserParameters(
+            animat_options.gait,
+            animat_options.frequency
+        )
+
+        # Debug info
+        test_debug_info()
 
 
 class DebugParameter:

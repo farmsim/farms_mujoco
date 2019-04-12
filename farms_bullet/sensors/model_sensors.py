@@ -14,6 +14,7 @@ class ModelSensors:
         # Contact sensors
         self.feet = salamander.feet
         self.contact_forces = np.zeros([4])
+        self.plane = None
 
         # Force-torque sensors
         self.feet_ft = np.zeros([4, 6])
@@ -29,15 +30,15 @@ class ModelSensors:
                 salamander.joints[joint]
             )
 
-    def update(self, identity, links, joints, plane):
+    def update(self, identity, links, joints):
         """Update sensors"""
-        self.update_contacts(identity, links, plane)
+        self.update_contacts(identity, links)
         self.update_joints(identity, joints)
 
-    def update_contacts(self, identity, links, plane):
+    def update_contacts(self, identity, links):
         """Update contact sensors"""
         _, self.contact_forces = (
-            self.get_links_contacts(identity, links, plane)
+            self.get_links_contacts(identity, links, self.plane)
         )
 
     def update_joints(self, identity, joints):

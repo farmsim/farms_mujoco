@@ -1,4 +1,7 @@
-"""Arenas"""
+"""Create scene"""
+
+import pybullet
+
 
 def create_scene(plane):
     """Create scene"""
@@ -23,7 +26,6 @@ def create_scene(plane):
 
     mass = 1
     visualShapeId = -1
-
 
     link_Masses=[1]
     linkCollisionShapeIndices=[colBoxId]

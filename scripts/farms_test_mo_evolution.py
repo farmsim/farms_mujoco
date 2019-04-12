@@ -3,7 +3,7 @@
 
 import pickle
 from multiprocessing import Pool
-from farms_bullet.simulation import Simulation
+from farms_bullet.simulation import SalamanderSimulation
 from farms_bullet.simulation_options import SimulationOptions
 from farms_bullet.model_options import ModelOptions
 import numpy as np
@@ -33,7 +33,7 @@ class SalamanderEvolution:
             frequency=decision_vector[0],
             body_stand_amplitude=decision_vector[1]
         )
-        sim = Simulation(self.simulation_options, model_options)
+        sim = SalamanderSimulation(self.simulation_options, model_options)
         print("Running for parameters:\n{}".format(decision_vector))
         sim.run()
         sim.end()
