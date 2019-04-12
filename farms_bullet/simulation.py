@@ -192,7 +192,7 @@ class ContactSensor(Sensor):
         self.animat_link = animat_link
         self.target_id = target_id
         self.target_link = target_link
-        self._data = np.zeros(4)
+        self._data = np.zeros(6)
 
     def update(self):
         """Update sensors"""
@@ -203,19 +203,22 @@ class ContactSensor(Sensor):
             self.target_link
         )
         self._data = np.concatenate(
-            [[self.get_normal_force()], self.get_lateral_friction()],
+            [self.get_normal_force(), self.get_lateral_friction()],
             axis=0
         )
 
     def get_normal_force(self):
         """Get force"""
-        return np.sum([contact[9] for contact in self._contacts])
+        return np.sum([
+            contact[9]*np.array(contact[7])
+            for contact in self._contacts
+        ], axis=0) if self._contacts else np.zeros(3)
 
     def get_lateral_friction(self):
         """Get force"""
         return np.sum([
             contact[10]*np.array(contact[11])  # Lateral friction dir 1
-            # + contact[11]*np.array(contact[12])  # Lateral friction dir 2
+            + contact[12]*np.array(contact[13])  # Lateral friction dir 2
             for contact in self._contacts
         ], axis=0) if self._contacts else np.zeros(3)
 
@@ -416,11 +419,11 @@ class SimonAnimat(Animat):
             pybullet.changeDynamics(
                 self.identity,
                 joint,
-                lateralFriction=1e-2,
-                spinningFriction=1e-2,
-                rollingFriction=1e-2,
-                linearDamping=1e-2,
-                jointDamping=1e-2
+                lateralFriction=1e3,
+                spinningFriction=1e-3,
+                rollingFriction=1e-3,
+                linearDamping=1e-3,
+                jointDamping=1e-3
             )
         print("Number of joints: {}".format(n_joints))
         for joint in range(n_joints):
@@ -933,6 +936,43 @@ class JointsStatesLogger(SensorLogger):
         plt.ylabel("Torque [Nm]")
 
 
+class ContactLogger(SensorLogger):
+    """Joints states logger"""
+
+    def plot(self, times, figure=None, label=None):
+        """Plot"""
+        self.plot_normal_force(times, figure, label=label)
+        self.plot_lateral_force(times, figure, label=label)
+
+    def plot_normal_force(self, times, figure=None, label=None):
+        """Plot normal force"""
+        if figure is None:
+            figure = "Contact"
+        plt.figure(figure+"_normal")
+        label = "" if label is None else (label + "_")
+        labels = [label + lab for lab in ["x", "y", "z"]]
+        for i, data in enumerate(self._data[:, :3].T):
+            plt.plot(times, data[:len(times)], label=labels[i])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Normal force [N]")
+        plt.legend()
+        plt.grid(True)
+
+    def plot_lateral_force(self, times, figure=None, label=None):
+        """Plot lateral force"""
+        if figure is None:
+            figure = "Contact"
+        plt.figure(figure+"_lateral")
+        label = "" if label is None else (label + "_")
+        labels = [label + lab for lab in ["x", "y", "z"]]
+        for i, data in enumerate(self._data[:, 3:].T):
+            plt.plot(times, data[:len(times)], label=labels[i])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Force [N]")
+        plt.legend()
+        plt.grid(True)
+
+
 class LinkStateLogger(SensorLogger):
     """Link state logger"""
 
@@ -1064,7 +1104,7 @@ class SensorsLogger(dict):
             sensor: (
                 JointsStatesLogger(sensor, n_iterations)
                 if isinstance(sensor, JointsStatesSensor)
-                else SensorLogger(sensor, n_iterations)
+                else ContactLogger(sensor, n_iterations)
                 if isinstance(sensor, ContactSensor)
                 else LinkStateLogger(sensor, n_iterations)
                 if isinstance(sensor, LinkStateSensor)
@@ -1082,7 +1122,7 @@ class SensorsLogger(dict):
         """Plot all sensors logs"""
         for sensor_i, sensor in enumerate(self._sensors):
             figure_name = (
-                "contacts"
+                "contacts_{}".format(sensor)
                 if isinstance(sensor, ContactSensor)
                 else str(sensor)
             )
