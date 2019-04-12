@@ -103,7 +103,7 @@ cpdef void odefun_sparse(
         dstate[connectivity[j][0]] += connection[j][0]*sin(
             state[connectivity[j][1]]
             - state[connectivity[j][0]]
-            + connection[j][1]
+            - connection[j][1]
         )
 
 

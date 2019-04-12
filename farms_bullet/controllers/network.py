@@ -1,93 +1,56 @@
-"""Control networks"""
+"""Network"""
 
 import numpy as np
-import casadi as cas
-
-
-def bodyjoint2index(joint_i):
-    """body2index"""
-    return joint_i
-
-
-def legjoint2index(leg_i, side_i, joint_i, offset=11):
-    """legjoint2index"""
-    return offset + leg_i*3*2 + side_i*3 + joint_i
+from ..cy_controller import odefun_sparse, rk4_ode_sparse
+from .convention import bodyjoint2index, legjoint2index
 
 
 class Network:
     """Controller network"""
 
-    def __init__(self, state, integrator):
+    def __init__(self, ode, state, ode_solver, timestep):
         super(Network, self).__init__()
+        self._ode = ode
         self._state = state
-        self._integrator = integrator
+        self._ode_solver = ode_solver
+        self._time = 0
+        self._timestep = timestep
 
     @property
     def state(self):
         """State"""
         return self._state
 
-    def integrate(self, parameters):
-        """Control step"""
-        self._state = np.array(
-            self._integrator(
-                x0=self._state,
-                p=parameters
-            )["xf"][:, 0]
-        )
-
-
-class IndependentOscillators(Network):
-    """Independent oscillators"""
-
-    def __init__(self, controllers, timestep):
-        size = len(controllers)
-        freqs = cas.MX.sym('freqs', size)
-        ode = {
-            "x": cas.MX.sym('phases', size),
-            "p": freqs,
-            "ode": freqs
-        }
-        super(IndependentOscillators, self).__init__(
-            state=np.zeros(size),
-            integrator=cas.integrator(
-                'oscillator',
-                'cvodes',
-                ode,
-                {
-                    "t0": 0,
-                    "tf": timestep,
-                    "jit": True,
-                    # "step0": 1e-3,
-                    # "abstol": 1e-3,
-                    # "reltol": 1e-3
-                },
-            )
-        )
-
     @property
-    def phases(self):
-        """Oscillator phases"""
-        return self._state
+    def time(self):
+        """Time"""
+        return self._time
 
-    def control_step(self, freqs):
+    def integrate(self, *parameters):
         """Control step"""
-        self.integrate(freqs)
-        return self.phases
+        self._ode_solver(
+            self._ode,
+            self._timestep,
+            self._state,
+            *parameters
+        )
+        self._time += self._timestep
 
 
 class SalamanderNetwork(Network):
     """Salamander network"""
 
-    def __init__(self, phases, freqs, weights, phases_desired, integrator):
-        self.freqs, self.weights, self.phases_desired = (
-            freqs,
-            weights,
-            phases_desired
-        )
+    def __init__(self, phases, freqs, connectivity, timestep):
+        self._freqs = freqs
+        self._connectivity = np.array(connectivity[:, :2], dtype=np.uintc)
+        self._connections = np.array(connectivity[:, 2:], dtype=np.float64)
+        self._n_dim = np.shape(self._freqs)[0]
+        self._c_dim = np.shape(self._connectivity)[0]
         super(SalamanderNetwork, self).__init__(
+            ode=odefun_sparse,
             state=phases,
-            integrator=integrator
+            ode_solver=rk4_ode_sparse,
+            timestep=timestep
         )
 
     @classmethod
@@ -102,424 +65,522 @@ class SalamanderNetwork(Network):
     @staticmethod
     def walking_parameters():
         """Walking parameters"""
-        n_dim_body = 11
-        n_dim_legs = 2*2*3
+        n_body_joints = 11
+        n_sides = 2
+        n_leg_pairs = 2
+        n_leg_dof = 3
+        n_dim_body = 2*n_body_joints
+        n_dim_legs = 2*n_leg_pairs*n_sides*n_leg_dof
         n_dim = n_dim_body + n_dim_legs
-        weights = np.zeros([n_dim, n_dim])
-        phases_desired = np.zeros([n_dim, n_dim])
+        connectivity = []
+
         # Body
-        for i in range(10):
-            weights[i, i+1] = 3e2
-            weights[i+1, i] = 3e2
-            phases_desired[i, i+1] = 0  # -2*np.pi/n_dim_body
-            phases_desired[i+1, i] = 0  # 2*np.pi/n_dim_body
-        # Legs
+        for i in range(n_body_joints-1):
+            # i - i
+            connectivity.append([
+                bodyjoint2index(joint_i=i, side=1),
+                bodyjoint2index(joint_i=i, side=0),
+                3e2, np.pi
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=i, side=0),
+                bodyjoint2index(joint_i=i, side=1),
+                3e2, np.pi
+            ])
+            # i - i+1
+            connectivity.append([
+                bodyjoint2index(joint_i=i+1, side=0),
+                bodyjoint2index(joint_i=i, side=0),
+                3e2, 0
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=i, side=0),
+                bodyjoint2index(joint_i=i+1, side=0),
+                3e2, 0
+            ])
+        # i+1 - i+1 (final)
+        connectivity.append([
+            bodyjoint2index(joint_i=n_body_joints-1, side=1),
+            bodyjoint2index(joint_i=n_body_joints-1, side=0),
+            3e2, np.pi
+        ])
+        connectivity.append([
+            bodyjoint2index(joint_i=n_body_joints-1, side=0),
+            bodyjoint2index(joint_i=n_body_joints-1, side=1),
+            3e2, np.pi
+        ])
+
+        # Legs (internal)
         for leg_i in range(2):
             for side_i in range(2):
+                # 0 - 0
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    3e2, np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    3e2, np.pi
+                ])
                 # 0 - 1
-                weights[
-                    legjoint2index(leg_i, side_i, 0),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 3e2
-                weights[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 0)
-                ] = 3e2
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 0),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 0.5*np.pi
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 0)
-                ] = -0.5*np.pi
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    3e2, 0.5*np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    3e2, -0.5*np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    3e2, 0.5*np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    3e2, -0.5*np.pi
+                ])
+                # 1 - 1
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    3e2, np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    3e2, np.pi
+                ])
                 # 1 - 2
-                weights[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 2)
-                ] = 3e2
-                weights[
-                    legjoint2index(leg_i, side_i, 2),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 3e2
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 2)
-                ] = 0
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 2),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 0
-        # # Opposite leg interaction
-        # for leg_i in range(2):
-        #     # 0 - 1
-        #     weights[
-        #         legjoint2index(leg_i, 0, 0),
-        #         legjoint2index(leg_i, 1, 0)
-        #     ] = 3e2
-        #     weights[
-        #         legjoint2index(leg_i, 1, 0),
-        #         legjoint2index(leg_i, 0, 0)
-        #     ] = 3e2
-        #     phases_desired[
-        #         legjoint2index(leg_i, 0, 0),
-        #         legjoint2index(leg_i, 1, 0)
-        #     ] = np.pi
-        #     phases_desired[
-        #         legjoint2index(leg_i, 1, 0),
-        #         legjoint2index(leg_i, 0, 0)
-        #     ] = -np.pi
-        # # Following leg interaction
-        # for side_i in range(2):
-        #     # 0 - 1
-        #     weights[
-        #         legjoint2index(0, side_i, 0),
-        #         legjoint2index(1, side_i, 0)
-        #     ] = 3e2
-        #     weights[
-        #         legjoint2index(1, side_i, 0),
-        #         legjoint2index(0, side_i, 0)
-        #     ] = 3e2
-        #     phases_desired[
-        #         legjoint2index(0, side_i, 0),
-        #         legjoint2index(1, side_i, 0)
-        #     ] = np.pi
-        #     phases_desired[
-        #         legjoint2index(1, side_i, 0),
-        #         legjoint2index(0, side_i, 0)
-        #     ] = -np.pi
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    3e2, 0
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    3e2, 0
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    3e2, 0
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    3e2, 0
+                ])
+                # 2 - 2
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    3e2, np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    3e2, np.pi
+                ])
+
+        # Opposite leg interaction
+        # TODO
+
+        # Following leg interaction
+        # TODO
+
         # Body-legs interaction
         for side_i in range(2):
             # Forelimbs
-            weights[
-                bodyjoint2index(1),
-                legjoint2index(0, side_i, 0)
-            ] = 3e2
-            weights[
-                legjoint2index(0, side_i, 0),
-                bodyjoint2index(1)
-            ] = 3e2
-            phases_desired[
-                bodyjoint2index(1),
-                legjoint2index(0, side_i, 0)
-            ] = side_i*np.pi  # 0.5*np.pi
-            phases_desired[
-                legjoint2index(0, side_i, 0),
-                bodyjoint2index(1)
-            ] = -side_i*np.pi  # -0.5*np.pi
+            connectivity.append([
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
+                bodyjoint2index(joint_i=1, side=side_i),
+                3e2, 0
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=1, side=side_i),
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
+                3e2, 0
+            ])
+            connectivity.append([
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
+                bodyjoint2index(joint_i=1, side=side_i),
+                3e2, np.pi
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=1, side=side_i),
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
+                3e2, -np.pi
+            ])
             # Hind limbs
-            weights[
-                bodyjoint2index(4),
-                legjoint2index(1, side_i, 0)
-            ] = 3e2
-            weights[
-                legjoint2index(1, side_i, 0),
-                bodyjoint2index(4)
-            ] = 3e2
-            phases_desired[
-                bodyjoint2index(4),
-                legjoint2index(1, side_i, 0)
-            ] = (side_i-1)*np.pi  # -0.5*np.pi
-            phases_desired[
-                legjoint2index(1, side_i, 0),
-                bodyjoint2index(4)
-            ] = (side_i-1)*np.pi  # 0.5*np.pi
-        freqs = 2*np.pi*np.ones(n_dim_body)
+            connectivity.append([
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
+                bodyjoint2index(joint_i=4, side=side_i),
+                3e2, np.pi
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=4, side=side_i),
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
+                3e2, -np.pi
+            ])
+            connectivity.append([
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
+                bodyjoint2index(joint_i=4, side=side_i),
+                3e2, 0
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=4, side=side_i),
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
+                3e2, 0
+            ])
+
+        freqs = 2*np.pi*np.ones(n_dim)
         phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
-        return n_dim, phases, freqs, weights, phases_desired
+        return phases, freqs, np.array(connectivity)
 
     @classmethod
     def walking(cls, timestep, phases=None):
         """Default salamander network"""
-        n_dim, _phases, freqs, weights, phases_desired = (
+        _phases, freqs, connectivity = (
             cls.walking_parameters()
         )
         if phases is None:
             phases = _phases
-        weights, phase_desired, integrator = cls.gen_cas_integrator(
-            timestep,
-            n_dim,
-            weights,
-            phases_desired
-        )
-        cls.walking_parameters()
-        return cls(phases, freqs, weights, phase_desired, integrator)
+        return cls(phases, freqs, connectivity, timestep)
+
+    @staticmethod
+    def swimming_parameters():
+        """Swimming parameters"""
+        n_body_joints = 11
+        n_sides = 2
+        n_leg_pairs = 2
+        n_leg_dof = 3
+        n_dim_body = 2*n_body_joints
+        n_dim_legs = 2*n_leg_pairs*n_sides*n_leg_dof
+        n_dim = n_dim_body + n_dim_legs
+        connectivity = []
+
+        # Body
+        for i in range(n_body_joints-1):
+            # i - i
+            connectivity.append([
+                bodyjoint2index(joint_i=i, side=1),
+                bodyjoint2index(joint_i=i, side=0),
+                3e2, np.pi
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=i, side=0),
+                bodyjoint2index(joint_i=i, side=1),
+                3e2, np.pi
+            ])
+            # i - i+1
+            connectivity.append([
+                bodyjoint2index(joint_i=i+1, side=0),
+                bodyjoint2index(joint_i=i, side=0),
+                3e2, 2*np.pi/n_body_joints
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=i, side=0),
+                bodyjoint2index(joint_i=i+1, side=0),
+                3e2, -2*np.pi/n_body_joints
+            ])
+        # i+1 - i+1 (final)
+        connectivity.append([
+            bodyjoint2index(joint_i=n_body_joints-1, side=1),
+            bodyjoint2index(joint_i=n_body_joints-1, side=0),
+            3e2, np.pi
+        ])
+        connectivity.append([
+            bodyjoint2index(joint_i=n_body_joints-1, side=0),
+            bodyjoint2index(joint_i=n_body_joints-1, side=1),
+            3e2, np.pi
+        ])
+
+        # Legs (internal)
+        for leg_i in range(2):
+            for side_i in range(2):
+                # 0 - 0
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    3e2, np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    3e2, np.pi
+                ])
+                # 0 - 1
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    3e2, 0.5*np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    3e2, -0.5*np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    3e2, 0.5*np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    3e2, -0.5*np.pi
+                ])
+                # 1 - 1
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    3e2, np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    3e2, np.pi
+                ])
+                # 1 - 2
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    3e2, 0
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    3e2, 0
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    3e2, 0
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    3e2, 0
+                ])
+                # 2 - 2
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    3e2, 0
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    3e2, 0
+                ])
+
+        # Opposite leg interaction
+        # TODO
+
+        # Following leg interaction
+        # TODO
+
+        # Body-legs interaction
+        for side_i in range(2):
+            # Forelimbs
+            connectivity.append([
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
+                bodyjoint2index(joint_i=1, side=side_i),
+                3e2, 0
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=1, side=side_i),
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
+                0, 0
+            ])
+            connectivity.append([
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
+                bodyjoint2index(joint_i=1, side=side_i),
+                3e2, np.pi
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=1, side=side_i),
+                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
+                0, -np.pi
+            ])
+            # Hind limbs
+            connectivity.append([
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
+                bodyjoint2index(joint_i=4, side=side_i),
+                3e2, np.pi
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=4, side=side_i),
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
+                0, -np.pi
+            ])
+            connectivity.append([
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
+                bodyjoint2index(joint_i=4, side=side_i),
+                3e2, 0
+            ])
+            connectivity.append([
+                bodyjoint2index(joint_i=4, side=side_i),
+                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
+                0, 0
+            ])
+
+        freqs = 2*np.pi*np.ones(n_dim)
+        phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
+        return phases, freqs, np.array(connectivity)
 
     @classmethod
     def swimming(cls, timestep, phases=None):
         """Default salamander network"""
-        n_dim_body = 11
-        n_dim_legs = 2*2*3
-        n_dim = n_dim_body + n_dim_legs
-        weights = np.zeros([n_dim, n_dim])
-        phases_desired = np.zeros([n_dim, n_dim])
-        # Body
-        for i in range(10):
-            weights[i, i+1] = 3e2
-            weights[i+1, i] = 3e2
-            phases_desired[i, i+1] = 2*np.pi/n_dim_body
-            phases_desired[i+1, i] = -2*np.pi/n_dim_body
-        # Legs
-        for leg_i in range(2):
-            for side_i in range(2):
-                # 0 - 1
-                weights[
-                    legjoint2index(leg_i, side_i, 0),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 3e2
-                weights[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 0)
-                ] = 3e2
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 0),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 0
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 0)
-                ] = 0
-                # 1 - 2
-                weights[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 2)
-                ] = 3e2
-                weights[
-                    legjoint2index(leg_i, side_i, 2),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 3e2
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 1),
-                    legjoint2index(leg_i, side_i, 2)
-                ] = 0
-                phases_desired[
-                    legjoint2index(leg_i, side_i, 2),
-                    legjoint2index(leg_i, side_i, 1)
-                ] = 0
-        # # Opposite leg interaction
-        # for leg_i in range(2):
-        #     # 0 - 1
-        #     weights[
-        #         legjoint2index(leg_i, 0, 0),
-        #         legjoint2index(leg_i, 1, 0)
-        #     ] = 3e2
-        #     weights[
-        #         legjoint2index(leg_i, 1, 0),
-        #         legjoint2index(leg_i, 0, 0)
-        #     ] = 3e2
-        #     phases_desired[
-        #         legjoint2index(leg_i, 0, 0),
-        #         legjoint2index(leg_i, 1, 0)
-        #     ] = np.pi
-        #     phases_desired[
-        #         legjoint2index(leg_i, 1, 0),
-        #         legjoint2index(leg_i, 0, 0)
-        #     ] = -np.pi
-        # # Following leg interaction
-        # for side_i in range(2):
-        #     # 0 - 1
-        #     weights[
-        #         legjoint2index(0, side_i, 0),
-        #         legjoint2index(1, side_i, 0)
-        #     ] = 3e2
-        #     weights[
-        #         legjoint2index(1, side_i, 0),
-        #         legjoint2index(0, side_i, 0)
-        #     ] = 3e2
-        #     phases_desired[
-        #         legjoint2index(0, side_i, 0),
-        #         legjoint2index(1, side_i, 0)
-        #     ] = np.pi
-        #     phases_desired[
-        #         legjoint2index(1, side_i, 0),
-        #         legjoint2index(0, side_i, 0)
-        #     ] = -np.pi
-        # Body-legs interaction
-        for side_i in range(2):
-            # Forelimbs
-            weights[
-                bodyjoint2index(1),
-                legjoint2index(0, side_i, 0)
-            ] = 3e2
-            weights[
-                legjoint2index(0, side_i, 0),
-                bodyjoint2index(1)
-            ] = 3e2
-            phases_desired[
-                bodyjoint2index(1),
-                legjoint2index(0, side_i, 0)
-            ] = 0  # 0.5*np.pi
-            phases_desired[
-                legjoint2index(0, side_i, 0),
-                bodyjoint2index(1)
-            ] = 0  # -0.5*np.pi
-            # Hind limbs
-            weights[
-                bodyjoint2index(4),
-                legjoint2index(1, side_i, 0)
-            ] = 3e2
-            weights[
-                legjoint2index(1, side_i, 0),
-                bodyjoint2index(4)
-            ] = 3e2
-            phases_desired[
-                bodyjoint2index(4),
-                legjoint2index(1, side_i, 0)
-            ] = 0  # -0.5*np.pi
-            phases_desired[
-                legjoint2index(1, side_i, 0),
-                bodyjoint2index(4)
-            ] = 0  # 0.5*np.pi
-        freqs = 2*np.pi*np.ones(n_dim_body)
+        _phases, freqs, connectivity = (
+            cls.swimming_parameters()
+        )
         if phases is None:
-            phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
-        weights, phase_desired, integrator = cls.gen_cas_integrator(
-            timestep,
-            n_dim,
-            weights,
-            phases_desired
-        )
-        return cls(phases, freqs, weights, phase_desired, integrator)
+            phases = _phases
+        return cls(phases, freqs, connectivity, timestep)
 
-    @staticmethod
-    def gen_cas_integrator(timestep, n_joints, weights, phases_desired):
-        """Generate controller"""
-        oscillator_names = np.array(
-            [
-                "body_{}".format(i)
-                for i in range(11)
-            ] + [
-                "legs_{}_{}_{}".format(leg_i, side, joint_i)
-                for leg_i in range(2)
-                for side in ["L", "R"]
-                for joint_i in range(3)
-            ]
-        )
-        freqs_sym = np.array([
-            cas.SX.sym(oscillator)
-            for oscillator in oscillator_names
-        ])
-        phases_sym = np.array([
-            [cas.SX.sym("phase_{}".format(oscillator))]
-            for oscillator in oscillator_names
-        ])
-        coupling_weights_dense = np.array([
-            [
-                cas.SX.sym("w_{}_{}".format(oscillator_0, oscillator_1))
-                if weights[i, j] != 0
-                else 0  # cas.SX.sym("0")
-                for j, oscillator_1 in enumerate(oscillator_names)
-            ] for i, oscillator_0 in enumerate(oscillator_names)
-        ])
-        phases_desired_dense = np.array([
-            [
-                cas.SX.sym("theta_d_{}_{}".format(i, j))
-                if weights[i, j] != 0
-                else 0  # cas.SX.sym("0")
-                for j in range(n_joints)
-            ] for i in range(n_joints)
-        ])
-        print("phases:\n{}".format(phases_sym))
-        phase_repeat = np.repeat(phases_sym, n_joints, axis=1)
-        print("phases_repeat:\n{}".format(phase_repeat))
-        phase_diff_sym = phase_repeat.T-phase_repeat
-        print("phases_diff:\n{}".format(phase_diff_sym))
-        ode = (
-            freqs_sym + np.sum(
-                coupling_weights_dense*np.sin(
-                    phase_diff_sym + phases_desired_dense
-                ),
-                axis=1
-            )
-        )
-        print("ODE:\n{}".format(ode))
-
-        print("Phases:\n{}".format(phases_sym.T))
-        print("Freqs:\n{}".format(freqs_sym))
-        # print("Coupling weights:\n{}".format(coupling_weights))
-        coupling_weights_sym = np.array([
-            coupling_weights_dense[i, j]
-            for i in range(n_joints)
-            for j in range(n_joints)
-            if isinstance(coupling_weights_dense[i, j], cas.SX)
-        ])
-        phases_desired_sym = np.array([
-            phases_desired_dense[i, j]
-            for i in range(n_joints)
-            for j in range(n_joints)
-            if isinstance(coupling_weights_dense[i, j], cas.SX)
-        ])
-        print("Coupling weights sym:\n{}".format(coupling_weights_sym))
-        # Integrator
-        dt = 1e-3
-        # opts = {
-        #     'tf': dt,
-        #     # "nonlinear_solver_iteration": "functional",
-        #     "grid": [0, dt],
-        #     "ad_weight": 1.0,
-        #     # "linear_multistep_method": "adams",
-        #     # "fsens_all_at_once": True,
-        #     # "max_multistep_order": 1,
-        #     # "sensitivity_method": "staggered",
-        #     # "linear_solver": "csparse",
-        #     # "steps_per_checkpoint": 1,
-        #     'jit': False,
-        #     'jac_penalty': 0,
-        #     "number_of_finite_elements": 1,
-        #     "inputs_check": False,
-        #     "enable_jacobian": True,
-        #     "enable_reverse": True,
-        #     "enable_fd":True,
-        #     "print_time": False,
-        #     "print_stats": False,
-        #     # "reltol": 1e-3,
-        #     # "abstol": 1e-3,
-        #     'expand': True
-        # }
-        integrator = cas.integrator(
-            'oscillator_network',
-            'cvodes',
-            # 'rk',
-            {
-                "x": phases_sym,
-                "p": cas.vertcat(
-                    freqs_sym,
-                    coupling_weights_sym,
-                    phases_desired_sym
-                ),
-                "ode": ode
-            },
-            {
-                "t0": 0,
-                "tf": timestep,
-                "jit": False,
-                # "step0": 1e-3,
-                # "abstol": 1e-3,
-                # "reltol": 1e-3
-                # "enable_jacobian": False,
-                # "number_of_finite_elements": 1
-                # "print_stats": True,
-                # "verbose": True,
-                # "enable_fd": True,
-                # "enable_jacobian": False,
-                # "step0": 1e-4
-            }
-        )
-        # integrator.print_options()
-        # integrator.setOption("exact_jacobian", "false")
-        weights = [
-            weights[i, j]
-            for i in range(n_joints)
-            for j in range(n_joints)
-            if isinstance(coupling_weights_dense[i, j], cas.SX)
-        ]
-        phases_desired = [
-            phases_desired[i, j]
-            for i in range(n_joints)
-            for j in range(n_joints)
-            if isinstance(coupling_weights_dense[i, j], cas.SX)
-        ]
-        return weights, phases_desired, integrator
+    # @classmethod
+    # def swimming(cls, timestep, phases=None):
+    #     """Default salamander network"""
+    #     n_dim_body = 11
+    #     n_dim_legs = 2*2*3
+    #     n_dim = n_dim_body + n_dim_legs
+    #     weights = np.zeros([n_dim, n_dim])
+    #     phases_desired = np.zeros([n_dim, n_dim])
+    #     # Body
+    #     for i in range(10):
+    #         weights[i, i+1] = 3e2
+    #         weights[i+1, i] = 3e2
+    #         phases_desired[i, i+1] = 2*np.pi/n_dim_body
+    #         phases_desired[i+1, i] = -2*np.pi/n_dim_body
+    #     # Legs
+    #     for leg_i in range(2):
+    #         for side_i in range(2):
+    #             # 0 - 1
+    #             weights[
+    #                 legjoint2index(leg_i, side_i, 0),
+    #                 legjoint2index(leg_i, side_i, 1)
+    #             ] = 3e2
+    #             weights[
+    #                 legjoint2index(leg_i, side_i, 1),
+    #                 legjoint2index(leg_i, side_i, 0)
+    #             ] = 3e2
+    #             phases_desired[
+    #                 legjoint2index(leg_i, side_i, 0),
+    #                 legjoint2index(leg_i, side_i, 1)
+    #             ] = 0
+    #             phases_desired[
+    #                 legjoint2index(leg_i, side_i, 1),
+    #                 legjoint2index(leg_i, side_i, 0)
+    #             ] = 0
+    #             # 1 - 2
+    #             weights[
+    #                 legjoint2index(leg_i, side_i, 1),
+    #                 legjoint2index(leg_i, side_i, 2)
+    #             ] = 3e2
+    #             weights[
+    #                 legjoint2index(leg_i, side_i, 2),
+    #                 legjoint2index(leg_i, side_i, 1)
+    #             ] = 3e2
+    #             phases_desired[
+    #                 legjoint2index(leg_i, side_i, 1),
+    #                 legjoint2index(leg_i, side_i, 2)
+    #             ] = 0
+    #             phases_desired[
+    #                 legjoint2index(leg_i, side_i, 2),
+    #                 legjoint2index(leg_i, side_i, 1)
+    #             ] = 0
+    #     # # Opposite leg interaction
+    #     # for leg_i in range(2):
+    #     #     # 0 - 1
+    #     #     weights[
+    #     #         legjoint2index(leg_i, 0, 0),
+    #     #         legjoint2index(leg_i, 1, 0)
+    #     #     ] = 3e2
+    #     #     weights[
+    #     #         legjoint2index(leg_i, 1, 0),
+    #     #         legjoint2index(leg_i, 0, 0)
+    #     #     ] = 3e2
+    #     #     phases_desired[
+    #     #         legjoint2index(leg_i, 0, 0),
+    #     #         legjoint2index(leg_i, 1, 0)
+    #     #     ] = np.pi
+    #     #     phases_desired[
+    #     #         legjoint2index(leg_i, 1, 0),
+    #     #         legjoint2index(leg_i, 0, 0)
+    #     #     ] = -np.pi
+    #     # # Following leg interaction
+    #     # for side_i in range(2):
+    #     #     # 0 - 1
+    #     #     weights[
+    #     #         legjoint2index(0, side_i, 0),
+    #     #         legjoint2index(1, side_i, 0)
+    #     #     ] = 3e2
+    #     #     weights[
+    #     #         legjoint2index(1, side_i, 0),
+    #     #         legjoint2index(0, side_i, 0)
+    #     #     ] = 3e2
+    #     #     phases_desired[
+    #     #         legjoint2index(0, side_i, 0),
+    #     #         legjoint2index(1, side_i, 0)
+    #     #     ] = np.pi
+    #     #     phases_desired[
+    #     #         legjoint2index(1, side_i, 0),
+    #     #         legjoint2index(0, side_i, 0)
+    #     #     ] = -np.pi
+    #     # Body-legs interaction
+    #     for side_i in range(2):
+    #         # Forelimbs
+    #         weights[
+    #             bodyjoint2index(1),
+    #             legjoint2index(0, side_i, 0)
+    #         ] = 3e2
+    #         weights[
+    #             legjoint2index(0, side_i, 0),
+    #             bodyjoint2index(1)
+    #         ] = 3e2
+    #         phases_desired[
+    #             bodyjoint2index(1),
+    #             legjoint2index(0, side_i, 0)
+    #         ] = 0  # 0.5*np.pi
+    #         phases_desired[
+    #             legjoint2index(0, side_i, 0),
+    #             bodyjoint2index(1)
+    #         ] = 0  # -0.5*np.pi
+    #         # Hind limbs
+    #         weights[
+    #             bodyjoint2index(4),
+    #             legjoint2index(1, side_i, 0)
+    #         ] = 3e2
+    #         weights[
+    #             legjoint2index(1, side_i, 0),
+    #             bodyjoint2index(4)
+    #         ] = 3e2
+    #         phases_desired[
+    #             bodyjoint2index(4),
+    #             legjoint2index(1, side_i, 0)
+    #         ] = 0  # -0.5*np.pi
+    #         phases_desired[
+    #             legjoint2index(1, side_i, 0),
+    #             bodyjoint2index(4)
+    #         ] = 0  # 0.5*np.pi
+    #     freqs = 2*np.pi*np.ones(n_dim_body)
+    #     if phases is None:
+    #         phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
+    #     weights, phase_desired, integrator = cls.gen_cas_integrator(
+    #         timestep,
+    #         n_dim,
+    #         weights,
+    #         phases_desired
+    #     )
+    #     return cls(phases, freqs, weights, phase_desired, integrator)
 
     @property
     def phases(self):
@@ -528,12 +589,12 @@ class SalamanderNetwork(Network):
 
     def control_step(self, freqs):
         """Control step"""
-        self.integrate(np.concatenate(
-            [
-                freqs,
-                self.weights,
-                self.phases_desired
-            ],
-            axis=0
-        ))
-        return self.phases
+        self._freqs = np.array(freqs, dtype=np.float64)
+        self.integrate(
+            self._freqs,
+            self._connectivity,
+            self._connections,
+            self._n_dim,
+            self._c_dim
+        )
+        return self._state

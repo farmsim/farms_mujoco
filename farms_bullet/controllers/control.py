@@ -1,11 +1,11 @@
 """Control"""
 
 import time
-
-import pybullet
 import numpy as np
+import pybullet
 
 from .network import SalamanderNetwork
+# from .casadi import SalamanderCasADiNetwork
 
 
 class SineControl:
@@ -120,12 +120,21 @@ class ModelController:
 
     def control(self, verbose=False):
         """Control"""
-        phases = self.network.control_step([
-            float(controller.angular_frequency())
-            for controller in self.controllers
+        _phases = self.network.control_step([
+            float(self.controllers[0].angular_frequency())
+            # float(controller.angular_frequency())
+            # for controller in self.controllers
+            for i in range(46)
         ])
         if verbose:
             tic = time.time()
+        outputs = [i for i in range(11)] + [
+            22 + leg*2*3*2 + side*3*2 + j
+            for leg in range(2)
+            for side in range(2)
+            for j in range(3)
+        ]
+        phases = _phases[outputs]
         controls = [
             controller.update(phases[i])
             for i, controller in enumerate(self.controllers)
