@@ -322,13 +322,13 @@ class Simulation:
         pybullet.disconnect()
 
 
-def main(sim_options=None, model_options=None):
+def main(simulation_options=None, model_options=None):
     """Main"""
 
     # Parse command line arguments
-    if not sim_options:
+    if simulation_options is None:
         simulation_options = SimulationOptions.with_clargs()
-    if not model_options:
+    if model_options is None:
         model_options = ModelOptions()
 
     # Setup simulation
