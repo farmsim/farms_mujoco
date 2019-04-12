@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Run salamander simulation with bullet"""
 
-from farms_bullet.simulation import main as run_simulation
-from farms_bullet.model_options import ModelOptions
-from farms_bullet.simulation_options import SimulationOptions
+from farms_bullet.simulations.salamander import main as run_simulation
+from farms_bullet.animats.model_options import ModelOptions
+from farms_bullet.simulations.simulation_options import SimulationOptions
 
 
 def main():
