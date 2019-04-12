@@ -29,6 +29,7 @@ class SalamanderSimulation(Simulation):
             activate=False
         )
         self.animat.model.print_dynamics_info()
+        self.experiment.save()
 
 
 def main(simulation_options=None, animat_options=None):
