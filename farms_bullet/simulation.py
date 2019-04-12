@@ -345,7 +345,7 @@ class SimonAnimat(Animat):
             position=[0, 0, 0],
             orientation=[0, 0, 0],
             f_position=[0, 0, 0],
-            mass=0.3
+            mass=2
         )
         # Upper legs
         upper_legs_positions = np.array([
@@ -364,7 +364,7 @@ class SimonAnimat(Animat):
                 f_orientation=[0, 0, 0],
                 frame_position=[0, 0, -0.02],
                 joint_axis=[1, 0, 0],
-                mass=0.1
+                mass=0.5
             ) for position in upper_legs_positions
         ]
         upper_legs[0].parent = 0
@@ -384,7 +384,7 @@ class SimonAnimat(Animat):
                 f_orientation=[0, 0, 0],
                 frame_position=[0, 0, -0.03],
                 joint_axis=[0, 1, 0],
-                mass=0.1
+                mass=0.5
             ) for upper_pos in upper_legs_positions
         ]
         lower_legs[0].parent = 1
