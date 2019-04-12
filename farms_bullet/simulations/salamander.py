@@ -31,11 +31,11 @@ class SalamanderSimulation(Simulation):
         self.animat.model.print_dynamics_info()
 
 
-def main(sim_options=None, animat_options=None):
+def main(simulation_options=None, animat_options=None):
     """Main"""
 
     # Parse command line arguments
-    if not sim_options:
+    if not simulation_options:
         simulation_options = SimulationOptions.with_clargs()
     if not animat_options:
         animat_options = ModelOptions()

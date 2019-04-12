@@ -13,9 +13,11 @@ def main():
     #     frequency=1.7,
     #     body_stand_amplitude=0.42
     # )
-    # sim_options = SimulationOptions.with_clargs(duration=100)
-    # run_simulation(sim_options=sim_options, animat_options=animat_options)
-    run_simulation(animat_options=animat_options)
+    simulation_options = SimulationOptions.with_clargs(duration=100)
+    run_simulation(
+        simulation_options=simulation_options,
+        animat_options=animat_options
+    )
 
 
 if __name__ == '__main__':

@@ -99,9 +99,9 @@ class SalamanderNetwork(Network):
             else cls.walking(timestep, phases)
         )
 
-    @classmethod
-    def walking(cls, timestep, phases=None):
-        """Default salamander network"""
+    @staticmethod
+    def walking_parameters():
+        """Walking parameters"""
         n_dim_body = 11
         n_dim_legs = 2*2*3
         n_dim = n_dim_body + n_dim_legs
@@ -225,14 +225,24 @@ class SalamanderNetwork(Network):
                 bodyjoint2index(4)
             ] = (side_i-1)*np.pi  # 0.5*np.pi
         freqs = 2*np.pi*np.ones(n_dim_body)
+        phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
+        return n_dim, phases, freqs, weights, phases_desired
+
+    @classmethod
+    def walking(cls, timestep, phases=None):
+        """Default salamander network"""
+        n_dim, _phases, freqs, weights, phases_desired = (
+            cls.walking_parameters()
+        )
         if phases is None:
-            phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
-        weights, phase_desired, integrator = cls.gen_integrator(
+            phases = _phases
+        weights, phase_desired, integrator = cls.gen_cas_integrator(
             timestep,
             n_dim,
             weights,
             phases_desired
         )
+        cls.walking_parameters()
         return cls(phases, freqs, weights, phase_desired, integrator)
 
     @classmethod
@@ -363,7 +373,7 @@ class SalamanderNetwork(Network):
         freqs = 2*np.pi*np.ones(n_dim_body)
         if phases is None:
             phases = 1e-3*3e-1*np.pi*(2*np.pi*np.random.ranf(n_dim)-1)
-        weights, phase_desired, integrator = cls.gen_integrator(
+        weights, phase_desired, integrator = cls.gen_cas_integrator(
             timestep,
             n_dim,
             weights,
@@ -372,7 +382,7 @@ class SalamanderNetwork(Network):
         return cls(phases, freqs, weights, phase_desired, integrator)
 
     @staticmethod
-    def gen_integrator(timestep, n_joints, weights, phases_desired):
+    def gen_cas_integrator(timestep, n_joints, weights, phases_desired):
         """Generate controller"""
         oscillator_names = np.array(
             [
@@ -441,9 +451,35 @@ class SalamanderNetwork(Network):
         ])
         print("Coupling weights sym:\n{}".format(coupling_weights_sym))
         # Integrator
+        dt = 1e-3
+        # opts = {
+        #     'tf': dt,
+        #     # "nonlinear_solver_iteration": "functional",
+        #     "grid": [0, dt],
+        #     "ad_weight": 1.0,
+        #     # "linear_multistep_method": "adams",
+        #     # "fsens_all_at_once": True,
+        #     # "max_multistep_order": 1,
+        #     # "sensitivity_method": "staggered",
+        #     # "linear_solver": "csparse",
+        #     # "steps_per_checkpoint": 1,
+        #     'jit': False,
+        #     'jac_penalty': 0,
+        #     "number_of_finite_elements": 1,
+        #     "inputs_check": False,
+        #     "enable_jacobian": True,
+        #     "enable_reverse": True,
+        #     "enable_fd":True,
+        #     "print_time": False,
+        #     "print_stats": False,
+        #     # "reltol": 1e-3,
+        #     # "abstol": 1e-3,
+        #     'expand': True
+        # }
         integrator = cas.integrator(
             'oscillator_network',
             'cvodes',
+            # 'rk',
             {
                 "x": phases_sym,
                 "p": cas.vertcat(
@@ -460,8 +496,17 @@ class SalamanderNetwork(Network):
                 # "step0": 1e-3,
                 # "abstol": 1e-3,
                 # "reltol": 1e-3
+                # "enable_jacobian": False,
+                # "number_of_finite_elements": 1
+                # "print_stats": True,
+                # "verbose": True,
+                # "enable_fd": True,
+                # "enable_jacobian": False,
+                # "step0": 1e-4
             }
         )
+        # integrator.print_options()
+        # integrator.setOption("exact_jacobian", "false")
         weights = [
             weights[i, j]
             for i in range(n_joints)
