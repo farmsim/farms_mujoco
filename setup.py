@@ -2,6 +2,9 @@
 """ Setup script """
 
 from setuptools import setup, find_packages
+from setuptools.extension import Extension
+from Cython.Build import cythonize
+import numpy as np
 
 
 setup(
@@ -27,4 +30,13 @@ setup(
     #     'farms_bullet/config/*'
     # ]},
     # include_package_data=True
+    ext_modules=cythonize([
+        Extension(
+            "farms_bullet.cy_controller",
+            ["src/controller.pyx"],
+            include_dirs=[np.get_include()],
+            extra_compile_args=['-O3'],  # , '-fopenmp'
+            extra_link_args=['-O3']  # , '-fopenmp'
+        )
+    ]),
 )
