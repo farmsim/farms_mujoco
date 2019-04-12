@@ -23,6 +23,7 @@ DTYPE = np.float64
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.profile(False)
+@cython.nonecheck(False)
 cpdef void odefun(CTYPE[:] dstate, CTYPE[:] state, CTYPE[:] freqs, CTYPE[:, :] weights, CTYPE[:, :] phi, unsigned int n_dim) nogil:
     """ODE"""
     cdef int i, j, n_dim_c = n_dim
@@ -37,6 +38,7 @@ cpdef void odefun(CTYPE[:] dstate, CTYPE[:] state, CTYPE[:] freqs, CTYPE[:, :] w
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.profile(False)
+@cython.nonecheck(False)
 cpdef void rk4_ode(fun, float timestep, CTYPE[:] state, CTYPE[:] freqs, CTYPE[:, :] weights, CTYPE[:, :] phi, unsigned int n_dim):
     """Runge-Kutta step integration"""
     cdef int i, n_dim_c = n_dim
