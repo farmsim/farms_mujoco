@@ -177,7 +177,7 @@ cpdef void ode_oscillators_sparse(
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.profile(False)
 @cython.nonecheck(False)
-cpdef void ode_radius(
+cpdef void ode_amplitude(
     CTYPE[:] dstate,
     CTYPE[:] state,
     unsigned int n_dim,

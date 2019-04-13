@@ -1,7 +1,7 @@
 """Network"""
 
 import numpy as np
-from ..cy_controller import ode_oscillators_sparse, ode_radius, rk4
+from ..cy_controller import ode_oscillators_sparse, ode_amplitude, rk4
 from .convention import bodyjoint2index, legjoint2index
 
 
@@ -466,26 +466,26 @@ class SalamanderODEPhase(ODESolver):
         return self._state
 
 
-class SalamanderODERadius(ODESolver):
+class SalamanderODEAmplitude(ODESolver):
     """Salamander network"""
 
-    def __init__(self, radius, rate, radius_desired, timestep):
+    def __init__(self, amplitude, rate, amplitude_desired, timestep):
         self._rate = np.array(rate, dtype=np.float64)
-        self._radius_desired = np.array(radius_desired, dtype=np.float64)
-        super(SalamanderODERadius, self).__init__(
-            ode=ode_radius,
-            state=radius,
+        self._amplitude_desired = np.array(amplitude_desired, dtype=np.float64)
+        super(SalamanderODEAmplitude, self).__init__(
+            ode=ode_amplitude,
+            state=amplitude,
             ode_solver=rk4,
             timestep=timestep
         )
 
     @classmethod
-    def from_gait(cls, gait, timestep, radius=None):
+    def from_gait(cls, gait, timestep, amplitude=None):
         """ Salamander network from gait"""
         return (
-            cls.swimming(timestep, radius)
+            cls.swimming(timestep, amplitude)
             if gait == "swimming"
-            else cls.walking(timestep, radius)
+            else cls.walking(timestep, amplitude)
         )
 
     @staticmethod
@@ -498,20 +498,20 @@ class SalamanderODERadius(ODESolver):
         n_dim_body = 2*n_body_joints
         n_dim_legs = 2*n_leg_pairs*n_sides*n_leg_dof
         n_dim = n_dim_body + n_dim_legs
-        radius = np.zeros(n_dim)
+        amplitude = np.zeros(n_dim)
         rate = np.ones(n_dim)
-        radius_desired = np.ones(n_dim)
-        return radius, rate, radius_desired
+        amplitude_desired = np.ones(n_dim)
+        return amplitude, rate, amplitude_desired
 
     @classmethod
-    def walking(cls, timestep, radius=None):
+    def walking(cls, timestep, amplitude=None):
         """Default salamander network"""
-        _radius, freqs, connectivity = (
+        _amplitude, freqs, connectivity = (
             cls.walking_parameters()
         )
-        if radius is None:
-            radius = _radius
-        return cls(radius, freqs, connectivity, timestep)
+        if amplitude is None:
+            amplitude = _amplitude
+        return cls(amplitude, freqs, connectivity, timestep)
 
     @staticmethod
     def swimming_parameters():
@@ -523,20 +523,20 @@ class SalamanderODERadius(ODESolver):
         n_dim_body = 2*n_body_joints
         n_dim_legs = 2*n_leg_pairs*n_sides*n_leg_dof
         n_dim = n_dim_body + n_dim_legs
-        radius = np.zeros(n_dim)
+        amplitude = np.zeros(n_dim)
         rate = np.ones(n_dim)
-        radius_desired = np.ones(n_dim)
-        return radius, rate, radius_desired
+        amplitude_desired = np.ones(n_dim)
+        return amplitude, rate, amplitude_desired
 
     @classmethod
-    def swimming(cls, timestep, radius=None):
+    def swimming(cls, timestep, amplitude=None):
         """Default salamander network"""
-        radius, rate, radius_desired = cls.swimming_parameters()
-        return cls(radius, rate, radius_desired, timestep)
+        amplitude, rate, amplitude_desired = cls.swimming_parameters()
+        return cls(amplitude, rate, amplitude_desired, timestep)
 
     @property
-    def radius(self):
-        """Oscillator radius"""
+    def amplitude(self):
+        """Oscillator amplitude"""
         return self._state
 
     def control_step(self):
@@ -544,7 +544,7 @@ class SalamanderODERadius(ODESolver):
         self.integrate(
             [
                 self._rate,
-                self._radius_desired,
+                self._amplitude_desired,
             ]
         )
         return self._state
@@ -553,44 +553,44 @@ class SalamanderODERadius(ODESolver):
 class SalamanderNetwork:
     """Salamander network"""
 
-    def __init__(self, phases_ode, radius_ode, offsets):
+    def __init__(self, phases_ode, amplitude_ode, offsets):
         super(SalamanderNetwork, self).__init__()
         self._ode_phases = phases_ode
-        self._ode_radius = radius_ode
+        self._ode_amplitude = amplitude_ode
         self._offsets = offsets
 
     @classmethod
-    def from_gait(cls, gait, timestep, phases=None, radius=None):
+    def from_gait(cls, gait, timestep, phases=None, amplitude=None):
         """ Salamander network from gait"""
         return (
-            cls.swimming(timestep, phases, radius)
+            cls.swimming(timestep, phases, amplitude)
             if gait == "swimming"
-            else cls.walking(timestep, phases, radius)
+            else cls.walking(timestep, phases, amplitude)
         )
 
     @classmethod
-    def walking(cls, timestep, phases=None, radius=None):
+    def walking(cls, timestep, phases=None, amplitude=None):
         """Network for walking"""
         phases_ode = SalamanderODEPhase.walking(timestep, phases)
-        radius_ode = SalamanderODERadius.walking(timestep, radius)
+        amplitude_ode = SalamanderODEAmplitude.walking(timestep, amplitude)
         offsets = np.zeros(11+4*3)
-        return cls(phases_ode, radius_ode, offsets)
+        return cls(phases_ode, amplitude_ode, offsets)
 
     @classmethod
-    def swimming(cls, timestep, phases=None, radius=None):
+    def swimming(cls, timestep, phases=None, amplitude=None):
         """Network for """
         phases_ode = SalamanderODEPhase.swimming(timestep, phases)
-        radius_ode = SalamanderODERadius.swimming(timestep, radius)
+        amplitude_ode = SalamanderODEAmplitude.swimming(timestep, amplitude)
         offsets = np.zeros(11+4*3)
-        return cls(phases_ode, radius_ode, offsets)
+        return cls(phases_ode, amplitude_ode, offsets)
 
     def control_step(self, freqs):
         """Control step"""
         # return (
         #     self._ode_phases.control_step(freqs),
-        #     self._ode_radius.control_step()
+        #     self._ode_amplitude.control_step()
         # )
-        self._ode_radius.control_step()
+        self._ode_amplitude.control_step()
         return self._ode_phases.control_step(freqs)
 
     @property
@@ -599,9 +599,9 @@ class SalamanderNetwork:
         return self._ode_phases.state
 
     @property
-    def radius(self):
-        """Radius"""
-        return self._ode_radius.state
+    def amplitude(self):
+        """Amplitude"""
+        return self._ode_amplitude.state
 
 
 class SalamanderNetworkPosition(SalamanderNetwork):
@@ -609,7 +609,7 @@ class SalamanderNetworkPosition(SalamanderNetwork):
 
     def get_position_output(self):
         """Position output"""
-        phases, radius = self.phases, self.radius
+        phases, amplitude = self.phases, self.amplitude
         n_body = 11
         n_legs_dofs = 3
         n_legs = 4
@@ -625,8 +625,8 @@ class SalamanderNetworkPosition(SalamanderNetwork):
         ]
         return np.concatenante([
             0.5*(
-                radius[group0]*(1 + np.cos(phases[group0]))
-                + radius[group1]*(1 + np.cos(phases[group1]))
+                amplitude[group0]*(1 + np.cos(phases[group0]))
+                + amplitude[group1]*(1 + np.cos(phases[group1]))
             )
             
         ]) + self._offsets
@@ -637,9 +637,9 @@ class SalamanderNetworkPosition(SalamanderNetwork):
 
 #     def get_torque_output(self):
 #         """Position output"""
-#         phases, radius = self.phases, self.radius
+#         phases, amplitude = self.phases, self.amplitude
 #         n_body = 11
 #         return 0.5*(
-#             radius[:n_body]*np.cos(1 + phases[:n_body])
-#             + radius[:n_body]*np.cos(1 + phases[:n_body])
+#             amplitude[:n_body]*np.cos(1 + phases[:n_body])
+#             + amplitude[:n_body]*np.cos(1 + phases[:n_body])
 #         )
