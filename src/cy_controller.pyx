@@ -146,3 +146,83 @@ cpdef void rk4_ode_sparse(
     for i in range(n_dim_c):  # , nogil=True):
         k_4[i] = timestep*k_4[i]
         state[i] = state[i] + (k_1[i]+2*k_2[i]+2*k_3[i]+k_4[i])/6.
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.profile(False)
+@cython.nonecheck(False)
+cpdef void ode_oscillators_sparse(
+    CTYPE[:] dstate,
+    CTYPE[:] state,
+    unsigned int n_dim,
+    CTYPE[:] freqs,
+    unsigned int[:, :] connectivity,
+    CTYPE[:, :] connection,
+    unsigned int c_dim
+) nogil:
+    """ODE"""
+    cdef int i, j, n_dim_c = n_dim, c_dim_c = c_dim
+    for i in range(n_dim_c):  # , nogil=True):
+        dstate[i] = freqs[i]
+    for j in range(c_dim_c):
+        dstate[connectivity[j][0]] += connection[j][0]*sin(
+            state[connectivity[j][1]]
+            - state[connectivity[j][0]]
+            - connection[j][1]
+        )
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.profile(False)
+@cython.nonecheck(False)
+cpdef void ode_radius(
+    CTYPE[:] dstate,
+    CTYPE[:] state,
+    unsigned int n_dim,
+    CTYPE[:] rate,
+    CTYPE[:] desired
+) nogil:
+    """ODE"""
+    cdef int i, n_dim_c = n_dim
+    for i in range(n_dim_c):  # , nogil=True):
+        dstate[i] = rate[i]*(desired[i] - state[i])
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.profile(False)
+@cython.nonecheck(False)
+cpdef void rk4(
+    fun,
+    float timestep,
+    CTYPE[:] state,
+    unsigned int n_dim,
+    parameters
+):
+    """Runge-Kutta step integration"""
+    cdef int i, n_dim_c = n_dim
+    cdef CTYPE[:] k_1 = np.empty([n_dim], dtype=DTYPE)
+    cdef CTYPE[:] k_2 = np.empty([n_dim], dtype=DTYPE)
+    cdef CTYPE[:] k_3 = np.empty([n_dim], dtype=DTYPE)
+    cdef CTYPE[:] k_4 = np.empty([n_dim], dtype=DTYPE)
+    cdef CTYPE[:] k_1_2 = np.empty([n_dim], dtype=DTYPE)
+    cdef CTYPE[:] k_2_2 = np.empty([n_dim], dtype=DTYPE)
+    cdef CTYPE[:] k_3_2 = np.empty([n_dim], dtype=DTYPE)
+    fun(k_1, state, n_dim_c, *parameters)
+    for i in range(n_dim_c):  # , nogil=True):
+        k_1[i] = timestep*k_1[i]
+        k_1_2[i] = state[i]+0.5*k_1[i]
+    fun(k_2, k_1_2, n_dim_c, *parameters)
+    for i in range(n_dim_c):  # , nogil=True):
+        k_2[i] = timestep*k_2[i]
+        k_2_2[i] = state[i]+0.5*k_2[i]
+    fun(k_3, k_2_2, n_dim_c, *parameters)
+    for i in range(n_dim_c):  # , nogil=True):
+        k_3[i] = timestep*k_3[i]
+        k_3_2[i] = state[i]+k_3[i]
+    fun(k_4, k_3_2, n_dim_c, *parameters)
+    for i in range(n_dim_c):  # , nogil=True):
+        k_4[i] = timestep*k_4[i]
+        state[i] = state[i] + (k_1[i]+2*k_2[i]+2*k_3[i]+k_4[i])/6.
