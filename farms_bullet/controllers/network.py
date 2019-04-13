@@ -599,9 +599,16 @@ class SalamanderNetwork:
         return self._ode_phases.state
 
     @property
-    def amplitude(self):
-        """Amplitude"""
+    def amplitudes(self):
+        """Amplitudes"""
         return self._ode_amplitude.state
+
+    @property
+    def outputs(self):
+        """Outputs"""
+        return self._ode_amplitude.state*(
+            1 + np.cos(2*np.pi*self._ode_phases.state)
+        )
 
 
 class SalamanderNetworkPosition(SalamanderNetwork):
@@ -609,7 +616,6 @@ class SalamanderNetworkPosition(SalamanderNetwork):
 
     def get_position_output(self):
         """Position output"""
-        phases, amplitude = self.phases, self.amplitude
         n_body = 11
         n_legs_dofs = 3
         n_legs = 4
@@ -623,13 +629,8 @@ class SalamanderNetworkPosition(SalamanderNetwork):
             for i in range(n_legs_dofs)
             for j in range(n_legs)
         ]
-        return np.concatenante([
-            0.5*(
-                amplitude[group0]*(1 + np.cos(phases[group0]))
-                + amplitude[group1]*(1 + np.cos(phases[group1]))
-            )
-            
-        ]) + self._offsets
+        outputs = self.outputs
+        return 0.5*(outputs[group0] - outputs[group1]) + self._offsets
 
 
 # class SalamanderNetworkTorque(SalamanderNetwork):
