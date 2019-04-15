@@ -5,6 +5,8 @@ import numpy as np
 import pybullet
 
 from .network import SalamanderNetwork
+from .network import SalamanderNetworkPosition
+from .control_options import SalamanderControlOptions
 # from .casadi import SalamanderCasADiNetwork
 
 
@@ -70,6 +72,10 @@ class JointController:
         self._pdf = pdf
         self._is_body = kwargs.pop("is_body", False)
 
+    def joint(self):
+        """Joint"""
+        return self._joint
+
     def cmds(self, phase):
         """Commands"""
         return {
@@ -114,9 +120,11 @@ class ModelController:
         #     self.controllers,
         #     timestep=timestep
         # )
-        self.network = SalamanderNetwork.walking(timestep, phases=None)
+        # self.network = SalamanderNetwork.walking(timestep, phases=None)
+        self.network = SalamanderNetworkPosition.pos_walking(timestep)
         self._frequency = self.controllers[0].get_frequency()
         self._body_offset = 0
+        self._joint_order = [ctrl.joint() for ctrl in self.controllers]
 
     def control(self, verbose=False):
         """Control"""
@@ -126,31 +134,33 @@ class ModelController:
             # for controller in self.controllers
             for i in range(46)
         ])
-        if verbose:
-            tic = time.time()
-        outputs = [i for i in range(11)] + [
-            22 + leg*2*3*2 + side*3*2 + j
-            for leg in range(2)
-            for side in range(2)
-            for j in range(3)
-        ]
-        phases = _phases[outputs]
-        controls = [
-            controller.update(phases[i])
-            for i, controller in enumerate(self.controllers)
-        ]
-        if verbose:
-            toc = time.time()
-            print("Time to copy phases: {} [s]".format(toc-tic))
+        # if verbose:
+        #     tic = time.time()
+        # outputs = [i for i in range(11)] + [
+        #     22 + leg*2*3*2 + side*3*2 + j
+        #     for leg in range(2)
+        #     for side in range(2)
+        #     for j in range(3)
+        # ]
+        # phases = _phases[outputs]
+        # controls = [
+        #     controller.update(phases[i])
+        #     for i, controller in enumerate(self.controllers)
+        # ]
+        # if verbose:
+        #     toc = time.time()
+        #     print("Time to copy phases: {} [s]".format(toc-tic))
+        position = self.network.get_position_output()
+        velocity = self.network.get_velocity_output()
         pybullet.setJointMotorControlArray(
             self.model,
-            [ctrl["joint"] for ctrl in controls],
+            self._joint_order,  # [ctrl["joint"] for ctrl in controls]
             pybullet.POSITION_CONTROL,
-            targetPositions=[ctrl["cmd"]["pos"] for ctrl in controls],
-            targetVelocities=[ctrl["cmd"]["vel"] for ctrl in controls],
-            positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
-            velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
-            forces=[ctrl["pdf"]["f"] for ctrl in controls]
+            targetPositions=position,  # [ctrl["cmd"]["pos"] for ctrl in controls],
+            targetVelocities=velocity,  # [ctrl["cmd"]["vel"] for ctrl in controls],
+            # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
+            # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
+            # forces=[ctrl["pdf"]["f"] for ctrl in controls]
         )
 
     def update_frequency(self, frequency):
@@ -164,198 +174,6 @@ class ModelController:
         self._body_offset = body_offset
         for controller in self.controllers:
             controller.set_body_offset(body_offset)
-
-
-class SalamanderControlOptions(dict):
-    """Model options"""
-
-    def __init__(self, options):
-        super(SalamanderControlOptions, self).__init__()
-        self.update(options)
-
-    @classmethod
-    def from_gait(cls, gait, **kwargs):
-        """Salamander control option from gait"""
-        return (
-            cls.walking(frequency=kwargs.pop("frequency", 1), **kwargs)
-            if gait == "walking"
-            else cls.swimming(frequency=kwargs.pop("frequency", 2), **kwargs)
-            if gait == "swimming"
-            else cls.standing()
-        )
-
-    @classmethod
-    def standing(cls, **kwargs):
-        """Standing options"""
-        # Options
-        options = {}
-
-        # General
-        options["n_body_joints"] = 11
-        options["frequency"] = kwargs.pop("frequency", 0)
-
-        # Body
-        options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0)
-        options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0)
-        options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
-        options["body_stand_shift"] = kwargs.pop("body_stand_shift", 0)
-
-        # Legs
-        options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0)
-        options["leg_0_offset"] = kwargs.pop("leg_0_offset", 0)
-
-        options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", 0)
-        options["leg_1_offset"] = kwargs.pop("leg_1_offset", np.pi/16)
-
-        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", 0)
-        options["leg_2_offset"] = kwargs.pop("leg_2_offset", np.pi/8)
-
-        # Additional walking options
-        options["leg_turn"] = 0
-
-        # Gains
-        options["body_p"] = 1e-1
-        options["body_d"] = 1e0
-        options["body_f"] = 1e1
-        options["legs_p"] = 1e-1
-        options["legs_d"] = 1e0
-        options["legs_f"] = 1e1
-
-        # Additional options
-        options.update(kwargs)
-        return cls(options)
-
-    @classmethod
-    def walking(cls, **kwargs):
-        """Walking options"""
-        # Options
-        options = {}
-
-        # General
-        options["n_body_joints"] = 11
-        options["frequency"] = kwargs.pop("frequency", 1)
-
-        # Body
-        options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0)
-        options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0)
-        options["body_stand_amplitude"] = kwargs.pop(
-            "body_stand_amplitude",
-            0.2
-        )
-        options["body_stand_shift"] = kwargs.pop("body_stand_shift", np.pi/4)
-
-        # Legs
-        options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0.8)
-        options["leg_0_offset"] = kwargs.pop("leg_0_offset", 0)
-
-        options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", np.pi/32)
-        options["leg_1_offset"] = kwargs.pop("leg_1_offset", np.pi/32)
-
-        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", np.pi/8)
-        options["leg_2_offset"] = kwargs.pop("leg_2_offset", np.pi/8)
-
-        # Additional walking options
-        options["leg_turn"] = 0
-
-        # Gains
-        options["body_p"] = 1e-1
-        options["body_d"] = 1e0
-        options["body_f"] = 1e1
-        options["legs_p"] = 1e-1
-        options["legs_d"] = 1e0
-        options["legs_f"] = 1e1
-
-        # Additional options
-        options.update(kwargs)
-        return cls(options)
-
-    @classmethod
-    def swimming(cls, **kwargs):
-        """Swimming options"""
-        # Options
-        options = {}
-
-        # General
-        n_body_joints = 11
-        options["n_body_joints"] = n_body_joints
-        options["frequency"] = kwargs.pop("frequency", 2)
-
-        # Body
-        options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0.1)
-        options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0.5)
-        options["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0)
-        options["body_stand_shift"] = kwargs.pop("body_stand_shift", 0)
-
-        # Legs
-        options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0)
-        options["leg_0_offset"] = kwargs.pop("leg_0_offset", -2*np.pi/5)
-
-        options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", 0)
-        options["leg_1_offset"] = kwargs.pop("leg_1_offset", 0)
-
-        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", 0)
-        options["leg_2_offset"] = kwargs.pop("leg_2_offset", 0)
-
-        # Additional walking options
-        options["leg_turn"] = 0
-
-        # Gains
-        options["body_p"] = 1e-1
-        options["body_d"] = 1e0
-        options["body_f"] = 1e1
-        options["legs_p"] = 1e-1
-        options["legs_d"] = 1e0
-        options["legs_f"] = 1e1
-
-        # Additional options
-        options.update(kwargs)
-        return cls(options)
-
-    def to_vector(self):
-        """To vector"""
-        return [
-            self["frequency"],
-            self["body_amplitude_0"],
-            self["body_amplitude_1"],
-            self["body_stand_amplitude"],
-            self["body_stand_shift"],
-            self["leg_0_amplitude"],
-            self["leg_0_offset"],
-            self["leg_1_amplitude"],
-            self["leg_1_offset"],
-            self["leg_2_amplitude"],
-            self["leg_2_offset"],
-            self["leg_turn"],
-            self["body_p"],
-            self["body_d"],
-            self["body_f"],
-            self["legs_p"],
-            self["legs_d"],
-            self["legs_f"]
-        ]
-
-    def from_vector(self, vector):
-        """From vector"""
-        (
-            self["frequency"],
-            self["body_amplitude_0"],
-            self["body_amplitude_1"],
-            self["body_stand_amplitude"],
-            self["body_stand_shift"],
-            self["leg_0_amplitude"],
-            self["leg_0_offset"],
-            self["leg_1_amplitude"],
-            self["leg_1_offset"],
-            self["leg_2_amplitude"],
-            self["leg_2_offset"],
-            self["leg_turn"],
-            self["body_p"],
-            self["body_d"],
-            self["body_f"],
-            self["legs_p"],
-            self["legs_d"],
-            self["legs_f"]
-        ) = vector
 
 
 class SalamanderController(ModelController):
@@ -384,7 +202,7 @@ class SalamanderController(ModelController):
             )
         )
         self.controllers = controllers_body + controllers_legs
-        self.network = SalamanderNetwork.from_gait(
+        self.network = SalamanderNetworkPosition.pos_from_gait(
             gait,
             timestep,
             phases=self.network.phases

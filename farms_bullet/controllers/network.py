@@ -3,6 +3,7 @@
 import numpy as np
 from ..cy_controller import ode_oscillators_sparse, ode_amplitude, rk4
 from .convention import bodyjoint2index, legjoint2index
+from .control_options import SalamanderControlOptions
 
 
 class ODESolver:
@@ -506,19 +507,28 @@ class SalamanderODEAmplitude(ODESolver):
         n_dim_legs = 2*n_leg_pairs*n_sides*n_leg_dof
         n_dim = n_dim_body + n_dim_legs
         amplitude = np.zeros(n_dim)
+
+        amplitude = np.zeros(n_dim)
+
         rate = np.ones(n_dim)
         amplitude_desired = np.ones(n_dim)
         return amplitude, rate, amplitude_desired
 
     @classmethod
-    def walking(cls, timestep, amplitude=None):
+    def walking(
+            cls, timestep, amplitude=None, rate=None, amplitude_desired=None
+    ):
         """Default salamander network"""
-        _amplitude, freqs, connectivity = (
+        _amplitude, _rate, _amplitude_desired = (
             cls.walking_parameters()
         )
         if amplitude is None:
             amplitude = _amplitude
-        return cls(amplitude, freqs, connectivity, timestep)
+        if rate is None:
+            rate = _rate
+        if amplitude_desired is None:
+            amplitude_desired = _amplitude_desired
+        return cls(amplitude, rate, amplitude_desired, timestep)
 
     @staticmethod
     def swimming_parameters():
@@ -536,9 +546,19 @@ class SalamanderODEAmplitude(ODESolver):
         return amplitude, rate, amplitude_desired
 
     @classmethod
-    def swimming(cls, timestep, amplitude=None):
+    def swimming(
+            cls, timestep, amplitude=None, rate=None, amplitude_desired=None
+    ):
         """Default salamander network"""
-        amplitude, rate, amplitude_desired = cls.swimming_parameters()
+        _amplitude, _rate, _amplitude_desired = (
+            cls.swimming_parameters()
+        )
+        if amplitude is None:
+            amplitude = _amplitude
+        if rate is None:
+            rate = _rate
+        if amplitude_desired is None:
+            amplitude_desired = _amplitude_desired
         return cls(amplitude, rate, amplitude_desired, timestep)
 
     @property
@@ -620,14 +640,14 @@ class SalamanderNetwork:
     def get_outputs(self):
         """Outputs"""
         return self.amplitudes*(
-            1 + np.cos(2*np.pi*self.phases)
+            1 + np.cos(self.phases)
         )
 
-    def get_velocity_outputs(self):
+    def get_doutputs(self):
         """Outputs velocity"""
         return self.damplitudes*(
-            1 + np.cos(2*np.pi*self.phases)
-        ) - self.amplitudes*np.sin(2*np.pi*self.phases)*2*np.pi*self.dphases
+            1 + np.cos(self.phases)
+        ) - self.amplitudes*np.sin(self.phases)*self.dphases
 
 
 class SalamanderNetworkPosition(SalamanderNetwork):
@@ -639,55 +659,131 @@ class SalamanderNetworkPosition(SalamanderNetwork):
             amplitude_ode
         )
         self._offsets = offsets
+        n_body = 11
+        n_legs_dofs = 3
+        n_legs = 4
+        self.group0 = [
+            bodyjoint2index(joint_i=i, side=0)
+            for i in range(11)
+        ] + [
+            legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=0)
+            for leg_i in range(2)
+            for side_i in range(2)
+            for joint_i in range(n_legs_dofs)
+        ]
+        self.group1 = [
+            bodyjoint2index(joint_i=i, side=1)
+            for i in range(11)
+        ] + [
+            legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=1)
+            for leg_i in range(2)
+            for side_i in range(2)
+            for joint_i in range(n_legs_dofs)
+        ]
 
     @classmethod
-    def pos_walking(cls, timestep, phases=None, amplitude=None, **kwargs):
+    def pos_from_gait(cls, gait, timestep, **kwargs):
+        """ Salamander network from gait"""
+        return (
+            cls.pos_swimming(timestep, **kwargs)
+            if gait == "swimming"
+            else cls.pos_walking(timestep, **kwargs)
+        )
+
+    @classmethod
+    def pos_walking(cls, timestep, phases=None, amplitude=None, offsets=None):
         """Network for walking"""
+        if amplitude is None:
+            n_body = 11
+            n_dof_legs = 3
+            n_legs = 4
+            n_joints = n_body + n_legs*n_dof_legs
+            amplitude = np.zeros(2*n_joints)
+            options = SalamanderControlOptions.walking()
+            for i in range(n_body):
+                amplitude[[i, i+n_body]] = (
+                    options["body_stand_amplitude"]*np.sin(
+                        2*np.pi*i/n_body
+                        - options["body_stand_shift"]
+                    )
+                )
+            for leg_i in range(n_legs):
+                for i in range(n_dof_legs):
+                    amplitude[[
+                        2*n_body + 2*leg_i*n_dof_legs + i,
+                        2*n_body + 2*leg_i*n_dof_legs + i + n_dof_legs
+                    ]] = (
+                        options["leg_{}_amplitude".format(i)]
+                    )
         phases_ode = SalamanderODEPhase.walking(timestep, phases)
-        amplitude_ode = SalamanderODEAmplitude.walking(timestep, amplitude)
-        offsets = kwargs.pop("offsets", np.zeros(11+4*3))
+        amplitude_ode = SalamanderODEAmplitude.walking(
+            timestep,
+            amplitude_desired=amplitude
+        )
+        if offsets is None:
+            n_body = 11
+            n_dof_legs = 3
+            n_legs = 4
+            n_joints = n_body + n_legs*n_dof_legs
+            offsets = np.zeros(n_joints)
+            options = SalamanderControlOptions.walking()
+            for leg_i in range(n_legs):
+                for i in range(n_dof_legs):
+                    offsets[n_body + leg_i*n_dof_legs + i] = (
+                        options["leg_{}_offset".format(i)]
+                    )
         return cls(phases_ode, amplitude_ode, offsets)
 
     @classmethod
-    def pos_swimming(cls, timestep, phases=None, amplitude=None, **kwargs):
+    def pos_swimming(cls, timestep, phases=None, amplitude=None, offsets=None):
         """Network for """
+        if amplitude is None:
+            n_body = 11
+            n_dof_legs = 3
+            n_legs = 4
+            n_joints = n_body + n_legs*n_dof_legs
+            amplitude = np.zeros(2*n_joints)
+            options = SalamanderControlOptions.swimming()
+            body_amplitudes = np.linspace(
+                options["body_amplitude_0"],
+                options["body_amplitude_1"],
+                n_body
+            )
+            for i in range(n_body):
+                amplitude[[i, i+n_body]] = body_amplitudes[i]
+            for leg_i in range(n_legs):
+                for i in range(n_dof_legs):
+                    amplitude[[
+                        2*n_body + 2*leg_i*n_dof_legs + i,
+                        2*n_body + 2*leg_i*n_dof_legs + i + n_dof_legs
+                    ]] = (
+                        options["leg_{}_amplitude".format(i)]
+                    )
         phases_ode = SalamanderODEPhase.swimming(timestep, phases)
-        amplitude_ode = SalamanderODEAmplitude.swimming(timestep, amplitude)
-        offsets = kwargs.pop("offsets", np.zeros(11+4*3))
+        amplitude_ode = SalamanderODEAmplitude.swimming(
+            timestep,
+            amplitude_desired=amplitude
+        )
+        if offsets is None:
+            n_body = 11
+            n_dof_legs = 3
+            n_legs = 4
+            n_joints = n_body + n_legs*n_dof_legs
+            offsets = np.zeros(n_joints)
+            options = SalamanderControlOptions.swimming()
+            for leg_i in range(n_legs):
+                for i in range(n_dof_legs):
+                    offsets[n_body + leg_i*n_dof_legs + i] = (
+                        options["leg_{}_offset".format(i)]
+                    )
         return cls(phases_ode, amplitude_ode, offsets)
 
     def get_position_output(self):
         """Position output"""
-        n_body = 11
-        n_legs_dofs = 3
-        n_legs = 4
-        group0 = [i for i in range(11)] + [
-            2*n_body + i+2*n_legs_dofs*j
-            for i in range(n_legs_dofs)
-            for j in range(n_legs)
-        ]
-        group1 = [n_body + i for i in range(11)] + [
-            2*n_body + n_legs_dofs + i+2*n_legs_dofs*j
-            for i in range(n_legs_dofs)
-            for j in range(n_legs)
-        ]
         outputs = self.get_outputs()
-        return 0.5*(outputs[group0] - outputs[group1]) + self._offsets
+        return 0.5*(outputs[self.group0] - outputs[self.group1]) + self._offsets
 
     def get_velocity_output(self):
         """Position output"""
-        n_body = 11
-        n_legs_dofs = 3
-        n_legs = 4
-        group0 = [i for i in range(11)] + [
-            2*n_body + i+2*n_legs_dofs*j
-            for i in range(n_legs_dofs)
-            for j in range(n_legs)
-        ]
-        group1 = [n_body + i for i in range(11)] + [
-            2*n_body + n_legs_dofs + i+2*n_legs_dofs*j
-            for i in range(n_legs_dofs)
-            for j in range(n_legs)
-        ]
-        outputs = self.get_velocity_outputs()
-        return 0.5*(outputs[group0] - outputs[group1])
+        outputs = self.get_doutputs()
+        return 0.5*(outputs[self.group0] - outputs[self.group1])

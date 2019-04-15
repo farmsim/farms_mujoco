@@ -28,12 +28,13 @@ def main():
     times = np.arange(0, 10, timestep)
     n_iterations = len(times)
     network = SalamanderNetworkPosition.pos_walking(timestep=1e-3)
-    freqs = np.ones(np.shape(network.phases))
+    freqs = 2*np.pi*np.ones(np.shape(network.phases))
     phase_log = np.zeros([n_iterations, len(network.phases)])
     dphase_log = np.zeros([n_iterations, len(network.dphases)])
     amplitude_log = np.zeros([n_iterations, len(network.amplitudes)])
     damplitude_log = np.zeros([n_iterations, len(network.damplitudes)])
     output_log = np.zeros([n_iterations, len(network.get_outputs())])
+    doutput_log = np.zeros([n_iterations, len(network.get_outputs())])
     position_log = np.zeros([n_iterations, len(network.get_position_output())])
     velocity_log = np.zeros([n_iterations, len(network.get_velocity_output())])
 
@@ -50,6 +51,7 @@ def main():
         dphase_log[i, :] = network.dphases
         damplitude_log[i, :] = network.damplitudes
         output_log[i, :] = network.get_outputs()
+        doutput_log[i, :] = network.get_doutputs()
         position_log[i, :] = network.get_position_output()
         tic2 = time.time()
         velocity_log[i, :] = network.get_velocity_output()
@@ -109,6 +111,16 @@ def main():
         "Outputs",
         r"$r{}$",
         "Output"
+    )
+
+    # Plot doutput
+    plot_data(
+        times,
+        doutput_log,
+        22,
+        "dOutputs",
+        r"$r{}$",
+        "dOutput"
     )
 
     # Plot positions
