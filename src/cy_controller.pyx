@@ -198,6 +198,7 @@ cpdef void rk4(
     fun,
     float timestep,
     CTYPE[:] state,
+    CTYPE[:] dstate,
     unsigned int n_dim,
     parameters
 ):
@@ -212,17 +213,14 @@ cpdef void rk4(
     cdef CTYPE[:] k_3_2 = np.empty([n_dim], dtype=DTYPE)
     fun(k_1, state, n_dim_c, *parameters)
     for i in range(n_dim_c):  # , nogil=True):
-        k_1[i] = timestep*k_1[i]
-        k_1_2[i] = state[i]+0.5*k_1[i]
+        k_1_2[i] = state[i]+0.5*timestep*k_1[i]
     fun(k_2, k_1_2, n_dim_c, *parameters)
     for i in range(n_dim_c):  # , nogil=True):
-        k_2[i] = timestep*k_2[i]
-        k_2_2[i] = state[i]+0.5*k_2[i]
+        k_2_2[i] = state[i]+0.5*timestep*k_2[i]
     fun(k_3, k_2_2, n_dim_c, *parameters)
     for i in range(n_dim_c):  # , nogil=True):
-        k_3[i] = timestep*k_3[i]
-        k_3_2[i] = state[i]+k_3[i]
+        k_3_2[i] = state[i]+timestep*k_3[i]
     fun(k_4, k_3_2, n_dim_c, *parameters)
     for i in range(n_dim_c):  # , nogil=True):
-        k_4[i] = timestep*k_4[i]
-        state[i] = state[i] + (k_1[i]+2*k_2[i]+2*k_3[i]+k_4[i])/6.
+        dstate[i] = (k_1[i]+2*k_2[i]+2*k_3[i]+k_4[i])/6.
+        state[i] = state[i] + timestep*dstate[i]

@@ -12,6 +12,7 @@ class ODESolver:
         super(ODESolver, self).__init__()
         self._ode = ode
         self._state = state
+        self._dstate = np.copy(state)
         self._n_dim = len(state)
         self._ode_solver = ode_solver
         self._time = 0
@@ -21,6 +22,11 @@ class ODESolver:
     def state(self):
         """State"""
         return self._state
+
+    @property
+    def dstate(self):
+        """State"""
+        return self._dstate
 
     @property
     def time(self):
@@ -33,6 +39,7 @@ class ODESolver:
             self._ode,
             self._timestep,
             self._state,
+            self._dstate,
             self._n_dim,
             parameters
         )
@@ -553,11 +560,10 @@ class SalamanderODEAmplitude(ODESolver):
 class SalamanderNetwork:
     """Salamander network"""
 
-    def __init__(self, phases_ode, amplitude_ode, offsets):
+    def __init__(self, phases_ode, amplitude_ode):
         super(SalamanderNetwork, self).__init__()
         self._ode_phases = phases_ode
         self._ode_amplitude = amplitude_ode
-        self._offsets = offsets
 
     @classmethod
     def from_gait(cls, gait, timestep, phases=None, amplitude=None):
@@ -573,16 +579,14 @@ class SalamanderNetwork:
         """Network for walking"""
         phases_ode = SalamanderODEPhase.walking(timestep, phases)
         amplitude_ode = SalamanderODEAmplitude.walking(timestep, amplitude)
-        offsets = np.zeros(11+4*3)
-        return cls(phases_ode, amplitude_ode, offsets)
+        return cls(phases_ode, amplitude_ode)
 
     @classmethod
     def swimming(cls, timestep, phases=None, amplitude=None):
         """Network for """
         phases_ode = SalamanderODEPhase.swimming(timestep, phases)
         amplitude_ode = SalamanderODEAmplitude.swimming(timestep, amplitude)
-        offsets = np.zeros(11+4*3)
-        return cls(phases_ode, amplitude_ode, offsets)
+        return cls(phases_ode, amplitude_ode)
 
     def control_step(self, freqs):
         """Control step"""
@@ -599,20 +603,58 @@ class SalamanderNetwork:
         return self._ode_phases.state
 
     @property
+    def dphases(self):
+        """Oscillators phases velocity"""
+        return self._ode_phases.dstate
+
+    @property
     def amplitudes(self):
         """Amplitudes"""
         return self._ode_amplitude.state
 
     @property
-    def outputs(self):
+    def damplitudes(self):
+        """Amplitudes velocity"""
+        return self._ode_amplitude.dstate
+
+    def get_outputs(self):
         """Outputs"""
-        return self._ode_amplitude.state*(
-            1 + np.cos(2*np.pi*self._ode_phases.state)
+        return self.amplitudes*(
+            1 + np.cos(2*np.pi*self.phases)
         )
+
+    def get_velocity_outputs(self):
+        """Outputs velocity"""
+        return self.damplitudes*(
+            1 + np.cos(2*np.pi*self._ode_phases.dstate)
+        ) - 2*np.pi*self.amplitudes*np.sin(2*np.pi*self.phases)*self.dphases
 
 
 class SalamanderNetworkPosition(SalamanderNetwork):
     """Salamander network for position control"""
+
+    def __init__(self, phases_ode, amplitude_ode, offsets):
+        super(SalamanderNetworkPosition, self).__init__(
+            phases_ode,
+            amplitude_ode
+        )
+        self._offsets = offsets
+
+    @classmethod
+    def pos_walking(cls, timestep, phases=None, amplitude=None, **kwargs):
+        """Network for walking"""
+        phases_ode = SalamanderODEPhase.walking(timestep, phases)
+        amplitude_ode = SalamanderODEAmplitude.walking(timestep, amplitude)
+        offsets = kwargs.pop("offsets", np.zeros(11+4*3))
+        return cls(phases_ode, amplitude_ode, offsets)
+
+    @classmethod
+    def pos_swimming(cls, timestep, phases=None, amplitude=None, **kwargs):
+        """Network for """
+        phases_ode = SalamanderODEPhase.swimming(timestep, phases)
+        amplitude_ode = SalamanderODEAmplitude.swimming(timestep, amplitude)
+        offsets = kwargs.pop("offsets", np.zeros(11+4*3))
+        return cls(phases_ode, amplitude_ode, offsets)
 
     def get_position_output(self):
         """Position output"""
@@ -629,18 +671,23 @@ class SalamanderNetworkPosition(SalamanderNetwork):
             for i in range(n_legs_dofs)
             for j in range(n_legs)
         ]
-        outputs = self.outputs
+        outputs = self.get_outputs()
         return 0.5*(outputs[group0] - outputs[group1]) + self._offsets
 
-
-# class SalamanderNetworkTorque(SalamanderNetwork):
-#     """Salamander network for torque control"""
-
-#     def get_torque_output(self):
-#         """Position output"""
-#         phases, amplitude = self.phases, self.amplitude
-#         n_body = 11
-#         return 0.5*(
-#             amplitude[:n_body]*np.cos(1 + phases[:n_body])
-#             + amplitude[:n_body]*np.cos(1 + phases[:n_body])
-#         )
+    def get_velocity_output(self):
+        """Position output"""
+        n_body = 11
+        n_legs_dofs = 3
+        n_legs = 4
+        group0 = [i for i in range(11)] + [
+            2*n_body + i+2*n_legs_dofs*j
+            for i in range(n_legs_dofs)
+            for j in range(n_legs)
+        ]
+        group1 = [n_body + i for i in range(11)] + [
+            2*n_body + n_legs_dofs + i+2*n_legs_dofs*j
+            for i in range(n_legs_dofs)
+            for j in range(n_legs)
+        ]
+        outputs = self.get_velocity_outputs()
+        return 0.5*(outputs[group0] - outputs[group1])
