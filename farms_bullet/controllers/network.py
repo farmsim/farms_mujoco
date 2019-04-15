@@ -626,8 +626,8 @@ class SalamanderNetwork:
     def get_velocity_outputs(self):
         """Outputs velocity"""
         return self.damplitudes*(
-            1 + np.cos(2*np.pi*self._ode_phases.dstate)
-        ) - 2*np.pi*self.amplitudes*np.sin(2*np.pi*self.phases)*self.dphases
+            1 + np.cos(2*np.pi*self.phases)
+        ) - self.amplitudes*np.sin(2*np.pi*self.phases)*2*np.pi*self.dphases
 
 
 class SalamanderNetworkPosition(SalamanderNetwork):

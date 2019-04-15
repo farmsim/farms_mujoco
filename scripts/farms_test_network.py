@@ -29,24 +29,37 @@ def main():
     n_iterations = len(times)
     network = SalamanderNetworkPosition.pos_walking(timestep=1e-3)
     freqs = np.ones(np.shape(network.phases))
-    tic = time.time()
     phase_log = np.zeros([n_iterations, len(network.phases)])
     dphase_log = np.zeros([n_iterations, len(network.dphases)])
     amplitude_log = np.zeros([n_iterations, len(network.amplitudes)])
     damplitude_log = np.zeros([n_iterations, len(network.damplitudes)])
     output_log = np.zeros([n_iterations, len(network.get_outputs())])
     position_log = np.zeros([n_iterations, len(network.get_position_output())])
+    velocity_log = np.zeros([n_iterations, len(network.get_velocity_output())])
 
     # Simulate
+    time_control = 0
+    time_log = 0
+    time_log2 = 0
     for i in range(n_iterations):
+        tic0 = time.time()
         network.control_step(freqs)
+        tic1 = time.time()
         phase_log[i, :] = network.phases
         amplitude_log[i, :] = network.amplitudes
         dphase_log[i, :] = network.dphases
         damplitude_log[i, :] = network.damplitudes
         output_log[i, :] = network.get_outputs()
         position_log[i, :] = network.get_position_output()
-    print("Integration time: {} [s]".format(time.time() - tic))
+        tic2 = time.time()
+        velocity_log[i, :] = network.get_velocity_output()
+        tic3 = time.time()
+        time_control += tic1 - tic0
+        time_log += tic2 - tic1
+        time_log2 += tic3 - tic2
+    print("Integration time: {} [s]".format(time_control))
+    print("Log time: {} [s]".format(time_log))
+    print("Log2 time: {} [s]".format(time_log2))
 
     # Plot phase
     plot_data(
@@ -57,6 +70,7 @@ def main():
         r"$\theta{}$",
         "Phase [rad]"
     )
+
     # Plot amplitude
     plot_data(
         times,
@@ -66,6 +80,7 @@ def main():
         r"$r{}$",
         "Amplitude [rad]"
     )
+
     # Plot dphase
     plot_data(
         times,
@@ -75,6 +90,7 @@ def main():
         r"$d\theta{}$",
         "dPhase [rad]"
     )
+
     # Plot damplitude
     plot_data(
         times,
@@ -84,6 +100,7 @@ def main():
         r"$dr{}$",
         "dAmplitude [rad]"
     )
+
     # Plot output
     plot_data(
         times,
@@ -93,14 +110,25 @@ def main():
         r"$r{}$",
         "Output"
     )
+
     # Plot positions
     plot_data(
         times,
-        output_log,
-        22,
+        position_log,
+        11,
         "Positions",
         r"$\theta{}$",
         "Position [rad]"
+    )
+
+    # Plot velocitys
+    plot_data(
+        times,
+        velocity_log,
+        11,
+        "Velocitys",
+        r"$\theta{}$",
+        "Velocity [rad]"
     )
 
     plt.show()
