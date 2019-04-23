@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Run salamander simulation with bullet"""
 
+import cProfile
+import pstats
 from farms_bullet.simulations.salamander import main as run_simulation
 from farms_bullet.animats.model_options import ModelOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
@@ -19,6 +21,14 @@ def main():
         animat_options=animat_options
     )
 
+def profile():
+    """Profile"""
+    cProfile.run("main()", "simulation.profile")
+    pstat = pstats.Stats("simulation.profile")
+    pstat.sort_stats('time').print_stats(30)
+    pstat.sort_stats('cumtime').print_stats(30)
+
 
 if __name__ == '__main__':
-    main()
+    # main()
+    profile()

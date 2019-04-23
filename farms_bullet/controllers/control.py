@@ -4,8 +4,7 @@ import time
 import numpy as np
 import pybullet
 
-from .network import SalamanderNetwork
-from .network import SalamanderNetworkPosition
+from .network import SalamanderNetworkODE
 from .control_options import SalamanderControlOptions
 # from .casadi import SalamanderCasADiNetwork
 
@@ -112,7 +111,7 @@ class JointController:
 class ModelController:
     """ModelController"""
 
-    def __init__(self, model, joints_controllers, timestep):
+    def __init__(self, model, joints_controllers, iterations, timestep):
         super(ModelController, self).__init__()
         self.model = model
         self.controllers = joints_controllers
@@ -121,12 +120,12 @@ class ModelController:
         #     timestep=timestep
         # )
         # self.network = SalamanderNetwork.walking(timestep, phases=None)
-        self.network = SalamanderNetworkPosition.pos_walking(timestep)
+        self.network = SalamanderNetworkODE.walking(iterations, timestep)
         self._frequency = self.controllers[0].get_frequency()
         self._body_offset = 0
         self._joint_order = [ctrl.joint() for ctrl in self.controllers]
 
-    def control(self, verbose=False):
+    def control(self):
         """Control"""
         _phases = self.network.control_step([
             float(self.controllers[0].angular_frequency())
@@ -180,12 +179,13 @@ class SalamanderController(ModelController):
     """ModelController"""
 
     @classmethod
-    def from_gait(cls, model, joints, gait, timestep, **kwargs):
+    def from_gait(cls, model, joints, gait, iterations, timestep, **kwargs):
         """Salamander controller from gait"""
         return cls.from_options(
             model=model,
             joints=joints,
             options=SalamanderControlOptions.from_gait(gait, **kwargs),
+            iterations=iterations,
             timestep=timestep
         )
 
@@ -209,7 +209,7 @@ class SalamanderController(ModelController):
         )
 
     @classmethod
-    def from_options(cls, model, joints, options, timestep):
+    def from_options(cls, model, joints, options, iterations, timestep):
         """Salamander controller from options"""
         joint_controllers_body, joint_controllers_legs = (
             cls.joints_controllers(joints, options)
@@ -217,6 +217,7 @@ class SalamanderController(ModelController):
         return cls(
             model,
             joint_controllers_body + joint_controllers_legs,
+            iterations=iterations,
             timestep=timestep
         )
 

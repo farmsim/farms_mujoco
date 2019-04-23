@@ -3,7 +3,7 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from farms_bullet.controllers.network import SalamanderNetworkPosition
+from farms_bullet.controllers.network import SalamanderNetworkODE
 
 
 def plot_data(times, data, body_ids, figurename, label, ylabel):
@@ -24,49 +24,32 @@ def plot_data(times, data, body_ids, figurename, label, ylabel):
 
 def main():
     """Main"""
+    # Allocation
+    tic = time.time()
     timestep = 1e-3
     times = np.arange(0, 10, timestep)
+    network = SalamanderNetworkODE.walking(
+        n_iterations=len(times),
+        timestep=timestep
+    )
     n_iterations = len(times)
-    network = SalamanderNetworkPosition.pos_walking(timestep=1e-3)
-    freqs = 2*np.pi*np.ones(np.shape(network.phases))
-    phase_log = np.zeros([n_iterations, len(network.phases)])
-    dphase_log = np.zeros([n_iterations, len(network.dphases)])
-    amplitude_log = np.zeros([n_iterations, len(network.amplitudes)])
-    damplitude_log = np.zeros([n_iterations, len(network.damplitudes)])
-    output_log = np.zeros([n_iterations, len(network.get_outputs())])
-    doutput_log = np.zeros([n_iterations, len(network.get_outputs())])
-    position_log = np.zeros([n_iterations, len(network.get_position_output())])
-    velocity_log = np.zeros([n_iterations, len(network.get_velocity_output())])
+    freqs = 2*np.pi*np.ones(np.shape(network.phases)[1])
+    toc = time.time()
+    print("Time to allocate data: {} [s]".format(toc-tic))
 
-    # Simulate
+    # Simulate (method 1)
     time_control = 0
-    time_log = 0
-    time_log2 = 0
-    for i in range(n_iterations):
+    for _ in range(n_iterations-1):
         tic0 = time.time()
         network.control_step(freqs)
         tic1 = time.time()
-        phase_log[i, :] = network.phases
-        amplitude_log[i, :] = network.amplitudes
-        dphase_log[i, :] = network.dphases
-        damplitude_log[i, :] = network.damplitudes
-        output_log[i, :] = network.get_outputs()
-        doutput_log[i, :] = network.get_doutputs()
-        position_log[i, :] = network.get_position_output()
-        tic2 = time.time()
-        velocity_log[i, :] = network.get_velocity_output()
-        tic3 = time.time()
         time_control += tic1 - tic0
-        time_log += tic2 - tic1
-        time_log2 += tic3 - tic2
     print("Integration time: {} [s]".format(time_control))
-    print("Log time: {} [s]".format(time_log))
-    print("Log2 time: {} [s]".format(time_log2))
 
     # Plot phase
     plot_data(
         times,
-        phase_log,
+        network.phases,
         22,
         "Phases",
         r"$\theta{}$",
@@ -76,7 +59,7 @@ def main():
     # Plot amplitude
     plot_data(
         times,
-        amplitude_log,
+        network.amplitudes,
         22,
         "Amplitudes",
         r"$r{}$",
@@ -86,7 +69,7 @@ def main():
     # Plot dphase
     plot_data(
         times,
-        dphase_log,
+        network.dphases,
         22,
         "dPhases",
         r"$d\theta{}$",
@@ -96,7 +79,7 @@ def main():
     # Plot damplitude
     plot_data(
         times,
-        damplitude_log,
+        network.damplitudes,
         22,
         "dAmplitudes",
         r"$dr{}$",
@@ -106,7 +89,7 @@ def main():
     # Plot output
     plot_data(
         times,
-        output_log,
+        network.get_outputs_all(),
         22,
         "Outputs",
         r"$r{}$",
@@ -116,7 +99,7 @@ def main():
     # Plot doutput
     plot_data(
         times,
-        doutput_log,
+        network.get_doutputs_all(),
         22,
         "dOutputs",
         r"$r{}$",
@@ -126,7 +109,7 @@ def main():
     # Plot positions
     plot_data(
         times,
-        position_log,
+        network.get_position_output_all(),
         11,
         "Positions",
         r"$\theta{}$",
@@ -136,7 +119,7 @@ def main():
     # Plot velocitys
     plot_data(
         times,
-        velocity_log,
+        network.get_velocity_output_all(),
         11,
         "Velocitys",
         r"$\theta{}$",
@@ -147,4 +130,6 @@ def main():
 
 
 if __name__ == '__main__':
+    # import pdb
+    # pdb.run("main()")
     main()

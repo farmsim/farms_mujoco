@@ -187,7 +187,9 @@ class PhasesLogger:
         self.size = size
         self.phases_log = np.zeros([
             size,
-            *np.shape(model.controller.network.phases)
+            *np.shape(model.controller.network.phases[
+                model.controller.network.iteration
+            ])
         ])
         self.oscillator_names = [
             "body_{}_{}".format(i, side)
@@ -204,7 +206,9 @@ class PhasesLogger:
     def update(self, iteration):
         """Update phase logs"""
         self.phases_log[iteration, :] = (
-            self.model.controller.network.phases
+            self.model.controller.network.phases[
+                self.model.controller.network.iteration
+            ]
         )
 
     def plot(self, times):
