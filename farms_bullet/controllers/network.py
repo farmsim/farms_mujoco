@@ -94,6 +94,10 @@ class NetworkArray:
         """Array"""
         return self._array
 
+    def shape(self):
+        """Array shape"""
+        return np.shape(self._array)
+
 
 class OscillatorNetworkState(NetworkArray):
     """Network state"""
@@ -140,7 +144,7 @@ class SalamanderNetworkParameters(ODE):
 
     def __init__(self, oscillators, connectivity, joints):
         super(SalamanderNetworkParameters, self).__init__(
-            [NetworkArray(np.zeros([7, 2*np.shape(oscillators.array)[1]]))],
+            [NetworkArray(np.zeros([7, 2*oscillators.shape()[1]]))],
             [oscillators, connectivity, joints]
         )
 
@@ -206,8 +210,8 @@ class SalamanderNetworkParameters(ODE):
         return ODE(
             [parameter.array for parameter in self.solver],
             [parameter.array for parameter in self.function]
-            + [np.shape(self.oscillators.array)[1]]
-            + [np.shape(self.connectivity.array)[0]]
+            + [self.oscillators.shape()[1]]
+            + [self.connectivity.shape()[0]]
         )
 
 
