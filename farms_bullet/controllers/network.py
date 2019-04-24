@@ -240,7 +240,7 @@ class OscillatorArray(NetworkArray):
         n_joints = n_body + n_legs*n_dof_legs
         n_oscillators = 2*(n_joints)
         freqs = 2*np.pi*np.ones(n_oscillators)
-        rates = 3*np.ones(n_oscillators)
+        rates = 10*np.ones(n_oscillators)
         options = SalamanderControlOptions.walking()
         # Amplitudes
         amplitudes = np.zeros(n_oscillators)
@@ -270,7 +270,7 @@ class OscillatorArray(NetworkArray):
         n_joints = n_body + n_legs*n_dof_legs
         n_oscillators = 2*(n_joints)
         freqs = 2*np.pi*np.ones(n_oscillators)
-        rates = 3*np.ones(n_oscillators)
+        rates = 10*np.ones(n_oscillators)
         amplitudes = np.zeros(n_oscillators)
         options = SalamanderControlOptions.swimming()
         body_amplitudes = np.linspace(
