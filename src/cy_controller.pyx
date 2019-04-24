@@ -182,13 +182,13 @@ cpdef void ode_oscillators_sparse(
     cdef unsigned int i, j, i0, i1
     for i in range(o_dim):  # , nogil=True):
         dstate[i] = oscillators[0][i]
-        dstate[i+o_dim] = (
-            oscillators[1][i]*(oscillators[2][i] - state[i+o_dim])
+        dstate[o_dim+i] = (
+            oscillators[1][i]*(oscillators[2][i] - state[o_dim+i])
         )
     for j in range(c_dim):
         i0 = <unsigned int> (connectivity[j][0] + 0.5)
         i1 = <unsigned int> (connectivity[j][1] + 0.5)
-        dstate[i0] += connectivity[j][2]*sin(
+        dstate[i0] += connectivity[j][2]*sin(  # state[o_dim+i1]*
             state[i1] - state[i0] - connectivity[j][3]
         )
 
