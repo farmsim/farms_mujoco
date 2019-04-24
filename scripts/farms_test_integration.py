@@ -15,6 +15,7 @@ from farms_bullet.cy_controller import (
     odefun, rk4_ode,
     odefun_sparse, rk4_ode_sparse
 )
+from farms_bullet.controllers.network import SalamanderNetworkODE
 
 
 def ode(_, phases, freqs, coupling_weights, phases_desired, n_dim):
@@ -591,6 +592,36 @@ def test_cython_sparse(times):
     plt.grid(True)
 
 
+def test_cython_new(times):
+    # Allocation
+    timestep = times[1] - times[0]
+    network = SalamanderNetworkODE.walking(
+        n_iterations=len(times),
+        timestep=timestep
+    )
+    n_dim = np.shape(network.phases)[1]
+
+    # Simulate (method 1)
+    time_control = 0
+    for _time in times[:-1]:
+        tic0 = time.time()
+        network.control_step(
+            2*np.pi*10*np.ones(n_dim)*(np.sin(_time)+1)
+        )
+        tic1 = time.time()
+        time_control += tic1 - tic0
+    print("Cython/RK4 (More complex) integration took {} [s]".format(
+        time_control
+    ))
+
+    # Plot results
+    plt.figure("Cython new")
+    plt.plot(times, network.phases)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Phases [rad]")
+    plt.grid(True)
+
+
 def main():
     """Main"""
     times = np.arange(0, 10, 1e-3)
@@ -606,6 +637,7 @@ def main():
     test_sympy(times)
     test_cython(times)
     test_cython_sparse(times)
+    test_cython_new(times)
 
     plt.show()
 
