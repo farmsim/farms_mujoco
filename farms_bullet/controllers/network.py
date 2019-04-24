@@ -153,20 +153,32 @@ class SalamanderNetworkParameters(ODE):
             else cls.for_walking()
         )
 
-    @classmethod
-    def for_walking(cls):
-        """Salamander swimming network"""
+    @staticmethod
+    def walking_parameters():
+        """Walking parameters"""
         oscillators = OscillatorArray.for_walking()
         connectivity = ConnectivityArray.for_walking()
         joints = JointsArray.for_walking()
+        return oscillators, connectivity, joints
+
+    @staticmethod
+    def swimming_parameters():
+        """Swimming parameters"""
+        oscillators = OscillatorArray.for_swimming()
+        connectivity = ConnectivityArray.for_swimming()
+        joints = JointsArray.for_swimming()
+        return oscillators, connectivity, joints
+
+    @classmethod
+    def for_walking(cls):
+        """Salamander swimming network"""
+        oscillators, connectivity, joints = cls.walking_parameters()
         return cls(oscillators, connectivity, joints)
 
     @classmethod
     def for_swimming(cls):
         """Salamander swimming network"""
-        oscillators = OscillatorArray.for_swimming()
-        connectivity = ConnectivityArray.for_swimming()
-        joints = JointsArray.for_swimming()
+        oscillators, connectivity, joints = cls.swimming_parameters()
         return cls(oscillators, connectivity, joints)
 
     @property
@@ -207,9 +219,8 @@ class OscillatorArray(NetworkArray):
         """From each parameter"""
         return cls(np.array([freqs, rates, amplitudes]))
 
-    @classmethod
-    def for_walking(cls):
-        """Parameters for walking"""
+    @staticmethod
+    def walking_parameters():
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
@@ -235,11 +246,11 @@ class OscillatorArray(NetworkArray):
                 ]] = (
                     options["leg_{}_amplitude".format(i)]
                 )
-        return cls.from_parameters(freqs, rates, amplitudes)
+        return freqs, rates, amplitudes
 
-    @classmethod
-    def for_swimming(cls):
-        """Parameters for swimming"""
+    @staticmethod
+    def swimming_parameters():
+        """Swimming parameters"""
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
@@ -264,6 +275,18 @@ class OscillatorArray(NetworkArray):
                 ]] = (
                     options["leg_{}_amplitude".format(i)]
                 )
+        return freqs, rates, amplitudes
+
+    @classmethod
+    def for_walking(cls):
+        """Parameters for walking"""
+        freqs, rates, amplitudes = cls.walking_parameters()
+        return cls.from_parameters(freqs, rates, amplitudes)
+
+    @classmethod
+    def for_swimming(cls):
+        """Parameters for swimming"""
+        freqs, rates, amplitudes = cls.swimming_parameters()
         return cls.from_parameters(freqs, rates, amplitudes)
 
     @property
@@ -295,9 +318,9 @@ class ConnectivityArray(NetworkArray):
         """From each parameter"""
         return cls(np.stack([connections, weights, desired_phases], axis=1))
 
-    @classmethod
-    def for_walking(cls):
-        """Parameters for walking"""
+    @staticmethod
+    def walking_parameters():
+        """Walking parameters"""
         n_body_joints = 11
         connectivity = []
 
@@ -466,11 +489,11 @@ class ConnectivityArray(NetworkArray):
                 legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
                 3e2, 0
             ])
-        return cls(np.array(connectivity))
+        return connectivity
 
-    @classmethod
-    def for_swimming(cls):
-        """Parameters for swimming"""
+    @staticmethod
+    def swimming_parameters():
+        """Swimming parameters"""
         n_body_joints = 11
         connectivity = []
 
@@ -639,6 +662,18 @@ class ConnectivityArray(NetworkArray):
                 legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
                 0, 0
             ])
+        return connectivity
+
+    @classmethod
+    def for_walking(cls):
+        """Parameters for walking"""
+        connectivity = cls.walking_parameters()
+        return cls(np.array(connectivity))
+
+    @classmethod
+    def for_swimming(cls):
+        """Parameters for swimming"""
+        connectivity = cls.swimming_parameters()
         return cls(np.array(connectivity))
 
     @property
@@ -665,9 +700,9 @@ class JointsArray(NetworkArray):
         """From each parameter"""
         return cls(np.array([offsets]))
 
-    @classmethod
-    def for_walking(cls):
-        """Parameters for walking"""
+    @staticmethod
+    def walking_parameters():
+        """Walking parameters"""
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
@@ -679,22 +714,34 @@ class JointsArray(NetworkArray):
                 offsets[n_body + leg_i*n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
-        return cls.from_parameters(offsets)
+        return offsets
 
-    @classmethod
-    def for_swimming(cls):
-        """Parameters for swimming"""
+    @staticmethod
+    def swimming_parameters():
+        """Swimming parameters"""
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
         n_joints = n_body + n_legs*n_dof_legs
-        options = SalamanderControlOptions.swimming()
+        options = SalamanderControlOptions.walking()
         offsets = np.zeros(n_joints)
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
                 offsets[n_body + leg_i*n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
+        return offsets
+
+    @classmethod
+    def for_walking(cls):
+        """Parameters for walking"""
+        offsets = cls.walking_parameters()
+        return cls.from_parameters(offsets)
+
+    @classmethod
+    def for_swimming(cls):
+        """Parameters for swimming"""
+        offsets = cls.swimming_parameters()
         return cls.from_parameters(offsets)
 
     @property
