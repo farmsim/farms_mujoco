@@ -52,9 +52,6 @@ class CyODESolver:
 
     def step(self):
         """Control step"""
-        # print(self._n_dim)
-        # print(self._parameters.function[-1])
-        # print([np.shape(parameter) for parameter in self._parameters.function])
         self.ode.solver(
             self.ode.function,
             self._timestep,
@@ -157,6 +154,17 @@ class SalamanderNetworkParameters(ODE):
             else cls.for_walking()
         )
 
+    def update_gait(self, gait):
+        """Update from gait"""
+        if gait == "walking":
+            self[1][0] = OscillatorArray.for_walking()
+            self[1][1] = ConnectivityArray.for_walking()
+            self[1][2] = JointsArray.for_walking()
+        else:
+            self[1][0] = OscillatorArray.for_swimming()
+            self[1][1] = ConnectivityArray.for_swimming()
+            self[1][2] = JointsArray.for_swimming()
+
     @staticmethod
     def walking_parameters():
         """Walking parameters"""
@@ -225,6 +233,7 @@ class OscillatorArray(NetworkArray):
 
     @staticmethod
     def walking_parameters():
+        """Walking parameters"""
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
@@ -727,7 +736,7 @@ class JointsArray(NetworkArray):
         n_dof_legs = 3
         n_legs = 4
         n_joints = n_body + n_legs*n_dof_legs
-        options = SalamanderControlOptions.walking()
+        options = SalamanderControlOptions.swimming()
         offsets = np.zeros(n_joints)
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
@@ -797,6 +806,11 @@ class SalamanderNetworkODE(ODESolver):
             if gait == "swimming"
             else cls.walking(n_iterations, timestep)
         )
+
+    def update_gait(self, gait):
+        """Update from gait"""
+        self.parameters.update_gait(gait)
+        self._parameters = self.parameters.to_ode_parameters()
 
     @classmethod
     def walking(cls, n_iterations, timestep):

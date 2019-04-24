@@ -28,10 +28,11 @@ def main():
     tic = time.time()
     timestep = 1e-3
     times = np.arange(0, 10, timestep)
-    network = SalamanderNetworkODE.walking(
+    network = SalamanderNetworkODE.swimming(
         n_iterations=len(times),
         timestep=timestep
     )
+    print(network.parameters.joints.offsets)
     n_iterations = len(times)
     freqs = 2*np.pi*np.ones(np.shape(network.phases)[1])
     toc = time.time()

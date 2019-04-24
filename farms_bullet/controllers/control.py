@@ -202,11 +202,12 @@ class SalamanderController(ModelController):
             )
         )
         self.controllers = controllers_body + controllers_legs
-        self.network = SalamanderNetworkPosition.pos_from_gait(
-            gait,
-            timestep,
-            phases=self.network.phases
-        )
+        # self.network = SalamanderNetworkPosition.pos_from_gait(
+        #     gait,
+        #     timestep,
+        #     phases=self.network.phases
+        # )
+        self.network.update_gait(gait)
 
     @classmethod
     def from_options(cls, model, joints, options, iterations, timestep):
