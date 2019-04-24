@@ -831,27 +831,28 @@ class SalamanderNetworkODE(ODESolver):
         self.parameters.update_gait(gait)
         self._parameters = self.parameters.to_ode_parameters()
 
-    @classmethod
-    def walking(cls, n_iterations, timestep):
-        """Salamander swimming network"""
-        n_oscillators = 2*(11+4*3)
-        state = OscillatorNetworkState.from_initial_state(
-            initial_state=1e-6*np.random.ranf(2*n_oscillators),
+    @staticmethod
+    def default_state(n_iterations):
+        """Default state"""
+        n_joints = 11+4*3
+        n_oscillators = 2*n_joints
+        return OscillatorNetworkState.from_initial_state(
+            initial_state=np.linspace(0, 1e-6, 4*n_joints),
             n_iterations=n_iterations,
             n_oscillators=n_oscillators
         )
+
+    @classmethod
+    def walking(cls, n_iterations, timestep):
+        """Salamander swimming network"""
+        state = cls.default_state(n_iterations)
         parameters = SalamanderNetworkParameters.for_walking()
         return cls(state, parameters, timestep)
 
     @classmethod
     def swimming(cls, n_iterations, timestep):
         """Salamander swimming network"""
-        n_oscillators = 2*(11+4*3)
-        state = OscillatorNetworkState.from_initial_state(
-            initial_state=1e-6*np.random.ranf(2*n_oscillators),
-            n_iterations=n_iterations,
-            n_oscillators=n_oscillators
-        )
+        state = cls.default_state(n_iterations)
         parameters = SalamanderNetworkParameters.for_swimming()
         return cls(state, parameters, timestep)
 
@@ -874,12 +875,12 @@ class SalamanderNetworkODE(ODESolver):
     @property
     def amplitudes(self):
         """Amplitudes"""
-        return self._state[:, 0, self._n_oscillators:]
+        return self._state[:, 0, self._n_oscillators:2*self._n_oscillators]
 
     @property
     def damplitudes(self):
         """Amplitudes velocity"""
-        return self._state[:, 1, self._n_oscillators:]
+        return self._state[:, 1, self._n_oscillators:2*self._n_oscillators]
 
     def get_outputs(self):
         """Outputs"""
