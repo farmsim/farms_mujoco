@@ -39,7 +39,9 @@ def main():
 
     # Simulate (method 1)
     time_control = 0
-    for _ in range(n_iterations-1):
+    for i in range(n_iterations-1):
+        if i == n_iterations//2:
+            network.update_gait("swimming")
         tic0 = time.time()
         network.control_step(freqs)
         tic1 = time.time()
@@ -66,6 +68,16 @@ def main():
         "Amplitude [rad]"
     )
 
+    # Plot offset
+    plot_data(
+        times,
+        network.offsets,
+        11,
+        "Offsets",
+        r"$\theta{}$",
+        "Offset [rad]"
+    )
+
     # Plot dphase
     plot_data(
         times,
@@ -73,7 +85,7 @@ def main():
         22,
         "dPhases",
         r"$d\theta{}$",
-        "dPhase [rad]"
+        "dPhase [rad/s]"
     )
 
     # Plot damplitude
@@ -83,7 +95,17 @@ def main():
         22,
         "dAmplitudes",
         r"$dr{}$",
-        "dAmplitude [rad]"
+        "dAmplitude [rad/s]"
+    )
+
+    # Plot doffset
+    plot_data(
+        times,
+        network.doffsets,
+        11,
+        "dOffsets",
+        r"$d\theta{}$",
+        "Offset [rad/s]"
     )
 
     # Plot output

@@ -141,7 +141,10 @@ class SalamanderNetworkParameters(ODE):
 
     def __init__(self, oscillators, connectivity, joints):
         super(SalamanderNetworkParameters, self).__init__(
-            [NetworkArray(np.zeros([7, 2*oscillators.shape()[1]]))],
+            [NetworkArray(np.zeros([
+                7,
+                2*oscillators.shape()[1] + 1*joints.shape()[1]
+            ]))],
             [oscillators, connectivity, joints]
         )
 
@@ -220,6 +223,7 @@ class SalamanderNetworkParameters(ODE):
             [parameter.array for parameter in self.function]
             + [self.oscillators.shape()[1]]
             + [self.connectivity.shape()[0]]
+            + [self.joints.shape()[1]]
         )
 
 
@@ -728,9 +732,9 @@ class JointsArray(NetworkArray):
     """Oscillator array"""
 
     @classmethod
-    def from_parameters(cls, offsets):
+    def from_parameters(cls, offsets, rates):
         """From each parameter"""
-        return cls(np.array([offsets]))
+        return cls(np.array([offsets, rates]))
 
     @staticmethod
     def walking_parameters():
@@ -746,7 +750,8 @@ class JointsArray(NetworkArray):
                 offsets[n_body + leg_i*n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
-        return offsets
+        rates = 10*np.ones(n_joints)
+        return offsets, rates
 
     @staticmethod
     def swimming_parameters():
@@ -762,24 +767,30 @@ class JointsArray(NetworkArray):
                 offsets[n_body + leg_i*n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
-        return offsets
+        rates = 10*np.ones(n_joints)
+        return offsets, rates
 
     @classmethod
     def for_walking(cls):
         """Parameters for walking"""
-        offsets = cls.walking_parameters()
-        return cls.from_parameters(offsets)
+        offsets, rates = cls.walking_parameters()
+        return cls.from_parameters(offsets, rates)
 
     @classmethod
     def for_swimming(cls):
         """Parameters for swimming"""
-        offsets = cls.swimming_parameters()
-        return cls.from_parameters(offsets)
+        offsets, rates = cls.swimming_parameters()
+        return cls.from_parameters(offsets, rates)
 
     @property
     def offsets(self):
-        """Joints anglers offsets"""
+        """Joints angles offsets"""
         return self.array[0]
+
+    @property
+    def rates(self):
+        """Joints angles offsets rates"""
+        return self.array[1]
 
 
 class SalamanderNetworkODE(ODESolver):
@@ -795,6 +806,7 @@ class SalamanderNetworkODE(ODESolver):
         self.state = state
         self.parameters = parameters
         self._n_oscillators = state.n_oscillators
+        self._n_joints = parameters.joints.shape()[1]
         n_body = 11
         n_legs_dofs = 3
         # n_legs = 4
@@ -837,7 +849,7 @@ class SalamanderNetworkODE(ODESolver):
         n_joints = 11+4*3
         n_oscillators = 2*n_joints
         return OscillatorNetworkState.from_initial_state(
-            initial_state=np.linspace(0, 1e-6, 4*n_joints),
+            initial_state=np.linspace(0, 1e-6, 5*n_joints),
             n_iterations=n_iterations,
             n_oscillators=n_oscillators
         )
@@ -882,6 +894,16 @@ class SalamanderNetworkODE(ODESolver):
         """Amplitudes velocity"""
         return self._state[:, 1, self._n_oscillators:2*self._n_oscillators]
 
+    @property
+    def offsets(self):
+        """Offset"""
+        return self._state[:, 0, 2*self._n_oscillators:]
+
+    @property
+    def doffsets(self):
+        """Offset velocity"""
+        return self._state[:, 1, 2*self._n_oscillators:]
+
     def get_outputs(self):
         """Outputs"""
         return self.amplitudes[self.iteration]*(
@@ -915,7 +937,7 @@ class SalamanderNetworkODE(ODESolver):
         outputs = self.get_outputs()
         return (
             0.5*(outputs[self.group0] - outputs[self.group1])
-            + self.parameters.joints.offsets
+            + self.offsets[self.iteration]
         )
 
     def get_position_output_all(self):
@@ -923,7 +945,7 @@ class SalamanderNetworkODE(ODESolver):
         outputs = self.get_outputs_all()
         return (
             0.5*(outputs[:, self.group0] - outputs[:, self.group1])
-            + self.parameters.joints.offsets
+            + self.offsets
         )
 
     def get_velocity_output(self):

@@ -31,21 +31,24 @@ cpdef void ode_oscillators_sparse(
     CTYPE[:, :] connectivity,
     CTYPE[:, :] joints,
     unsigned int o_dim,
-    unsigned int c_dim
+    unsigned int c_dim,
+    unsigned int j_dim
 ) nogil:
     """ODE"""
-    cdef unsigned int i, j, i0, i1
+    cdef unsigned int i, i0, i1
     for i in range(o_dim):  # , nogil=True):
         dstate[i] = oscillators[0][i]
         dstate[o_dim+i] = (
             oscillators[1][i]*(oscillators[2][i] - state[o_dim+i])
         )
-    for j in range(c_dim):
-        i0 = <unsigned int> (connectivity[j][0] + 0.5)
-        i1 = <unsigned int> (connectivity[j][1] + 0.5)
-        dstate[i0] += state[o_dim+i1]*connectivity[j][2]*sin(
-            state[i1] - state[i0] - connectivity[j][3]
+    for i in range(c_dim):
+        i0 = <unsigned int> (connectivity[i][0] + 0.5)
+        i1 = <unsigned int> (connectivity[i][1] + 0.5)
+        dstate[i0] += state[o_dim+i1]*connectivity[i][2]*sin(
+            state[i1] - state[i0] - connectivity[i][3]
         )
+    for i in range(j_dim):
+        dstate[2*o_dim+i] = joints[1][i]*(joints[0][i] - state[2*o_dim+i])
 
 
 @cython.boundscheck(False)  # Deactivate bounds checking
