@@ -114,7 +114,10 @@ class SalamanderExperiment(Experiment):
         # Real-time
         self.toc_rt = time.time()
         tic_rt = time.time()
-        if not self.sim_options.fast and self.interface.user_params.rtl.value < 3:
+        if (
+                not self.sim_options.fast
+                and self.interface.user_params.rtl.value < 3
+        ):
             real_time_handing(
                 self.timestep, self.tic_rt, self.toc_rt,
                 rtl=self.interface.user_params.rtl.value,
@@ -148,6 +151,16 @@ class SalamanderExperiment(Experiment):
                 self.interface.user_params.body_offset.value
             )
             self.interface.user_params.body_offset.changed = False
+        if (
+                self.interface.user_params.drive_speed.changed
+                or self.interface.user_params.drive_turn.changed
+        ):
+            self.animat.model.controller.network.update_drive(
+                self.interface.user_params.drive_speed.value,
+                self.interface.user_params.drive_turn.value
+            )
+            self.interface.user_params.drive_speed.changed = False
+            self.interface.user_params.drive_turn.changed = False
 
     def postprocess(self):
         """Plot after simulation"""
