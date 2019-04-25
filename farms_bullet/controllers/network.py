@@ -807,6 +807,10 @@ class JointsArray(NetworkArray):
         """Joints angles offsets rates"""
         return self.array[1]
 
+    def set_body_offset(self, value, n_body_joints=11):
+        """Body offset"""
+        self.array[0, :n_body_joints] = value
+
 
 class SalamanderNetworkODE(ODESolver):
     """Salamander network"""

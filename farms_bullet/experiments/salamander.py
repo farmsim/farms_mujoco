@@ -148,7 +148,8 @@ class SalamanderExperiment(Experiment):
             )
             self.interface.user_params.frequency.changed = False
         if self.interface.user_params.body_offset.changed:
-            self.animat.model.controller.update_body_offset(
+            network = self.animat.model.controller.network
+            network.parameters.joints.set_body_offset(
                 self.interface.user_params.body_offset.value
             )
             self.interface.user_params.body_offset.changed = False

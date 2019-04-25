@@ -141,14 +141,6 @@ class ModelController:
             # forces=[ctrl["pdf"]["f"] for ctrl in controls]
         )
 
-    # def update_frequency(self, frequency):
-    #     """Update frequency"""
-    #     self.network.freqs = frequency
-
-    # def update_body_offset(self, body_offset):
-    #     """Update body offset"""
-    #     self.network.desired_body_offsets = body_offset
-
 
 class SalamanderController(ModelController):
     """ModelController"""
