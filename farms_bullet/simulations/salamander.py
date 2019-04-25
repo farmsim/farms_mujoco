@@ -23,7 +23,6 @@ class SalamanderSimulation(Simulation):
             simulation_options=simulation_options,
             animat_options=animat_options
         )
-
         self.animat.model.leg_collisions(
             self.experiment.arena.floor.identity,
             activate=False
