@@ -230,6 +230,11 @@ class SalamanderNetworkParameters(ODE):
 class OscillatorArray(NetworkArray):
     """Oscillator array"""
 
+    def __init__(self, array):
+        super(OscillatorArray, self).__init__(array)
+        self._array = array
+        self._original_amplitudes_desired = np.copy(array[:, 2])
+
     @classmethod
     def from_parameters(cls, freqs, rates, amplitudes):
         """From each parameter"""
@@ -309,12 +314,12 @@ class OscillatorArray(NetworkArray):
     @property
     def freqs(self):
         """Frequencies"""
-        return self.array[0]
+        return 0.5*self.array[0]/np.pi
 
     @freqs.setter
     def freqs(self, value):
         """Frequencies"""
-        self.array[0] = value
+        self.array[0, :] = 2*np.pi*value
 
     @property
     def amplitudes_rates(self):
@@ -325,6 +330,16 @@ class OscillatorArray(NetworkArray):
     def amplitudes_desired(self):
         """Amplitudes desired"""
         return self.array[2]
+
+    @amplitudes_desired.setter
+    def amplitudes_desired(self, value):
+        """Amplitudes desired"""
+        self.array[2] = value
+
+    def update_drives(self, drive_speed, drive_turn):
+        """Set freqs"""
+        self.freqs = 4*drive_speed*np.ones(self.shape()[1])
+        self.amplitudes_desired = self._original_amplitudes_desired
 
 
 class ConnectivityArray(NetworkArray):
@@ -868,9 +883,8 @@ class SalamanderNetworkODE(ODESolver):
         parameters = SalamanderNetworkParameters.for_swimming()
         return cls(state, parameters, timestep)
 
-    def control_step(self, freqs):
+    def control_step(self):
         """Control step"""
-        self.parameters.oscillators.freqs = freqs
         self.step()
         return self.current_state
 
@@ -964,3 +978,4 @@ class SalamanderNetworkODE(ODESolver):
             drive_speed,
             drive_turn
         ))
+        self.parameters.oscillators.update_drives(drive_speed, drive_turn)

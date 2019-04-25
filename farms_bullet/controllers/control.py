@@ -127,28 +127,7 @@ class ModelController:
 
     def control(self):
         """Control"""
-        _phases = self.network.control_step([
-            float(self.controllers[0].angular_frequency())
-            # float(controller.angular_frequency())
-            # for controller in self.controllers
-            for i in range(46)
-        ])
-        # if verbose:
-        #     tic = time.time()
-        # outputs = [i for i in range(11)] + [
-        #     22 + leg*2*3*2 + side*3*2 + j
-        #     for leg in range(2)
-        #     for side in range(2)
-        #     for j in range(3)
-        # ]
-        # phases = _phases[outputs]
-        # controls = [
-        #     controller.update(phases[i])
-        #     for i, controller in enumerate(self.controllers)
-        # ]
-        # if verbose:
-        #     toc = time.time()
-        #     print("Time to copy phases: {} [s]".format(toc-tic))
+        _phases = self.network.control_step()
         position = self.network.get_position_output()
         velocity = self.network.get_velocity_output()
         pybullet.setJointMotorControlArray(
@@ -162,17 +141,13 @@ class ModelController:
             # forces=[ctrl["pdf"]["f"] for ctrl in controls]
         )
 
-    def update_frequency(self, frequency):
-        """Update frequency"""
-        self._frequency = frequency
-        for controller in self.controllers:
-            controller.set_frequency(frequency)
+    # def update_frequency(self, frequency):
+    #     """Update frequency"""
+    #     self.network.freqs = frequency
 
-    def update_body_offset(self, body_offset):
-        """Update body offset"""
-        self._body_offset = body_offset
-        for controller in self.controllers:
-            controller.set_body_offset(body_offset)
+    # def update_body_offset(self, body_offset):
+    #     """Update body offset"""
+    #     self.network.desired_body_offsets = body_offset
 
 
 class SalamanderController(ModelController):
@@ -202,11 +177,6 @@ class SalamanderController(ModelController):
             )
         )
         self.controllers = controllers_body + controllers_legs
-        # self.network = SalamanderNetworkPosition.pos_from_gait(
-        #     gait,
-        #     timestep,
-        #     phases=self.network.phases
-        # )
         self.network.update_gait(gait)
 
     @classmethod
@@ -266,15 +236,6 @@ class SalamanderController(ModelController):
                 sine=SineControl(
                     amplitude=options["leg_{}_amplitude".format(joint_i)],
                     frequency=frequency,
-                    # phase=(
-                    #     - np.pi*np.abs(leg_i-side_i)
-                    #     - options["leg_{}_phase".format(joint_i)]
-                    #     + options["leg_turn"]*float(  # Turning
-                    #         (0.5)*np.pi*np.sign(np.abs(leg_i-side_i) - 0.5)
-                    #         if joint_i == 2
-                    #         else 0
-                    #     )
-                    # ),
                     offset=options["leg_{}_offset".format(joint_i)]
                 ),
                 pdf=ControlPDF(

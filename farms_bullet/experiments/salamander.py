@@ -142,7 +142,8 @@ class SalamanderExperiment(Experiment):
             )
             self.interface.user_params.gait.changed = False
         if self.interface.user_params.frequency.changed:
-            self.animat.model.controller.update_frequency(
+            network = self.animat.model.controller.network
+            network.parameters.oscillators.freqs = (
                 self.interface.user_params.frequency.value
             )
             self.interface.user_params.frequency.changed = False
