@@ -150,7 +150,7 @@ class SalamanderModel(Model):
             "link_leg_1_L_3",
             "link_leg_1_R_3"
         ]
-        self.sensors = ModelSensors(self)
+        self.sensors = ModelSensors(self, iterations)
         self.motors = ModelMotors()
 
     @classmethod

@@ -70,19 +70,17 @@ class SensorsLogger:
         self.model = model
         self.size = size
         self.contact_forces = np.zeros([
-            size,
             *np.shape(model.sensors.contact_forces)
         ])
         self.feet_ft = np.zeros([
-            size,
             *np.shape(model.sensors.feet_ft)
         ])
         self.feet = model.sensors.feet
 
     def update(self, iteration):
         """Update sensors logs"""
-        self.contact_forces[iteration, :] = self.model.sensors.contact_forces
-        self.feet_ft[iteration, :, :] = self.model.sensors.feet_ft
+        self.contact_forces[iteration, :] = self.model.sensors.contact_forces[iteration]
+        self.feet_ft[iteration, :, :] = self.model.sensors.feet_ft[iteration]
 
     def plot_contacts(self, times):
         """Plot sensors"""

@@ -73,6 +73,7 @@ class Salamander(Animat):
         # Contacts during walking
         tic_sensors = time.time()
         self.model.sensors.update(
+            sim_step,
             identity=self.identity,
             links=[self.links[foot] for foot in self.model.feet],
             joints=[

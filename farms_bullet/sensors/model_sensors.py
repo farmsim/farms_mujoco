@@ -8,16 +8,16 @@ import pybullet
 class ModelSensors:
     """Model sensors"""
 
-    def __init__(self, salamander):  # , sensors
+    def __init__(self, salamander, n_iterations):  # , sensors
         super(ModelSensors, self).__init__()
         # self.sensors = sensors
         # Contact sensors
         self.feet = salamander.feet
-        self.contact_forces = np.zeros([4])
+        self.contact_forces = np.zeros([n_iterations, 4])
         self.plane = None
 
         # Force-torque sensors
-        self.feet_ft = np.zeros([4, 6])
+        self.feet_ft = np.zeros([n_iterations, 4, 6])
         self.joints_sensors = [
             "joint_link_leg_0_L_3",
             "joint_link_leg_0_R_3",
@@ -30,20 +30,20 @@ class ModelSensors:
                 salamander.joints[joint]
             )
 
-    def update(self, identity, links, joints):
+    def update(self, iteration, identity, links, joints):
         """Update sensors"""
-        self.update_contacts(identity, links)
-        self.update_joints(identity, joints)
+        self.update_contacts(iteration, identity, links)
+        self.update_joints(iteration, identity, joints)
 
-    def update_contacts(self, identity, links):
+    def update_contacts(self, iteration, identity, links):
         """Update contact sensors"""
-        _, self.contact_forces = (
+        _, self.contact_forces[iteration] = (
             self.get_links_contacts(identity, links, self.plane)
         )
 
-    def update_joints(self, identity, joints):
+    def update_joints(self, iteration, identity, joints):
         """Update force-torque sensors"""
-        self.feet_ft = (
+        self.feet_ft[iteration] = (
             self.get_joints_force_torque(identity, joints)
         )
 
