@@ -1,7 +1,7 @@
 """Network"""
 
 import numpy as np
-from ..cy_controller import ode_oscillators_sparse, ode_amplitude, rk4
+from ..cy_controller import ode_oscillators_sparse, rk4
 from .convention import bodyjoint2index, legjoint2index
 from .control_options import SalamanderControlOptions
 

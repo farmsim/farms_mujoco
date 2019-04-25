@@ -11,7 +11,7 @@ import sympy as sp
 from sympy.utilities.autowrap import autowrap
 from sympy.utilities.autowrap import ufuncify
 import matplotlib.pyplot as plt
-from farms_bullet.cy_controller import (
+from farms_bullet.cy_controller_old import (
     odefun, rk4_ode,
     odefun_sparse, rk4_ode_sparse
 )

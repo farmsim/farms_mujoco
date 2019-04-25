@@ -37,6 +37,20 @@ setup(
             include_dirs=[np.get_include()],
             extra_compile_args=['-O3'],  # , '-fopenmp'
             extra_link_args=['-O3']  # , '-fopenmp'
-        )
-    ]),
+        ),
+        Extension(
+            "farms_bullet.cy_controller_old",
+            ["src/cy_controller_old.pyx"],
+            include_dirs=[np.get_include()],
+            extra_compile_args=['-O3'],  # , '-fopenmp'
+            extra_link_args=['-O3']  # , '-fopenmp'
+        ),
+        Extension(
+            "farms_bullet.cy_controller_test",
+            ["src/cy_controller_test.pyx"],
+            include_dirs=[np.get_include()],
+            extra_compile_args=['-O3'],  # , '-fopenmp'
+            extra_link_args=['-O3']  # , '-fopenmp'
+        ),
+    ])
 )
