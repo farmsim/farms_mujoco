@@ -124,7 +124,11 @@ class Model:
 class SalamanderModel(Model):
     """Salamander model"""
 
-    def __init__(self, identity, base_link, timestep, gait="walking", **kwargs):
+    def __init__(
+            self, identity, base_link,
+            iterations, timestep,
+            gait="walking", **kwargs
+    ):
         super(SalamanderModel, self).__init__(
             identity=identity,
             base_link=base_link
@@ -136,6 +140,7 @@ class SalamanderModel(Model):
             self.identity,
             self.joints,
             gait=gait,
+            iterations=iterations,
             timestep=timestep,
             **kwargs
         )
@@ -149,11 +154,12 @@ class SalamanderModel(Model):
         self.motors = ModelMotors()
 
     @classmethod
-    def spawn(cls, timestep, gait="walking", **kwargs):
+    def spawn(cls, iterations, timestep, gait="walking", **kwargs):
         """Spawn salamander"""
         return cls.from_sdf(
             "{}/.farms/models/biorob_salamander/model.sdf".format(os.environ['HOME']),
             base_link="link_body_0",
+            iterations=iterations,
             timestep=timestep,
             gait=gait,
             **kwargs

@@ -20,6 +20,7 @@ class Salamander(Animat):
     def spawn(self):
         """Spawn"""
         self.model = SalamanderModel.spawn(
+            self.n_iterations,
             self.timestep,
             **self.options
         )
