@@ -32,7 +32,7 @@ cpdef void ode_oscillators_sparse(
     CTYPE[:, :] joints,
     unsigned int o_dim,
     unsigned int c_dim
-):
+) nogil:
     """ODE"""
     cdef unsigned int i, j, i0, i1
     for i in range(o_dim):  # , nogil=True):
