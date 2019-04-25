@@ -957,3 +957,10 @@ class SalamanderNetworkODE(ODESolver):
         """Position output"""
         outputs = self.get_doutputs_all()
         return 0.5*(outputs[:, self.group0] - outputs[:, self.group1])
+
+    def update_drive(self, drive_speed, drive_turn):
+        """Update drives"""
+        print("TODO: Update drives to speed={} and turn={}".format(
+            drive_speed,
+            drive_turn
+        ))

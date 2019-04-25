@@ -69,6 +69,7 @@ class DebugParameter:
         self.val_min = val_min
         self.val_max = val_max
         self._handler = None
+        self.changed = False
         self.add(self.value)
 
     def add(self, value):
@@ -95,6 +96,18 @@ class DebugParameter:
         """Current value"""
         return pybullet.readUserDebugParameter(self._handler)
 
+    def update(self):
+        """Update"""
+        previous_value = self.value
+        self.value = self.get_value()
+        self.changed = (self.value != previous_value)
+        if self.changed:
+            print("{} changed ({} -> {})".format(
+                self.name,
+                previous_value,
+                self.value
+            ))
+
 
 class ParameterPlay(DebugParameter):
     """Play/pause parameter"""
@@ -106,17 +119,6 @@ class ParameterPlay(DebugParameter):
     def update(self):
         """Update"""
         self.value = self.get_value() > 0.5
-
-
-class ParameterRTL(DebugParameter):
-    """Real-time limiter"""
-
-    def __init__(self):
-        super(ParameterRTL, self).__init__("Real-time limiter", 1, 1e-3, 3)
-
-    def update(self):
-        """Update"""
-        self.value = self.get_value()
 
 
 class ParameterGait(DebugParameter):
@@ -147,88 +149,56 @@ class ParameterGait(DebugParameter):
             ))
 
 
-class ParameterFrequency(DebugParameter):
-    """Frequency control"""
-
-    def __init__(self, frequency):
-        super(ParameterFrequency, self).__init__("Frequency", frequency, 0, 5)
-        self.changed = False
-
-    def update(self):
-        """Update"""
-        previous_value = self.value
-        self.value = self.get_value()
-        self.changed = (self.value != previous_value)
-        if self.changed:
-            print("frequency changed ({} > {})".format(
-                previous_value,
-                self.value
-            ))
-
-
-class ParameterBodyOffset(DebugParameter):
-    """Body offset control"""
-
-    def __init__(self):
-        lim = np.pi/8
-        super(ParameterBodyOffset, self).__init__("Body offset", 0, -lim, lim)
-        self.changed = False
-
-    def update(self):
-        """Update"""
-        previous_value = self.value
-        self.value = self.get_value()
-        self.changed = (self.value != previous_value)
-        if self.changed:
-            print("Body offset changed ({} > {})".format(
-                previous_value,
-                self.value
-            ))
-
-
-class UserParameters:
+class UserParameters(dict):
     """Parameters control"""
 
     def __init__(self, gait, frequency):
         super(UserParameters, self).__init__()
-        self._play = ParameterPlay()
-        self._rtl = ParameterRTL()
-        self._gait = ParameterGait(gait)
-        self._frequency = ParameterFrequency(frequency)
-        self._body_offset = ParameterBodyOffset()
+        lim = np.pi/8
+        self["play"] = ParameterPlay()
+        self["rtl"] = DebugParameter("Real-time limiter", 1, 1e-3, 3)
+        self["gait"] = ParameterGait(gait)
+        self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
+        self["body_offset"] = DebugParameter("Body offset", 0, -lim, lim)
+        self["drive_speed"] = DebugParameter("Drive speed", 0.25, -1, 1)
+        self["drive_turn"] = DebugParameter("Drive speed", 0, -1, 1)
 
     def update(self):
         """Update parameters"""
-        for parameter in [
-                self._play,
-                self._rtl,
-                self._gait,
-                self._frequency,
-                self._body_offset
-        ]:
-            parameter.update()
+        for parameter in self:
+            self[parameter].update()
 
     @property
     def play(self):
         """Play"""
-        return self._play
+        return self["play"]
 
     @property
     def rtl(self):
         """Real-time limiter"""
-        return self._rtl
+        return self["rtl"]
 
     @property
     def gait(self):
         """Gait"""
-        return self._gait
+        return self["gait"]
 
     @property
     def frequency(self):
         """Frequency"""
-        return self._frequency
+        return self["frequency"]
 
     @property
     def body_offset(self):
         """Body offset"""
-        return self._body_offset
+        return self["body_offset"]
+
+    @property
+    def drive_speed(self):
+        """Drive speed"""
+        return self["drive_speed"]
+
+    @property
+    def drive_turn(self):
+        """Drive turn"""
+        return self["drive_turn"]
