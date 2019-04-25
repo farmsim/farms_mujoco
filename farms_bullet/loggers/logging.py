@@ -12,7 +12,7 @@ class ExperimentLogger:
         self.sim_size = sim_size
         self.model = model
         self.positions = PositionLogger(model, sim_size)
-        self.sensors = SensorsLogger(model, sim_size)
+        self.sensors = SensorsLogger(model.sensors)
         # [SensorsLogger(model) for sensor in model.sensors]
         self.motors = MotorsLogger(model, sim_size)
         self.phases = PhasesLogger(model, sim_size)
@@ -20,7 +20,6 @@ class ExperimentLogger:
     def update(self, iteration):
         """Update sensors at iteration"""
         self.positions.update(iteration)
-        self.sensors.update(iteration)
         self.motors.update(iteration)
         self.phases.update(iteration)
 
@@ -65,22 +64,11 @@ class PositionLogger:
 class SensorsLogger:
     """Sensors logger"""
 
-    def __init__(self, model, size):
+    def __init__(self, sensors):
         super(SensorsLogger, self).__init__()
-        self.model = model
-        self.size = size
-        self.contact_forces = np.zeros([
-            *np.shape(model.sensors.contact_forces)
-        ])
-        self.feet_ft = np.zeros([
-            *np.shape(model.sensors.feet_ft)
-        ])
-        self.feet = model.sensors.feet
-
-    def update(self, iteration):
-        """Update sensors logs"""
-        self.contact_forces[iteration, :] = self.model.sensors.contact_forces[iteration]
-        self.feet_ft[iteration, :, :] = self.model.sensors.feet_ft[iteration]
+        self.contact_forces = sensors.contact_forces
+        self.feet_ft = sensors.feet_ft
+        self.feet = sensors.feet
 
     def plot_contacts(self, times):
         """Plot sensors"""
