@@ -161,7 +161,7 @@ class UserParameters(dict):
         self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
         self["body_offset"] = DebugParameter("Body offset", 0, -lim, lim)
         self["drive_speed"] = DebugParameter("Drive speed", 0.25, -1, 1)
-        self["drive_turn"] = DebugParameter("Drive speed", 0, -1, 1)
+        self["drive_turn"] = DebugParameter("Drive turn", 0, -1, 1)
 
     def update(self):
         """Update parameters"""
