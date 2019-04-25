@@ -233,7 +233,7 @@ class OscillatorArray(NetworkArray):
     def __init__(self, array):
         super(OscillatorArray, self).__init__(array)
         self._array = array
-        self._original_amplitudes_desired = np.copy(array[:, 2])
+        self._original_amplitudes_desired = np.copy(array[2])
 
     @classmethod
     def from_parameters(cls, freqs, rates, amplitudes):
@@ -334,7 +334,7 @@ class OscillatorArray(NetworkArray):
     @amplitudes_desired.setter
     def amplitudes_desired(self, value):
         """Amplitudes desired"""
-        self.array[2] = value
+        self.array[2, :] = value
 
     def update_drives(self, drive_speed, drive_turn):
         """Set freqs"""
