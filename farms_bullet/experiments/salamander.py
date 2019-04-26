@@ -95,8 +95,10 @@ class SalamanderExperiment(Experiment):
         self.toc_sim = time.time()
         sim_step += 1
         self.profile.physics_time += self.toc_sim - self.tic_sim
+        # Animat sensors
+        time_sensors = self.animat.animat_sensors(sim_step)
         # Animat logging
-        time_sensors, time_log = self.animat.animat_logging(sim_step)
+        time_log = self.animat.animat_logging(sim_step)
         self.profile.sensors_time += time_sensors
         self.profile.log_time += time_log
         # Camera

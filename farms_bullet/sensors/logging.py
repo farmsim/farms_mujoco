@@ -25,7 +25,7 @@ class SensorLogger:
     @property
     def data(self):
         """Log data"""
-        return np.copy(self._sensor.data)
+        return self._sensor.data
 
     def update(self, step):
         """Update log"""

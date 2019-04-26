@@ -45,32 +45,8 @@ class Salamander(Animat):
         self.animat_physics()
         self.animat_control()
 
-    def log(self):
-        """Log"""
-        self.animat_logging()
-
-    def animat_physics(self):
-        """Animat physics"""
-        # Swimming
-        forces = None
-        if self.options.gait == "swimming":
-            forces = viscous_swimming(
-                self.identity,
-                self.links
-            )
-        return forces
-
-    def animat_control(self):
-        """Control animat"""
-        # Control
-        tic_control = time.time()
-        self.model.controller.control()
-        time_control = time.time() - tic_control
-        return time_control
-
-    def animat_logging(self, sim_step):
-        """Animat logging"""
-        # Contacts during walking
+    def animat_sensors(self, sim_step):
+        """Animat sensors update"""
         tic_sensors = time.time()
         self.model.sensors.update(
             sim_step,
@@ -93,8 +69,30 @@ class Salamander(Animat):
                 for joint in self.model.motors.joints_commanded_legs
             ]
         )
-        time_sensors = time.time() - tic_sensors
+        return time.time() - tic_sensors
+
+    def animat_control(self):
+        """Control animat"""
+        # Control
+        tic_control = time.time()
+        self.model.controller.control()
+        time_control = time.time() - tic_control
+        return time_control
+
+    def animat_physics(self):
+        """Animat physics"""
+        # Swimming
+        forces = None
+        if self.options.gait == "swimming":
+            forces = viscous_swimming(
+                self.identity,
+                self.links
+            )
+        return forces
+
+    def animat_logging(self, sim_step):
+        """Animat logging"""
+        # Contacts during walking
         tic_log = time.time()
         self.logger.update(sim_step-1)
-        time_log = time.time() - tic_log
-        return time_sensors, time_log
+        return time.time() - tic_log
