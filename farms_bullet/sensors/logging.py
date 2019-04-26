@@ -170,6 +170,10 @@ class LinkStateLogger(SensorLogger):
             figure=figure,
             label="pos" if label is None else label
         )
+        self.plot_trajectory_top(
+            times=times,
+            figure=figure
+        )
         self.plot_linear_velocities(
             times=times,
             local=True,
@@ -237,7 +241,18 @@ class LinkStateLogger(SensorLogger):
             labels=[label + "_" + element for element in ["x", "y", "z"]]
         )
         plt.xlabel("Time [s]")
-        plt.ylabel("Position [rad]")
+        plt.ylabel("Position [m]")
+
+    def plot_trajectory_top(self, times, **kwargs):
+        """Plot positions"""
+        plt.figure(kwargs.pop("figure", "") + "_trajectory_top")
+        plt.plot(
+            self.data[:len(times), 0],
+            self.data[:len(times), 1]
+        )
+        plt.grid(True)
+        plt.xlabel("Position x [m]")
+        plt.ylabel("Position y [m]")
 
     def plot_linear_velocities(self, times, local=False, **kwargs):
         """Plot velocities"""
