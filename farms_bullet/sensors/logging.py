@@ -340,7 +340,7 @@ class SensorsLogger(dict):
         if extension == "npy":
             save_function = np.save
             nosplit = True
-        elif extension == "txt" or extension == "csv":
+        elif extension in ("txt", "csv"):
             save_function = np.savetxt
             nosplit = False
         else:
