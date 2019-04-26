@@ -66,7 +66,6 @@ class JointsStatesSensor(Sensor):
         self._model_id = model_id
         self._joints = joints
         self._enable_ft = enable_ft
-        self._state = None
         if self._enable_ft:
             for joint in self._joints:
                 pybullet.enableJointForceTorqueSensor(
@@ -76,15 +75,11 @@ class JointsStatesSensor(Sensor):
 
     def update(self, iteration):
         """Update sensor"""
-        self._state = pybullet.getJointStates(self._model_id, self._joints)
         self._data[iteration] = np.array([
-            [
-                self._state[joint_i][0],
-                self._state[joint_i][1]
-            ] + list(self._state[joint_i][2]) + [
-                self._state[joint_i][3]
-            ]
-            for joint_i, state in enumerate(self._state)
+            (state[0], state[1]) + state[2] + (state[3],)
+            for joint_i, state in enumerate(
+                pybullet.getJointStates(self._model_id, self._joints)
+            )
         ])
 
 
@@ -95,17 +90,17 @@ class LinkStateSensor(Sensor):
         super(LinkStateSensor, self).__init__([n_iterations, 13])
         self._model_id = model_id
         self._link = link
-        self._state = None
 
     def update(self, iteration):
         """Update sensor"""
-        self._state = pybullet.getLinkState(
-            bodyUniqueId=self._model_id,
-            linkIndex=self._link,
-            computeLinkVelocity=1,
-            computeForwardKinematics=1
+        self._data[iteration] = np.concatenate(
+            pybullet.getLinkState(
+                bodyUniqueId=self._model_id,
+                linkIndex=self._link,
+                computeLinkVelocity=1,
+                computeForwardKinematics=1
+            )[4:]
         )
-        self._data[iteration] = np.concatenate(self._state[4:])
 
 
 class Sensors(dict):
