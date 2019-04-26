@@ -82,53 +82,55 @@ class SalamanderExperiment(Experiment):
         """Simulation step"""
         self.tic_rt = time.time()
         self.sim_time = self.timestep*sim_step
-
-        # Time plugins
-        self.animat_interface()
-        external_forces = self.animat.animat_physics()
-        if external_forces is not None:
-            self.forces_torques[sim_step] = external_forces
-        self.time_plugin = time.time() - self.tic_rt
-        self.profile.plugin_time += self.time_plugin
         # Animat sensors
         time_sensors = self.animat.animat_sensors(sim_step)
         self.profile.sensors_time += time_sensors
-        # Control animat
-        time_control = self.animat.animat_control()
-        self.profile.ctrl_time += time_control
-        # Physics
-        self.tic_sim = time.time()
-        pybullet.stepSimulation()
-        sim_step += 1
-        self.toc_sim = time.time()
-        self.profile.physics_time += self.toc_sim - self.tic_sim
-        # Camera
-        tic_camera = time.time()
-        if not self.sim_options.headless:
-            if self.sim_options.record and not sim_step % 25:
-                self.camera_record.record(sim_step//25-1)
-            # User camera
+        if sim_step < self.n_iterations-1:
+            if not self.sim_options.headless:
+                self.animat_interface()
+            # Plugins
+            external_forces = self.animat.animat_physics()
+            if external_forces is not None:
+                self.forces_torques[sim_step] = external_forces
+            self.time_plugin = time.time() - self.tic_rt
+            self.profile.plugin_time += self.time_plugin
+            # Control animat
+            time_control = self.animat.animat_control()
+            self.profile.ctrl_time += time_control
+            # Interface
+            # Physics
+            self.tic_sim = time.time()
+            pybullet.stepSimulation()
+            sim_step += 1
+            self.toc_sim = time.time()
+            self.profile.physics_time += self.toc_sim - self.tic_sim
+            # Camera
+            tic_camera = time.time()
+            if not self.sim_options.headless:
+                if self.sim_options.record and not sim_step % 25:
+                    self.camera_record.record(sim_step//25-1)
+                # User camera
+                if (
+                        not sim_step % self.interface.camera_skips
+                        and not self.sim_options.free_camera
+                ):
+                    self.interface.camera.update()
+            self.profile.camera_time += time.time() - tic_camera
+            # Real-time
+            self.toc_rt = time.time()
+            tic_rt = time.time()
             if (
-                    not sim_step % self.interface.camera_skips
-                    and not self.sim_options.free_camera
+                    not self.sim_options.fast
+                    and self.interface.user_params.rtl.value < 3
             ):
-                self.interface.camera.update()
-        self.profile.camera_time += time.time() - tic_camera
-        # Real-time
-        self.toc_rt = time.time()
-        tic_rt = time.time()
-        if (
-                not self.sim_options.fast
-                and self.interface.user_params.rtl.value < 3
-        ):
-            real_time_handing(
-                self.timestep, self.tic_rt, self.toc_rt,
-                rtl=self.interface.user_params.rtl.value,
-                time_plugin=self.time_plugin,
-                time_sim=self.toc_sim-self.tic_sim,
-                time_control=time_control
-            )
-        self.profile.waitrt_time = time.time() - tic_rt
+                real_time_handing(
+                    self.timestep, self.tic_rt, self.toc_rt,
+                    rtl=self.interface.user_params.rtl.value,
+                    time_plugin=self.time_plugin,
+                    time_sim=self.toc_sim-self.tic_sim,
+                    time_control=time_control
+                )
+            self.profile.waitrt_time = time.time() - tic_rt
 
     def animat_interface(self):
         """Animat interface"""
