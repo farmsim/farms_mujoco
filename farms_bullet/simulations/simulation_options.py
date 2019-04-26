@@ -21,6 +21,7 @@ class SimulationOptions(dict):
         self["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0.2)
         self["plot"] = kwargs.pop("plot", True)
         self["log_path"] = kwargs.pop("log_path", False)
+        self["log_extension"] = kwargs.pop("log_extension", "npy")
 
     @classmethod
     def with_clargs(cls, **kwargs):
@@ -37,7 +38,8 @@ class SimulationOptions(dict):
             record=kwargs.pop("record", clargs.record),
             headless=kwargs.pop("headless", clargs.headless),
             plot=kwargs.pop("plot", clargs.plot),
-            log_path=kwargs.pop("plot", clargs.log_path),
+            log_path=kwargs.pop("log_path", clargs.log_path),
+            log_extension=kwargs.pop("log_extension", clargs.log_extension),
             **kwargs
         )
 
@@ -105,3 +107,8 @@ class SimulationOptions(dict):
     def log_path(self):
         """Log at end of experiment for results analysis"""
         return self["log_path"]
+
+    @property
+    def log_extension(self):
+        """Logs files extention"""
+        return self["log_extension"]

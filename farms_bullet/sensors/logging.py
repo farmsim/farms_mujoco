@@ -340,13 +340,19 @@ class SensorsLogger(dict):
         np.save(folder+"/times.npy", times)
         if extension == "npy":
             save_function = np.save
+            nosplit = True
         elif extension == "txt" or extension == "csv":
             save_function = np.savetxt
+            nosplit = False
         else:
             raise Exception(
                 "Format {} is not valid for logging data".format(extension)
             )
         for sensor_name, sensor in self._sensors.items():
-            print("{} {}".format(np.shape(times), np.shape(self[sensor].data[:len(times)])))
-            path = folder + "/" + sensor_name + "." + extension
-            save_function(path, self[sensor].data[:len(times)])
+            if nosplit or self[sensor].data.ndim == 2:
+                path = folder + "/" + sensor_name + "." + extension
+                save_function(path, self[sensor].data[:len(times)])
+            elif self[sensor].data.ndim == 3:
+                for i in range(np.shape(self[sensor].data)[1]):
+                    path = folder+"/"+sensor_name+"_{}.".format(i)+extension
+                    save_function(path, self[sensor].data[:len(times), i])

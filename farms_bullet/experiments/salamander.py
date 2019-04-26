@@ -174,14 +174,18 @@ class SalamanderExperiment(Experiment):
             self.interface.user_params.drive_speed.changed = False
             self.interface.user_params.drive_turn.changed = False
 
-    def postprocess(self, plot=False, log_path=False):
+    def postprocess(self, plot=None, log_path=None, log_extension=None):
         """Plot after simulation"""
         # Plot
         if plot:
             self.logger.plot_all(self.times_simulated)
             plt.show()
         if log_path:
-            self.logger.log_all(self.times_simulated, folder=log_path)
+            self.logger.log_all(
+                self.times_simulated,
+                folder=log_path,
+                extension=log_extension
+            )
 
         # Record video
         if self.sim_options.record and not self.sim_options.headless:

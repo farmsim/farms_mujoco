@@ -55,7 +55,8 @@ def main(simulation_options=None, animat_options=None):
     print("Analysing simulation")
     sim.experiment.postprocess(
         plot=simulation_options.plot,
-        log_path=simulation_options.log_path
+        log_path=simulation_options.log_path,
+        log_extension=simulation_options.log_extension
     )
     sim.end()
 
