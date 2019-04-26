@@ -48,4 +48,11 @@ def parse_args():
         default=False,
         help='Headless mode instead of using GUI'
     )
+    parser.add_argument(
+        '--no_plot',
+        action='store_false',
+        dest='plot',
+        default=True,
+        help='Plot at end of experiment for results analysis'
+    )
     return parser.parse_args()

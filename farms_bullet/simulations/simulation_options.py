@@ -19,6 +19,7 @@ class SimulationOptions(dict):
         self["headless"] = kwargs.pop("headless", False)
         self["frequency"] = kwargs.pop("frequency", 1)
         self["body_stand_amplitude"] = kwargs.pop("body_stand_amplitude", 0.2)
+        self["plot"] = kwargs.pop("plot", True)
 
     @classmethod
     def with_clargs(cls, **kwargs):
@@ -34,6 +35,7 @@ class SimulationOptions(dict):
             fast=kwargs.pop("fast", clargs.fast),
             record=kwargs.pop("record", clargs.record),
             headless=kwargs.pop("headless", clargs.headless),
+            plot=kwargs.pop("plot", clargs.plot),
             **kwargs
         )
 
@@ -91,3 +93,8 @@ class SimulationOptions(dict):
     def headless(self):
         """Headless simulation instead of using GUI"""
         return self["headless"]
+
+    @property
+    def plot(self):
+        """Plot at end of experiment for results analysis"""
+        return self["plot"]
