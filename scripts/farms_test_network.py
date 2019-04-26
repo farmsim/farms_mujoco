@@ -33,7 +33,7 @@ def main():
         timestep=timestep
     )
     n_iterations = len(times)
-    freqs = 2*np.pi*np.ones(np.shape(network.phases)[1])
+    freqs = np.ones(np.shape(network.phases)[1])
     toc = time.time()
     print("Time to allocate data: {} [s]".format(toc-tic))
 
@@ -43,7 +43,8 @@ def main():
         if i == n_iterations//2:
             network.update_gait("swimming")
         tic0 = time.time()
-        network.control_step(freqs)
+        network.parameters.oscillators.freqs = freqs
+        network.control_step()
         tic1 = time.time()
         time_control += tic1 - tic0
     print("Integration time: {} [s]".format(time_control))
