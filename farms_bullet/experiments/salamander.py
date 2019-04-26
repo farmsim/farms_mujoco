@@ -90,21 +90,18 @@ class SalamanderExperiment(Experiment):
             self.forces_torques[sim_step] = external_forces
         self.time_plugin = time.time() - self.tic_rt
         self.profile.plugin_time += self.time_plugin
+        # Animat sensors
+        time_sensors = self.animat.animat_sensors(sim_step)
+        self.profile.sensors_time += time_sensors
         # Control animat
         time_control = self.animat.animat_control()
         self.profile.ctrl_time += time_control
         # Physics
         self.tic_sim = time.time()
         pybullet.stepSimulation()
-        self.toc_sim = time.time()
         sim_step += 1
+        self.toc_sim = time.time()
         self.profile.physics_time += self.toc_sim - self.tic_sim
-        # Animat sensors
-        time_sensors = self.animat.animat_sensors(sim_step)
-        # # Animat logging
-        # time_log = self.animat.animat_logging(sim_step)
-        self.profile.sensors_time += time_sensors
-        # self.profile.log_time += time_log
         # Camera
         tic_camera = time.time()
         if not self.sim_options.headless:
