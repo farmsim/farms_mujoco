@@ -43,10 +43,10 @@ class Salamander(Animat):
         self.sensors.add({
             "contact_{}".format(i): ContactSensor(
                 self.n_iterations,
-                self._identity, 11+4*i+4,
+                self._identity, self.links[foot],
                 arena_identity, -1
             )
-            for i in [self.links[foot] for foot in self.model.feet]
+            for i, foot in enumerate(self.model.feet)
         })
         # Joints
         n_joints = pybullet.getNumJoints(self._identity)
