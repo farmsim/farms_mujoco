@@ -104,6 +104,23 @@ class OscillatorNetworkState(NetworkArray):
         self._iteration = iteration
         super(OscillatorNetworkState, self).__init__(state)
 
+    @staticmethod
+    def default_initial_state():
+        """Default state"""
+        n_joints = 11+4*3
+        return np.linspace(0, 1e-6, 5*n_joints)
+
+    @staticmethod
+    def default_state(n_iterations):
+        """Default state"""
+        n_joints = 11+4*3
+        n_oscillators = 2*n_joints
+        return OscillatorNetworkState.from_initial_state(
+            initial_state=OscillatorNetworkState.default_initial_state(),
+            n_iterations=n_iterations,
+            n_oscillators=n_oscillators
+        )
+
     @classmethod
     def from_initial_state(cls, initial_state, n_iterations, n_oscillators):
         """From initial state"""
@@ -862,28 +879,17 @@ class SalamanderNetworkODE(ODESolver):
         self.parameters.update_gait(gait)
         self._parameters = self.parameters.to_ode_parameters()
 
-    @staticmethod
-    def default_state(n_iterations):
-        """Default state"""
-        n_joints = 11+4*3
-        n_oscillators = 2*n_joints
-        return OscillatorNetworkState.from_initial_state(
-            initial_state=np.linspace(0, 1e-6, 5*n_joints),
-            n_iterations=n_iterations,
-            n_oscillators=n_oscillators
-        )
-
     @classmethod
     def walking(cls, n_iterations, timestep):
         """Salamander swimming network"""
-        state = cls.default_state(n_iterations)
+        state = OscillatorNetworkState.default_state(n_iterations)
         parameters = SalamanderNetworkParameters.for_walking()
         return cls(state, parameters, timestep)
 
     @classmethod
     def swimming(cls, n_iterations, timestep):
         """Salamander swimming network"""
-        state = cls.default_state(n_iterations)
+        state = OscillatorNetworkState.default_state(n_iterations)
         parameters = SalamanderNetworkParameters.for_swimming()
         return cls(state, parameters, timestep)
 
