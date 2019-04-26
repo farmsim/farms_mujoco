@@ -9,7 +9,12 @@ from .experiment import Experiment
 from ..animats.model_options import ModelOptions
 from ..animats.simon import SimonAnimat
 from ..arenas.arena import FlooredArena
-from ..sensors.sensor import JointsStatesSensor, ContactSensor, LinkStateSensor
+from ..sensors.sensor import (
+    Sensors,
+    JointsStatesSensor,
+    ContactSensor,
+    LinkStateSensor
+)
 from ..sensors.logging import SensorsLogger
 
 
@@ -57,27 +62,36 @@ class SimonExperiment(Experiment):
 
         # Sensors
         n_joints = pybullet.getNumJoints(self.animat.identity)
-        self.animat.sensors = [
-            ContactSensor(
+        self.animat.sensors = Sensors()
+        # Contacts
+        self.animat.sensors.add({
+            "contact_{}".format(i): ContactSensor(
+                self.n_iterations,
                 self.animat.identity, 1+2*i,
                 self.arena.floor.identity, -1
             )
             for i in range(4)
-        ] + [
-            JointsStatesSensor(
+        })
+        # Joints
+        self.animat.sensors.add({
+            "joints": JointsStatesSensor(
+                self.n_iterations,
                 self.animat.identity,
                 np.arange(n_joints),
                 enable_ft=True
             )
-        ] + [
-            LinkStateSensor(
+        })
+        # Base link
+        self.animat.sensors.add({
+            "base_link": LinkStateSensor(
+                self.n_iterations,
                 self.animat.identity,
                 0,  # Base link
             )
-        ]
+        })
 
         # logger
-        self.logger = SensorsLogger(self.animat.sensors, self.n_iterations)
+        self.logger = SensorsLogger(self.animat.sensors)
 
     def pre_step(self, sim_step):
         """New step"""
@@ -85,12 +99,13 @@ class SimonExperiment(Experiment):
 
     def step(self, sim_step):
         """Step"""
-        for sensor in self.animat.sensors:
-            sensor.update()
-        contacts_sensors = [
-            self.animat.sensors[i].get_normal_force()
-            for i in range(4)
-        ]
+        # for sensor in self.animat.sensors:
+        #     sensor.update()
+        self.animat.sensors.update(sim_step)
+        # contacts_sensors = [
+        #     self.animat.sensors["contact_{}".format(i)].get_normal_force()
+        #     for i in range(4)
+        # ]
         # print("Sensors contact forces: {}".format(contacts_sensors))
         # self.logger[sim_step, :] = contacts_sensors
         self.logger.update_logs(sim_step)

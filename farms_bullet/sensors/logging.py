@@ -18,27 +18,24 @@ def global2local(vector_global, orientation):
 class SensorLogger:
     """Sensor logger"""
 
-    def __init__(self, sensor, n_iterations):
+    def __init__(self, sensor):
         super(SensorLogger, self).__init__()
         self._sensor = sensor
-        self._data = np.zeros(
-            [n_iterations] + list(np.shape(self._sensor.data))
-        )
 
     @property
     def data(self):
         """Log data"""
-        return self._data
+        return np.copy(self._sensor.data)
 
     def update(self, step):
         """Update log"""
-        self._data[step, :] = self._sensor.data
+        self.data[step, :] = self._sensor.data
 
     def plot(self, times, figure=None, label=None):
         """Plot"""
         if figure is not None:
             plt.figure(figure)
-        for data in self._data.T:
+        for data in self.data.T:
             plt.plot(times, data[:len(times)], label=label)
         plt.grid(True)
         plt.legend()
@@ -57,11 +54,11 @@ class JointsStatesLogger(SensorLogger):
 
     def plot_data(self, times, data_id, label=None):
         """Plot data"""
-        n_sensors = np.shape(self._data)[1]
+        n_sensors = np.shape(self.data)[1]
         for sensor in range(n_sensors):
             plt.plot(
                 times,
-                self._data[:len(times), sensor, data_id],
+                self.data[:len(times), sensor, data_id],
                 label=(
                     label + "_" if label is not None else ""
                     + "sensor_{}".format(sensor)
@@ -72,7 +69,7 @@ class JointsStatesLogger(SensorLogger):
 
     def plot_data_norm(self, times, data_ids, label=None):
         """Plot data"""
-        n_sensors = np.shape(self._data)[1]
+        n_sensors = np.shape(self.data)[1]
         for sensor in range(n_sensors):
             data = self.data[:len(times), sensor, data_ids]
             data_norm = np.sqrt(np.sum(data**2, axis=1))
@@ -145,7 +142,7 @@ class ContactLogger(SensorLogger):
         plt.figure(figure+"_normal")
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
-        for i, data in enumerate(self._data[:, :3].T):
+        for i, data in enumerate(self.data[:, :3].T):
             plt.plot(times, data[:len(times)], label=labels[i])
         plt.xlabel("Time [s]")
         plt.ylabel("Normal force [N]")
@@ -159,7 +156,7 @@ class ContactLogger(SensorLogger):
         plt.figure(figure+"_lateral")
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
-        for i, data in enumerate(self._data[:, 3:].T):
+        for i, data in enumerate(self.data[:, 3:].T):
             plt.plot(times, data[:len(times)], label=labels[i])
         plt.xlabel("Time [s]")
         plt.ylabel("Force [N]")
@@ -209,7 +206,7 @@ class LinkStateLogger(SensorLogger):
         for data_i, data_id in enumerate(data_ids):
             plt.plot(
                 times,
-                self._data[:len(times), data_id],
+                self.data[:len(times), data_id],
                 label=labels[data_i]
             )
         plt.grid(True)
@@ -220,7 +217,7 @@ class LinkStateLogger(SensorLogger):
         if figure is not None:
             plt.figure(figure)
         data_local = np.array([
-            global2local(data[i], self._data[i, 3:7])
+            global2local(data[i], self.data[i, 3:7])
             for i, _ in enumerate(times)
         ]).T
         labels = kwargs.pop("labels", ["x", "y", "z"])
@@ -253,7 +250,7 @@ class LinkStateLogger(SensorLogger):
         if local:
             self.plot_local_data(
                 times=times,
-                data=self._data[:, 7:10],
+                data=self.data[:, 7:10],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
@@ -274,7 +271,7 @@ class LinkStateLogger(SensorLogger):
         if local:
             self.plot_local_data(
                 times=times,
-                data=self._data[:, 10:],
+                data=self.data[:, 10:],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
@@ -292,36 +289,35 @@ class LinkStateLogger(SensorLogger):
 class SensorsLogger(dict):
     """Sensors logging"""
 
-    def __init__(self, sensors, n_iterations):
+    def __init__(self, sensors):
         self._sensors = sensors
         super(SensorsLogger, self).__init__({
             sensor: (
-                JointsStatesLogger(sensor, n_iterations)
+                JointsStatesLogger(sensor)
                 if isinstance(sensor, JointsStatesSensor)
-                else ContactLogger(sensor, n_iterations)
+                else ContactLogger(sensor)
                 if isinstance(sensor, ContactSensor)
-                else LinkStateLogger(sensor, n_iterations)
+                else LinkStateLogger(sensor)
                 if isinstance(sensor, LinkStateSensor)
-                else SensorLogger(sensor, n_iterations)
+                else SensorLogger(sensor)
             )
-            for sensor in self._sensors
+            for sensor in self._sensors.values()
         })
 
     def update_logs(self, sim_step):
         """Update sensors logs"""
-        for sensor in self._sensors:
-            self[sensor].update(sim_step)
+        self._sensors.update(sim_step)
 
     def plot_all(self, times):
         """Plot all sensors logs"""
-        for sensor_i, sensor in enumerate(self._sensors):
+        for sensor_name, sensor in self._sensors.items():
             figure_name = (
-                "contacts_{}".format(sensor)
+                sensor_name
                 if isinstance(sensor, ContactSensor)
                 else str(sensor)
             )
             label = (
-                "contact_{}".format(sensor_i)
+                sensor_name
                 if isinstance(sensor, ContactSensor)
                 else None
             )
