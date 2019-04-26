@@ -337,7 +337,6 @@ class SensorsLogger(dict):
     def log_all(self, times, folder, extension="npy"):
         """Log all sensors logs"""
         os.makedirs(folder, exist_ok=True)
-        np.save(folder+"/times.npy", times)
         if extension == "npy":
             save_function = np.save
             nosplit = True
@@ -348,6 +347,7 @@ class SensorsLogger(dict):
             raise Exception(
                 "Format {} is not valid for logging data".format(extension)
             )
+        save_function(folder+"/times."+extension, times)
         for sensor_name, sensor in self._sensors.items():
             if nosplit or self[sensor].data.ndim == 2:
                 path = folder + "/" + sensor_name + "." + extension
@@ -356,3 +356,6 @@ class SensorsLogger(dict):
                 for i in range(np.shape(self[sensor].data)[1]):
                     path = folder+"/"+sensor_name+"_{}.".format(i)+extension
                     save_function(path, self[sensor].data[:len(times), i])
+            else:
+                msg = "Dimensionality {} is not valid for extension of type {}"
+                raise Exception(msg.format(self[sensor].data.ndim, extension))
