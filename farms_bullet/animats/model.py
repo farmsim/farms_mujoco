@@ -6,7 +6,7 @@ import numpy as np
 
 import pybullet
 from ..sensors.model_sensors import ModelSensors
-from ..motors.motors import ModelMotors
+# from ..motors.motors import ModelMotors
 from ..controllers.control import SalamanderController
 
 
@@ -151,7 +151,7 @@ class SalamanderModel(Model):
             "link_leg_1_R_3"
         ]
         self.sensors = ModelSensors(self, iterations)
-        self.motors = ModelMotors()
+        # self.motors = ModelMotors()
 
     @classmethod
     def spawn(cls, iterations, timestep, gait="walking", **kwargs):

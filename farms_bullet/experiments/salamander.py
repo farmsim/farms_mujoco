@@ -12,6 +12,8 @@ from ..arenas.arena import FlooredArena
 from ..interface.interface import Interfaces
 from ..profile.profile import SimulationProfiler
 from ..simulations.simulator import real_time_handing
+# from ..loggers.logging import ExperimentLogger
+from ..sensors.logging import SensorsLogger
 
 
 class SalamanderExperiment(Experiment):
@@ -34,12 +36,14 @@ class SalamanderExperiment(Experiment):
         self.simulation_state = None
         self.profile = SimulationProfiler(self.sim_options.duration)
         self.forces_torques = np.zeros([n_iterations, 2, 10, 3])
+        self.logger = None
 
     def spawn(self):
         """Spawn"""
         # Elements
         self._spawn()
-        self.animat.model.sensors.plane = self.arena.floor.identity
+        self.animat.add_sensors(self.arena.floor.identity)
+        self.logger = SensorsLogger(self.animat.sensors)
         # Interface
         if not self.sim_options.headless:
             self.interface.init_camera(
@@ -97,10 +101,10 @@ class SalamanderExperiment(Experiment):
         self.profile.physics_time += self.toc_sim - self.tic_sim
         # Animat sensors
         time_sensors = self.animat.animat_sensors(sim_step)
-        # Animat logging
-        time_log = self.animat.animat_logging(sim_step)
+        # # Animat logging
+        # time_log = self.animat.animat_logging(sim_step)
         self.profile.sensors_time += time_sensors
-        self.profile.log_time += time_log
+        # self.profile.log_time += time_log
         # Camera
         tic_camera = time.time()
         if not self.sim_options.headless:
@@ -169,7 +173,7 @@ class SalamanderExperiment(Experiment):
     def postprocess(self):
         """Plot after simulation"""
         # Plot
-        self.animat.logger.plot_all(self.times_simulated)
+        self.logger.plot_all(self.times_simulated)
         plt.show()
 
         # Record video

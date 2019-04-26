@@ -1,10 +1,19 @@
 """Salamander"""
 
 import time
+import numpy as np
+
+import pybullet
+
 from .animat import Animat
 from .model import SalamanderModel
-from ..loggers.logging import ExperimentLogger
 from ..plugins.swimming import viscous_swimming
+from ..sensors.sensor import (
+    Sensors,
+    JointsStatesSensor,
+    ContactSensor,
+    LinkStateSensor
+)
 
 
 class Salamander(Animat):
@@ -14,7 +23,7 @@ class Salamander(Animat):
         super(Salamander, self).__init__(options)
         self.model = None
         self.timestep = timestep
-        self.logger = None
+        self.sensors = None
         self.n_iterations = n_iterations
 
     def spawn(self):
@@ -25,10 +34,38 @@ class Salamander(Animat):
             **self.options
         )
         self._identity = self.model.identity
-        self.logger = ExperimentLogger(
-            self.model,
-            self.n_iterations
-        )
+
+    def add_sensors(self, arena_identity):
+        """Add sensors"""
+        # Sensors
+        self.sensors = Sensors()
+        # Contacts
+        self.sensors.add({
+            "contact_{}".format(i): ContactSensor(
+                self.n_iterations,
+                self._identity, 11+4*i+4,
+                arena_identity, -1
+            )
+            for i in [self.links[foot] for foot in self.model.feet]
+        })
+        # Joints
+        n_joints = pybullet.getNumJoints(self._identity)
+        self.sensors.add({
+            "joints": JointsStatesSensor(
+                self.n_iterations,
+                self._identity,
+                np.arange(n_joints),
+                enable_ft=True
+            )
+        })
+        # Base link
+        self.sensors.add({
+            "base_link": LinkStateSensor(
+                self.n_iterations,
+                self._identity,
+                0,  # Base link
+            )
+        })
 
     @property
     def links(self):
@@ -48,27 +85,28 @@ class Salamander(Animat):
     def animat_sensors(self, sim_step):
         """Animat sensors update"""
         tic_sensors = time.time()
-        self.model.sensors.update(
-            sim_step,
-            identity=self.identity,
-            links=[self.links[foot] for foot in self.model.feet],
-            joints=[
-                self.joints[joint]
-                for joint in self.model.sensors.joints_sensors
-            ]
-        )
-        # Commands
-        self.model.motors.update(
-            identity=self.identity,
-            joints_body=[
-                self.joints[joint]
-                for joint in self.model.motors.joints_commanded_body
-            ],
-            joints_legs=[
-                self.joints[joint]
-                for joint in self.model.motors.joints_commanded_legs
-            ]
-        )
+        # self.model.sensors.update(
+        #     sim_step,
+        #     identity=self.identity,
+        #     links=[self.links[foot] for foot in self.model.feet],
+        #     joints=[
+        #         self.joints[joint]
+        #         for joint in self.model.sensors.joints_sensors
+        #     ]
+        # )
+        self.sensors.update(sim_step)
+        # # Commands
+        # self.model.motors.update(
+        #     identity=self.identity,
+        #     joints_body=[
+        #         self.joints[joint]
+        #         for joint in self.model.motors.joints_commanded_body
+        #     ],
+        #     joints_legs=[
+        #         self.joints[joint]
+        #         for joint in self.model.motors.joints_commanded_legs
+        #     ]
+        # )
         return time.time() - tic_sensors
 
     def animat_control(self):
@@ -90,9 +128,9 @@ class Salamander(Animat):
             )
         return forces
 
-    def animat_logging(self, sim_step):
-        """Animat logging"""
-        # Contacts during walking
-        tic_log = time.time()
-        self.logger.update(sim_step-1)
-        return time.time() - tic_log
+    # def animat_logging(self, sim_step):
+    #     """Animat logging"""
+    #     # Contacts during walking
+    #     tic_log = time.time()
+    #     self.logger.update(sim_step-1)
+    #     return time.time() - tic_log

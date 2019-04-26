@@ -20,16 +20,12 @@ class SensorLogger:
 
     def __init__(self, sensor):
         super(SensorLogger, self).__init__()
-        self._sensor = sensor
+        self._element = sensor
 
     @property
     def data(self):
         """Log data"""
-        return self._sensor.data
-
-    def update(self, step):
-        """Update log"""
-        self.data[step, :] = self._sensor.data
+        return self._element.data
 
     def plot(self, times, figure=None, label=None):
         """Plot"""
