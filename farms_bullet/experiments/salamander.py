@@ -66,16 +66,17 @@ class SalamanderExperiment(Experiment):
         """Save experiment state"""
         self.simulation_state = pybullet.saveState()
 
-    def pre_step(self, sim_step):
+    def pre_step(self, sim_step, play=True):
         """New step"""
-        play = self.interface.user_params.play.value
-        if not sim_step % 100:
-            self.interface.user_params.update()
         if not(sim_step % 10000) and sim_step > 0:
             pybullet.restoreState(self.simulation_state)
-        if not play:
-            time.sleep(0.5)
-            self.interface.user_params.update()
+        if not self.sim_options.headless:
+            play = self.interface.user_params.play.value
+            if not sim_step % 100:
+                self.interface.user_params.update()
+            if not play:
+                time.sleep(0.5)
+                self.interface.user_params.update()
         return play
 
     def step(self, sim_step):

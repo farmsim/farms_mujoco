@@ -63,17 +63,16 @@ class Simulation:
         self.tic = time.time()
         loop_time = 0
         play = True
-        while self.sim_step < len(self.times):
+        n_iterations = len(self.times)
+        while self.sim_step < n_iterations:
             if not self.sim_options.headless:
                 keys = pybullet.getKeyboardEvents()
                 if ord("q") in keys:
                     break
-                play = self.experiment.pre_step(self.sim_step)
-            if play:
+            if self.experiment.pre_step(self.sim_step):
                 tic_loop = time.time()
                 self.experiment.step(self.sim_step)
                 self.sim_step += 1
-                # self.experiment.log()
                 loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
         self.toc = time.time()
