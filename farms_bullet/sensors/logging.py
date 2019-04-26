@@ -285,18 +285,17 @@ class LinkStateLogger(SensorLogger):
 class SensorsLogger(dict):
     """Sensors logging"""
 
+    mapping = {
+        JointsStatesSensor: JointsStatesLogger,
+        ContactSensor: ContactLogger,
+        LinkStateSensor: LinkStateLogger
+    }
+    default = SensorLogger
+
     def __init__(self, sensors):
         self._sensors = sensors
         super(SensorsLogger, self).__init__({
-            sensor: (
-                JointsStatesLogger(sensor)
-                if isinstance(sensor, JointsStatesSensor)
-                else ContactLogger(sensor)
-                if isinstance(sensor, ContactSensor)
-                else LinkStateLogger(sensor)
-                if isinstance(sensor, LinkStateSensor)
-                else SensorLogger(sensor)
-            )
+            sensor: self.mapping[type(sensor)](sensor)
             for sensor in self._sensors.values()
         })
 
