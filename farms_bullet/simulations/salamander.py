@@ -51,10 +51,12 @@ def main(simulation_options=None, animat_options=None):
     print("Running simulation")
     sim.run()
 
-    # Show results
-    if simulation_options.plot:
-        print("Analysing simulation")
-        sim.experiment.postprocess()
+    # Analyse results
+    print("Analysing simulation")
+    sim.experiment.postprocess(
+        plot=simulation_options.plot,
+        log_path=simulation_options.log_path
+    )
     sim.end()
 
 

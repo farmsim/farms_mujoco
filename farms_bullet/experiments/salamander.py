@@ -70,6 +70,7 @@ class SalamanderExperiment(Experiment):
         """New step"""
         if not(sim_step % 10000) and sim_step > 0:
             pybullet.restoreState(self.simulation_state)
+            self.animat.model.controller.network.state
         if not self.sim_options.headless:
             play = self.interface.user_params.play.value
             if not sim_step % 100:
@@ -170,11 +171,14 @@ class SalamanderExperiment(Experiment):
             self.interface.user_params.drive_speed.changed = False
             self.interface.user_params.drive_turn.changed = False
 
-    def postprocess(self):
+    def postprocess(self, plot=False, log_path=False):
         """Plot after simulation"""
         # Plot
-        self.logger.plot_all(self.times_simulated)
-        plt.show()
+        if plot:
+            self.logger.plot_all(self.times_simulated)
+            plt.show()
+        if log_path:
+            self.logger.log_all(self.times_simulated, folder=log_path)
 
         # Record video
         if self.sim_options.record and not self.sim_options.headless:

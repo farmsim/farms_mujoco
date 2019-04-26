@@ -1,5 +1,6 @@
 """Sensor logging"""
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import pybullet
@@ -332,3 +333,20 @@ class SensorsLogger(dict):
                 else None
             )
             self[sensor].plot(times, figure=figure_name, label=label)
+
+    def log_all(self, times, folder, extension="npy"):
+        """Log all sensors logs"""
+        os.makedirs(folder, exist_ok=True)
+        np.save(folder+"/times.npy", times)
+        if extension == "npy":
+            save_function = np.save
+        elif extension == "txt" or extension == "csv":
+            save_function = np.savetxt
+        else:
+            raise Exception(
+                "Format {} is not valid for logging data".format(extension)
+            )
+        for sensor_name, sensor in self._sensors.items():
+            print("{} {}".format(np.shape(times), np.shape(self[sensor].data[:len(times)])))
+            path = folder + "/" + sensor_name + "." + extension
+            save_function(path, self[sensor].data[:len(times)])

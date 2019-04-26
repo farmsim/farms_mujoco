@@ -55,4 +55,11 @@ def parse_args():
         default=True,
         help='Plot at end of experiment for results analysis'
     )
+    parser.add_argument(
+        '-l', '--log',
+        type=str,
+        dest='log_path',
+        default=False,
+        help='Log data to path at end of experiment for results analysis'
+    )
     return parser.parse_args()
