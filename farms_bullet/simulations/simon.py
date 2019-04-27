@@ -45,9 +45,14 @@ def run_simon(sim_options=None, animat_options=None):
     # Run simulation
     print("Running simulation")
     sim.run()
-    sim.end()
 
-    # # Show results
-    # print("Analysing simulation")
-    # sim.experiment.postprocess()
-    # sim.end()
+    # Show results
+    print("Analysing simulation")
+    sim.experiment.postprocess(
+        iteration=sim.iteration,
+        plot=simulation_options.plot,
+        log_path=simulation_options.log_path,
+        log_extension=simulation_options.log_extension,
+        record=sim.sim_options.record and not sim.sim_options.headless
+    )
+    sim.end()

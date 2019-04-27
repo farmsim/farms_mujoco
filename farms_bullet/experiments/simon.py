@@ -157,11 +157,3 @@ class SimonExperiment(Experiment):
         pybullet.stepSimulation()
         sim_step += 1
         time.sleep(1e-3)
-
-    def end(self, sim_step, sim_time):
-        """delete"""
-        print("Time taken: {} [s]".format(sim_time))
-        self.logger.plot_all(
-            np.linspace(0, (sim_step-1)*self.timestep, sim_step)
-        )
-        plt.show()

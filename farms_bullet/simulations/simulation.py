@@ -35,7 +35,7 @@ class Simulation:
         self.animat = self.experiment.animat
 
         # Simulation
-        self.sim_step = 0
+        self.iteration = 0
 
         rendering(1)
 
@@ -64,23 +64,23 @@ class Simulation:
         loop_time = 0
         play = True
         n_iterations = len(self.times)
-        while self.sim_step < n_iterations:
+        while self.iteration < n_iterations:
             if not self.sim_options.headless:
                 keys = pybullet.getKeyboardEvents()
                 if ord("q") in keys:
                     break
-            if self.experiment.pre_step(self.sim_step):
+            if self.experiment.pre_step(self.iteration):
                 tic_loop = time.time()
-                self.experiment.step(self.sim_step)
-                self.sim_step += 1
+                self.experiment.step(self.iteration)
+                self.iteration += 1
                 loop_time += time.time() - tic_loop
         print("Loop time: {} [s]".format(loop_time))
         self.toc = time.time()
-        self.experiment.times_simulated = self.times[:self.sim_step]
+        self.experiment.times_simulated = self.times[:self.iteration]
 
     def end(self):
         """Terminate simulation"""
-        # End experiment
-        self.experiment.end(self.sim_step, self.toc - self.tic)
+        # End experiment1
+        self.experiment.end()  # self.iteration, self.toc - self.tic
         # Disconnect from simulation
         pybullet.disconnect()

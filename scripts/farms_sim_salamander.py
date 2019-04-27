@@ -3,6 +3,7 @@
 
 import cProfile
 import pstats
+import matplotlib.pyplot as plt
 from farms_bullet.simulations.salamander import main as run_simulation
 from farms_bullet.animats.model_options import ModelOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
@@ -20,6 +21,7 @@ def main():
         simulation_options=simulation_options,
         animat_options=animat_options
     )
+    plt.show()
 
 def profile():
     """Profile"""

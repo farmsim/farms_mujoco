@@ -174,25 +174,29 @@ class SalamanderExperiment(Experiment):
             self.interface.user_params.drive_speed.changed = False
             self.interface.user_params.drive_turn.changed = False
 
-    def postprocess(self, plot=None, log_path=None, log_extension=None):
-        """Plot after simulation"""
-        # Plot
-        if plot:
-            self.logger.plot_all(self.times_simulated)
-            plt.show()
-        if log_path:
-            self.logger.log_all(
-                self.times_simulated,
-                folder=log_path,
-                extension=log_extension
-            )
+    # def postprocess(self, plot=None, log_path=None, log_extension=None):
+    #     """Plot after simulation"""
+    #     # Plot
+    #     if plot:
+    #         self.logger.plot_all(self.times_simulated)
+    #         plt.show()
+    #     if log_path:
+    #         self.logger.log_all(
+    #             self.times_simulated,
+    #             folder=log_path,
+    #             extension=log_extension
+    #         )
 
-        # Record video
-        if self.sim_options.record and not self.sim_options.headless:
-            self.camera_record.save("video.avi")
+    #     # Record video
+    #     if self.sim_options.record and not self.sim_options.headless:
+    #         self.camera_record.save("video.avi")
 
-    def end(self, sim_step, sim_time):
+    def end(self, **kwargs):
         """Terminate experiment"""
+        sim_step, sim_time = (
+            kwargs.pop("sim_step", 0),
+            kwargs.pop("sim_time", 0)
+        )
         self.profile.sim_duration = self.timestep*sim_step
         self.profile.sim_time = sim_time
         self.profile.print_times()

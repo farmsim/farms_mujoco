@@ -1,5 +1,7 @@
 """Experiment"""
 
+import numpy as np
+
 class Experiment:
     """Experiment"""
 
@@ -9,7 +11,6 @@ class Experiment:
         self.arena = arena
         self.timestep = timestep
         self.n_iterations = n_iterations
-        self.logger = None
 
     def elements(self):
         """Elements in experiment"""
@@ -34,5 +35,31 @@ class Experiment:
         for element in self.elements():
             element.log()
 
-    def end(self):
+    def postprocess(self, iteration, **kwargs):
+        """Plot after simulation"""
+        times = np.arange(
+            0,
+            self.timestep*self.n_iterations,
+            self.timestep
+        )[:iteration]
+
+        plot = kwargs.pop("plot", None)
+        if plot:
+            self.logger.plot_all(times)
+
+        log_path = kwargs.pop("log_path", None)
+        if log_path:
+            log_extension = kwargs.pop("log_extension", None)
+            self.logger.log_all(
+                times,
+                folder=log_path,
+                extension=log_extension
+            )
+
+        # Record video
+        record = kwargs.pop("record", None)
+        if record:
+            self.camera_record.save("video.avi")
+
+    def end(self, **kwargs):
         """delete"""
