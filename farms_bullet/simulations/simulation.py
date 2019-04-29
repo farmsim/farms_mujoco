@@ -37,7 +37,6 @@ class Simulation:
         # Initialise models
         self.experiment = experiment
         self.experiment.spawn()
-        self.animat = self.experiment.animat
 
         # Simulation
         self.iteration = 0

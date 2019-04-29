@@ -44,6 +44,12 @@ class SalamanderExperiment(Experiment):
         self._spawn()
         self.animat.add_sensors(self.arena.floor.identity)
         self.logger = SensorsLogger(self.animat.sensors)
+        # Collisions
+        self.animat.model.leg_collisions(
+            self.arena.floor.identity,
+            activate=False
+        )
+        self.animat.model.print_dynamics_info()
         # Interface
         if not self.sim_options.headless:
             self.interface.init_camera(
