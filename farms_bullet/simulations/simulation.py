@@ -9,7 +9,12 @@ from ..render.render import rendering
 
 
 class Simulation:
-    """Simulation"""
+    """Simulation
+
+    Handles the start/run/end of the experiment, the GUI if not headless, the
+    physics properties, etc.
+
+    """
 
     def __init__(self, experiment, simulation_options, animat_options):
         super(Simulation, self).__init__()

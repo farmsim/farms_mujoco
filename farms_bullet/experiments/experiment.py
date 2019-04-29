@@ -3,7 +3,12 @@
 import numpy as np
 
 class Experiment:
-    """Experiment"""
+    """Experiment
+
+    All experiment related code (Pure simulation). This does not include
+    GUI/headless mode, simulation physics, timesteps handling, etc.
+
+    """
 
     def __init__(self, animat, arena, timestep, n_iterations):
         super(Experiment, self).__init__()
