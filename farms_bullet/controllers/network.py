@@ -1,26 +1,26 @@
 """Network"""
 
 import numpy as np
-from ..cy_controller import ode_oscillators_sparse, rk4
+from ..cy_controller import ode_oscillators_sparse, rk4, euler
 from .convention import bodyjoint2index, legjoint2index
 from .control_options import SalamanderControlOptions
 
 
-class ODE(list):
+class ODE(dict):
     """ODE"""
 
     def __init__(self, solver, function):
-        super(ODE, self).__init__([solver, function])
+        super(ODE, self).__init__({"solver": solver, "function": function})
 
     @property
     def solver(self):
         """Solver"""
-        return self[0]
+        return self["solver"]
 
     @property
     def function(self):
         """Function"""
-        return self[1]
+        return self["function"]
 
 
 class CyODESolver:
@@ -220,22 +220,22 @@ class SalamanderNetworkParameters(ODE):
     @property
     def rk4(self):
         """Rung-Kutta parameters"""
-        return self[0][0]
+        return self.solver[0]
 
     @property
     def oscillators(self):
         """Oscillators parameters"""
-        return self[1][0]
+        return self.function[0]
 
     @property
     def connectivity(self):
         """Connectivity parameters"""
-        return self[1][1]
+        return self.function[1]
 
     @property
     def joints(self):
         """Joints parameters"""
-        return self[1][2]
+        return self.function[2]
 
     def to_ode_parameters(self):
         """Convert 2 arrays"""
