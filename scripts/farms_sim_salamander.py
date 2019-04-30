@@ -23,6 +23,7 @@ def main():
     )
     plt.show()
 
+
 def profile():
     """Profile"""
     cProfile.run("main()", "simulation.profile")

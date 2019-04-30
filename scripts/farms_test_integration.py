@@ -16,6 +16,7 @@ from farms_bullet.cy_controller_old import (
     odefun_sparse, rk4_ode_sparse
 )
 from farms_bullet.controllers.network import SalamanderNetworkODE
+from farms_bullet.cy_controller import rk4 as cyrk4, euler as cyeuler
 
 
 def ode(_, phases, freqs, coupling_weights, phases_desired, n_dim):
@@ -382,11 +383,10 @@ class ODEFunction:
         return self.ode(current_time, state, *self.args)
 
 
-def test_scipy_new(times, methods=None):
+
+def test_scipy_new(times, methods):
     """Scipy"""
     freqs = 2*np.pi*10*np.ones(11 + 2*2*3)
-    if not methods:
-        methods = ["vode", "zvode", "lsoda", "dopri5", "dop853"]
     timestep = times[1] - times[0]
     n_dim, _, _, weights, phases_desired = (
         SalamanderCasADiNetwork.walking_parameters()
@@ -414,13 +414,13 @@ def test_scipy_new(times, methods=None):
             #     n_dim
             # )
             # phases_sci[i+1, :] = _ode.integrate(_ode.t+timestep)
-        print("Scipy integration took {} [s] with {}".format(
+        print("Scipy_new integration took {} [s] with {}".format(
             time.time() - tic,
             method
         ))
 
         # Plot results
-        plt.figure("Scipy ({})".format(method))
+        plt.figure("Scipy_new ({})".format(method))
         plt.plot(times, phases_sci[:-1])
         plt.xlabel("Time [s]")
         plt.ylabel("Phases [rad]")
@@ -592,52 +592,272 @@ def test_cython_sparse(times):
     plt.grid(True)
 
 
+def freqs_function(_time, n_dim, freq=3):
+    """Frequency function"""
+    return 2*np.pi*0.1*np.ones(n_dim)*(np.sin(2*np.pi*freq*_time))
+
+
 def test_cython_new(times):
     # Allocation
     timestep = times[1] - times[0]
-    network = SalamanderNetworkODE.walking(
-        n_iterations=len(times),
-        timestep=timestep
-    )
-    n_dim = np.shape(network.phases)[1]
+
+    for method_name, method in [["RK4", cyrk4], ["Euler", cyeuler]]:
+        network = SalamanderNetworkODE.walking(
+            n_iterations=len(times),
+            timestep=timestep
+        )
+        network.ode["solver"] = method
+        n_dim = np.shape(network.phases)[1]
+
+        # Simulate (method 1)
+        time_control = 0
+        for _time in times[:-1]:
+            tic0 = time.time()
+            network.parameters.oscillators.freqs = freqs_function(_time, n_dim)
+            network.control_step()
+            tic1 = time.time()
+            time_control += tic1 - tic0
+        print("Cython ({}) integration took {} [s]".format(
+            method_name,
+            time_control
+        ))
+
+        # Plot results
+        plt.figure("Cython new ({})".format(method_name))
+        plt.plot(times, network.phases)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid(True)
+
+
+class NetworkODEwrap:
+    """ODE function"""
+
+    def __init__(self, n_iterations, timestep):
+        super(NetworkODEwrap, self).__init__()
+        self.network = SalamanderNetworkODE.walking(
+            n_iterations=n_iterations,
+            timestep=timestep
+        )
+        self.dstate = np.copy(self.network.state.array[0, 0])
+        self.parameters = self.network.parameters.to_ode_parameters().function
+        self.i = 0
+        self.tot_time = 0
+
+    def fun(self, _time, state):
+        """ODE function"""
+        self.i += 1
+        tic = time.time()
+        self.network.ode.function(
+            self.dstate,
+            state,
+            *self.parameters
+        )
+        self.tot_time += time.time() - tic
+        return self.dstate
+
+
+def test_scipy_cython_ivp(times, methods=None):
+    # Allocation
+    timestep = times[1] - times[0]
+
+    # Simulate (method 1)
+    if not methods:
+        methods = ["RK45", "RK23", "Radau", "LSODA"]  # "BDF",
+    for method in methods:
+        time_control = 0
+        network_ode = NetworkODEwrap(len(times), timestep)
+        n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
+        for i, _time in enumerate(times[:-1]):
+            tic0 = time.time()
+            network_ode.network.parameters.oscillators.freqs = (
+                freqs_function(_time, n_dim)
+            )
+            sol = integrate.solve_ivp(
+                fun=network_ode.fun,
+                t_span=[0, timestep],
+                y0=network_ode.network.state.array[i, 0],
+                method=method,
+                t_eval=[timestep],
+                # first_step=timestep,
+                # min_step=timestep,
+                # max_step=timestep,
+                # rtol=1e-3,
+                # atol=1e-3
+            )
+            network_ode.network.state.array[i+1, 0, :] = sol.y[:, -1]
+            tic1 = time.time()
+            time_control += tic1 - tic0
+        print("Number of iterations: {} (t={}[s])".format(
+            network_ode.i,
+            network_ode.tot_time
+        ))
+        print("Scipy/Cython (solve_ivp/{}) integration took {} [s]".format(
+            method,
+            time_control
+        ))
+
+        # Plot results
+        plt.figure("Scipy/Cython (solve_ivp/{})".format(method))
+        plt.plot(times, network_ode.network.phases)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid(True)
+
+
+def test_scipy_cython_odesolver(times):
+    # Allocation
+    timestep = times[1] - times[0]
 
     # Simulate (method 1)
     time_control = 0
-    for _time in times[:-1]:
+    network_ode = NetworkODEwrap(len(times), timestep)
+    n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
+    sol = integrate.RK45(
+        fun=network_ode.fun,
+        t0=0,
+        y0=np.copy(network_ode.network.state.array[0, 0]),
+        t_bound=1e4,
+        # first_step=timestep,
+        # min_step=0,
+        max_step=timestep,
+        rtol=1e-6,
+        atol=1e-8
+    )
+    for i, _time in enumerate(times[:-1]):
         tic0 = time.time()
-        network.control_step(
-            2*np.pi*10*np.ones(n_dim)*(np.sin(_time)+1)
+        network_ode.network.parameters.oscillators.freqs = (
+            freqs_function(_time, n_dim)
         )
+        sol.step()
+        network_ode.network.state.array[i+1, 0, :] = sol.y
         tic1 = time.time()
         time_control += tic1 - tic0
-    print("Cython/RK4 (More complex) integration took {} [s]".format(
+    print("Time: {} [s]".format(sol.t))
+    print("Number of iterations: {} (t={}[s])".format(
+        network_ode.i,
+        network_ode.tot_time
+    ))
+    print("Scipy/Cython (odesolver) integration took {} [s]".format(
         time_control
     ))
 
     # Plot results
-    plt.figure("Cython new")
-    plt.plot(times, network.phases)
+    plt.figure("Scipy/Cython odesolver")
+    plt.plot(times, network_ode.network.phases)
     plt.xlabel("Time [s]")
     plt.ylabel("Phases [rad]")
     plt.grid(True)
 
 
+def test_scipy_cython_odeint(times):
+    # Allocation
+    timestep = times[1] - times[0]
+
+    # Simulate (method 1)
+    time_control = 0
+    network_ode = NetworkODEwrap(len(times), timestep)
+    n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
+    for i, _time in enumerate(times[:-1]):
+        tic0 = time.time()
+        network_ode.network.parameters.oscillators.freqs = (
+            freqs_function(_time, n_dim)
+        )
+        network_ode.network.state.array[i+1, 0, :] = integrate.odeint(
+            func=network_ode.fun,
+            y0=network_ode.network.state.array[i, 0],
+            t=[0, timestep],
+            tfirst=True
+        )[-1]
+        tic1 = time.time()
+        time_control += tic1 - tic0
+    print("Number of iterations: {} (t={}[s])".format(
+        network_ode.i,
+        network_ode.tot_time
+    ))
+    print("Scipy/Cython (odeint) integration took {} [s]".format(
+        time_control
+    ))
+
+    # Plot results
+    plt.figure("Scipy/Cython (odeint)")
+    plt.plot(times, network_ode.network.phases)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Phases [rad]")
+    plt.grid(True)
+
+
+def test_scipy_cython_ode(times, methods=None):
+    # Allocation
+    timestep = times[1] - times[0]
+
+    # Simulate (method 1)
+    if not methods:
+        methods = ["vode", "lsoda", "dopri5", "dop853"]
+    for method in methods:
+        network_ode = NetworkODEwrap(len(times), timestep)
+        n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
+        solver = integrate.ode(f=network_ode.fun)
+        # , max_step=timestep, first_step=timestep
+        solver.set_integrator(method)
+        solver.set_initial_value(network_ode.network.state.array[0, 0, :], 0)
+        time_control = 0
+        for i, _time in enumerate(times[:-1]):
+            tic0 = time.time()
+            network_ode.network.parameters.oscillators.freqs = (
+                freqs_function(_time, n_dim)
+            )
+            solver.integrate(solver.t+timestep)
+            assert (solver.t - (_time+timestep))**2 < 1e-5
+            network_ode.network.state.array[i+1, 0, :] = solver.y
+            tic1 = time.time()
+            time_control += tic1 - tic0
+        print("Number of iterations: {} (t={}[s])".format(
+            network_ode.i,
+            network_ode.tot_time
+        ))
+        print("Scipy/Cython (ode/{}) integration took {} [s]".format(
+            method,
+            time_control
+        ))
+
+        # Plot results
+        plt.figure("Scipy/Cython (ode/{})".format(method))
+        plt.plot(times, network_ode.network.phases)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid(True)
+
+
 def main():
     """Main"""
-    times = np.arange(0, 10, 1e-3)
 
-    test_casadi(times)
-    test_numpy_euler(times)
-    test_numpy_rk(times)
-    test_numpy_euler_sparse(times)
-    test_scipy_ode(times)
-    # test_scipy_ode(times, methods=["lsoda"])
-    test_scipy_new(times, methods=[scipy.integrate.LSODA])
-    # test_scipy_odeint(times)
-    test_sympy(times)
-    test_cython(times)
-    test_cython_sparse(times)
+    # # Old implementation
+    # times = np.arange(0, 10, 1e-3)
+    # test_casadi(times)
+    # test_numpy_euler(times)
+    # test_numpy_rk(times)
+    # test_numpy_euler_sparse(times)
+    # test_scipy_ode(times)
+    # # test_scipy_ode(times, methods=["lsoda"])
+    # test_scipy_new(times, methods=[scipy.integrate.LSODA])
+    # # test_scipy_odeint(times)
+    # test_sympy(times)
+    # test_cython(times)
+    # test_cython_sparse(times)
+
+    # New implementation
+    times = np.arange(0, 1, 1e-2)
+    print("\nNew Cython:")
     test_cython_new(times)
+    print("\nSolve_ivp:")
+    test_scipy_cython_ivp(times)
+    print("\nODEsolver:")
+    test_scipy_cython_odesolver(times)
+    print("\nOdeint:")
+    test_scipy_cython_odeint(times)
+    print("\nODE:")
+    test_scipy_cython_ode(times)
 
     plt.show()
 
