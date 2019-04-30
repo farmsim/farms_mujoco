@@ -663,7 +663,7 @@ def test_scipy_cython_ivp(times, methods=None):
 
     # Simulate (method 1)
     if not methods:
-        methods = ["RK45", "RK23", "Radau", "LSODA"]  # "BDF",
+        methods = ["RK45", "RK23", "LSODA"]  # "BDF", "Radau",
     for method in methods:
         time_control = 0
         network_ode = NetworkODEwrap(len(times), timestep)
@@ -847,7 +847,10 @@ def main():
     # test_cython_sparse(times)
 
     # New implementation
-    times = np.arange(0, 1, 1e-2)
+    max_time = 1
+    timestep = 1e-2
+    times = np.arange(0, max_time, timestep)
+    print("Times:\ntimes = np.arange(0, {}, {})".format(max_time, timestep))
     print("\nNew Cython:")
     test_cython_new(times)
     print("\nSolve_ivp:")
