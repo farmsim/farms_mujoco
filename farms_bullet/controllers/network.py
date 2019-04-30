@@ -108,7 +108,11 @@ class OscillatorNetworkState(NetworkArray):
     def default_initial_state():
         """Default state"""
         n_joints = 11+4*3
-        return np.linspace(0, 1e-6, 5*n_joints)
+        return np.concatenate([
+            np.linspace(1e-3, 0, 2*n_joints),
+            np.zeros(2*n_joints),
+            np.zeros(n_joints)
+        ])
 
     @staticmethod
     def default_state(n_iterations):
