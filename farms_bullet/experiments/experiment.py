@@ -8,6 +8,11 @@ class Experiment:
     All experiment related code (Pure simulation). This does not include
     GUI/headless mode, simulation physics, timesteps handling, etc.
 
+    TODO: The previous simulation class and experiment class should be merged
+    into one to facilitate experiments design. As such, the experiment should
+    contain simulation properties, an arena and animat(s). It would also contain
+    the methods for (re)spawning, running and logging the experiment.
+
     """
 
     def __init__(self, animat, arena, timestep, n_iterations):
