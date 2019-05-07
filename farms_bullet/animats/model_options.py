@@ -5,6 +5,9 @@ import numpy as np
 
 class ModelOptions(dict):
     """Simulation options"""
+    """Parameters"""
+    _getattr_ = dict.__getitem__
+    _setattr_ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(ModelOptions, self).__init__()
@@ -24,6 +27,12 @@ class ModelOptions(dict):
 
         self["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", np.pi/8)
         self["leg_2_offset"] = kwargs.pop("leg_2_offset", np.pi/8)
+
+        #oscillators properties
+        self["n_body"] = kwargs.pop("n_dim_body", 11)
+        self['n_dof_legs'] = kwargs.pop("n_dof_legs", 3)
+        self['n_legs'] = kwargs.pop("n_legs", 4)
+
 
     @property
     def frequency(self):

@@ -17,6 +17,7 @@ class ExperimentLogger:
         self.motors = MotorsLogger(model, sim_size)
         self.phases = PhasesLogger(model, sim_size)
 
+
     def update(self, iteration):
         """Update sensors at iteration"""
         self.positions.update(iteration)
@@ -31,6 +32,7 @@ class ExperimentLogger:
         self.motors.plot_body(sim_times)
         self.motors.plot_legs(sim_times)
         self.phases.plot(sim_times)
+
 
 
 class PositionLogger:
@@ -58,7 +60,6 @@ class PositionLogger:
         plt.ylabel("Position Y [m]")
         plt.grid(True)
         plt.legend()
-
 
 
 class SensorsLogger:
@@ -214,3 +215,4 @@ class PhasesLogger:
             plt.ylabel("Phase [rad]")
             plt.grid(True)
             plt.legend()
+

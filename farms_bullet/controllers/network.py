@@ -4,6 +4,7 @@ import numpy as np
 from ..cy_controller import ode_oscillators_sparse, rk4
 from .convention import bodyjoint2index, legjoint2index
 from .control_options import SalamanderControlOptions
+from ..animats.model_options import ModelOptions
 
 
 class ODE(list):
@@ -70,7 +71,7 @@ class ODESolver(CyODESolver):
     def __init__(self, ode, state, timestep, **kwargs):
         super(ODESolver, self).__init__(ode, state, timestep, **kwargs)
         iterations = np.shape(state)[0]
-        self._times = np.arange(0, timestep*iterations, timestep)
+        self._times = np.arange(0, timestep * iterations, timestep)
         assert len(self._times) == iterations
 
     @property
@@ -107,14 +108,14 @@ class OscillatorNetworkState(NetworkArray):
     @staticmethod
     def default_initial_state():
         """Default state"""
-        n_joints = 11+4*3
-        return np.linspace(0, 1e-6, 5*n_joints)
+        n_joints = 11 + 4 * 3
+        return np.linspace(0, 1e-6, 5 * n_joints)
 
     @staticmethod
     def default_state(n_iterations):
         """Default state"""
-        n_joints = 11+4*3
-        n_oscillators = 2*n_joints
+        n_joints = 11 + 4 * 3
+        n_oscillators = 2 * n_joints
         return OscillatorNetworkState.from_initial_state(
             initial_state=OscillatorNetworkState.default_initial_state(),
             n_iterations=n_iterations,
@@ -160,7 +161,7 @@ class SalamanderNetworkParameters(ODE):
         super(SalamanderNetworkParameters, self).__init__(
             [NetworkArray(np.zeros([
                 7,
-                2*oscillators.shape()[1] + 1*joints.shape()[1]
+                2 * oscillators.shape()[1] + 1 * joints.shape()[1]
             ]))],
             [oscillators, connectivity, joints]
         )
@@ -260,28 +261,28 @@ class OscillatorArray(NetworkArray):
     @staticmethod
     def walking_parameters():
         """Walking parameters"""
-        n_body = 11
-        n_dof_legs = 3
-        n_legs = 4
-        n_joints = n_body + n_legs*n_dof_legs
-        n_oscillators = 2*(n_joints)
-        freqs = 2*np.pi*np.ones(n_oscillators)
-        rates = 10*np.ones(n_oscillators)
+        n_body = ModelOptions()['n_body']
+        n_dof_legs = ModelOptions()['n_dof_legs']
+        n_legs = ModelOptions()['n_legs']
+        n_joints = n_body + n_legs * n_dof_legs
+        n_oscillators = 2 * (n_joints)
+        freqs = 2 * np.pi * np.ones(n_oscillators)
+        rates = 10 * np.ones(n_oscillators)
         options = SalamanderControlOptions.walking()
         # Amplitudes
         amplitudes = np.zeros(n_oscillators)
         for i in range(n_body):
-            amplitudes[[i, i+n_body]] = np.abs(
-                options["body_stand_amplitude"]*np.sin(
-                    2*np.pi*i/n_body
+            amplitudes[[i, i + n_body]] = np.abs(
+                options["body_stand_amplitude"] * np.sin(
+                    2 * np.pi * i / n_body
                     - options["body_stand_shift"]
                 )
             )
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
                 amplitudes[[
-                    2*n_body + 2*leg_i*n_dof_legs + i,
-                    2*n_body + 2*leg_i*n_dof_legs + i + n_dof_legs
+                    2 * n_body + 2 * leg_i * n_dof_legs + i,
+                    2 * n_body + 2 * leg_i * n_dof_legs + i + n_dof_legs
                 ]] = np.abs(
                     options["leg_{}_amplitude".format(i)]
                 )
@@ -293,10 +294,10 @@ class OscillatorArray(NetworkArray):
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
-        n_joints = n_body + n_legs*n_dof_legs
-        n_oscillators = 2*(n_joints)
-        freqs = 2*np.pi*np.ones(n_oscillators)
-        rates = 10*np.ones(n_oscillators)
+        n_joints = n_body + n_legs * n_dof_legs
+        n_oscillators = 2 * (n_joints)
+        freqs = 2 * np.pi * np.ones(n_oscillators)
+        rates = 10 * np.ones(n_oscillators)
         amplitudes = np.zeros(n_oscillators)
         options = SalamanderControlOptions.swimming()
         body_amplitudes = np.linspace(
@@ -305,12 +306,12 @@ class OscillatorArray(NetworkArray):
             n_body
         )
         for i in range(n_body):
-            amplitudes[[i, i+n_body]] = body_amplitudes[i]
+            amplitudes[[i, i + n_body]] = body_amplitudes[i]
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
                 amplitudes[[
-                    2*n_body + 2*leg_i*n_dof_legs + i,
-                    2*n_body + 2*leg_i*n_dof_legs + i + n_dof_legs
+                    2 * n_body + 2 * leg_i * n_dof_legs + i,
+                    2 * n_body + 2 * leg_i * n_dof_legs + i + n_dof_legs
                 ]] = (
                     options["leg_{}_amplitude".format(i)]
                 )
@@ -331,12 +332,12 @@ class OscillatorArray(NetworkArray):
     @property
     def freqs(self):
         """Frequencies"""
-        return 0.5*self.array[0]/np.pi
+        return 0.5 * self.array[0] / np.pi
 
     @freqs.setter
     def freqs(self, value):
         """Frequencies"""
-        self.array[0, :] = 2*np.pi*value
+        self.array[0, :] = 2 * np.pi * value
 
     @property
     def amplitudes_rates(self):
@@ -353,10 +354,83 @@ class OscillatorArray(NetworkArray):
         """Amplitudes desired"""
         self.array[2, :] = value
 
+    def freq_sat_body(self, drive_speed):
+        drive_low_sat = 1
+        drive_up_sat = 5
+        dim_body = 22
+        if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
+            self.freqs[0:dim_body] = 0.25 + 0.25 * drive_speed
+        else:
+            self.freqs[0:dim_body] = 0
+
+    def freq_sat_limb(self, drive_speed):
+        drive_low_sat = 1
+        drive_up_sat = 3
+        dim_body = 22
+        if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
+            self.freqs[dim_body:-1] = 0.15 + 0.1 * drive_speed
+        else:
+            self.freqs[dim_body:-1] = 0
+
+    def amp_sat_body(self, drive_speed):
+        """
+        :param drive_speed:
+        :return:
+        """
+        drive_low_sat = 1
+        drive_up_sat = 5
+        dim_body = 22
+        if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
+            self.amplitudes_desired[0:dim_body] = 0.05 + 0.04 * drive_speed
+        else:
+            self.amplitudes_desired[0:dim_body] = 0
+
+    def amp_sat_limb(self, drive_speed):
+        """
+        function that saturated the 3 DOFs of each limb, the shoulder has 2 DOFs and 1 for the KNEE
+        :param drive_speed:
+        :return: the saturation of the
+        """
+        drive_low_sat = 1
+        drive_up_sat = 5
+        dim_body = 22
+        if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
+            self.amplitudes_desired[dim_body:-1] = 0.05 + 0.1 * drive_speed
+            # characterizing the elbow amplitudes
+            for i in np.arange(2):
+                for j in np.arange(2):
+                    # forward motion of the shoulder 0-90
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=0)] = 0  # 0.6 + 0.02 * drive_speed
+                    #up-down motion of the shoulder lower side
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=1)] = 0  # 0.01 + 0.005 * drive_speed
+                    #don't know
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=2)] = 0  # 0.05 + 0.01 * drive_speed
+                    # forward motion of the shoulder 90-180
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=3)] = 0  # 0.05 + 0.01 * drive_speed
+                    # up-down motion of the shoulder upper side
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=4)] = 0  # 0.05 + 0.01 * drive_speed
+                    #up-down motion of the knee
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=5)] = 1  # 0.05 + 0.01 * drive_speed
+
+        else:
+            self.amplitudes_desired[dim_body:-1] = 0
+
     def update_drives(self, drive_speed, drive_turn):
-        """Set freqs"""
-        self.freqs = 4*drive_speed*np.ones(self.shape()[1])
-        self.amplitudes_desired = self._original_amplitudes_desired
+        """
+        :param drive_speed: drive that change the frequency
+        :param drive_turn: drive that change the offset
+        :return: send to the simulation the drive
+        """
+        self.freq_sat_limb(drive_speed)
+        self.freq_sat_body(drive_speed)
+        self.amp_sat_body(drive_speed)
+        self.amp_sat_limb(drive_speed)
 
 
 class ConnectivityArray(NetworkArray):
@@ -377,15 +451,15 @@ class ConnectivityArray(NetworkArray):
         # Amplitudes
         options = SalamanderControlOptions.walking()
         amplitudes = [
-            options["body_stand_amplitude"]*np.sin(
-                2*np.pi*i/n_body_joints
+            options["body_stand_amplitude"] * np.sin(
+                2 * np.pi * i / n_body_joints
                 - options["body_stand_shift"]
             )
             for i in range(n_body_joints)
         ]
 
         # Body
-        for i in range(n_body_joints-1):
+        for i in range(n_body_joints - 1):
             # i - i
             connectivity.append([
                 bodyjoint2index(joint_i=i, side=1),
@@ -400,29 +474,29 @@ class ConnectivityArray(NetworkArray):
             # i - i+1
             phase_diff = (
                 0
-                if np.sign(amplitudes[i]) == np.sign(amplitudes[i+1])
+                if np.sign(amplitudes[i]) == np.sign(amplitudes[i + 1])
                 else np.pi
             )
             for side in range(2):
                 connectivity.append([
-                    bodyjoint2index(joint_i=i+1, side=side),
+                    bodyjoint2index(joint_i=i + 1, side=side),
                     bodyjoint2index(joint_i=i, side=side),
                     default_amplitude, phase_diff
                 ])
                 connectivity.append([
                     bodyjoint2index(joint_i=i, side=side),
-                    bodyjoint2index(joint_i=i+1, side=side),
+                    bodyjoint2index(joint_i=i + 1, side=side),
                     default_amplitude, phase_diff
                 ])
         # i+1 - i+1 (final)
         connectivity.append([
-            bodyjoint2index(joint_i=n_body_joints-1, side=1),
-            bodyjoint2index(joint_i=n_body_joints-1, side=0),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=1),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=0),
             default_amplitude, np.pi
         ])
         connectivity.append([
-            bodyjoint2index(joint_i=n_body_joints-1, side=0),
-            bodyjoint2index(joint_i=n_body_joints-1, side=1),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=0),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=1),
             default_amplitude, np.pi
         ])
 
@@ -444,22 +518,22 @@ class ConnectivityArray(NetworkArray):
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    default_amplitude, 0.5*np.pi
+                    default_amplitude, 0.5 * np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, -0.5*np.pi
+                    default_amplitude, -0.5 * np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    default_amplitude, 0.5*np.pi
+                    default_amplitude, 0.5 * np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, -0.5*np.pi
+                    default_amplitude, -0.5 * np.pi
                 ])
                 # 1 - 1
                 connectivity.append([
@@ -565,7 +639,7 @@ class ConnectivityArray(NetworkArray):
         default_amplitude = 3e2
 
         # Body
-        for i in range(n_body_joints-1):
+        for i in range(n_body_joints - 1):
             # i - i
             connectivity.append([
                 bodyjoint2index(joint_i=i, side=1),
@@ -580,24 +654,24 @@ class ConnectivityArray(NetworkArray):
             # i - i+1
             for side in range(2):
                 connectivity.append([
-                    bodyjoint2index(joint_i=i+1, side=side),
+                    bodyjoint2index(joint_i=i + 1, side=side),
                     bodyjoint2index(joint_i=i, side=side),
-                    default_amplitude, 2*np.pi/n_body_joints
+                    default_amplitude, 2 * np.pi / n_body_joints
                 ])
                 connectivity.append([
                     bodyjoint2index(joint_i=i, side=side),
-                    bodyjoint2index(joint_i=i+1, side=side),
-                    default_amplitude, -2*np.pi/n_body_joints
+                    bodyjoint2index(joint_i=i + 1, side=side),
+                    default_amplitude, -2 * np.pi / n_body_joints
                 ])
         # i+1 - i+1 (final)
         connectivity.append([
-            bodyjoint2index(joint_i=n_body_joints-1, side=1),
-            bodyjoint2index(joint_i=n_body_joints-1, side=0),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=1),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=0),
             default_amplitude, np.pi
         ])
         connectivity.append([
-            bodyjoint2index(joint_i=n_body_joints-1, side=0),
-            bodyjoint2index(joint_i=n_body_joints-1, side=1),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=0),
+            bodyjoint2index(joint_i=n_body_joints - 1, side=1),
             default_amplitude, np.pi
         ])
 
@@ -619,22 +693,22 @@ class ConnectivityArray(NetworkArray):
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    default_amplitude, 0.5*np.pi
+                    default_amplitude, 0.5 * np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, -0.5*np.pi
+                    default_amplitude, -0.5 * np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    default_amplitude, 0.5*np.pi
+                    default_amplitude, 0.5 * np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, -0.5*np.pi
+                    default_amplitude, -0.5 * np.pi
                 ])
                 # 1 - 1
                 connectivity.append([
@@ -774,15 +848,15 @@ class JointsArray(NetworkArray):
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
-        n_joints = n_body + n_legs*n_dof_legs
+        n_joints = n_body + n_legs * n_dof_legs
         options = SalamanderControlOptions.walking()
         offsets = np.zeros(n_joints)
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
-                offsets[n_body + leg_i*n_dof_legs + i] = (
+                offsets[n_body + leg_i * n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
-        rates = 10*np.ones(n_joints)
+        rates = 10 * np.ones(n_joints)
         return offsets, rates
 
     @staticmethod
@@ -791,15 +865,15 @@ class JointsArray(NetworkArray):
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
-        n_joints = n_body + n_legs*n_dof_legs
+        n_joints = n_body + n_legs * n_dof_legs
         options = SalamanderControlOptions.swimming()
         offsets = np.zeros(n_joints)
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
-                offsets[n_body + leg_i*n_dof_legs + i] = (
+                offsets[n_body + leg_i * n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
-        rates = 10*np.ones(n_joints)
+        rates = 10 * np.ones(n_joints)
         return offsets, rates
 
     @classmethod
@@ -847,23 +921,23 @@ class SalamanderNetworkODE(ODESolver):
         n_legs_dofs = 3
         # n_legs = 4
         self.group0 = [
-            bodyjoint2index(joint_i=i, side=0)
-            for i in range(11)
-        ] + [
-            legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=0)
-            for leg_i in range(2)
-            for side_i in range(2)
-            for joint_i in range(n_legs_dofs)
-        ]
+                          bodyjoint2index(joint_i=i, side=0)
+                          for i in range(11)
+                      ] + [
+                          legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=0)
+                          for leg_i in range(2)
+                          for side_i in range(2)
+                          for joint_i in range(n_legs_dofs)
+                      ]
         self.group1 = [
-            bodyjoint2index(joint_i=i, side=1)
-            for i in range(n_body)
-        ] + [
-            legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=1)
-            for leg_i in range(2)
-            for side_i in range(2)
-            for joint_i in range(n_legs_dofs)
-        ]
+                          bodyjoint2index(joint_i=i, side=1)
+                          for i in range(n_body)
+                      ] + [
+                          legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=1)
+                          for leg_i in range(2)
+                          for side_i in range(2)
+                          for joint_i in range(n_legs_dofs)
+                      ]
 
     @classmethod
     def from_gait(cls, gait, n_iterations, timestep):
@@ -911,81 +985,78 @@ class SalamanderNetworkODE(ODESolver):
     @property
     def amplitudes(self):
         """Amplitudes"""
-        return self._state[:, 0, self._n_oscillators:2*self._n_oscillators]
+        return self._state[:, 0, self._n_oscillators:2 * self._n_oscillators]
 
     @property
     def damplitudes(self):
         """Amplitudes velocity"""
-        return self._state[:, 1, self._n_oscillators:2*self._n_oscillators]
+        return self._state[:, 1, self._n_oscillators:2 * self._n_oscillators]
 
     @property
     def offsets(self):
         """Offset"""
-        return self._state[:, 0, 2*self._n_oscillators:]
+        return self._state[:, 0, 2 * self._n_oscillators:]
 
     @property
     def doffsets(self):
         """Offset velocity"""
-        return self._state[:, 1, 2*self._n_oscillators:]
+        return self._state[:, 1, 2 * self._n_oscillators:]
 
     def get_outputs(self):
         """Outputs"""
-        return self.amplitudes[self.iteration]*(
-            1 + np.cos(self.phases[self.iteration])
+        return self.amplitudes[self.iteration] * (
+                1 + np.cos(self.phases[self.iteration])
         )
 
     def get_outputs_all(self):
         """Outputs"""
-        return self.amplitudes*(
-            1 + np.cos(self.phases)
+        return self.amplitudes * (
+                1 + np.cos(self.phases)
         )
 
     def get_doutputs(self):
         """Outputs velocity"""
-        return self.damplitudes[self.iteration]*(
-            1 + np.cos(self.phases[self.iteration])
+        return self.damplitudes[self.iteration] * (
+                1 + np.cos(self.phases[self.iteration])
         ) - (
-            self.amplitudes[self.iteration]
-            *np.sin(self.phases[self.iteration])
-            *self.dphases[self.iteration]
-        )
+                       self.amplitudes[self.iteration]
+                       * np.sin(self.phases[self.iteration])
+                       * self.dphases[self.iteration]
+               )
 
     def get_doutputs_all(self):
         """Outputs velocity"""
-        return self.damplitudes*(
-            1 + np.cos(self.phases)
-        ) - self.amplitudes*np.sin(self.phases)*self.dphases
+        return self.damplitudes * (
+                1 + np.cos(self.phases)
+        ) - self.amplitudes * np.sin(self.phases) * self.dphases
 
     def get_position_output(self):
         """Position output"""
         outputs = self.get_outputs()
         return (
-            0.5*(outputs[self.group0] - outputs[self.group1])
-            + self.offsets[self.iteration]
+                0.5 * (outputs[self.group0] - outputs[self.group1])
+                + self.offsets[self.iteration]
         )
 
     def get_position_output_all(self):
         """Position output"""
         outputs = self.get_outputs_all()
         return (
-            0.5*(outputs[:, self.group0] - outputs[:, self.group1])
-            + self.offsets
+                0.5 * (outputs[:, self.group0] - outputs[:, self.group1])
+                + self.offsets
         )
 
     def get_velocity_output(self):
         """Position output"""
         outputs = self.get_doutputs()
-        return 0.5*(outputs[self.group0] - outputs[self.group1])
+        return 0.5 * (outputs[self.group0] - outputs[self.group1])
 
     def get_velocity_output_all(self):
         """Position output"""
         outputs = self.get_doutputs_all()
-        return 0.5*(outputs[:, self.group0] - outputs[:, self.group1])
+        return 0.5 * (outputs[:, self.group0] - outputs[:, self.group1])
 
     def update_drive(self, drive_speed, drive_turn):
         """Update drives"""
-        print("TODO: Update drives to speed={} and turn={}".format(
-            drive_speed,
-            drive_turn
-        ))
+        print("Updating the drive")
         self.parameters.oscillators.update_drives(drive_speed, drive_turn)
