@@ -713,41 +713,57 @@ def test_scipy_cython_odesolver(times):
     time_control = 0
     network_ode = NetworkODEwrap(len(times), timestep)
     n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
-    sol = integrate.RK45(
-        fun=network_ode.fun,
-        t0=0,
-        y0=np.copy(network_ode.network.state.array[0, 0]),
-        t_bound=1e4,
-        # first_step=timestep,
-        # min_step=0,
-        max_step=timestep,
-        rtol=1e-6,
-        atol=1e-8
-    )
-    for i, _time in enumerate(times[:-1]):
-        tic0 = time.time()
-        network_ode.network.parameters.oscillators.freqs = (
-            freqs_function(_time, n_dim)
+    methods = [
+        integrate.RK23,
+        integrate.RK45,
+        # integrate.Radau,
+        # integrate.BDF,
+        integrate.LSODA
+    ]
+    for method in methods:
+        solver = method(
+            fun=network_ode.fun,
+            t0=0,
+            y0=np.copy(network_ode.network.state.array[0, 0]),
+            t_bound=times[-1],
+            # first_step=1e-1*timestep,
+            # min_step=0,
+            # max_step=1e-1*timestep,
+            # rtol=1e-6,
+            # atol=1e-8
         )
-        sol.step()
-        network_ode.network.state.array[i+1, 0, :] = sol.y
-        tic1 = time.time()
-        time_control += tic1 - tic0
-    print("Time: {} [s]".format(sol.t))
-    print("Number of iterations: {} (t={}[s])".format(
-        network_ode.i,
-        network_ode.tot_time
-    ))
-    print("Scipy/Cython (odesolver) integration took {} [s]".format(
-        time_control
-    ))
+        solver.step()
+        for i, _time in enumerate(times[:-1]):
+            tic0 = time.time()
+            network_ode.network.parameters.oscillators.freqs = (
+                freqs_function(_time, n_dim)
+            )
+            while solver.t < _time:
+                solver.step()
+            assert solver.status == "running"
+            network_ode.network.state.array[i+1, 0, :] = (
+                solver.dense_output()(_time)
+            )
+            time_control += time.time() - tic0
+        print("Time: {} [s]".format(solver.t))
+        print("Number of iterations: {} (t={}[s])".format(
+            network_ode.i,
+            network_ode.tot_time
+        ))
+        print("Scipy/Cython (odesolver-{}) integration took {} [s]".format(
+            method,
+            time_control
+        ))
 
-    # Plot results
-    plt.figure("Scipy/Cython odesolver")
-    plt.plot(times, network_ode.network.phases)
-    plt.xlabel("Time [s]")
-    plt.ylabel("Phases [rad]")
-    plt.grid(True)
+        # Plot results
+        plt.figure("Scipy/Cython odesolver ({})".format(method))
+        plt.plot(times, network_ode.network.phases)
+        plt.xlabel("Time [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid(True)
+
+        network_ode.i = 0
+        network_ode.tot_time = 0
 
 
 def test_scipy_cython_odeint(times):
@@ -807,7 +823,7 @@ def test_scipy_cython_ode(times, methods=None):
             network_ode.network.parameters.oscillators.freqs = (
                 freqs_function(_time, n_dim)
             )
-            solver.integrate(solver.t+timestep)
+            solver.integrate(_time+timestep)
             assert (solver.t - (_time+timestep))**2 < 1e-5
             network_ode.network.state.array[i+1, 0, :] = solver.y
             tic1 = time.time()
@@ -827,6 +843,9 @@ def test_scipy_cython_ode(times, methods=None):
         plt.xlabel("Time [s]")
         plt.ylabel("Phases [rad]")
         plt.grid(True)
+
+        network_ode.i = 0
+        network_ode.tot_time = 0
 
 
 def main():
