@@ -120,6 +120,7 @@ class ModelController:
         #     timestep=timestep
         # )
         # self.network = SalamanderNetwork.walking(timestep, phases=None)
+        #self.network = SalamanderNetworkODE.walking(iterations, timestep)
         self.network = SalamanderNetworkODE.walking(iterations, timestep)
         self._frequency = self.controllers[0].get_frequency()
         self._body_offset = 0

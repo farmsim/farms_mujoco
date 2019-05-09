@@ -205,6 +205,11 @@ class SalamanderNetworkParameters(ODE):
     @classmethod
     def for_walking(cls):
         """Salamander swimming network"""
+        #my implementation
+        oscillators = 
+        connectivity = 
+        joints = 
+
         oscillators, connectivity, joints = cls.walking_parameters()
         return cls(oscillators, connectivity, joints)
 
@@ -261,9 +266,11 @@ class OscillatorArray(NetworkArray):
     @staticmethod
     def walking_parameters():
         """Walking parameters"""
-        n_body = ModelOptions()['n_body']
-        n_dof_legs = ModelOptions()['n_dof_legs']
-        n_legs = ModelOptions()['n_legs']
+        raise Exception
+        opt_mod = ModelOptions()
+        n_body = opt_mod['n_body']
+        n_dof_legs = opt_mod['n_dof_legs']
+        n_legs = opt_mod['n_legs']
         n_joints = n_body + n_legs * n_dof_legs
         n_oscillators = 2 * (n_joints)
         freqs = 2 * np.pi * np.ones(n_oscillators)
@@ -291,9 +298,11 @@ class OscillatorArray(NetworkArray):
     @staticmethod
     def swimming_parameters():
         """Swimming parameters"""
-        n_body = 11
-        n_dof_legs = 3
-        n_legs = 4
+        raise Exception
+        opt_mod = ModelOptions()
+        n_body = opt_mod['n_body']
+        n_dof_legs = opt_mod['n_dof_legs']
+        n_legs = opt_mod['n_legs']
         n_joints = n_body + n_legs * n_dof_legs
         n_oscillators = 2 * (n_joints)
         freqs = 2 * np.pi * np.ones(n_oscillators)
@@ -354,25 +363,29 @@ class OscillatorArray(NetworkArray):
         """Amplitudes desired"""
         self.array[2, :] = value
 
-    def freq_sat_body(self, drive_speed):
+    def freq_sat_body(self, drive_speed, drive_turn):
         drive_low_sat = 1
         drive_up_sat = 5
         dim_body = 22
         if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
-            self.freqs[0:dim_body] = 0.25 + 0.25 * drive_speed
+            self.freqs[0:dim_body] = 2.0 + 0.4 * drive_speed
         else:
             self.freqs[0:dim_body] = 0
 
-    def freq_sat_limb(self, drive_speed):
+    def freq_sat_limb(self, drive_speed, drive_turn):
+        """
+        :param drive_speed:
+        :return:
+        """
         drive_low_sat = 1
         drive_up_sat = 3
         dim_body = 22
         if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
-            self.freqs[dim_body:-1] = 0.15 + 0.1 * drive_speed
+            self.freqs[dim_body:-1] = 1 + 0.2 * drive_speed
         else:
             self.freqs[dim_body:-1] = 0
 
-    def amp_sat_body(self, drive_speed):
+    def amp_sat_body(self, drive_speed, drive_turn):
         """
         :param drive_speed:
         :return:
@@ -381,45 +394,62 @@ class OscillatorArray(NetworkArray):
         drive_up_sat = 5
         dim_body = 22
         if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
-            self.amplitudes_desired[0:dim_body] = 0.05 + 0.04 * drive_speed
+            self.amplitudes_desired[0:dim_body] = 0.1 + 0.04 * drive_speed
         else:
             self.amplitudes_desired[0:dim_body] = 0
 
-    def amp_sat_limb(self, drive_speed):
+    def amp_sat_limb(self, drive_speed, drive_turn):
         """
         function that saturated the 3 DOFs of each limb, the shoulder has 2 DOFs and 1 for the KNEE
         :param drive_speed:
         :return: the saturation of the
         """
+
         drive_low_sat = 1
-        drive_up_sat = 5
+        drive_up_sat = 3
         dim_body = 22
+
+        if drive_speed < drive_low_sat:
+            for i in np.arange(2):
+                for j in np.arange(2):
+                    self.amplitudes_desired[legjoint2index(leg_i=i, side_i=j, joint_i=0)] = 0
+                    self.amplitudes_desired[legjoint2index(leg_i=i, side_i=j, joint_i=1)] = 5
+                    self.amplitudes_desired[legjoint2index(leg_i=i, side_i=j, joint_i=2)] = 0
+                    self.amplitudes_desired[legjoint2index(leg_i=i, side_i=j, joint_i=3)] = 0
+                    self.amplitudes_desired[legjoint2index(leg_i=i, side_i=j, joint_i=4)] = 0
+                    self.amplitudes_desired[legjoint2index(leg_i=i, side_i=j, joint_i=5)] = 0
+
         if drive_speed >= drive_low_sat and drive_speed <= drive_up_sat:
-            self.amplitudes_desired[dim_body:-1] = 0.05 + 0.1 * drive_speed
             # characterizing the elbow amplitudes
             for i in np.arange(2):
                 for j in np.arange(2):
                     # forward motion of the shoulder 0-90
                     self.amplitudes_desired[
-                        legjoint2index(leg_i=i, side_i=j, joint_i=0)] = 0  # 0.6 + 0.02 * drive_speed
-                    #up-down motion of the shoulder lower side
+                        legjoint2index(leg_i=i, side_i=j, joint_i=0)] = 0.2 + 0.2 * drive_speed
+                    # up-down motion of the shoulder lower side
                     self.amplitudes_desired[
-                        legjoint2index(leg_i=i, side_i=j, joint_i=1)] = 0  # 0.01 + 0.005 * drive_speed
-                    #don't know
+                        legjoint2index(leg_i=i, side_i=j, joint_i=1)] = 0.045 + 0.045 * drive_speed
+                    # knee motion but doesn't seem to high for a motion
                     self.amplitudes_desired[
-                        legjoint2index(leg_i=i, side_i=j, joint_i=2)] = 0  # 0.05 + 0.01 * drive_speed
+                        legjoint2index(leg_i=i, side_i=j, joint_i=2)] = 0.1 + 0.1 * drive_speed
                     # forward motion of the shoulder 90-180
                     self.amplitudes_desired[
-                        legjoint2index(leg_i=i, side_i=j, joint_i=3)] = 0  # 0.05 + 0.01 * drive_speed
+                        legjoint2index(leg_i=i, side_i=j, joint_i=3)] = 0.2 + 0.2 * drive_speed
                     # up-down motion of the shoulder upper side
                     self.amplitudes_desired[
-                        legjoint2index(leg_i=i, side_i=j, joint_i=4)] = 0  # 0.05 + 0.01 * drive_speed
-                    #up-down motion of the knee
+                        legjoint2index(leg_i=i, side_i=j, joint_i=4)] = 0.045 + 0.045 * drive_speed
+                    # up-down motion of the knee
                     self.amplitudes_desired[
-                        legjoint2index(leg_i=i, side_i=j, joint_i=5)] = 1  # 0.05 + 0.01 * drive_speed
+                        legjoint2index(leg_i=i, side_i=j, joint_i=5)] = 0.1 + 0.1 * drive_speed
 
         else:
             self.amplitudes_desired[dim_body:-1] = 0
+            for i in np.arange(2):
+                for j in np.arange(2):
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=3)] = 1.2
+                    self.amplitudes_desired[
+                        legjoint2index(leg_i=i, side_i=j, joint_i=0)] = -1.2
 
     def update_drives(self, drive_speed, drive_turn):
         """
@@ -427,10 +457,10 @@ class OscillatorArray(NetworkArray):
         :param drive_turn: drive that change the offset
         :return: send to the simulation the drive
         """
-        self.freq_sat_limb(drive_speed)
-        self.freq_sat_body(drive_speed)
-        self.amp_sat_body(drive_speed)
-        self.amp_sat_limb(drive_speed)
+        self.freq_sat_limb(drive_speed, drive_turn)
+        self.freq_sat_body(drive_speed, drive_turn)
+        self.amp_sat_body(drive_speed, drive_turn)
+        self.amp_sat_limb(drive_speed, drive_turn)
 
 
 class ConnectivityArray(NetworkArray):
@@ -444,6 +474,7 @@ class ConnectivityArray(NetworkArray):
     @staticmethod
     def walking_parameters():
         """Walking parameters"""
+        raise Exception
         n_body_joints = 11
         connectivity = []
         default_amplitude = 3e2
@@ -634,6 +665,7 @@ class ConnectivityArray(NetworkArray):
     @staticmethod
     def swimming_parameters():
         """Swimming parameters"""
+        raise Exception
         n_body_joints = 11
         connectivity = []
         default_amplitude = 3e2
@@ -845,6 +877,7 @@ class JointsArray(NetworkArray):
     @staticmethod
     def walking_parameters():
         """Walking parameters"""
+        raise Exception
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
@@ -862,6 +895,7 @@ class JointsArray(NetworkArray):
     @staticmethod
     def swimming_parameters():
         """Swimming parameters"""
+        raise Exception
         n_body = 11
         n_dof_legs = 3
         n_legs = 4
@@ -958,6 +992,8 @@ class SalamanderNetworkODE(ODESolver):
         """Salamander swimming network"""
         state = OscillatorNetworkState.default_state(n_iterations)
         parameters = SalamanderNetworkParameters.for_walking()
+        #TODO
+        #parameters = 
         return cls(state, parameters, timestep)
 
     @classmethod
