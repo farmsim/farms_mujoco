@@ -664,6 +664,8 @@ def test_scipy_cython_ivp(times, methods=None):
     # Simulate (method 1)
     if not methods:
         methods = ["RK45", "RK23", "LSODA"]  # "BDF", "Radau",
+    t_span = [0, timestep]
+    t_eval = [timestep]
     for method in methods:
         time_control = 0
         network_ode = NetworkODEwrap(len(times), timestep)
@@ -675,10 +677,10 @@ def test_scipy_cython_ivp(times, methods=None):
             )
             sol = integrate.solve_ivp(
                 fun=network_ode.fun,
-                t_span=[0, timestep],
+                t_span=t_span,
                 y0=network_ode.network.state.array[i, 0],
                 method=method,
-                t_eval=[timestep],
+                t_eval=t_eval,
                 # first_step=timestep,
                 # min_step=timestep,
                 # max_step=timestep,
@@ -711,8 +713,6 @@ def test_scipy_cython_odesolver(times):
 
     # Simulate (method 1)
     time_control = 0
-    network_ode = NetworkODEwrap(len(times), timestep)
-    n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
     methods = [
         integrate.RK23,
         integrate.RK45,
@@ -721,6 +721,8 @@ def test_scipy_cython_odesolver(times):
         integrate.LSODA
     ]
     for method in methods:
+        network_ode = NetworkODEwrap(len(times), timestep)
+        n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
         solver = method(
             fun=network_ode.fun,
             t0=0,
@@ -761,9 +763,6 @@ def test_scipy_cython_odesolver(times):
         plt.xlabel("Time [s]")
         plt.ylabel("Phases [rad]")
         plt.grid(True)
-
-        network_ode.i = 0
-        network_ode.tot_time = 0
 
 
 def test_scipy_cython_odeint(times):
@@ -826,8 +825,7 @@ def test_scipy_cython_ode(times, methods=None):
             solver.integrate(_time+timestep)
             assert (solver.t - (_time+timestep))**2 < 1e-5
             network_ode.network.state.array[i+1, 0, :] = solver.y
-            tic1 = time.time()
-            time_control += tic1 - tic0
+            time_control += time.time() - tic0
         print("Number of iterations: {} (t={}[s])".format(
             network_ode.i,
             network_ode.tot_time
@@ -843,9 +841,6 @@ def test_scipy_cython_ode(times, methods=None):
         plt.xlabel("Time [s]")
         plt.ylabel("Phases [rad]")
         plt.grid(True)
-
-        network_ode.i = 0
-        network_ode.tot_time = 0
 
 
 def main():
