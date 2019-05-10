@@ -181,13 +181,17 @@ class SalamanderNetworkParameters(ODE):
     def update_gait(self, gait):
         """Update from gait"""
         if gait == "walking":
-            self[1][0] = OscillatorArray.for_walking()
-            self[1][1] = ConnectivityArray.for_walking()
-            self[1][2] = JointsArray.for_walking()
+            self.function[0:3] = [
+                OscillatorArray.for_walking(),
+                ConnectivityArray.for_walking(),
+                JointsArray.for_walking()
+            ]
         else:
-            self[1][0] = OscillatorArray.for_swimming()
-            self[1][1] = ConnectivityArray.for_swimming()
-            self[1][2] = JointsArray.for_swimming()
+            self.function[0:3] = [
+                OscillatorArray.for_swimming(),
+                ConnectivityArray.for_swimming(),
+                JointsArray.for_swimming()
+            ]
 
     @staticmethod
     def walking_parameters():
