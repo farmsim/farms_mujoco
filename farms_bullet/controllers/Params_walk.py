@@ -1,7 +1,7 @@
 from control_options import SalamanderControlOptions
 #from ../animats.model_options import ModelOptions
 import numpy as np
-gait = "waking"
+gait = "walking"
 
 #walking parameters
 #opt_mod = ModelOptions()
@@ -12,6 +12,7 @@ n_legs = 4
 n_joints = n_body + n_legs * n_dof_legs
 n_oscillators = 2 * (n_joints)
 if gait == 'walking':
+    print('walking')
     freqs = 2 * np.pi * np.ones(n_oscillators)
     rates = 10 * np.ones(n_oscillators)
     options = SalamanderControlOptions.walking()
@@ -33,7 +34,7 @@ if gait == 'walking':
                     options["leg_{}_amplitude".format(i)]
                     )
 else:
-
+    print('swimming')
     freqs = 2 * np.pi * np.ones(n_oscillators)
     rates = 10 * np.ones(n_oscillators)
     amplitudes = np.zeros(n_oscillators)
@@ -53,4 +54,5 @@ else:
                             options["leg_{}_amplitude".format(i)]
                             )
 
-print(freqs, amplitudes)
+#print(freqs, rates, amplitudes)
+print(amplitudes)

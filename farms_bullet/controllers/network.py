@@ -205,12 +205,37 @@ class SalamanderNetworkParameters(ODE):
     @classmethod
     def for_walking(cls):
         """Salamander swimming network"""
+        #=====================================================development=====================================================
         #my implementation
-        oscillators = 
-        connectivity = 
-        joints = 
+        model_options = ModelOptions()
+        body_freqs = 2*np.pi*model_options['body_freqs']*np.ones(2*model_options['n_body'])
+        limb_freqs = 2*np.pi*model_options['limb_freqs']*np.ones(2*model_options["n_dof_legs"]*model_options['n_legs'])
+        freqs = np.append(body_freqs, limb_freqs)
+        rates = model_options['rates'] * np.ones(np.shape(freqs)[0])
+        #computing all amplitudes
+        body_amp = model_options['body_amp'] 
+        forelimb_amp = np.append(model_options['left_forelimb_amp'],model_options['right_forelimb_amp'])
+        hindlimb_amp = np.append(model_options['left_hindlimb_amp'],model_options['right_hindlimb_amp'])
+        limb_amp = np.append(forelimb_amp, hindlimb_amp)
+        amplitudes = np.append(body_amp, limb_amp)
+        oscillators = [freqs, rates, amplitudes]
+        #connectivity
+        body_connections = model_options['connec_body']
+        limb_connections = model_options['connec_left_forelimb'] + model_options['connec_right_forelimb'] + model_options['connec_left_hindlimb'] + model_options['connec_right_hindlimb']
+        body_to_limb_connections = model_options['connec_body_left_forelimb'] + model_options['connec_body_right_forelimb']+model_options['connec_body_left_hindlimb'] + model_options['connec_body_right_hindlimb']
+        connections = body_connections + limb_connections + body_to_limb_connections
+        #computing the connectivity
+        connectivity = np.array([0,0,0,0])
+        for wij, wji, w, phi in connections:
+            connectivity = np.vstack((connectivity, [wij, wji, w, phi]))
+        #computing the joints parameters
+        np.delete(connectivity, 0, 0)#deleting first row of only zeros 
+        #to be changed 
+        offsets = model_options['joints_offset']
+        rates = model_options['joints_rate']
+        joints =  [offsets, rates]
 
-        oscillators, connectivity, joints = cls.walking_parameters()
+        #oscillators, connectivity, joints = cls.walking_parameters()
         return cls(oscillators, connectivity, joints)
 
     @classmethod
@@ -267,6 +292,7 @@ class OscillatorArray(NetworkArray):
     def walking_parameters():
         """Walking parameters"""
         raise Exception
+
         opt_mod = ModelOptions()
         n_body = opt_mod['n_body']
         n_dof_legs = opt_mod['n_dof_legs']
@@ -299,6 +325,7 @@ class OscillatorArray(NetworkArray):
     def swimming_parameters():
         """Swimming parameters"""
         raise Exception
+
         opt_mod = ModelOptions()
         n_body = opt_mod['n_body']
         n_dof_legs = opt_mod['n_dof_legs']

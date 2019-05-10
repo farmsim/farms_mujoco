@@ -365,3 +365,13 @@ else:
             legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
             default_amplitude, 0
         ])
+connectivity = np.array(connectivity)
+#np.savez('osc_connect', connectivity[:,0:2])
+w_connect = np.load('osc_connect.npz')
+my_connectivity = ()
+#print(w_connect['arr_0'])
+for i in w_connect['arr_0']:
+    my_connectivity = my_connectivity + ((int(i[0]),int(i[1])),)
+
+for j in np.arange(0,int(len(my_connectivity)/8)):
+    print('{},{},{},{},{},{},{},{}'.format(my_connectivity[4*j],my_connectivity[4*j+1],my_connectivity[4*j+2],my_connectivity[4*j+3],my_connectivity[4*j+4],my_connectivity[4*j+5],my_connectivity[4*j+6],my_connectivity[4*j+7]))
