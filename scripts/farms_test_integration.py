@@ -712,25 +712,25 @@ def test_scipy_cython_odesolver(times):
     timestep = times[1] - times[0]
 
     # Simulate (method 1)
-    time_control = 0
     methods = [
         integrate.RK23,
         integrate.RK45,
         # integrate.Radau,
         # integrate.BDF,
-        integrate.LSODA
+        # integrate.LSODA
     ]
     for method in methods:
+        time_control = 0
         network_ode = NetworkODEwrap(len(times), timestep)
         n_dim = np.shape(network_ode.network.parameters.oscillators.freqs)[0]
         solver = method(
             fun=network_ode.fun,
             t0=0,
             y0=np.copy(network_ode.network.state.array[0, 0]),
-            t_bound=times[-1],
-            # first_step=1e-1*timestep,
+            t_bound=timestep,
+            # first_step=0.1*timestep,
             # min_step=0,
-            # max_step=1e-1*timestep,
+            # max_step=timestep,
             # rtol=1e-6,
             # atol=1e-8
         )
@@ -740,9 +740,16 @@ def test_scipy_cython_odesolver(times):
             network_ode.network.parameters.oscillators.freqs = (
                 freqs_function(_time, n_dim)
             )
-            while solver.t < _time:
+            solver.t_bound = _time + timestep
+            solver.status = "running"
+            while solver.status == "running":  # solver.t < (_time + timestep):
                 solver.step()
-            assert solver.status == "running"
+            assert solver.t == _time + timestep
+            # assert solver.t < (_time + 1.5*timestep)
+            assert solver.status == "finished"
+            # if solver.status == "failed":
+            #     print("ERROR for Scipy/Cython (odesolver-{})".format(method))
+            #     break
             network_ode.network.state.array[i+1, 0, :] = (
                 solver.dense_output()(_time)
             )
