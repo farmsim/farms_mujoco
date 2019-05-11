@@ -208,17 +208,22 @@ class SalamanderNetworkParameters(ODE):
         #=====================================================development=====================================================
         #my implementation
         model_options = ModelOptions()
-        body_freqs = 2*np.pi*model_options['body_freqs']*np.ones(2*model_options['n_body'])
+        body_freqs = 2*np.pi*model_options['body_freqs']*np.ones(2*model_options['n_body'])       
         limb_freqs = 2*np.pi*model_options['limb_freqs']*np.ones(2*model_options["n_dof_legs"]*model_options['n_legs'])
         freqs = np.append(body_freqs, limb_freqs)
         rates = model_options['rates'] * np.ones(np.shape(freqs)[0])
+        print('Rates: {}, type: {}'.format(rates,type(rates)))
+        print('Freqs: {}, type: {}'.format(freqs,type(freqs)))
+
         #computing all amplitudes
         body_amp = model_options['body_amp'] 
         forelimb_amp = np.append(model_options['left_forelimb_amp'],model_options['right_forelimb_amp'])
         hindlimb_amp = np.append(model_options['left_hindlimb_amp'],model_options['right_hindlimb_amp'])
         limb_amp = np.append(forelimb_amp, hindlimb_amp)
         amplitudes = np.append(body_amp, limb_amp)
-        oscillators = [freqs, rates, amplitudes]
+        #oscillators = [freqs, rates, amplitudes]
+        oscillators = np.array([freqs, rates, amplitudes])
+        print(type(oscillators))
         #connectivity
         body_connections = model_options['connec_body']
         limb_connections = model_options['connec_left_forelimb'] + model_options['connec_right_forelimb'] + model_options['connec_left_hindlimb'] + model_options['connec_right_hindlimb']
@@ -229,11 +234,13 @@ class SalamanderNetworkParameters(ODE):
         for wij, wji, w, phi in connections:
             connectivity = np.vstack((connectivity, [wij, wji, w, phi]))
         #computing the joints parameters
-        np.delete(connectivity, 0, 0)#deleting first row of only zeros 
+        connectivity = connectivity[1:-1,:]
+        print(type(connectivity))  
         #to be changed 
         offsets = model_options['joints_offset']
         rates = model_options['joints_rate']
-        joints =  [offsets, rates]
+        joints = np.append(offsets, rates)
+        print(type(joints))
 
         #oscillators, connectivity, joints = cls.walking_parameters()
         return cls(oscillators, connectivity, joints)
