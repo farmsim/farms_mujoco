@@ -162,7 +162,7 @@ class SalamanderNetworkParameters(ODE):
 
     def __init__(self, oscillators, connectivity, joints):
         super(SalamanderNetworkParameters, self).__init__(
-            [NetworkArray(np.zeros([
+            [NetworkArray(np.zeros([  # Runge-Kutta parameters
                 7,
                 2*oscillators.shape()[1] + 1*joints.shape()[1]
             ]))],
@@ -279,20 +279,18 @@ class OscillatorArray(NetworkArray):
         # Amplitudes
         amplitudes = np.zeros(n_oscillators)
         for i in range(n_body):
-            amplitudes[[i, i+n_body]] = np.abs(
-                options["body_stand_amplitude"]*np.sin(
-                    2*np.pi*i/n_body
-                    - options["body_stand_shift"]
-                )
+            amplitudes[[i, i+n_body]] = options["body_stand_amplitude"]*np.sin(
+                2*np.pi*i/n_body
+                - options["body_stand_shift"]
             )
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
                 amplitudes[[
                     2*n_body + 2*leg_i*n_dof_legs + i,
                     2*n_body + 2*leg_i*n_dof_legs + i + n_dof_legs
-                ]] = np.abs(
-                    options["leg_{}_amplitude".format(i)]
-                )
+                ]] = options["leg_{}_amplitude".format(i)]
+        # print("Amplitudes along body: abs({})".format(amplitudes[:11]))
+        amplitudes = np.abs(amplitudes)
         return freqs, rates, amplitudes
 
     @staticmethod
@@ -380,7 +378,9 @@ class ConnectivityArray(NetworkArray):
         """Walking parameters"""
         n_body_joints = 11
         connectivity = []
-        default_amplitude = 3e2
+        body_amplitude = 1e2
+        legs_amplitude = 3e2
+        legs2body_amplitude = 3e2
 
         # Amplitudes
         options = SalamanderControlOptions.walking()
@@ -398,12 +398,12 @@ class ConnectivityArray(NetworkArray):
             connectivity.append([
                 bodyjoint2index(joint_i=i, side=1),
                 bodyjoint2index(joint_i=i, side=0),
-                default_amplitude, np.pi
+                body_amplitude, np.pi
             ])
             connectivity.append([
                 bodyjoint2index(joint_i=i, side=0),
                 bodyjoint2index(joint_i=i, side=1),
-                default_amplitude, np.pi
+                body_amplitude, np.pi
             ])
             # i - i+1
             phase_diff = (
@@ -415,23 +415,23 @@ class ConnectivityArray(NetworkArray):
                 connectivity.append([
                     bodyjoint2index(joint_i=i+1, side=side),
                     bodyjoint2index(joint_i=i, side=side),
-                    default_amplitude, phase_diff
+                    body_amplitude, phase_diff
                 ])
                 connectivity.append([
                     bodyjoint2index(joint_i=i, side=side),
                     bodyjoint2index(joint_i=i+1, side=side),
-                    default_amplitude, phase_diff
+                    body_amplitude, phase_diff
                 ])
         # i+1 - i+1 (final)
         connectivity.append([
             bodyjoint2index(joint_i=n_body_joints-1, side=1),
             bodyjoint2index(joint_i=n_body_joints-1, side=0),
-            default_amplitude, np.pi
+            body_amplitude, np.pi
         ])
         connectivity.append([
             bodyjoint2index(joint_i=n_body_joints-1, side=0),
             bodyjoint2index(joint_i=n_body_joints-1, side=1),
-            default_amplitude, np.pi
+            body_amplitude, np.pi
         ])
 
         # Legs (internal)
@@ -441,128 +441,154 @@ class ConnectivityArray(NetworkArray):
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 # 0 - 1
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    default_amplitude, 0.5*np.pi
+                    legs_amplitude, 0.5*np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, -0.5*np.pi
+                    legs_amplitude, -0.5*np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    default_amplitude, 0.5*np.pi
+                    legs_amplitude, 0.5*np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, -0.5*np.pi
+                    legs_amplitude, -0.5*np.pi
                 ])
                 # 1 - 1
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 # 1 - 2
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 # 2 - 2
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
 
         # Opposite leg interaction
         # TODO
+        for leg_i in range(2):
+            for side in range(2):
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=0, joint_i=0, side=side),
+                    legjoint2index(leg_i=leg_i, side_i=1, joint_i=0, side=side),
+                    legs_amplitude, np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=leg_i, side_i=1, joint_i=0, side=side),
+                    legjoint2index(leg_i=leg_i, side_i=0, joint_i=0, side=side),
+                    legs_amplitude, np.pi
+                ])
 
         # Following leg interaction
         # TODO
+        for side_i in range(2):
+            for side in range(2):
+                connectivity.append([
+                    legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
+                    legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
+                    legs_amplitude, np.pi
+                ])
+                connectivity.append([
+                    legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
+                    legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
+                    legs_amplitude, np.pi
+                ])
 
         # Body-legs interaction
         for side_i in range(2):
-            # Forelimbs
-            connectivity.append([
-                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
-                bodyjoint2index(joint_i=1, side=side_i),
-                default_amplitude, np.pi
-            ])
-            connectivity.append([
-                bodyjoint2index(joint_i=1, side=side_i),
-                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
-                default_amplitude, np.pi
-            ])
-            connectivity.append([
-                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
-                bodyjoint2index(joint_i=1, side=side_i),
-                default_amplitude, 0
-            ])
-            connectivity.append([
-                bodyjoint2index(joint_i=1, side=side_i),
-                legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
-                default_amplitude, 0
-            ])
-            # Hind limbs
-            connectivity.append([
-                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
-                bodyjoint2index(joint_i=4, side=side_i),
-                default_amplitude, np.pi
-            ])
-            connectivity.append([
-                bodyjoint2index(joint_i=4, side=side_i),
-                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
-                default_amplitude, np.pi
-            ])
-            connectivity.append([
-                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
-                bodyjoint2index(joint_i=4, side=side_i),
-                default_amplitude, 0
-            ])
-            connectivity.append([
-                bodyjoint2index(joint_i=4, side=side_i),
-                legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
-                default_amplitude, 0
-            ])
+            for i in [0, 1, 7, 8, 9, 10]:
+                # Forelimbs
+                connectivity.append([
+                    bodyjoint2index(joint_i=i, side=side_i),
+                    legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
+                    legs2body_amplitude, np.pi
+                ])
+                # connectivity.append([
+                #     bodyjoint2index(joint_i=1, side=side_i),
+                #     legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
+                #     legs2body_amplitude, np.pi
+                # ])
+                connectivity.append([
+                    bodyjoint2index(joint_i=i, side=side_i),
+                    legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
+                    legs2body_amplitude, 0
+                ])
+                # connectivity.append([
+                #     bodyjoint2index(joint_i=1, side=side_i),
+                #     legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
+                #     legs2body_amplitude, 0
+                # ])
+            for i in [2, 3, 4, 5]:
+                # Hind limbs
+                connectivity.append([
+                    bodyjoint2index(joint_i=i+4, side=side_i),
+                    legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
+                    legs2body_amplitude, np.pi
+                ])
+                # connectivity.append([
+                #     bodyjoint2index(joint_i=4, side=side_i),
+                #     legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
+                #     legs2body_amplitude, np.pi
+                # ])
+                connectivity.append([
+                    bodyjoint2index(joint_i=i+4, side=side_i),
+                    legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
+                    legs2body_amplitude, 0
+                ])
+                # connectivity.append([
+                #     bodyjoint2index(joint_i=4, side=side_i),
+                #     legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
+                #     legs2body_amplitude, 0
+                # ])
         return connectivity
 
     @staticmethod
@@ -570,7 +596,9 @@ class ConnectivityArray(NetworkArray):
         """Swimming parameters"""
         n_body_joints = 11
         connectivity = []
-        default_amplitude = 3e2
+        body_amplitude = 1e2
+        legs_amplitude = 3e2
+        legs2body_amplitude = 3e2
 
         # Body
         for i in range(n_body_joints-1):
@@ -578,35 +606,35 @@ class ConnectivityArray(NetworkArray):
             connectivity.append([
                 bodyjoint2index(joint_i=i, side=1),
                 bodyjoint2index(joint_i=i, side=0),
-                default_amplitude, np.pi
+                body_amplitude, np.pi
             ])
             connectivity.append([
                 bodyjoint2index(joint_i=i, side=0),
                 bodyjoint2index(joint_i=i, side=1),
-                default_amplitude, np.pi
+                body_amplitude, np.pi
             ])
             # i - i+1
             for side in range(2):
                 connectivity.append([
                     bodyjoint2index(joint_i=i+1, side=side),
                     bodyjoint2index(joint_i=i, side=side),
-                    default_amplitude, 2*np.pi/n_body_joints
+                    body_amplitude, 2*np.pi/n_body_joints
                 ])
                 connectivity.append([
                     bodyjoint2index(joint_i=i, side=side),
                     bodyjoint2index(joint_i=i+1, side=side),
-                    default_amplitude, -2*np.pi/n_body_joints
+                    body_amplitude, -2*np.pi/n_body_joints
                 ])
         # i+1 - i+1 (final)
         connectivity.append([
             bodyjoint2index(joint_i=n_body_joints-1, side=1),
             bodyjoint2index(joint_i=n_body_joints-1, side=0),
-            default_amplitude, np.pi
+            body_amplitude, np.pi
         ])
         connectivity.append([
             bodyjoint2index(joint_i=n_body_joints-1, side=0),
             bodyjoint2index(joint_i=n_body_joints-1, side=1),
-            default_amplitude, np.pi
+            body_amplitude, np.pi
         ])
 
         # Legs (internal)
@@ -616,76 +644,76 @@ class ConnectivityArray(NetworkArray):
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 # 0 - 1
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    default_amplitude, 0.5*np.pi
+                    legs_amplitude, 0.5*np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, -0.5*np.pi
+                    legs_amplitude, -0.5*np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    default_amplitude, 0.5*np.pi
+                    legs_amplitude, 0.5*np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, -0.5*np.pi
+                    legs_amplitude, -0.5*np.pi
                 ])
                 # 1 - 1
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, np.pi
+                    legs_amplitude, np.pi
                 ])
                 # 1 - 2
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 # 2 - 2
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
                 connectivity.append([
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
                     legjoint2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
-                    default_amplitude, 0
+                    legs_amplitude, 0
                 ])
 
         # Opposite leg interaction
@@ -700,43 +728,43 @@ class ConnectivityArray(NetworkArray):
             connectivity.append([
                 legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
                 bodyjoint2index(joint_i=1, side=side_i),
-                default_amplitude, np.pi
+                legs2body_amplitude, np.pi
             ])
             connectivity.append([
                 bodyjoint2index(joint_i=1, side=side_i),
                 legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
-                default_amplitude, np.pi
+                legs2body_amplitude, np.pi
             ])
             connectivity.append([
                 legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
                 bodyjoint2index(joint_i=1, side=side_i),
-                default_amplitude, 0
+                legs2body_amplitude, 0
             ])
             connectivity.append([
                 bodyjoint2index(joint_i=1, side=side_i),
                 legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
-                default_amplitude, 0
+                legs2body_amplitude, 0
             ])
             # Hind limbs
             connectivity.append([
                 legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
                 bodyjoint2index(joint_i=4, side=side_i),
-                default_amplitude, np.pi
+                legs2body_amplitude, np.pi
             ])
             connectivity.append([
                 bodyjoint2index(joint_i=4, side=side_i),
                 legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
-                default_amplitude, np.pi
+                legs2body_amplitude, np.pi
             ])
             connectivity.append([
                 legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
                 bodyjoint2index(joint_i=4, side=side_i),
-                default_amplitude, 0
+                legs2body_amplitude, 0
             ])
             connectivity.append([
                 bodyjoint2index(joint_i=4, side=side_i),
                 legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
-                default_amplitude, 0
+                legs2body_amplitude, 0
             ])
         return connectivity
 
@@ -790,7 +818,7 @@ class JointsArray(NetworkArray):
                 offsets[n_body + leg_i*n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
-        rates = 10*np.ones(n_joints)
+        rates = 5*np.ones(n_joints)
         return offsets, rates
 
     @staticmethod
@@ -807,7 +835,7 @@ class JointsArray(NetworkArray):
                 offsets[n_body + leg_i*n_dof_legs + i] = (
                     options["leg_{}_offset".format(i)]
                 )
-        rates = 10*np.ones(n_joints)
+        rates = 5*np.ones(n_joints)
         return offsets, rates
 
     @classmethod
