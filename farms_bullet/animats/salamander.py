@@ -1,12 +1,13 @@
 """Salamander"""
 
+import os
 import time
 import numpy as np
 
 import pybullet
 
 from .animat import Animat
-from .model import SalamanderModel
+from .model import Model
 from ..plugins.swimming import viscous_swimming
 from ..sensors.sensor import (
     Sensors,
@@ -14,6 +15,76 @@ from ..sensors.sensor import (
     ContactSensor,
     LinkStateSensor
 )
+from ..sensors.model_sensors import ModelSensors
+from ..controllers.control import SalamanderController
+
+
+class SalamanderModel(Model):
+    """Salamander model"""
+
+    def __init__(
+            self, identity, base_link,
+            iterations, timestep,
+            gait="walking", **kwargs
+    ):
+        super(SalamanderModel, self).__init__(
+            identity=identity,
+            base_link=base_link
+        )
+        # Model dynamics
+        self.apply_motor_damping()
+        # Controller
+        self.controller = SalamanderController.from_gait(
+            self.identity,
+            self.joints,
+            gait=gait,
+            iterations=iterations,
+            timestep=timestep,
+            **kwargs
+        )
+        self.feet = [
+            "link_leg_0_L_3",
+            "link_leg_0_R_3",
+            "link_leg_1_L_3",
+            "link_leg_1_R_3"
+        ]
+        self.sensors = ModelSensors(self, iterations)
+        # self.motors = ModelMotors()
+
+    @classmethod
+    def spawn(cls, iterations, timestep, gait="walking", **kwargs):
+        """Spawn salamander"""
+        return cls.from_sdf(
+            "{}/.farms/models/biorob_salamander/model.sdf".format(os.environ['HOME']),
+            base_link="link_body_0",
+            iterations=iterations,
+            timestep=timestep,
+            gait=gait,
+            **kwargs
+        )
+
+    def leg_collisions(self, plane, activate=True):
+        """Activate/Deactivate leg collisions"""
+        for leg_i in range(2):
+            for side in ["L", "R"]:
+                for joint_i in range(3):
+                    link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+                    pybullet.setCollisionFilterPair(
+                        bodyUniqueIdA=self.identity,
+                        bodyUniqueIdB=plane,
+                        linkIndexA=self.links[link],
+                        linkIndexB=-1,
+                        enableCollision=activate
+                    )
+
+    def apply_motor_damping(self, linear=0, angular=0):
+        """Apply motor damping"""
+        for j in range(pybullet.getNumJoints(self.identity)):
+            pybullet.changeDynamics(
+                self.identity, j,
+                linearDamping=0,
+                angularDamping=angular
+            )
 
 
 class Salamander(Animat):
