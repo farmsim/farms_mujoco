@@ -160,17 +160,17 @@ class ModelOptions(dict):
                                                                              [45, 42, self['weigths_limb'], np.pi], 
                                                                              [42, 45, self['weigths_limb'], np.pi]])
         #connection from limb to body 
-        self['connec_body_left_forelimb'] = kwargs.pop('connec_body_left_forelimb', [[22, 1, self['weights_limb_to_body'], self['phi_limb_to_body']], 
-                                                                                     [25, 1, self['weights_limb_to_body'], 0]])
+        self['connec_body_left_forelimb'] = kwargs.pop('connec_body_left_forelimb', [[22, 1, self['weights_limb_to_body'], self['phi_limb_to_body']]]) #, 
+                                                                                     #[25, 1, self['weights_limb_to_body'], 0]])
 
-        self['connec_body_right_forelimb'] = kwargs.pop('connec_body_right_forelimb',[[28, 12, self['weights_limb_to_body'], self['phi_limb_to_body']],
-                                                                                      [31, 12, self['weights_limb_to_body'], 0]])
+        self['connec_body_right_forelimb'] = kwargs.pop('connec_body_right_forelimb',[[28, 12, self['weights_limb_to_body'], self['phi_limb_to_body']]])#,
+                                                                                     # [31, 12, self['weights_limb_to_body'], 0]])
 
-        self['connec_body_left_hindlimb'] = kwargs.pop('connec_body_left_hindlimb',[[34, 4, self['weights_limb_to_body'], self['phi_limb_to_body']],
-                                                                                    [37, 4, self['weights_limb_to_body'], 0]])
+        self['connec_body_left_hindlimb'] = kwargs.pop('connec_body_left_hindlimb',[[34, 4, self['weights_limb_to_body'], self['phi_limb_to_body']]])#,
+                                                                                   # [37, 4, self['weights_limb_to_body'], 0]])
 
-        self['connec_body_right_hindlimb'] = kwargs.pop('connec_body_right_hindlimb',[[40, 15, self['weights_limb_to_body'], self['phi_limb_to_body']], 
-                                                                                      [43, 15, self['weights_limb_to_body'], 0]])
+        self['connec_body_right_hindlimb'] = kwargs.pop('connec_body_right_hindlimb',[[40, 15, self['weights_limb_to_body'], self['phi_limb_to_body']]])#, 
+                                                                                      #[43, 15, self['weights_limb_to_body'], 0]])
         #to be check
         self['connec_inter_limb'] = kwargs.pop('connec_inter_limb', [[25, 34, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
                                                                      [34, 25, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 

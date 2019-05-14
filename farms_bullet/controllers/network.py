@@ -4,7 +4,7 @@ import numpy as np
 from ..cy_controller import ode_oscillators_sparse, rk4
 from .convention import bodyjoint2index, legjoint2index
 from .control_options import SalamanderControlOptions
-from ..animats.model_options import ModelOptions
+from ..animats.model_options2 import ModelOptions
 import pdb
 
 class ODE(list):
@@ -886,7 +886,7 @@ class ConnectivityArray(NetworkArray):
         body_to_limb_connections = _options['connec_body_left_forelimb'] + _options['connec_body_right_forelimb'] + _options['connec_body_left_hindlimb'] + _options['connec_body_right_hindlimb']
         connectivity = body_connections + limb_connections + body_to_limb_connections
 
-        debug = True
+        debug = False
         if debug == True:
             print("-----connectivity-----")
             for i in np.arange(0,len(connectivity)):
@@ -1176,5 +1176,4 @@ class SalamanderNetworkODE(ODESolver):
 
     def update_drive(self, drive_speed, drive_turn):
         """Update drives"""
-        print("Updating the drive")
         self.parameters.oscillators.update_drives(drive_speed, drive_turn)
