@@ -33,17 +33,20 @@ class AnimatLink:
         self.mass = kwargs.pop("mass", 0)
         self.parent = kwargs.pop("parent", None)
         self.frame_position = kwargs.pop("frame_position", [0, 0, 0])
+        self.frame_orientation = pybullet.getQuaternionFromEuler(
+            kwargs.pop("frame_orientation", [0, 0, 0])
+        )
         self.collision = pybullet.createCollisionShape(
-            self.geometry,
+            shapeType=self.geometry,
             collisionFramePosition=self.frame_position,
-            collisionFrameOrientation=self.orientation,
+            collisionFrameOrientation=self.frame_orientation,
             **additional_kwargs
         )
         color = kwargs.pop("color", None)
         self.visual = -1 if color is None else pybullet.createVisualShape(
-            self.geometry,
+            shapeType=self.geometry,
             visualFramePosition=self.frame_position,
-            visualFrameOrientation=self.orientation,
+            visualFrameOrientation=self.frame_orientation,
             rgbaColor=color,
             **additional_kwargs
         )
