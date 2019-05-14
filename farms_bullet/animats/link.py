@@ -12,12 +12,15 @@ class AnimatLink:
         self.size = kwargs.pop("size", None)
         self.radius = kwargs.pop("radius", None)
         self.height = kwargs.pop("height", None)
+        self.filename = kwargs.pop("filename", None)
         if self.size is not None:
             additional_kwargs["halfExtents"] = self.size
         if self.radius is not None:
             additional_kwargs["radius"] = self.radius
         if self.height is not None:
             additional_kwargs["height"] = self.height
+        if self.filename is not None:
+            additional_kwargs["fileName"] = self.filename
         self.geometry = kwargs.pop("geometry", pybullet.GEOM_BOX)
         self.position = kwargs.pop("position", [0, 0, 0])
         self.orientation = pybullet.getQuaternionFromEuler(
