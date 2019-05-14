@@ -55,6 +55,29 @@ cpdef void ode_oscillators_sparse(
 @cython.wraparound(False)   # Deactivate negative indexing.
 @cython.profile(False)
 @cython.nonecheck(False)
+cpdef void euler(
+    fun,
+    float timestep,
+    CTYPE[:, :, :] state,
+    unsigned int n_dim,
+    unsigned int iteration,
+    CTYPE[:, :] rk4_k,
+    parameters
+):
+    """Runge-Kutta step integration"""
+    cdef unsigned int i
+    fun(state[iteration][1], state[iteration][0], *parameters)
+    for i in range(n_dim):  # , nogil=True):
+        state[iteration+1][0][i] = (
+            state[iteration][0][i]
+            + timestep*state[iteration][1][i]
+        )
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.profile(False)
+@cython.nonecheck(False)
 cpdef void rk4(
     fun,
     float timestep,

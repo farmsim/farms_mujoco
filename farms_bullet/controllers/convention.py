@@ -2,6 +2,7 @@
 
 def bodyjoint2index(joint_i, side=0, n_body_joints=11):
     """body2index"""
+    assert joint_i < 11, "Joint must be < 11, got {}".format(joint_i)
     return joint_i + side*n_body_joints
 
 def legjoint2index(
