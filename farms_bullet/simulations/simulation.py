@@ -8,6 +8,34 @@ from .simulator import init_engine
 from ..render.render import rendering
 
 
+class SimulationElements(dict):
+    """Simulation elements"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __init__(self, animat, arena):
+        super(SimulationElements, self).__init__()
+        self.animat = animat
+        self.arena = arena
+
+    def spawn(self):
+        """Spawn"""
+        for element_name, element in self.items():
+            print("Spawning {}".format(element_name))
+            element.spawn()
+
+    def step(self):
+        """Step"""
+        for element in self.values():
+            element.step()
+
+    def log(self):
+        """Step"""
+        for element in self.values():
+            element.log()
+
+
 class Simulation:
     """Simulation
 
@@ -16,42 +44,41 @@ class Simulation:
 
     """
 
-    def __init__(self, experiment, simulation_options, animat_options):
+    def __init__(self, elements, options):
         super(Simulation, self).__init__()
 
-        # Options
-        self.sim_options = simulation_options
-        self.animat_options = animat_options
+        self.elements = elements
+        self.options = options
 
         # Initialise engine
-        init_engine(self.sim_options.headless)
+        init_engine(self.options.headless)
         rendering(0)
-
-        # Parameters
-        self.timestep = self.sim_options.timestep
-        self.times = np.arange(0, self.sim_options.duration, self.timestep)
 
         # Initialise physics
         self.init_physics()
 
         # Initialise models
-        self.experiment = experiment
-        self.experiment.spawn()
+        self.elements.spawn()
 
         # Simulation
         self.iteration = 0
+        self.simulation_state = None
+        self.logger = NotImplemented
 
         rendering(1)
 
+    def save(self):
+        """Save experiment state"""
+        self.simulation_state = pybullet.saveState()
+
     def init_physics(self):
         """Initialise physics"""
-        gait = self.animat_options.gait
         pybullet.resetSimulation()
-        pybullet.setGravity(0, 0, -1e-2 if gait == "swimming" else -9.81)
-        pybullet.setTimeStep(self.timestep)
+        pybullet.setGravity(0, 0, -9.81)
+        pybullet.setTimeStep(self.options.timestep)
         pybullet.setRealTimeSimulation(0)
         pybullet.setPhysicsEngineParameter(
-            fixedTimeStep=self.timestep,
+            fixedTimeStep=self.options.timestep,
             numSolverIterations=50,
             erp=0,
             contactERP=0,
@@ -61,30 +88,50 @@ class Simulation:
             pybullet.getPhysicsEngineParameters()
         ))
 
+    def pre_step(self, sim_step):
+        """Pre-step"""
+        raise NotImplementedError
+
     def run(self):
         """Run simulation"""
         # Run simulation
-        self.tic = time.time()
-        loop_time = 0
-        play = True
-        n_iterations = len(self.times)
-        while self.iteration < n_iterations:
-            if not self.sim_options.headless:
+        while self.iteration < self.options.n_iterations:
+            if not self.options.headless:
                 keys = pybullet.getKeyboardEvents()
                 if ord("q") in keys:
                     break
-            if self.experiment.pre_step(self.iteration):
+            if self.pre_step(self.iteration):
                 tic_loop = time.time()
-                self.experiment.step(self.iteration)
+                self.step(self.iteration)
                 self.iteration += 1
-                loop_time += time.time() - tic_loop
-        print("Loop time: {} [s]".format(loop_time))
-        self.toc = time.time()
-        self.experiment.times_simulated = self.times[:self.iteration]
+
+    def postprocess(self, iteration, **kwargs):
+        """Plot after simulation"""
+        times = np.arange(
+            0,
+            self.options.timestep*self.options.n_iterations,
+            self.options.timestep
+        )[:iteration]
+
+        plot = kwargs.pop("plot", None)
+        if plot:
+            self.logger.plot_all(times)
+
+        log_path = kwargs.pop("log_path", None)
+        if log_path:
+            log_extension = kwargs.pop("log_extension", None)
+            self.logger.log_all(
+                times,
+                folder=log_path,
+                extension=log_extension
+            )
+
+        # Record video
+        record = kwargs.pop("record", None)
+        if record:
+            self.camera_record.save("video.avi")
 
     def end(self):
         """Terminate simulation"""
-        # End experiment1
-        self.experiment.end()  # self.iteration, self.toc - self.tic
         # Disconnect from simulation
         pybullet.disconnect()

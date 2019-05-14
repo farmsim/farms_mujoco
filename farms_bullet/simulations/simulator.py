@@ -21,10 +21,10 @@ def init_engine(headless=False):
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def real_time_handing(timestep, tic_rt, toc_rt, rtl=1.0, **kwargs):
+def real_time_handing(timestep, tic_rt, rtl=1.0, **kwargs):
     """Real-time handling"""
-    sleep_rtl = timestep/rtl - (toc_rt - tic_rt)
-    rtf = timestep / (toc_rt - tic_rt)
+    sleep_rtl = timestep/rtl - (tic_rt[1] - tic_rt[0])
+    rtf = timestep / (tic_rt[1] - tic_rt[0])
     tic = time.time()
     sleep_rtl = np.clip(sleep_rtl, a_min=0, a_max=1)
     if sleep_rtl > 0:
