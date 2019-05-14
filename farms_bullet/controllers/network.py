@@ -196,6 +196,7 @@ class SalamanderNetworkParameters(ODE):
         oscillators = OscillatorArray.for_moving()
         connectivity = ConnectivityArray.for_moving()
         joints = JointsArray.for_moving()
+        pdb.set_trace()
         return oscillators, connectivity, joints
 
     @staticmethod
@@ -290,6 +291,16 @@ class  OscillatorArray(NetworkArray):
         hindlimb_amp = np.append(_options['left_hindlimb_amp'], _options['right_hindlimb_amp'])
         limb_amp = np.append(forelimb_amp, hindlimb_amp)
         amplitudes = np.append(body_amp, limb_amp)
+
+        debug = True
+        if debug == True:
+            print("-----freqs-----")
+            print(freqs)
+            print("-----rates-----")
+            print(rates)
+            print("-----amplitudes-----")
+            print(amplitudes)
+            
         return freqs, rates, amplitudes
 
     @staticmethod
@@ -883,6 +894,13 @@ class ConnectivityArray(NetworkArray):
         limb_connections = _options['connec_left_forelimb'] + _options['connec_right_forelimb'] + _options['connec_left_hindlimb'] + _options['connec_right_hindlimb']
         body_to_limb_connections = _options['connec_body_left_forelimb'] + _options['connec_body_right_forelimb'] + _options['connec_body_left_hindlimb'] + _options['connec_body_right_hindlimb']
         connectivity = body_connections + limb_connections + body_to_limb_connections
+
+        debug = True
+        if debug == True:
+            print("-----connectivity-----")
+            for i in np.arange(0,len(connectivity)):
+                print(connectivity[i][:])
+
         return connectivity
 
     @classmethod
@@ -968,6 +986,13 @@ class JointsArray(NetworkArray):
         _options = ModelOptions()
         offsets = _options['joints_offset']
         rates = _options['joints_rate']
+
+        debug = True
+        if debug == True:
+            print("-----offsets-----")
+            print(offsets)
+            print('-----rates-----')
+            print(rates)
         return offsets, rates
 
     @classmethod

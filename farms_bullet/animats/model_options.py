@@ -34,8 +34,8 @@ class ModelOptions(dict):
         self['n_legs'] = kwargs.pop("n_legs", 4)
         #oscillators array
         #freq
-        self['body_freqs'] = kwargs.pop('body_freqs', 1.6)
-        self['limb_freqs'] = kwargs.pop('limb_freqs', 4)
+        self['body_freqs'] = kwargs.pop('body_freqs', 0.5)
+        self['limb_freqs'] = kwargs.pop('limb_freqs', 0.25)
         self['rates'] = kwargs.pop('rates', 10)
         #rates
         #amplitudes
