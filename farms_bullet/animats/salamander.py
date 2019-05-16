@@ -81,7 +81,6 @@ class SalamanderModel(Model):
     @classmethod
     def spawn(cls, iterations, timestep, gait="walking", **kwargs):
         """Spawn salamander"""
-        mass = 0.05
         # Body
         meshes_directory = (
             "{}/salamander/meshes".format(
@@ -97,8 +96,7 @@ class SalamanderModel(Model):
             f_orientation=[0, 0, 0],
             frame_position=[0, 0, 0],
             frame_orientation=[0, 0, 0],
-            joint_axis=[0, 0, 1],
-            mass=mass
+            joint_axis=[0, 0, 1]
         )
         links_body = [
             AnimatLink(
@@ -113,8 +111,7 @@ class SalamanderModel(Model):
                 f_orientation=[0, 0, 0],
                 frame_position=[0, 0, 0],
                 frame_orientation=[0, 0, 0],
-                joint_axis=[0, 0, 1],
-                mass=mass
+                joint_axis=[0, 0, 1]
             )
             for i in range(11)
         ]
@@ -140,8 +137,7 @@ class SalamanderModel(Model):
                     f_orientation=[0, 0, 0],
                     frame_position=[0, 0, 0],
                     frame_orientation=[0, 0, 0],
-                    joint_axis=[0, 0, sign],
-                    mass=0.1
+                    joint_axis=[0, 0, sign]
                 )
                 links_legs[offset+0].parent = 5 if leg_i else 1
                 # Upper leg
@@ -156,8 +152,7 @@ class SalamanderModel(Model):
                     f_orientation=[0, 0, 0],
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    joint_axis=[-sign, 0, 0],
-                    mass=mass
+                    joint_axis=[-sign, 0, 0]
                 )
                 links_legs[offset+1].parent = 12 + offset
                 # Lower leg
@@ -172,8 +167,7 @@ class SalamanderModel(Model):
                     f_orientation=[0, 0, 0],
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    joint_axis=[-sign, 0, 0],
-                    mass=mass
+                    joint_axis=[-sign, 0, 0]
                 )
                 links_legs[offset+2].parent = 12 + offset + 1
                 # Foot
@@ -187,8 +181,7 @@ class SalamanderModel(Model):
                     f_orientation=[0, 0, 0],
                     frame_position=[0, 0, 0],
                     frame_orientation=[0, 0, 0],
-                    joint_axis=[0, 0, 1],
-                    mass=0.1
+                    joint_axis=[0, 0, 1]
                 )
                 links_legs[offset+3].parent = 12 + offset + 2
         links = links_body + links_legs
