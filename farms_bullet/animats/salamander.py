@@ -110,9 +110,6 @@ class SalamanderModel(Model):
             geometry=pybullet.GEOM_MESH,
             filename="{}/salamander_body_0.obj".format(meshes_directory),
             position=body_link_positions[0],
-            orientation=[0, 0, 0],
-            frame_position=[0, 0, 0],
-            frame_orientation=[0, 0, 0],
             joint_axis=[0, 0, 1]
         )
         links_body = [
@@ -123,9 +120,6 @@ class SalamanderModel(Model):
                     i+1
                 ),
                 position=body_link_positions[i+1],
-                orientation=[0, 0, 0],
-                frame_position=[0, 0, 0],
-                frame_orientation=[0, 0, 0],
                 joint_axis=[0, 0, 1]
             )
             for i in range(11)
@@ -147,9 +141,6 @@ class SalamanderModel(Model):
                     geometry=pybullet.GEOM_SPHERE,
                     radius=leg_radius,
                     position=position,
-                    orientation=[0, 0, 0],
-                    frame_position=[0, 0, 0],
-                    frame_orientation=[0, 0, 0],
                     joint_axis=[0, 0, sign]
                 )
                 links_legs[offset+0].parent = 5 if leg_i else 1
@@ -173,7 +164,6 @@ class SalamanderModel(Model):
                     radius=leg_radius,
                     height=0.9*2*leg_length,
                     position=2*position,
-                    orientation=[0, 0, 0],
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     joint_axis=[-sign, 0, 0]
@@ -185,9 +175,6 @@ class SalamanderModel(Model):
                     geometry=pybullet.GEOM_SPHERE,
                     radius=leg_radius,
                     position=2*position,
-                    orientation=[0, 0, 0],
-                    frame_position=[0, 0, 0],
-                    frame_orientation=[0, 0, 0],
                     joint_axis=[0, 0, 1]
                 )
                 links_legs[offset+3].parent = 12 + offset + 2
