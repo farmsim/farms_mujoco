@@ -150,8 +150,6 @@ class SalamanderModel(Model):
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
-                    position=[0, 0, 0],
-                    orientation=[0, 0, 0],
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     joint_axis=[-sign, 0, 0]
