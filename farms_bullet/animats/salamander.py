@@ -87,10 +87,29 @@ class SalamanderModel(Model):
                 os.path.dirname(os.path.realpath(__file__))
             )
         )
+        body_link_positions = [  # From SDF
+            [0, 0, 0],
+            [0.200000003, 0, 0.0069946074],
+            [0.2700000107, 0, 0.010382493],
+            [0.3400000036, 0, 0.0106022889],
+            [0.4099999964, 0, 0.010412137],
+            [0.4799999893, 0, 0.0086611426],
+            [0.5500000119, 0, 0.0043904358],
+            [0.6200000048, 0, 0.0006898994],
+            [0.6899999976, 0, 8.0787e-06],
+            [0.7599999905, 0, -4.89001e-05],
+            [0.8299999833, 0, 0.0001386079],
+            [0.8999999762, 0, 0.0003494423]
+        ]
+        body_link_positions = np.diff(
+            body_link_positions,
+            axis=0,
+            prepend=0
+        )
         base_link = AnimatLink(
             geometry=pybullet.GEOM_MESH,
             filename="{}/salamander_body_0.obj".format(meshes_directory),
-            position=[0, 0, 0],
+            position=body_link_positions[0],
             orientation=[0, 0, 0],
             frame_position=[0, 0, 0],
             frame_orientation=[0, 0, 0],
@@ -103,7 +122,7 @@ class SalamanderModel(Model):
                     meshes_directory,
                     i+1
                 ),
-                position=[0.07 if i > 0 else 0.21, 0, 0],
+                position=body_link_positions[i+1],
                 orientation=[0, 0, 0],
                 frame_position=[0, 0, 0],
                 frame_orientation=[0, 0, 0],
