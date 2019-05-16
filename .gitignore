@@ -7,3 +7,14 @@ GRTAGS
 GTAGS
 __pycache__
 .idea/*
+*.c
+*.cc
+*.h
+*.so
+*.json
+*.html
+*.npy
+*.profile
+*.avi
+*.png
+*.csv
