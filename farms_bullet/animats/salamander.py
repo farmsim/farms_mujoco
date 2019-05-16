@@ -92,8 +92,6 @@ class SalamanderModel(Model):
             filename="{}/salamander_body_0.obj".format(meshes_directory),
             position=[0, 0, 0],
             orientation=[0, 0, 0],
-            f_position=[0, 0, 0],
-            f_orientation=[0, 0, 0],
             frame_position=[0, 0, 0],
             frame_orientation=[0, 0, 0],
             joint_axis=[0, 0, 1]
@@ -107,8 +105,6 @@ class SalamanderModel(Model):
                 ),
                 position=[0.07 if i > 0 else 0.21, 0, 0],
                 orientation=[0, 0, 0],
-                f_position=[0, 0, 0],
-                f_orientation=[0, 0, 0],
                 frame_position=[0, 0, 0],
                 frame_orientation=[0, 0, 0],
                 joint_axis=[0, 0, 1]
@@ -133,8 +129,6 @@ class SalamanderModel(Model):
                     radius=leg_radius,
                     position=position,
                     orientation=[0, 0, 0],
-                    f_position=[0, 0, 0],
-                    f_orientation=[0, 0, 0],
                     frame_position=[0, 0, 0],
                     frame_orientation=[0, 0, 0],
                     joint_axis=[0, 0, sign]
@@ -148,8 +142,6 @@ class SalamanderModel(Model):
                     height=0.9*2*leg_length,
                     position=[0, 0, 0],
                     orientation=[0, 0, 0],
-                    f_position=[0, 0, 0],
-                    f_orientation=[0, 0, 0],
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     joint_axis=[-sign, 0, 0]
@@ -163,8 +155,6 @@ class SalamanderModel(Model):
                     height=0.9*2*leg_length,
                     position=2*position,
                     orientation=[0, 0, 0],
-                    f_position=[0, 0, 0],
-                    f_orientation=[0, 0, 0],
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     joint_axis=[-sign, 0, 0]
@@ -177,8 +167,6 @@ class SalamanderModel(Model):
                     radius=leg_radius,
                     position=2*position,
                     orientation=[0, 0, 0],
-                    f_position=[0, 0, 0],
-                    f_orientation=[0, 0, 0],
                     frame_position=[0, 0, 0],
                     frame_orientation=[0, 0, 0],
                     joint_axis=[0, 0, 1]

@@ -48,15 +48,19 @@ class AnimatLink(dict):
         self.orientation = pybullet.getQuaternionFromEuler(
             kwargs.pop("orientation", [0, 0, 0])
         )
-        self.f_position = kwargs.pop("f_position", [0, 0, 0])
-        self.f_orientation = pybullet.getQuaternionFromEuler(
-            kwargs.pop("f_orientation", [0, 0, 0])
-        )
-        self.parent = kwargs.pop("parent", None)
         self.frame_position = kwargs.pop("frame_position", [0, 0, 0])
-        self.frame_orientation = pybullet.getQuaternionFromEuler(
-            kwargs.pop("frame_orientation", [0, 0, 0])
-        )
+        self.frame_orientation = kwargs.pop("frame_orientation", [0, 0, 0])
+        if len(self.frame_orientation) == 3:
+            self.frame_orientation = pybullet.getQuaternionFromEuler(
+                self.frame_orientation
+            )
+        self.f_position = kwargs.pop("f_position", self.frame_position)
+        self.f_orientation = kwargs.pop("f_orientation", self.frame_orientation)
+        if len(self.f_orientation) == 3:
+            self.f_orientation = pybullet.getQuaternionFromEuler(
+                self.f_orientation
+            )
+        self.parent = kwargs.pop("parent", None)
         self.collision = pybullet.createCollisionShape(
             shapeType=self.geometry,
             collisionFramePosition=self.frame_position,
