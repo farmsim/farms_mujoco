@@ -1,0 +1,3 @@
+include MANIFEST.in *.txt
+include requirements.txt
+recursive-include farms_bullet/animats *.obj
