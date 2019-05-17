@@ -928,7 +928,7 @@ class SalamanderNetworkODE(ODESolver):
     def update_gait(self, gait):
         """Update from gait"""
         self.parameters.update_gait(gait)
-        self._parameters = self.parameters.to_ode_parameters()
+        self._parameters = self.parameters.to_ode_parameters().function
 
     @classmethod
     def walking(cls, n_iterations, timestep):
