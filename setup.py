@@ -29,7 +29,7 @@ setup(
     #     'farms_bullet/templates/*',
     #     'farms_bullet/config/*'
     # ]},
-    include_package_data=True
+    include_package_data=True,
     ext_modules=cythonize([
         Extension(
             "farms_bullet.cy_controller",
