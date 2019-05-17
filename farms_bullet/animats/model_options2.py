@@ -34,8 +34,8 @@ class ModelOptions(dict):
         self['n_legs'] = kwargs.pop("n_legs", 4)
         #oscillators array
         #freq
-        self['body_freqs'] = kwargs.pop('body_freqs', 2)
-        self['limb_freqs'] = kwargs.pop('limb_freqs', 1)
+        self['body_freqs'] = kwargs.pop('body_freqs', 1)
+        self['limb_freqs'] = kwargs.pop('limb_freqs', 0.5)
         self['rates'] = kwargs.pop('rates', 10)
         #rates
         #amplitudes
@@ -52,10 +52,10 @@ class ModelOptions(dict):
                                                   for n in np.arange(self["n_body"])])
         #self['amplitudes'] = np.append(self['left_forelimb_amp'], self['right_forelimb_amp'])
         #weigths for limb
-        self['weigths_body'] = kwargs.pop('weigths_body', 300)
+        self['weigths_body'] = kwargs.pop('weigths_body', 100)
         self['weigths_limb'] = kwargs.pop('weigths_limb', 300)
-        self['weights_limb_to_body'] = kwargs.pop('weights_limb_to_body', 600)
-        self['weights_limb_to_limb'] = kwargs.pop('weights_limb_to_limb', 300)
+        self['weights_limb_to_body'] = kwargs.pop('weights_limb_to_body', 300)
+        self['weights_limb_to_limb'] = kwargs.pop('weights_limb_to_limb', 100)
         self['phi_contra_body'] = kwargs.pop('phi_contra_body', np.pi)
         self['phi_down_body'] = kwargs.pop('phi_down_body', -2*np.pi/self['n_body'])
         self['phi_up_body'] = kwargs.pop('phi_up_body', 2*np.pi/self['n_body'])
@@ -69,35 +69,35 @@ class ModelOptions(dict):
         #connectivity
         self['connec_body'] = kwargs.pop('connec_body', 
                                     [[11, 0, self['weigths_body'], self['phi_contra_body']], [0, 11, self['weigths_body'], self['phi_contra_body']],
-                                     [1, 0, self['weigths_body'], self['phi_up_body']], [0, 1, self['weigths_body'], self['phi_down_body']],
-                                     [12, 11, self['weigths_body'], self['phi_up_body']], [11, 12, self['weigths_body'], self['phi_down_body']],
+                                     [1, 0, self['weigths_body'], 0], [0, 1, self['weigths_body'], 0],
+                                     [12, 11, self['weigths_body'], 0], [11, 12, self['weigths_body'], 0],
                                      [12, 1, self['weigths_body'], self['phi_contra_body']], [1, 12, self['weigths_body'], self['phi_contra_body']],
                                      [2, 1, self['weigths_body'], np.pi], [1, 2, self['weigths_body'], np.pi], 
                                      [13, 12, self['weigths_body'], np.pi], [12, 13, self['weigths_body'], np.pi],
                                      [13, 2, self['weigths_body'], self['phi_contra_body']], [2, 13, self['weigths_body'], self['phi_contra_body']], 
-                                     [3, 2, self['weigths_body'], self['phi_up_body']], [2, 3, self['weigths_body'], self['phi_down_body']],
-                                     [14, 13, self['weigths_body'], self['phi_up_body']], [13, 14, self['weigths_body'], self['phi_down_body']],
+                                     [3, 2, self['weigths_body'], 0], [2, 3, self['weigths_body'], 0],
+                                     [14, 13, self['weigths_body'], 0], [13, 14, self['weigths_body'], 0],
                                      [14, 3, self['weigths_body'], self['phi_contra_body']], [3, 14, self['weigths_body'], self['phi_contra_body']],
-                                     [4, 3, self['weigths_body'], self['phi_up_body']], [3, 4, self['weigths_body'], self['phi_down_body']],
-                                     [15, 14, self['weigths_body'], self['phi_up_body']], [14, 15, self['weigths_body'], self['phi_down_body']],
+                                     [4, 3, self['weigths_body'], 0], [3, 4, self['weigths_body'], 0],
+                                     [15, 14, self['weigths_body'], 0], [14, 15, self['weigths_body'], 0],
                                      [15, 4, self['weigths_body'], self['phi_contra_body']], [4, 15, self['weigths_body'], self['phi_contra_body']],
-                                     [5, 4, self['weigths_body'], self['phi_up_body']], [4, 5, self['weigths_body'], self['phi_down_body']],
-                                     [16, 15, self['weigths_body'], self['phi_up_body']], [15, 16, self['weigths_body'], self['phi_down_body']],
+                                     [5, 4, self['weigths_body'], 0], [4, 5, self['weigths_body'], 0],
+                                     [16, 15, self['weigths_body'], 0], [15, 16, self['weigths_body'], 0],
                                      [16, 5, self['weigths_body'], self['phi_contra_body']], [5, 16, self['weigths_body'], self['phi_contra_body']],
-                                     [6, 5, self['weigths_body'], self['phi_up_body']], [5, 6, self['weigths_body'], self['phi_down_body']],
-                                     [17, 16, self['weigths_body'], self['phi_up_body']], [16, 17, self['weigths_body'], self['phi_down_body']],
+                                     [6, 5, self['weigths_body'], 0], [5, 6, self['weigths_body'], 0],
+                                     [17, 16, self['weigths_body'], 0], [16, 17, self['weigths_body'], 0],
                                      [17, 6, self['weigths_body'], self['phi_contra_body']], [6, 17, self['weigths_body'], self['phi_contra_body']],
                                      [7, 6, self['weigths_body'], self['phi_contra_body']], [6, 7, self['weigths_body'], self['phi_contra_body']],
                                      [18, 17, self['weigths_body'], self['phi_contra_body']], [17, 18, self['weigths_body'], self['phi_contra_body']],
                                      [18, 7, self['weigths_body'], self['phi_contra_body']], [7, 18, self['weigths_body'], self['phi_contra_body']],
-                                     [8, 7, self['weigths_body'], self['phi_up_body']], [7, 8, self['weigths_body'], self['phi_down_body']],
-                                     [19, 18, self['weigths_body'], self['phi_up_body']], [18, 19, self['weigths_body'], self['phi_down_body']],
+                                     [8, 7, self['weigths_body'], 0], [7, 8, self['weigths_body'], 0],
+                                     [19, 18, self['weigths_body'],0], [18, 19, self['weigths_body'], 0],
                                      [19, 8, self['weigths_body'], self['phi_contra_body']], [8, 19, self['weigths_body'], self['phi_contra_body']],
-                                     [9, 8, self['weigths_body'], self['phi_up_body']], [8, 9, self['weigths_body'], self['phi_down_body']],
-                                     [20, 19, self['weigths_body'], self['phi_up_body']], [19, 20, self['weigths_body'], self['phi_down_body']],
+                                     [9, 8, self['weigths_body'], 0], [8, 9, self['weigths_body'], 0],
+                                     [20, 19, self['weigths_body'], 0], [19, 20, self['weigths_body'], 0],
                                      [20, 9, self['weigths_body'], self['phi_contra_body']], [9, 20, self['weigths_body'], self['phi_contra_body']],
-                                     [10, 9, self['weigths_body'], self['phi_up_body']], [9, 10, self['weigths_body'], self['phi_down_body']],
-                                     [21, 20, self['weigths_body'], self['phi_up_body']], [20, 21, self['weigths_body'], self['phi_down_body']],
+                                     [10, 9, self['weigths_body'], 0], [9, 10, self['weigths_body'], 0],
+                                     [21, 20, self['weigths_body'], 0], [20, 21, self['weigths_body'], 0],
                                      [21, 10, self['weigths_body'], self['phi_contra_body']], [10, 21, self['weigths_body'], self['phi_contra_body']]])
         #connection in the limbs itself
         self['connec_left_forelimb'] = kwargs.pop('connec_left_forelimb', [[22, 25, self['weigths_limb'], self['phi_shoulder_contra']],             
@@ -132,8 +132,8 @@ class ModelOptions(dict):
 
         self['connec_left_hindlimb'] = kwargs.pop('connec_left_hindlimb', [[37, 34, self['weigths_limb'], self['phi_shoulder_contra']], 
                                                                            [34, 37, self['weigths_limb'], self['phi_shoulder_contra']], 
-                                                                           [35, 34, self['weigths_limb'], self['phi_shoulder_up']], 
-                                                                           [34, 35, self['weigths_limb'], self['phi_shoulder_down']], 
+                                                                           [35, 34, self['weigths_limb'], self['phi_shoulder_down']],
+                                                                           [34, 35, self['weigths_limb'], self['phi_shoulder_up']],
                                                                            [38, 37, self['weigths_limb'], self['phi_shoulder_down']], 
                                                                            [37, 38, self['weigths_limb'], self['phi_shoulder_up']],
                                                                            [38, 35, self['weigths_limb'], self['phi_shoulder_contra']], 
@@ -160,34 +160,74 @@ class ModelOptions(dict):
                                                                              [45, 42, self['weigths_limb'], np.pi], 
                                                                              [42, 45, self['weigths_limb'], np.pi]])
         #connection from limb to body 
-        self['connec_body_left_forelimb'] = kwargs.pop('connec_body_left_forelimb', [[22, 1, self['weights_limb_to_body'], self['phi_limb_to_body']]]) #, 
-                                                                                     #[25, 1, self['weights_limb_to_body'], 0]])
+        self['connec_body_left_forelimb'] = kwargs.pop('connec_body_left_forelimb', [
+                                                                                     [0, 22, self['weights_limb_to_body'], np.pi],
+                                                                                     [0, 25, self['weights_limb_to_body'], 0],
+                                                                                     [1, 22, self['weights_limb_to_body'], np.pi],
+                                                                                     [1, 25, self['weights_limb_to_body'], 0],
+                                                                                     [7, 22, self['weights_limb_to_body'], np.pi],
+                                                                                     [7, 25, self['weights_limb_to_body'], 0],
+                                                                                     [8, 22, self['weights_limb_to_body'], np.pi],
+                                                                                     [8, 25, self['weights_limb_to_body'], 0],
+                                                                                     [9, 22, self['weights_limb_to_body'], np.pi],
+                                                                                     [9, 25, self['weights_limb_to_body'], 0],
+                                                                                     [10, 22, self['weights_limb_to_body'], np.pi],
+                                                                                     [10, 25, self['weights_limb_to_body'], 0]
+                                                                                     ])
 
-        self['connec_body_right_forelimb'] = kwargs.pop('connec_body_right_forelimb',[[28, 12, self['weights_limb_to_body'], self['phi_limb_to_body']]])#,
-                                                                                     # [31, 12, self['weights_limb_to_body'], 0]])
+        self['connec_body_right_forelimb'] = kwargs.pop('connec_body_right_forelimb', [
+                                                                                      [11, 28, self['weights_limb_to_body'], np.pi],
+                                                                                      [11, 31, self['weights_limb_to_body'], 0],
+                                                                                      [12, 28, self['weights_limb_to_body'], np.pi],
+                                                                                      [12, 31, self['weights_limb_to_body'], 0],
+                                                                                      [18, 28, self['weights_limb_to_body'], np.pi],
+                                                                                      [18, 31, self['weights_limb_to_body'], 0],
+                                                                                      [19, 28, self['weights_limb_to_body'], np.pi],
+                                                                                      [19, 31, self['weights_limb_to_body'], 0],
+                                                                                      [20, 28, self['weights_limb_to_body'], np.pi],
+                                                                                      [20, 31, self['weights_limb_to_body'], 0],
+                                                                                      [21, 28, self['weights_limb_to_body'], np.pi],
+                                                                                      [21, 31, self['weights_limb_to_body'], 0]
+                                                                                       ])
 
-        self['connec_body_left_hindlimb'] = kwargs.pop('connec_body_left_hindlimb',[[34, 4, self['weights_limb_to_body'], self['phi_limb_to_body']]])#,
-                                                                                   # [37, 4, self['weights_limb_to_body'], 0]])
+        self['connec_body_left_hindlimb'] = kwargs.pop('connec_body_left_hindlimb',[
+                                                                                    [6, 34, self['weights_limb_to_body'], np.pi],
+                                                                                    [6, 37, self['weights_limb_to_body'], 0],
+                                                                                    [7, 34, self['weights_limb_to_body'], np.pi],
+                                                                                    [7, 37, self['weights_limb_to_body'], 0],
+                                                                                    [8, 34, self['weights_limb_to_body'], np.pi],
+                                                                                    [8, 37, self['weights_limb_to_body'], 0],
+                                                                                    [9, 34, self['weights_limb_to_body'], np.pi],
+                                                                                    [9, 37, self['weights_limb_to_body'], 0]
+                                                                                    ])
 
-        self['connec_body_right_hindlimb'] = kwargs.pop('connec_body_right_hindlimb',[[40, 15, self['weights_limb_to_body'], self['phi_limb_to_body']]])#, 
-                                                                                      #[43, 15, self['weights_limb_to_body'], 0]])
+        self['connec_body_right_hindlimb'] = kwargs.pop('connec_body_right_hindlimb',[
+                                                                                      [17, 40, self['weights_limb_to_body'], np.pi],
+                                                                                      [17, 43, self['weights_limb_to_body'], 0],
+                                                                                      [18, 40, self['weights_limb_to_body'], np.pi],
+                                                                                      [18, 43, self['weights_limb_to_body'], 0],
+                                                                                      [19, 40, self['weights_limb_to_body'], np.pi],
+                                                                                      [19, 43, self['weights_limb_to_body'], 0],
+                                                                                      [20, 40, self['weights_limb_to_body'], np.pi],
+                                                                                      [20, 43, self['weights_limb_to_body'], 0]
+                                                                                      ])
         #to be check
-        self['connec_inter_limb'] = kwargs.pop('connec_inter_limb', [[25, 34, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [34, 25, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [22, 37, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [37, 22, self['weights_limb_to_limb'], self['phi_limb_to_limb']],
-                                                                     [31, 40, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [40, 31, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [28, 43, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [43, 28, self['weights_limb_to_limb'], self['phi_limb_to_limb']],
-                                                                     [22, 28, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [28, 22, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [25, 31, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [31, 25, self['weights_limb_to_limb'], self['phi_limb_to_limb']],
-                                                                     [34, 40, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [40, 34, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [37, 43, self['weights_limb_to_limb'], self['phi_limb_to_limb']], 
-                                                                     [43, 37, self['weights_limb_to_limb'], self['phi_limb_to_limb']]])
+        self['connec_inter_limb'] = kwargs.pop('connec_inter_limb', [[25, 37, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [37, 25, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [22, 34, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [34, 22, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [31, 43, self['weights_limb_to_limb'], self['phi_limb_to_limb']],
+                                                                     [43, 31, self['weights_limb_to_limb'], self['phi_limb_to_limb']],
+                                                                     [28, 40, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [40, 28, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [22, 28, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [28, 22, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [25, 31, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [31, 25, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [34, 40, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [40, 34, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [37, 43, self['weights_limb_to_limb'], self['phi_limb_to_limb']], #
+                                                                     [43, 37, self['weights_limb_to_limb'], self['phi_limb_to_limb']]]) #
 
         self['joints_body_offset'] = kwargs.pop('joints_body_offset', np.zeros(self['n_body']))
         self['joints_limb_offset'] = kwargs.pop('joints_limb_offset', [self["leg_{}_offset".format(i)] for i in range(self['n_dof_legs'])]*4)

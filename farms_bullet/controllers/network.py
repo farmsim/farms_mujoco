@@ -434,7 +434,7 @@ class  OscillatorArray(NetworkArray):
         drive_up_sat = 5
         dim_body = 22
         if drive_low_sat <= drive_speed <= drive_up_sat:
-            self.amplitudes_desired[:dim_body] = 0.1 + 0.04 * drive_speed
+            self.amplitudes_desired[:dim_body] = np.append(np.linspace(0.1, 0.5, 11)/2,np.linspace(0.1, 0.5, 11)/2)  + 0.04 * drive_speed
         else:
             self.amplitudes_desired[:dim_body] = 0
 
@@ -472,14 +472,13 @@ class  OscillatorArray(NetworkArray):
                     self.amplitudes_desired[
                         legosc2index(leg_i=i, side_i=j, joint_i=5)] = 0.1 + 0.1 * drive_speed
 
+                    print('====update amplitudes walking=====')
+                    print(self.amplitudes_desired)
+
         else:
-            self.amplitudes_desired[dim_body:-1] = 0
-            for i in np.arange(2):
-                for j in np.arange(2):
-                    self.amplitudes_desired[
-                        legosc2index(leg_i=i, side_i=j, joint_i=3)] = 0
-                    self.amplitudes_desired[
-                        legosc2index(leg_i=i, side_i=j, joint_i=0)] = 0
+            self.amplitudes_desired[dim_body:] = 0
+            print('====update amplitudes swimming=====')
+            print(self.amplitudes_desired)
 
     def update_drives(self, drive_speed, drive_turn):
         """
@@ -874,13 +873,16 @@ class ConnectivityArray(NetworkArray):
         body_connections = _options['connec_body']
         limb_connections = _options['connec_left_forelimb'] + _options['connec_right_forelimb'] + _options['connec_left_hindlimb'] + _options['connec_right_hindlimb']
         body_to_limb_connections = _options['connec_body_left_forelimb'] + _options['connec_body_right_forelimb'] + _options['connec_body_left_hindlimb'] + _options['connec_body_right_hindlimb']
-        connectivity = body_connections + limb_connections + body_to_limb_connections
+        limb_to_limb_connections = _options['connec_inter_limb']
+        connectivity = body_connections + limb_connections + body_to_limb_connections + limb_to_limb_connections
 
-        debug = False
+        debug = True
         if debug == True:
             print("-----connectivity-----")
             for i in np.arange(0,len(connectivity)):
                 print(connectivity[i][:])
+            print(np.shape(connectivity))
+            #§  pdb.set_trace()
 
         return connectivity
 
@@ -941,6 +943,7 @@ class JointsArray(NetworkArray):
                     options["leg_{}_offset".format(i)]
                 )
         rates = 10 * np.ones(n_joints)
+
         return offsets, rates
 
     @staticmethod
@@ -974,6 +977,8 @@ class JointsArray(NetworkArray):
             print(offsets)
             print('-----rates-----')
             print(rates)
+            #pdb.set_trace()
+
         return offsets, rates
 
     @classmethod
@@ -1024,12 +1029,18 @@ class JointsArray(NetworkArray):
                     self.offsets[legjoint2index(leg_i, side_i, 0)] = 0
                     self.offsets[legjoint2index(leg_i, side_i, 1)] = np.pi/32
                     self.offsets[legjoint2index(leg_i, side_i, 2)] = np.pi/8
+                    print('=====update walking offsets=====')
+                    print(self.offsets)
+
         else:
             for leg_i in range(2):
                 for side_i in range(2):
                     self.offsets[legjoint2index(leg_i, side_i, 0)] = -2*np.pi/5
                     self.offsets[legjoint2index(leg_i, side_i, 1)] = 0
                     self.offsets[legjoint2index(leg_i, side_i, 2)] = 0
+                    print('=====update swimming offsets=====')
+                    print(self.offsets)
+                    #pdb.set_trace()
 
 
 class SalamanderNetworkODE(ODESolver):
