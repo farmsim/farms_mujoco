@@ -14,6 +14,13 @@ def parse_args():
         help="Simulation timestep"
     )
     parser.add_argument(
+        "--duration",
+        type=float,
+        dest="duration",
+        default=100,
+        help="Simulation duration"
+    )
+    parser.add_argument(
         "-f", "--free_camera",
         action="store_true",
         dest="free_camera",
