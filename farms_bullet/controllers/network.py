@@ -1,6 +1,7 @@
 """Network"""
 
 import numpy as np
+from scipy import integrate
 from ..cy_controller import ode_oscillators_sparse, rk4, euler
 from .convention import bodyjoint2index, legjoint2index
 from .control_options import SalamanderControlOptions
@@ -52,15 +53,15 @@ class CyODESolver:
 
     def step(self):
         """Control step"""
-        self.ode.solver(
-            self.ode.function,
-            self._timestep,
-            self._state,
-            self._n_dim,
-            self._iteration,
-            *self._parameters.solver,
-            self._parameters.function
-        )
+        # self.ode.solver(
+        #     self.ode.function,
+        #     self._timestep,
+        #     self._state,
+        #     self._n_dim,
+        #     self._iteration,
+        #     *self._parameters.solver,
+        #     self._parameters.function
+        # )
         self._iteration += 1
 
 
@@ -900,6 +901,19 @@ class SalamanderNetworkODE(ODESolver):
             for side_i in range(2)
             for joint_i in range(n_legs_dofs)
         ]
+        self.dstate = np.copy(self.state.array[0, 0, :])
+        self.solver = integrate.ode(f=self.fun)
+        self.solver.set_integrator("dopri5")
+        self._time = 0
+
+    def fun(self, _time, state):
+        """ODE function"""
+        self.ode.function(
+            self.dstate,
+            state,
+            *self.parameters.to_ode_parameters().function
+        )
+        return self.dstate
 
     @classmethod
     def from_gait(cls, gait, n_iterations, timestep):
@@ -931,6 +945,23 @@ class SalamanderNetworkODE(ODESolver):
 
     def control_step(self):
         """Control step"""
+        # self.state.array[self._iteration+1, 0, :] = integrate.odeint(
+        #     func=self.fun,
+        #     y0=np.copy(self.state.array[self._iteration, 0, :]),
+        #     t=np.linspace(0, self._timestep, 10),
+        #     tfirst=True
+        # )[-1]
+        self.solver.set_initial_value(
+            self.state.array[self._iteration, 0, :],
+            self._time
+        )
+        self._time += self._timestep
+        self.solver.integrate(self._time)
+        self.state.array[self._iteration+1, 0, :] = self.solver.y
+        self.state.array[self._iteration+1, 1, :] = (
+            self.state.array[self._iteration+1, 0, :]
+            - self.state.array[self._iteration, 0, :]
+        )/self._timestep
         self.step()
         return self.current_state
 
