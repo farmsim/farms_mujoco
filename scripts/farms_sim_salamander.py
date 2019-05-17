@@ -16,7 +16,10 @@ def main():
     #     frequency=1.7,
     #     body_stand_amplitude=0.42
     # )
-    simulation_options = SimulationOptions.with_clargs(duration=100)
+    simulation_options = SimulationOptions.with_clargs(
+        timestep=1e-3,
+        duration=50
+    )
     run_simulation(
         simulation_options=simulation_options,
         animat_options=animat_options
