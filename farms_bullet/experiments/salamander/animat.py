@@ -275,12 +275,11 @@ class Salamander(Animat):
             for i, foot in enumerate(self.model.feet)
         })
         # Joints
-        n_joints = pybullet.getNumJoints(self._identity)
         self.sensors.add({
             "joints": JointsStatesSensor(
                 self.n_iterations,
                 self._identity,
-                np.arange(n_joints),
+                np.arange(self.n_joints()),
                 enable_ft=True
             )
         })
