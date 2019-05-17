@@ -905,13 +905,14 @@ class SalamanderNetworkODE(ODESolver):
         self.solver = integrate.ode(f=self.fun)
         self.solver.set_integrator("dopri5")
         self._time = 0
+        self._parameters = self.parameters.to_ode_parameters().function
 
     def fun(self, _time, state):
         """ODE function"""
         self.ode.function(
             self.dstate,
             state,
-            *self.parameters.to_ode_parameters().function
+            *self._parameters
         )
         return self.dstate
 
