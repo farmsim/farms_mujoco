@@ -869,12 +869,165 @@ class ConnectivityArray(NetworkArray):
 
     @staticmethod
     def load_params():
-        _options = ModelOptions()
-        body_connections = _options['connec_body']
-        limb_connections = _options['connec_left_forelimb'] + _options['connec_right_forelimb'] + _options['connec_left_hindlimb'] + _options['connec_right_hindlimb']
-        body_to_limb_connections = _options['connec_body_left_forelimb'] + _options['connec_body_right_forelimb'] + _options['connec_body_left_hindlimb'] + _options['connec_body_right_hindlimb']
-        limb_to_limb_connections = _options['connec_inter_limb']
-        connectivity = body_connections + limb_connections + body_to_limb_connections + limb_to_limb_connections
+        opt = ModelOptions()
+        # body_connections = _options['connec_body']
+        # limb_connections = _options['connec_left_forelimb'] + _options['connec_right_forelimb'] + _options['connec_left_hindlimb'] + _options['connec_right_hindlimb']
+        # body_to_limb_connections = _options['connec_body_left_forelimb'] + _options['connec_body_right_forelimb'] + _options['connec_body_left_hindlimb'] + _options['connec_body_right_hindlimb']
+        # limb_to_limb_connections = _options['connec_inter_limb']
+        # connectivity = body_connections + limb_connections + body_to_limb_connections + limb_to_limb_connections
+        n_body = opt['n_body']
+        n_dof_leg = opt['n_dof_legs']
+        n_leg = 4
+        w_body = opt['weigths_body']
+        w_leg = opt['weigths_limb']
+        phi_contra_body = opt['phi_contra_body']
+        phi_up_body = opt['phi_up_body']
+        phi_down_body = opt['phi_down_body']
+
+        connectivity = np.zeros([1, 4])
+        # body connectivity
+        for i in np.arange(n_body):
+            # contralateral connectivity
+            connectivity = np.vstack((connectivity, [i, i + n_body, w_body, phi_contra_body]))
+            connectivity = np.vstack((connectivity, [i + n_body, i, w_body, phi_contra_body]))
+            if i < n_body - 1:
+                # left side of body
+                connectivity = np.vstack((connectivity, [i, i + 1, w_body, phi_down_body]))
+                connectivity = np.vstack((connectivity, [i + 1, i, w_body, phi_up_body]))
+                # right side of body
+                connectivity = np.vstack((connectivity, [i + n_body, i + n_body + 1, w_body, phi_down_body]))
+                connectivity = np.vstack((connectivity, [i + n_body + 1, i + n_body, w_body, phi_up_body]))
+
+        leg_offset = 2 * n_body
+        left_forelimb_offset = 0 + leg_offset
+        right_forelimb_offset = (2 * n_dof_leg) + leg_offset
+        left_hindlimb_offset = 2 * (2 * n_dof_leg) + leg_offset
+        right_hindlimb_offset = 3 * (2 * n_dof_leg) + leg_offset
+
+        for i in np.arange(2 * n_dof_leg):
+            if i == 0 or np.mod(i, 3) == 0:  # shoulder
+                # left forelimb shoulder
+                connectivity = np.vstack(
+                    (connectivity,
+                     [i + left_forelimb_offset, i + left_forelimb_offset + 1, w_leg, opt['phi_shoulder_up']]))
+                connectivity = np.vstack(
+                    (connectivity,
+                     [i + left_forelimb_offset + 1, i + left_forelimb_offset, w_leg, opt['phi_shoulder_down']]))
+                # right forelimb shoulder
+                connectivity = np.vstack(
+                    (connectivity,
+                     [i + right_forelimb_offset, i + right_forelimb_offset + 1, w_leg, opt['phi_shoulder_up']]))
+                connectivity = np.vstack(
+                    (connectivity, [i + right_forelimb_offset + 1, i + right_forelimb_offset, w_leg,
+                                    opt['phi_shoulder_down']]))
+                # left hindlim shoulder
+                connectivity = np.vstack(
+                    (connectivity,
+                     [i + left_hindlimb_offset, i + left_hindlimb_offset + 1, w_leg, opt['phi_shoulder_up']]))
+                connectivity = np.vstack(
+                    (connectivity,
+                     [i + left_hindlimb_offset + 1, i + left_hindlimb_offset, w_leg, opt['phi_shoulder_down']]))
+                # right hindlimb shoulder
+                connectivity = np.vstack(
+                    (connectivity,
+                     [i + right_hindlimb_offset, i + right_hindlimb_offset + 1, w_leg, opt['phi_shoulder_up']]))
+                connectivity = np.vstack(
+                    (connectivity, [i + right_hindlimb_offset + 1, i + right_hindlimb_offset, w_leg,
+                                    opt['phi_shoulder_down']]))
+
+            if i == 1 or i == 1 + n_dof_leg:  # knee
+                connectivity = np.vstack(
+                    (connectivity, [i + left_forelimb_offset, i + left_forelimb_offset + 1, w_leg, 0]))
+                connectivity = np.vstack(
+                    (connectivity, [i + left_forelimb_offset + 1, i + left_forelimb_offset, w_leg, 0]))
+                # right forelimb shoulder
+                connectivity = np.vstack(
+                    (connectivity, [i + right_forelimb_offset, i + right_forelimb_offset + 1, w_leg, 0]))
+                connectivity = np.vstack(
+                    (connectivity, [i + right_forelimb_offset + 1, i + right_forelimb_offset, w_leg, 0]))
+                # left hindlim shoulder
+                connectivity = np.vstack(
+                    (connectivity, [i + left_hindlimb_offset, i + left_hindlimb_offset + 1, w_leg, 0]))
+                connectivity = np.vstack(
+                    (connectivity, [i + left_hindlimb_offset + 1, i + left_hindlimb_offset, w_leg, 0]))
+                # right hindlimb shoulder
+                connectivity = np.vstack(
+                    (connectivity, [i + right_hindlimb_offset, i + right_hindlimb_offset + 1, w_leg, 0]))
+                connectivity = np.vstack(
+                    (connectivity, [i + right_hindlimb_offset + 1, i + right_hindlimb_offset, w_leg, 0]))
+
+        for i in np.arange(n_dof_leg):  # contralateral connexion
+            if i == n_dof_leg - 1:
+                phi = 0
+            else:
+                phi = np.pi
+            # left forelimb
+            connectivity = np.vstack(
+                (connectivity, [i + left_forelimb_offset, i + left_forelimb_offset + n_dof_leg, w_leg, phi]))
+            connectivity = np.vstack(
+                (connectivity, [i + left_forelimb_offset + n_dof_leg, i + left_forelimb_offset, w_leg, phi]))
+
+            connectivity = np.vstack(
+                (connectivity, [i + right_forelimb_offset, i + right_forelimb_offset + n_dof_leg, w_leg, phi]))
+            connectivity = np.vstack(
+                (connectivity, [i + right_forelimb_offset + n_dof_leg, i + right_forelimb_offset, w_leg, phi]))
+
+            connectivity = np.vstack(
+                (connectivity, [i + left_hindlimb_offset, i + left_hindlimb_offset + n_dof_leg, w_leg, phi]))
+            connectivity = np.vstack(
+                (connectivity, [i + left_hindlimb_offset + n_dof_leg, i + left_hindlimb_offset, w_leg, phi]))
+
+            connectivity = np.vstack(
+                (connectivity, [i + right_hindlimb_offset, i + right_hindlimb_offset + n_dof_leg, w_leg, phi]))
+            connectivity = np.vstack(
+                (connectivity, [i + right_hindlimb_offset + n_dof_leg, i + right_hindlimb_offset, w_leg, phi]))
+
+        # left forelimb connection to body
+        connectivity = np.vstack((connectivity, [0, 22, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [0, 25, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [1, 22, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [1, 25, 3 * w_body, 0]))
+        # right forelimb connection to body
+        connectivity = np.vstack((connectivity, [11, 28, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [11, 31, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [12, 28, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [12, 31, 3 * w_body, 0]))
+        # left hindlimb connections to body
+        connectivity = np.vstack((connectivity, [6, 34, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [6, 37, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [7, 34, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [7, 37, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [8, 34, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [8, 37, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [9, 34, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [9, 37, 3 * w_body, 0]))
+        # right hindlimb connections to body
+        connectivity = np.vstack((connectivity, [17, 40, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [17, 43, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [18, 40, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [18, 43, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [19, 40, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [19, 43, 3 * w_body, 0]))
+        connectivity = np.vstack((connectivity, [20, 40, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [20, 43, 3 * w_body, 0]))
+
+        # leg to leg connections
+        connectivity = np.vstack((connectivity, [22, 34, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [34, 22, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [22, 28, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [28, 22, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [40, 34, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [34, 40, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [28, 40, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [40, 28, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [25, 37, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [37, 25, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [43, 37, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [37, 43, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [25, 31, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [31, 25, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [31, 43, 3 * w_body, np.pi]))
+        connectivity = np.vstack((connectivity, [43, 31, 3 * w_body, np.pi]))
 
         debug = True
         if debug == True:
