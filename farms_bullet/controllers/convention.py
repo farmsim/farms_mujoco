@@ -26,3 +26,8 @@ def legjoint2index(
         + side_i*n_legs_dof
         + joint_i
     )
+
+def leg2body_connexion(osc_i, osc_j, phi_BtoL, n_body_joints=11, w_BtoL = 300):
+    return [osc_i, osc_j, w_BtoL, phi_BtoL]
+
+
