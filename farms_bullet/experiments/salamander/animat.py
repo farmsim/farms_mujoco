@@ -121,13 +121,12 @@ class SalamanderModel(Model):
                     i+1
                 ),
                 position=body_link_positions[i+1],
+                parent=i,
                 joint_axis=[0, 0, 1],
                 color=body_color
             )
             for i in range(11)
         ]
-        for i in range(11):
-            links_body[i].parent = i
         links_legs = [None for i in range(4) for j in range(4)]
         leg_length = 0.03
         leg_radius = 0.015
@@ -143,9 +142,9 @@ class SalamanderModel(Model):
                     geometry=pybullet.GEOM_SPHERE,
                     radius=leg_radius,
                     position=position,
+                    parent=5 if leg_i else 1,
                     joint_axis=[0, 0, sign]
                 )
-                links_legs[offset+0].parent = 5 if leg_i else 1
                 # Upper leg
                 position[1] = leg_offset
                 links_legs[offset+1] = AnimatLink(
@@ -154,9 +153,9 @@ class SalamanderModel(Model):
                     height=0.9*2*leg_length,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
+                    parent=12+offset,
                     joint_axis=[-sign, 0, 0]
                 )
-                links_legs[offset+1].parent = 12 + offset
                 # Lower leg
                 position[1] = leg_offset
                 links_legs[offset+2] = AnimatLink(
@@ -166,18 +165,18 @@ class SalamanderModel(Model):
                     position=2*position,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
+                    parent=12+offset+1,
                     joint_axis=[-sign, 0, 0]
                 )
-                links_legs[offset+2].parent = 12 + offset + 1
                 # Foot
                 position[1] = leg_offset
                 links_legs[offset+3] = AnimatLink(
                     geometry=pybullet.GEOM_SPHERE,
                     radius=leg_radius,
                     position=2*position,
+                    parent=12+offset+2,
                     joint_axis=[0, 0, 1]
                 )
-                links_legs[offset+3].parent = 12 + offset + 2
         links = links_body + links_legs
         identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
