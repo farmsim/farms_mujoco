@@ -303,33 +303,6 @@ class Salamander(Animat):
         """Joints"""
         return self.model.joints
 
-    def animat_sensors(self, sim_step):
-        """Animat sensors update"""
-        tic_sensors = time.time()
-        # self.model.sensors.update(
-        #     sim_step,
-        #     identity=self.identity,
-        #     links=[self.links[foot] for foot in self.model.feet],
-        #     joints=[
-        #         self.joints[joint]
-        #         for joint in self.model.sensors.joints_sensors
-        #     ]
-        # )
-        self.sensors.update(sim_step)
-        # # Commands
-        # self.model.motors.update(
-        #     identity=self.identity,
-        #     joints_body=[
-        #         self.joints[joint]
-        #         for joint in self.model.motors.joints_commanded_body
-        #     ],
-        #     joints_legs=[
-        #         self.joints[joint]
-        #         for joint in self.model.motors.joints_commanded_legs
-        #     ]
-        # )
-        return time.time() - tic_sensors
-
     def animat_control(self):
         """Control animat"""
         # Control
@@ -348,10 +321,3 @@ class Salamander(Animat):
                 self.links
             )
         return forces
-
-    # def animat_logging(self, sim_step):
-    #     """Animat logging"""
-    #     # Contacts during walking
-    #     tic_log = time.time()
-    #     self.logger.update(sim_step-1)
-    #     return time.time() - tic_log

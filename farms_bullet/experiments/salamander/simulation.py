@@ -85,7 +85,7 @@ class SalamanderSimulation(Simulation):
         """Simulation step"""
         self.tic_rt[0] = time.time()
         # Animat sensors
-        self.elements.animat.animat_sensors(sim_step)
+        self.elements.animat.sensors.update(sim_step)
         if sim_step < self.options.n_iterations-1:
             if not self.options.headless:
                 self.animat_interface()
