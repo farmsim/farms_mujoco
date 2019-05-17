@@ -105,12 +105,13 @@ class SalamanderModel(Model):
             axis=0,
             prepend=0
         )
+        body_color = [0, 0.3, 0, 1]
         base_link = AnimatLink(
             geometry=pybullet.GEOM_MESH,
             filename="{}/salamander_body_0.obj".format(meshes_directory),
             position=body_link_positions[0],
             joint_axis=[0, 0, 1],
-            color=[0, 0.3, 0, 1]
+            color=body_color
         )
         links_body = [
             AnimatLink(
@@ -121,7 +122,7 @@ class SalamanderModel(Model):
                 ),
                 position=body_link_positions[i+1],
                 joint_axis=[0, 0, 1],
-                color=[0, 0.3, 0, 1]
+                color=body_color
             )
             for i in range(11)
         ]
