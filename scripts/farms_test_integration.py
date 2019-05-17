@@ -592,7 +592,7 @@ def test_cython_sparse(times):
     plt.grid(True)
 
 
-def freqs_function(_time, n_dim, freq=3):
+def freqs_function(_time, n_dim, freq=10):
     """Frequency function"""
     return 2*np.pi*0.1*np.ones(n_dim)*(np.sin(2*np.pi*freq*_time))
 
