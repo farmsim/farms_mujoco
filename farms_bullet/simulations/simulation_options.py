@@ -12,7 +12,7 @@ class SimulationOptions(dict):
     def __init__(self, **kwargs):
         super(SimulationOptions, self).__init__()
         self.timestep = kwargs.pop("timestep", 1e-3)
-        self.duration = kwargs.pop("duration", 10)
+        self.duration = kwargs.pop("duration", 100)
         self.n_iterations = int(self.duration / self.timestep)
         self.gait = kwargs.pop("gait", "walking")
         self.free_camera = kwargs.pop("free_camera", False)
@@ -32,6 +32,8 @@ class SimulationOptions(dict):
         """Create simulation options and consider command-line arguments"""
         clargs = parse_args()
         return cls(
+            timestep=kwargs.pop("free_camera", clargs.timestep),
+            duration=kwargs.pop("duration", clargs.duration),
             free_camera=kwargs.pop("free_camera", clargs.free_camera),
             rotating_camera=kwargs.pop(
                 "rotating_camera",
