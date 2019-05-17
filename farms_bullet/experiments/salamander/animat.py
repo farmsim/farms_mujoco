@@ -42,8 +42,8 @@ class SalamanderModel(Model):
             )
         for leg_i in range(2):
             for side_i in range(2):
-                offset = 12 + 2*4*leg_i + 4*side_i
-                for part_i in range(4):
+                offset = 12 + 2*3*leg_i + 3*side_i
+                for part_i in range(3):
                     side = "R" if side_i else "L"
                     self.links[
                         'link_leg_{}_{}_{}'.format(
@@ -71,10 +71,10 @@ class SalamanderModel(Model):
             **kwargs
         )
         self.feet = [
-            "link_leg_0_L_3",
-            "link_leg_0_R_3",
-            "link_leg_1_L_3",
-            "link_leg_1_R_3"
+            "link_leg_0_L_2",
+            "link_leg_0_R_2",
+            "link_leg_1_L_2",
+            "link_leg_1_R_2"
         ]
         self.sensors = ModelSensors(self, iterations)
 
@@ -127,12 +127,12 @@ class SalamanderModel(Model):
             )
             for i in range(11)
         ]
-        links_legs = [None for i in range(4) for j in range(4)]
+        links_legs = [None for i in range(4) for j in range(3)]
         leg_length = 0.03
         leg_radius = 0.015
         for leg_i in range(2):
             for side in range(2):
-                offset = 2*4*leg_i + 4*side
+                offset = 2*3*leg_i + 3*side
                 sign = 1 if side else -1
                 leg_offset = sign*leg_length
                 # Shoulder
@@ -167,15 +167,6 @@ class SalamanderModel(Model):
                     frame_orientation=[np.pi/2, 0, 0],
                     parent=12+offset+1,
                     joint_axis=[-sign, 0, 0]
-                )
-                # Foot
-                position[1] = leg_offset
-                links_legs[offset+3] = AnimatLink(
-                    geometry=pybullet.GEOM_SPHERE,
-                    radius=leg_radius,
-                    position=2*position,
-                    parent=12+offset+2,
-                    joint_axis=[0, 0, 1]
                 )
         links = links_body + links_legs
         identity = pybullet.createMultiBody(
@@ -222,7 +213,7 @@ class SalamanderModel(Model):
         """Activate/Deactivate leg collisions"""
         for leg_i in range(2):
             for side in ["L", "R"]:
-                for joint_i in range(3):
+                for joint_i in range(2):
                     link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
                     pybullet.setCollisionFilterPair(
                         bodyUniqueIdA=self.identity,
