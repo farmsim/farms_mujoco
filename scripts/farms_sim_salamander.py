@@ -2,7 +2,7 @@
 """Run salamander simulation with bullet"""
 
 import matplotlib.pyplot as plt
-from farms_bullet.simulations.salamander import main as run_simulation
+from farms_bullet.experiments.salamander.simulation import main as run_simulation
 from farms_bullet.animats.model_options import ModelOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
@@ -38,6 +38,7 @@ def pycall():
     from pycallgraph.output import GraphvizOutput
     with PyCallGraph(output=GraphvizOutput()):
         main()
+
 
 if __name__ == '__main__':
     # main()

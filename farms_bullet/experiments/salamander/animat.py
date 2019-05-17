@@ -6,18 +6,18 @@ import numpy as np
 
 import pybullet
 
-from .animat import Animat
-from .link import AnimatLink
-from .model import Model
-from ..plugins.swimming import viscous_swimming
-from ..sensors.sensor import (
+from ...animats.animat import Animat
+from ...animats.link import AnimatLink
+from ...animats.model import Model
+from ...plugins.swimming import viscous_swimming
+from ...sensors.sensor import (
     Sensors,
     JointsStatesSensor,
     ContactSensor,
     LinkStateSensor
 )
-from ..sensors.model_sensors import ModelSensors
-from ..controllers.control import SalamanderController
+from ...sensors.model_sensors import ModelSensors
+from ...controllers.control import SalamanderController
 
 
 class SalamanderModel(Model):
@@ -83,7 +83,7 @@ class SalamanderModel(Model):
         """Spawn salamander"""
         # Body
         meshes_directory = (
-            "{}/salamander/meshes".format(
+            "{}/meshes".format(
                 os.path.dirname(os.path.realpath(__file__))
             )
         )

@@ -3,14 +3,14 @@
 import time
 import numpy as np
 import pybullet
-from .simulation import Simulation, SimulationElements
-from .simulation_options import SimulationOptions
-from ..animats.salamander import Salamander
-from ..animats.model_options import ModelOptions
-from ..arenas.arena import FlooredArena
-from ..interface.interface import Interfaces
-from ..simulations.simulator import real_time_handing
-from ..sensors.logging import SensorsLogger
+from ...simulations.simulation import Simulation, SimulationElements
+from ...simulations.simulation_options import SimulationOptions
+from .animat import Salamander
+from ...animats.model_options import ModelOptions
+from ...arenas.arena import FlooredArena
+from ...interface.interface import Interfaces
+from ...simulations.simulator import real_time_handing
+from ...sensors.logging import SensorsLogger
 
 
 class SalamanderSimulation(Simulation):
