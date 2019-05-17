@@ -303,11 +303,6 @@ class Salamander(Animat):
         """Joints"""
         return self.model.joints
 
-    def step(self):
-        """Step"""
-        self.animat_physics()
-        self.animat_control()
-
     def animat_sensors(self, sim_step):
         """Animat sensors update"""
         tic_sensors = time.time()

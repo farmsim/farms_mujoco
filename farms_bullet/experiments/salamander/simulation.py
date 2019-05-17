@@ -85,16 +85,16 @@ class SalamanderSimulation(Simulation):
         """Simulation step"""
         self.tic_rt[0] = time.time()
         # Animat sensors
-        time_sensors = self.elements.animat.animat_sensors(sim_step)
+        self.elements.animat.animat_sensors(sim_step)
         if sim_step < self.options.n_iterations-1:
             if not self.options.headless:
                 self.animat_interface()
             # Plugins
-            external_forces = self.elements.animat.animat_physics()
+            self.elements.animat.animat_physics()
             # if external_forces is not None:
             #     self.forces_torques[sim_step] = external_forces
             # Control animat
-            time_control = self.elements.animat.animat_control()
+            self.elements.animat.animat_control()
             # Interface
             # Physics
             pybullet.stepSimulation()
