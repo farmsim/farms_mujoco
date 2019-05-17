@@ -7,6 +7,13 @@ def parse_args():
     """ Parse arguments """
     parser = argparse.ArgumentParser(description="Salamander simulation")
     parser.add_argument(
+        "--timestep",
+        type=float,
+        dest="timestep",
+        default=1e-3,
+        help="Simulation timestep"
+    )
+    parser.add_argument(
         "-f", "--free_camera",
         action="store_true",
         dest="free_camera",

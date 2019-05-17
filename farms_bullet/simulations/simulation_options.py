@@ -32,6 +32,7 @@ class SimulationOptions(dict):
         """Create simulation options and consider command-line arguments"""
         clargs = parse_args()
         return cls(
+            timestep=kwargs.pop("free_camera", clargs.timestep),
             free_camera=kwargs.pop("free_camera", clargs.free_camera),
             rotating_camera=kwargs.pop(
                 "rotating_camera",
