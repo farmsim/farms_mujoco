@@ -165,6 +165,7 @@ class SalamanderNetworkParameters(ODE):
             ]))],
             [oscillators, connectivity, joints]
         )
+        
 
     @classmethod
     def from_gait(cls, gait):
@@ -258,6 +259,7 @@ class  OscillatorArray(NetworkArray):
         super(OscillatorArray, self).__init__(array)
         self._array = array
         self._original_amplitudes_desired = np.copy(array[2])
+        self._opt = ModelOptions()
         #my implementation
         
 
@@ -448,33 +450,19 @@ class  OscillatorArray(NetworkArray):
         drive_low_sat = 1
         drive_up_sat = 3
         dim_body = 22
+        forelimb_amp = np.append(self._opt['left_forelimb_amp'], self._opt['right_forelimb_amp'])
+        hindlimb_amp = np.append(self._opt['left_hindlimb_amp'], self._opt['right_hindlimb_amp'])
+        limb_amp = np.append(forelimb_amp, hindlimb_amp)
 
         if drive_low_sat <= drive_speed <= drive_up_sat:
-            pass
             # # characterizing the elbow amplitudes
-            # for i in np.arange(2):
-            #     for j in np.arange(2):
-            #         # forward motion of the shoulder 0-90
-            #         self.amplitudes_desired[
-            #             legosc2index(leg_i=i, side_i=j, joint_i=0)] = 0.2 + 0.2 * drive_speed
-            #         # up-down motion of the shoulder lower side
-            #         self.amplitudes_desired[
-            #             legosc2index(leg_i=i, side_i=j, joint_i=1)] = 0.045 + 0.045 * drive_speed
-            #         # knee motion but doesn't seem to high for a motion
-            #         self.amplitudes_desired[
-            #             legosc2index(leg_i=i, side_i=j, joint_i=2)] = 0.1 + 0.1 * drive_speed
-            #         # forward motion of the shoulder 90-180
-            #         self.amplitudes_desired[
-            #             legosc2index(leg_i=i, side_i=j, joint_i=3)] = 0.2 + 0.2 * drive_speed
-            #         # up-down motion of the shoulder upper side
-            #         self.amplitudes_desired[
-            #             legosc2index(leg_i=i, side_i=j, joint_i=4)] = 0.045 + 0.045 * drive_speed
-            #         # up-down motion of the knee
-            #         self.amplitudes_desired[
-            #             legosc2index(leg_i=i, side_i=j, joint_i=5)] = 0.1 + 0.1 * drive_speed
-            #
-            #         print('====update amplitudes walking=====')
-            #         print(self.amplitudes_desired)
+            for i in np.arange(2):
+                for j in np.arange(2):
+                     # forward motion of the shoulder 0-90
+                    self.amplitudes_desired[dim_body:] = limb_amp+0.05*drive_speed
+            
+                    print('====update amplitudes walking=====')
+                    print(self.amplitudes_desired)
 
         else:
             self.amplitudes_desired[dim_body:] = 0
