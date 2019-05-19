@@ -459,7 +459,7 @@ class  OscillatorArray(NetworkArray):
             for i in np.arange(2):
                 for j in np.arange(2):
                      # forward motion of the shoulder 0-90
-                    self.amplitudes_desired[dim_body:] = limb_amp+0.05*drive_speed
+                    self.amplitudes_desired[dim_body:] = limb_amp+0.05*(drive_speed - drive_low_sat)
             
                     print('====update amplitudes walking=====')
                     print(self.amplitudes_desired)
