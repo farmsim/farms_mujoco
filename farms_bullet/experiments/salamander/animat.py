@@ -33,17 +33,16 @@ class SalamanderModel(Model):
             base_link=base_link
         )
         # Correct names
+        self.links = {}
         for i in range(11):
-            self.links['link_body_{}'.format(i+1)] = (
-                self.links.pop('link{}'.format(i+1))
-            )
+            self.links['link_body_{}'.format(i+1)] = i
             self.joints['joint_link_body_{}'.format(i+1)] = (
                 self.joints.pop('joint{}'.format(i+1))
             )
         for leg_i in range(2):
             for side_i in range(2):
-                offset = 12 + 2*3*leg_i + 3*side_i
                 for part_i in range(3):
+                    link_index = 12 + 2*3*leg_i + 3*side_i + part_i
                     side = "R" if side_i else "L"
                     self.links[
                         'link_leg_{}_{}_{}'.format(
@@ -51,14 +50,14 @@ class SalamanderModel(Model):
                             side,
                             part_i
                         )
-                    ] = self.links.pop('link{}'.format(offset + part_i))
+                    ] = link_index-1
                     self.joints[
                         'joint_link_leg_{}_{}_{}'.format(
                             leg_i,
                             side,
                             part_i
                         )
-                    ] = self.joints.pop('joint{}'.format(offset + part_i))
+                    ] = self.joints.pop('joint{}'.format(link_index))
         # Model dynamics
         self.apply_motor_damping()
         # Controller
@@ -130,34 +129,34 @@ class SalamanderModel(Model):
         links_legs = [None for i in range(4) for j in range(3)]
         leg_length = 0.03
         leg_radius = 0.015
+        n_body = 12
         for leg_i in range(2):
             for side in range(2):
                 offset = 2*3*leg_i + 3*side
                 sign = 1 if side else -1
                 leg_offset = sign*leg_length
-                # Shoulder
                 position = np.zeros(3)
                 position[1] = leg_offset
+                # Shoulder
                 links_legs[offset+0] = AnimatLink(
                     geometry=pybullet.GEOM_SPHERE,
-                    radius=leg_radius,
+                    radius=1.1*leg_radius,
                     position=position,
                     parent=5 if leg_i else 1,
-                    joint_axis=[0, 0, sign]
+                    joint_axis=[0, 0, sign],
+                    mass=0
                 )
                 # Upper leg
-                position[1] = leg_offset
                 links_legs[offset+1] = AnimatLink(
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=12+offset,
+                    parent=n_body+offset,
                     joint_axis=[-sign, 0, 0]
                 )
                 # Lower leg
-                position[1] = leg_offset
                 links_legs[offset+2] = AnimatLink(
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
@@ -165,7 +164,7 @@ class SalamanderModel(Model):
                     position=2*position,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=12+offset+1,
+                    parent=n_body+offset+1,
                     joint_axis=[-sign, 0, 0]
                 )
         links = links_body + links_legs
@@ -227,7 +226,8 @@ class SalamanderModel(Model):
         """Apply motor damping"""
         for j in range(pybullet.getNumJoints(self.identity)):
             pybullet.changeDynamics(
-                self.identity, j,
+                bodyUniqueId=self.identity,
+                linkIndex=j,
                 linearDamping=linear,
                 angularDamping=angular
             )
