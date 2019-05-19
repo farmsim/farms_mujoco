@@ -4,6 +4,18 @@ import numpy as np
 import pybullet
 
 
+def joint_type_str(joint_type):
+    """Return joint type as str"""
+    return (
+        "Revolute" if joint_type == pybullet.JOINT_REVOLUTE
+        else "Prismatic" if joint_type == pybullet.JOINT_PRISMATIC
+        else "Spherical" if joint_type == pybullet.JOINT_SPHERICAL
+        else "Planar" if joint_type == pybullet.JOINT_PLANAR
+        else "Fixed" if joint_type == pybullet.JOINT_FIXED
+        else "Unknown"
+    )
+
+
 class Model:
     """Simulation model"""
 
@@ -68,9 +80,15 @@ class Model:
         ))
         print("Joints ids:\n{}".format(
             "\n".join([
-                "  {}: {}".format(
+                "  {}: {} (type: {})".format(
                     name,
-                    self.joints[name]
+                    self.joints[name],
+                    joint_type_str(
+                        pybullet.getJointInfo(
+                            self.identity,
+                            self.joints[name]
+                        )[2]
+                    )
                 )
                 for name in self.joints
             ])
