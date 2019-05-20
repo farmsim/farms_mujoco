@@ -91,7 +91,7 @@ class SalamanderControlOptions(dict):
         options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", np.pi/32)
         options["leg_1_offset"] = kwargs.pop("leg_1_offset", np.pi/32)
 
-        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", np.pi/2)
+        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", np.pi/4)
         options["leg_2_offset"] = kwargs.pop("leg_2_offset", 0)
 
         options["leg_3_amplitude"] = kwargs.pop("leg_3_amplitude", np.pi/8)
