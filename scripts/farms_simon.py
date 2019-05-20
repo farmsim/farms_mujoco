@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run Simon's experiment in Bullet"""
 
-from farms_bullet.simulations.simon import run_simon
 import matplotlib.pyplot as plt
+from farms_bullet.experiments.simon.simulation import run_simon
 
 
 def main():

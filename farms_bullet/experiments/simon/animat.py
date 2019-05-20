@@ -2,8 +2,8 @@
 
 import numpy as np
 import pybullet
-from .animat import Animat
-from .link import AnimatLink
+from ...animats.animat import Animat
+from ...animats.link import AnimatLink
 
 
 class SimonAnimat(Animat):
