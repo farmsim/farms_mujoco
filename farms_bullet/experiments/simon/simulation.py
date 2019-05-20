@@ -5,19 +5,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pybullet
 
-from .simulation import Simulation, SimulationElements
+from ...simulations.simulation import Simulation, SimulationElements
 # from ..experiments.simon import SimonExperiment
-from .simulation_options import SimulationOptions
-from ..animats.model_options import ModelOptions
-from ..animats.simon import SimonAnimat
-from ..arenas.arena import FlooredArena
-from ..sensors.sensor import (
+from ...simulations.simulation_options import SimulationOptions
+from ...animats.model_options import ModelOptions
+from .animat import SimonAnimat
+from ...arenas.arena import FlooredArena
+from ...sensors.sensor import (
     Sensors,
     JointsStatesSensor,
     ContactSensor,
     LinkStateSensor
 )
-from ..sensors.logging import SensorsLogger
+from ...sensors.logging import SensorsLogger
 
 
 class SimonSimulation(Simulation):
