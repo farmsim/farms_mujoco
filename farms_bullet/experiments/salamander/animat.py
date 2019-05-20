@@ -73,10 +73,10 @@ class SalamanderModel(Model):
             **kwargs
         )
         self.feet = [
-            "link_leg_0_L_2",
-            "link_leg_0_R_2",
-            "link_leg_1_L_2",
-            "link_leg_1_R_2"
+            "link_leg_0_L_3",
+            "link_leg_0_R_3",
+            "link_leg_1_L_3",
+            "link_leg_1_R_3"
         ]
         self.sensors = ModelSensors(self, iterations)
 
