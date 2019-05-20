@@ -110,12 +110,6 @@ class ModelController:
         super(ModelController, self).__init__()
         self.model = model
         self.controllers = joints_controllers
-        # self.network = IndependentOscillators(
-        #     self.controllers,
-        #     timestep=timestep
-        # )
-        # self.network = SalamanderNetwork.walking(timestep, phases=None)
-        # self.network = SalamanderNetworkODE.walking(iterations, timestep)
         self.network = network
         self._frequency = self.controllers[0].get_frequency()
         self._body_offset = 0

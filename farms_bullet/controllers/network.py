@@ -124,7 +124,7 @@ class OscillatorNetworkState(NetworkArray):
 
 
 class NetworkParameters(ODE):
-    """Salamander network parameter"""
+    """Network parameter"""
 
     def __init__(self, oscillators, connectivity, joints):
         super(NetworkParameters, self).__init__(
