@@ -39,10 +39,13 @@ class SalamanderModel(Model):
             self.joints['joint_link_body_{}'.format(i+1)] = (
                 self.joints.pop('joint{}'.format(i+1))
             )
+        n_dof_legs = 4
         for leg_i in range(2):
             for side_i in range(2):
-                for part_i in range(3):
-                    link_index = 12 + 2*3*leg_i + 3*side_i + part_i
+                for part_i in range(n_dof_legs):
+                    link_index = (
+                        12 + 2*n_dof_legs*leg_i + n_dof_legs*side_i + part_i
+                    )
                     side = "R" if side_i else "L"
                     self.links[
                         'link_leg_{}_{}_{}'.format(
@@ -126,45 +129,56 @@ class SalamanderModel(Model):
             )
             for i in range(11)
         ]
-        links_legs = [None for i in range(4) for j in range(3)]
+        links_legs = [None for i in range(4) for j in range(4)]
         leg_length = 0.03
         leg_radius = 0.015
         n_body = 12
+        n_dof_legs = 4
         for leg_i in range(2):
             for side in range(2):
-                offset = 2*3*leg_i + 3*side
+                offset = 2*n_dof_legs*leg_i + n_dof_legs*side
                 sign = 1 if side else -1
                 leg_offset = sign*leg_length
                 position = np.zeros(3)
                 position[1] = leg_offset
-                # Shoulder
+                # Shoulder1
                 links_legs[offset+0] = AnimatLink(
                     geometry=pybullet.GEOM_SPHERE,
-                    radius=1.1*leg_radius,
+                    radius=1.2*leg_radius,
                     position=position,
                     parent=5 if leg_i else 1,
                     joint_axis=[0, 0, sign],
-                    mass=0
+                    mass=0,
+                    color=[0.9, 0.0, 0.0, 0.3]
+                )
+                # Shoulder2
+                links_legs[offset+1] = AnimatLink(
+                    geometry=pybullet.GEOM_SPHERE,
+                    radius=1.5*leg_radius,
+                    parent=n_body+offset,
+                    joint_axis=[-sign, 0, 0],
+                    mass=0,
+                    color=[0.9, 0.9, 0.9, 0.3]
                 )
                 # Upper leg
-                links_legs[offset+1] = AnimatLink(
+                links_legs[offset+2] = AnimatLink(
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=n_body+offset,
-                    joint_axis=[-sign, 0, 0]
+                    parent=n_body+offset+1,
+                    joint_axis=[0, 1, 0]
                 )
                 # Lower leg
-                links_legs[offset+2] = AnimatLink(
+                links_legs[offset+3] = AnimatLink(
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
                     position=2*position,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=n_body+offset+1,
+                    parent=n_body+offset+2,
                     joint_axis=[-sign, 0, 0]
                 )
         links = links_body + links_legs

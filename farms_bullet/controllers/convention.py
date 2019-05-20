@@ -6,7 +6,7 @@ def bodyjoint2index(joint_i, side=0, n_body_joints=11):
     return joint_i + side*n_body_joints
 
 def legjoint2index(
-        leg_i, side_i, joint_i, side=0, n_body_joints=11, n_legs_dof=3
+        leg_i, side_i, joint_i, side=0, n_body_joints=11, n_legs_dof=4
 ):
     """legjoint2index"""
     return (
