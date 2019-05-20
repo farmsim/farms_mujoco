@@ -17,7 +17,7 @@ from ...sensors.sensor import (
     LinkStateSensor
 )
 from ...sensors.model_sensors import ModelSensors
-from ...controllers.control import SalamanderController
+from .control import SalamanderController
 
 
 class SalamanderModel(Model):
