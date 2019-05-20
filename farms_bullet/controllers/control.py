@@ -218,6 +218,7 @@ class SalamanderController(ModelController):
             )
             for joint_i in range(n_body_joints)
         ]
+        n_dof_legs = 4
         joint_controllers_legs = [
             JointController(
                 joint=joints["joint_link_leg_{}_{}_{}".format(
@@ -238,6 +239,6 @@ class SalamanderController(ModelController):
             )
             for leg_i in range(2)
             for side_i, side in enumerate(["L", "R"])
-            for joint_i in range(3)
+            for joint_i in range(n_dof_legs)
         ]
         return joint_controllers_body, joint_controllers_legs

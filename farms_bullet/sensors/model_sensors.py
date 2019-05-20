@@ -19,10 +19,10 @@ class ModelSensors:
         # Force-torque sensors
         self.feet_ft = np.zeros([n_iterations, 4, 6])
         self.joints_sensors = [
-            "joint_link_leg_0_L_3",
-            "joint_link_leg_0_R_3",
-            "joint_link_leg_1_L_3",
-            "joint_link_leg_1_R_3"
+            "joint_link_leg_0_L_2",
+            "joint_link_leg_0_R_2",
+            "joint_link_leg_1_L_2",
+            "joint_link_leg_1_R_2"
         ]
         for joint in self.joints_sensors:
             pybullet.enableJointForceTorqueSensor(

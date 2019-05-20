@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Run salamander simulation with bullet"""
 
-import cProfile
-import pstats
 import matplotlib.pyplot as plt
-from farms_bullet.simulations.salamander import main as run_simulation
+from farms_bullet.experiments.salamander.simulation import main as run_simulation
 from farms_bullet.animats.model_options import ModelOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
@@ -25,13 +23,24 @@ def main():
 
 
 def profile():
-    """Profile"""
+    """Profile with cProfile"""
+    import cProfile
+    import pstats
     cProfile.run("main()", "simulation.profile")
     pstat = pstats.Stats("simulation.profile")
     pstat.sort_stats('time').print_stats(30)
     pstat.sort_stats('cumtime').print_stats(30)
 
 
+def pycall():
+    """Profile with pycallgraph"""
+    from pycallgraph import PyCallGraph
+    from pycallgraph.output import GraphvizOutput
+    with PyCallGraph(output=GraphvizOutput()):
+        main()
+
+
 if __name__ == '__main__':
     # main()
     profile()
+    # pycall()

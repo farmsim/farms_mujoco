@@ -6,18 +6,18 @@ import numpy as np
 
 import pybullet
 
-from .animat import Animat
-from .link import AnimatLink
-from .model import Model
-from ..plugins.swimming import viscous_swimming
-from ..sensors.sensor import (
+from ...animats.animat import Animat
+from ...animats.link import AnimatLink
+from ...animats.model import Model
+from ...plugins.swimming import viscous_swimming
+from ...sensors.sensor import (
     Sensors,
     JointsStatesSensor,
     ContactSensor,
     LinkStateSensor
 )
-from ..sensors.model_sensors import ModelSensors
-from ..controllers.control import SalamanderController
+from ...sensors.model_sensors import ModelSensors
+from ...controllers.control import SalamanderController
 
 
 class SalamanderModel(Model):
@@ -33,17 +33,19 @@ class SalamanderModel(Model):
             base_link=base_link
         )
         # Correct names
+        self.links = {}
         for i in range(11):
-            self.links['link_body_{}'.format(i+1)] = (
-                self.links.pop('link{}'.format(i+1))
-            )
+            self.links['link_body_{}'.format(i+1)] = i
             self.joints['joint_link_body_{}'.format(i+1)] = (
                 self.joints.pop('joint{}'.format(i+1))
             )
+        n_dof_legs = 4
         for leg_i in range(2):
             for side_i in range(2):
-                offset = 12 + 2*4*leg_i + 4*side_i
-                for part_i in range(4):
+                for part_i in range(n_dof_legs):
+                    link_index = (
+                        12 + 2*n_dof_legs*leg_i + n_dof_legs*side_i + part_i
+                    )
                     side = "R" if side_i else "L"
                     self.links[
                         'link_leg_{}_{}_{}'.format(
@@ -51,14 +53,14 @@ class SalamanderModel(Model):
                             side,
                             part_i
                         )
-                    ] = self.links.pop('link{}'.format(offset + part_i))
+                    ] = link_index-1
                     self.joints[
                         'joint_link_leg_{}_{}_{}'.format(
                             leg_i,
                             side,
                             part_i
                         )
-                    ] = self.joints.pop('joint{}'.format(offset + part_i))
+                    ] = self.joints.pop('joint{}'.format(link_index))
         # Model dynamics
         self.apply_motor_damping()
         # Controller
@@ -71,10 +73,10 @@ class SalamanderModel(Model):
             **kwargs
         )
         self.feet = [
-            "link_leg_0_L_3",
-            "link_leg_0_R_3",
-            "link_leg_1_L_3",
-            "link_leg_1_R_3"
+            "link_leg_0_L_2",
+            "link_leg_0_R_2",
+            "link_leg_1_L_2",
+            "link_leg_1_R_2"
         ]
         self.sensors = ModelSensors(self, iterations)
 
@@ -83,7 +85,7 @@ class SalamanderModel(Model):
         """Spawn salamander"""
         # Body
         meshes_directory = (
-            "{}/salamander/meshes".format(
+            "{}/meshes".format(
                 os.path.dirname(os.path.realpath(__file__))
             )
         )
@@ -105,12 +107,13 @@ class SalamanderModel(Model):
             axis=0,
             prepend=0
         )
+        body_color = [0, 0.3, 0, 1]
         base_link = AnimatLink(
             geometry=pybullet.GEOM_MESH,
             filename="{}/salamander_body_0.obj".format(meshes_directory),
             position=body_link_positions[0],
             joint_axis=[0, 0, 1],
-            color=[0, 0.3, 0, 1]
+            color=body_color
         )
         links_body = [
             AnimatLink(
@@ -120,63 +123,64 @@ class SalamanderModel(Model):
                     i+1
                 ),
                 position=body_link_positions[i+1],
+                parent=i,
                 joint_axis=[0, 0, 1],
-                color=[0, 0.3, 0, 1]
+                color=body_color
             )
             for i in range(11)
         ]
-        for i in range(11):
-            links_body[i].parent = i
         links_legs = [None for i in range(4) for j in range(4)]
         leg_length = 0.03
         leg_radius = 0.015
+        n_body = 12
+        n_dof_legs = 4
         for leg_i in range(2):
             for side in range(2):
-                offset = 2*4*leg_i + 4*side
+                offset = 2*n_dof_legs*leg_i + n_dof_legs*side
                 sign = 1 if side else -1
                 leg_offset = sign*leg_length
-                # Shoulder
                 position = np.zeros(3)
                 position[1] = leg_offset
+                # Shoulder1
                 links_legs[offset+0] = AnimatLink(
                     geometry=pybullet.GEOM_SPHERE,
-                    radius=leg_radius,
+                    radius=1.2*leg_radius,
                     position=position,
-                    joint_axis=[0, 0, sign]
+                    parent=5 if leg_i else 1,
+                    joint_axis=[0, 0, sign],
+                    mass=0,
+                    color=[0.9, 0.0, 0.0, 0.3]
                 )
-                links_legs[offset+0].parent = 5 if leg_i else 1
-                # Upper leg
-                position[1] = leg_offset
+                # Shoulder2
                 links_legs[offset+1] = AnimatLink(
-                    geometry=pybullet.GEOM_CAPSULE,
-                    radius=leg_radius,
-                    height=0.9*2*leg_length,
-                    frame_position=position,
-                    frame_orientation=[np.pi/2, 0, 0],
-                    joint_axis=[-sign, 0, 0]
+                    geometry=pybullet.GEOM_SPHERE,
+                    radius=1.5*leg_radius,
+                    parent=n_body+offset,
+                    joint_axis=[-sign, 0, 0],
+                    mass=0,
+                    color=[0.9, 0.9, 0.9, 0.3]
                 )
-                links_legs[offset+1].parent = 12 + offset
-                # Lower leg
-                position[1] = leg_offset
+                # Upper leg
                 links_legs[offset+2] = AnimatLink(
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
+                    frame_position=position,
+                    frame_orientation=[np.pi/2, 0, 0],
+                    parent=n_body+offset+1,
+                    joint_axis=[0, 1, 0]
+                )
+                # Lower leg
+                links_legs[offset+3] = AnimatLink(
+                    geometry=pybullet.GEOM_CAPSULE,
+                    radius=leg_radius,
+                    height=0.9*2*leg_length,
                     position=2*position,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
+                    parent=n_body+offset+2,
                     joint_axis=[-sign, 0, 0]
                 )
-                links_legs[offset+2].parent = 12 + offset + 1
-                # Foot
-                position[1] = leg_offset
-                links_legs[offset+3] = AnimatLink(
-                    geometry=pybullet.GEOM_SPHERE,
-                    radius=leg_radius,
-                    position=2*position,
-                    joint_axis=[0, 0, 1]
-                )
-                links_legs[offset+3].parent = 12 + offset + 2
         links = links_body + links_legs
         identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
@@ -222,7 +226,7 @@ class SalamanderModel(Model):
         """Activate/Deactivate leg collisions"""
         for leg_i in range(2):
             for side in ["L", "R"]:
-                for joint_i in range(3):
+                for joint_i in range(2):
                     link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
                     pybullet.setCollisionFilterPair(
                         bodyUniqueIdA=self.identity,
@@ -236,7 +240,8 @@ class SalamanderModel(Model):
         """Apply motor damping"""
         for j in range(pybullet.getNumJoints(self.identity)):
             pybullet.changeDynamics(
-                self.identity, j,
+                bodyUniqueId=self.identity,
+                linkIndex=j,
                 linearDamping=linear,
                 angularDamping=angular
             )
@@ -275,12 +280,11 @@ class Salamander(Animat):
             for i, foot in enumerate(self.model.feet)
         })
         # Joints
-        n_joints = pybullet.getNumJoints(self._identity)
         self.sensors.add({
             "joints": JointsStatesSensor(
                 self.n_iterations,
                 self._identity,
-                np.arange(n_joints),
+                np.arange(self.n_joints()),
                 enable_ft=True
             )
         })
@@ -303,38 +307,6 @@ class Salamander(Animat):
         """Joints"""
         return self.model.joints
 
-    def step(self):
-        """Step"""
-        self.animat_physics()
-        self.animat_control()
-
-    def animat_sensors(self, sim_step):
-        """Animat sensors update"""
-        tic_sensors = time.time()
-        # self.model.sensors.update(
-        #     sim_step,
-        #     identity=self.identity,
-        #     links=[self.links[foot] for foot in self.model.feet],
-        #     joints=[
-        #         self.joints[joint]
-        #         for joint in self.model.sensors.joints_sensors
-        #     ]
-        # )
-        self.sensors.update(sim_step)
-        # # Commands
-        # self.model.motors.update(
-        #     identity=self.identity,
-        #     joints_body=[
-        #         self.joints[joint]
-        #         for joint in self.model.motors.joints_commanded_body
-        #     ],
-        #     joints_legs=[
-        #         self.joints[joint]
-        #         for joint in self.model.motors.joints_commanded_legs
-        #     ]
-        # )
-        return time.time() - tic_sensors
-
     def animat_control(self):
         """Control animat"""
         # Control
@@ -353,10 +325,3 @@ class Salamander(Animat):
                 self.links
             )
         return forces
-
-    # def animat_logging(self, sim_step):
-    #     """Animat logging"""
-    #     # Contacts during walking
-    #     tic_log = time.time()
-    #     self.logger.update(sim_step-1)
-    #     return time.time() - tic_log

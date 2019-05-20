@@ -3,14 +3,14 @@
 import time
 import numpy as np
 import pybullet
-from .simulation import Simulation, SimulationElements
-from .simulation_options import SimulationOptions
-from ..animats.salamander import Salamander
-from ..animats.model_options import ModelOptions
-from ..arenas.arena import FlooredArena
-from ..interface.interface import Interfaces
-from ..simulations.simulator import real_time_handing
-from ..sensors.logging import SensorsLogger
+from ...simulations.simulation import Simulation, SimulationElements
+from ...simulations.simulation_options import SimulationOptions
+from .animat import Salamander
+from ...animats.model_options import ModelOptions
+from ...arenas.arena import FlooredArena
+from ...interface.interface import Interfaces
+from ...simulations.simulator import real_time_handing
+from ...sensors.logging import SensorsLogger
 
 
 class SalamanderSimulation(Simulation):
@@ -85,16 +85,16 @@ class SalamanderSimulation(Simulation):
         """Simulation step"""
         self.tic_rt[0] = time.time()
         # Animat sensors
-        time_sensors = self.elements.animat.animat_sensors(sim_step)
+        self.elements.animat.sensors.update(sim_step)
         if sim_step < self.options.n_iterations-1:
             if not self.options.headless:
                 self.animat_interface()
             # Plugins
-            external_forces = self.elements.animat.animat_physics()
+            self.elements.animat.animat_physics()
             # if external_forces is not None:
             #     self.forces_torques[sim_step] = external_forces
             # Control animat
-            time_control = self.elements.animat.animat_control()
+            self.elements.animat.animat_control()
             # Interface
             # Physics
             pybullet.stepSimulation()
