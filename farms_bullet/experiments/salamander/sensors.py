@@ -5,11 +5,11 @@ import numpy as np
 import pybullet
 
 
-class ModelSensors:
+class SalamanderSensors:
     """Model sensors"""
 
     def __init__(self, salamander, n_iterations):  # , sensors
-        super(ModelSensors, self).__init__()
+        super(SalamanderSensors, self).__init__()
         # self.sensors = sensors
         # Contact sensors
         self.feet = salamander.feet

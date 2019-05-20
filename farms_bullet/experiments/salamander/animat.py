@@ -16,7 +16,7 @@ from ...sensors.sensor import (
     ContactSensor,
     LinkStateSensor
 )
-from ...sensors.model_sensors import ModelSensors
+from .sensors import SalamanderSensors
 from .control import SalamanderController
 
 
@@ -78,7 +78,7 @@ class SalamanderModel(Model):
             "link_leg_1_L_3",
             "link_leg_1_R_3"
         ]
-        self.sensors = ModelSensors(self, iterations)
+        self.sensors = SalamanderSensors(self, iterations)
 
     @classmethod
     def spawn(cls, iterations, timestep, gait="walking", **kwargs):
