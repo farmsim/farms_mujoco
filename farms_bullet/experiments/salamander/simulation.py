@@ -28,7 +28,7 @@ class SalamanderSimulation(Simulation):
             ),
             options=simulation_options
         )
-        self.interface = Interfaces()
+        self.interface = Interfaces(int(10*1e-3/simulation_options.timestep))
         self.spawn()
         self.simulation_state = None
         self.tic_rt = np.zeros(2)

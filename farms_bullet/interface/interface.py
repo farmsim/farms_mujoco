@@ -9,12 +9,18 @@ from .debug import test_debug_info
 class Interfaces:
     """Interfaces (GUI, camera, video)"""
 
-    def __init__(self, camera=None, user_params=None, video=None):
+    def __init__(
+            self,
+            camera=None,
+            user_params=None,
+            video=None,
+            camera_skips=1
+    ):
         super(Interfaces, self).__init__()
         self.camera = camera
         self.user_params = user_params
         self.video = video
-        self.camera_skips = 10
+        self.camera_skips = camera_skips
 
     def init_camera(self, target_identity, timestep, **kwargs):
         """Initialise camera"""
