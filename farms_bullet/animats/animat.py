@@ -23,9 +23,9 @@ class Animat(SimulationElement):
     def __init__(self, identity=None, options=None):
         super(Animat, self).__init__(identity=identity)
         self.options = options
-        self.links = None
-        self.joints = None
-        self.sensors = None
+        self.links = []
+        self.joints = []
+        self.sensors = []
         self.controller = None
 
     def n_joints(self):
@@ -121,3 +121,23 @@ class Animat(SimulationElement):
     def get_position(self):
         """Get position"""
         return pybullet.getLinkState(self.identity, 0)[0]
+
+    def set_collisions(self, links, group=0, mask=0):
+        """Activate/Deactivate leg collisions"""
+        for link in links:
+            pybullet.setCollisionFilterGroupMask(
+                bodyUniqueId=self._identity,
+                linkIndexA=self.links[link],
+                collisionFilterGroup=group,
+                collisionFilterMask=mask
+            )
+
+    def set_joint_damping(self, joints, linear=0, angular=0):
+        """Apply motor damping"""
+        for joint in joints:
+            pybullet.changeDynamics(
+                bodyUniqueId=self.identity,
+                linkIndex=self.joints[joint],
+                linearDamping=linear,
+                angularDamping=angular
+            )

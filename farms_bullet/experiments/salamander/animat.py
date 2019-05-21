@@ -32,8 +32,36 @@ class Salamander(Animat):
             "link_leg_1_R_3"
         ]
 
-    def spawn(self, gait="walking", **kwargs):
+    def spawn(self):
         """Spawn salamander"""
+        self.spawn_body()
+        self.add_sensors()
+        self.setup_controller()
+        # Deactivate collisions
+        links_no_collisions = [
+            "link_body_{}".format(body_i+1)
+            for body_i in range(0)
+        ] + [
+            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in ["L", "R"]
+            for joint_i in range(3)
+        ]
+        self.set_collisions(links_no_collisions, group=0, mask=0)
+        # Deactivate damping
+        joints_no_damping = [
+            "joint_link_body_{}".format(body_i+1)
+            for body_i in range(0)
+        ] + [
+            "joint_link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in ["L", "R"]
+            for joint_i in range(3)
+        ]
+        self.set_joint_damping(joints_no_damping, linear=0, angular=0)
+
+    def spawn_body(self):
+        """Spawn body"""
         # Body
         meshes_directory = (
             "{}/meshes".format(
@@ -182,57 +210,22 @@ class Salamander(Animat):
                         )
                     ] = self.joints.pop('joint{}'.format(link_index))
         self.print_information()
-        # Model dynamics
-        self.apply_motor_damping()
-        # Controller
-        self.controller = SalamanderController.from_gait(
-            self.identity,
-            self.joints,
-            gait=gait,
-            iterations=self.n_iterations,
-            timestep=self.timestep,
-            **kwargs
-        )
 
-    @classmethod
-    def spawn_sdf(cls, iterations, timestep, gait="walking", **kwargs):
-        """Spawn salamander"""
-        return cls.from_sdf(
-            "{}/.farms/models/biorob_salamander/model.sdf".format(
-                os.environ['HOME']
-            ),
-            base_link="link_body_0",
-            iterations=iterations,
-            timestep=timestep,
-            gait=gait,
-            **kwargs
-        )
+    # @classmethod
+    # def spawn_sdf(cls, iterations, timestep, gait="walking", **kwargs):
+    #     """Spawn salamander"""
+    #     return cls.from_sdf(
+    #         "{}/.farms/models/biorob_salamander/model.sdf".format(
+    #             os.environ['HOME']
+    #         ),
+    #         base_link="link_body_0",
+    #         iterations=iterations,
+    #         timestep=timestep,
+    #         gait=gait,
+    #         **kwargs
+    #     )
 
-    def leg_collisions(self, plane, activate=True):
-        """Activate/Deactivate leg collisions"""
-        for leg_i in range(2):
-            for side in ["L", "R"]:
-                for joint_i in range(2):
-                    link = "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
-                    pybullet.setCollisionFilterPair(
-                        bodyUniqueIdA=self.identity,
-                        bodyUniqueIdB=plane,
-                        linkIndexA=self.links[link],
-                        linkIndexB=-1,
-                        enableCollision=activate
-                    )
-
-    def apply_motor_damping(self, linear=0, angular=0):
-        """Apply motor damping"""
-        for j in range(pybullet.getNumJoints(self.identity)):
-            pybullet.changeDynamics(
-                bodyUniqueId=self.identity,
-                linkIndex=j,
-                linearDamping=linear,
-                angularDamping=angular
-            )
-
-    def add_sensors(self, arena_identity):
+    def add_sensors(self):
         """Add sensors"""
         # Sensors
         self.sensors = Sensors()
@@ -262,13 +255,16 @@ class Salamander(Animat):
             )
         })
 
-    def animat_control(self):
-        """Control animat"""
-        # Control
-        tic_control = time.time()
-        self.controller.control()
-        time_control = time.time() - tic_control
-        return time_control
+    def setup_controller(self, gait="walking", **kwargs):
+        """Setup controller"""
+        self.controller = SalamanderController.from_gait(
+            self.identity,
+            self.joints,
+            gait=gait,
+            iterations=self.n_iterations,
+            timestep=self.timestep,
+            **kwargs
+        )
 
     def animat_physics(self):
         """Animat physics"""

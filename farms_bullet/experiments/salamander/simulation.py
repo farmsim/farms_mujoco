@@ -29,24 +29,10 @@ class SalamanderSimulation(Simulation):
             ),
             options=simulation_options
         )
-        self.interface = Interfaces(int(10*1e-3/simulation_options.timestep))
-        self.spawn()
-        self.simulation_state = None
-        self.tic_rt = np.zeros(2)
-        self.save()
-
-    def spawn(self):
-        """Spawn"""
-        # Elements
-        self.elements.animat.add_sensors(self.elements.arena.floor.identity)
+        # Logging
         self.logger = SensorsLogger(self.elements.animat.sensors)
-        # Collisions
-        self.elements.animat.leg_collisions(
-            self.elements.arena.floor.identity,
-            activate=False
-        )
-        self.elements.animat.print_dynamics_info()
         # Interface
+        self.interface = Interfaces(int(10*1e-3/simulation_options.timestep))
         if not self.options.headless:
             self.interface.init_camera(
                 target_identity=self.elements.animat.identity,
@@ -63,6 +49,11 @@ class SalamanderSimulation(Simulation):
                 rotating_camera=self.options.rotating_camera,
                 top_camera=self.options.top_camera
             )
+        # Real-time handling
+        self.tic_rt = np.zeros(2)
+        # Simulation state
+        self.simulation_state = None
+        self.save()
 
     def pre_step(self, sim_step):
         """New step"""
@@ -88,16 +79,14 @@ class SalamanderSimulation(Simulation):
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
         if sim_step < self.options.n_iterations-1:
+            # Interface
             if not self.options.headless:
                 self.animat_interface()
             # Plugins
             self.elements.animat.animat_physics()
-            # if external_forces is not None:
-            #     self.forces_torques[sim_step] = external_forces
             # Control animat
-            self.elements.animat.animat_control()
-            # Interface
-            # Physics
+            self.elements.animat.controller.control()
+            # Physics step
             pybullet.stepSimulation()
             sim_step += 1
             # Camera
