@@ -5,12 +5,13 @@ import numpy as np
 import pybullet
 from ...simulations.simulation import Simulation, SimulationElements
 from ...simulations.simulation_options import SimulationOptions
-from .animat import Salamander
-from ...animats.model_options import ModelOptions
 from ...arenas.arena import FlooredArena
 from ...interface.interface import Interfaces
 from ...simulations.simulator import real_time_handing
 from ...sensors.logging import SensorsLogger
+
+from .animat import Salamander
+from .animat_options import SalamanderOptions
 
 
 class SalamanderSimulation(Simulation):
@@ -40,11 +41,11 @@ class SalamanderSimulation(Simulation):
         self.elements.animat.add_sensors(self.elements.arena.floor.identity)
         self.logger = SensorsLogger(self.elements.animat.sensors)
         # Collisions
-        self.elements.animat.model.leg_collisions(
+        self.elements.animat.leg_collisions(
             self.elements.arena.floor.identity,
             activate=False
         )
-        self.elements.animat.model.print_dynamics_info()
+        self.elements.animat.print_dynamics_info()
         # Interface
         if not self.options.headless:
             self.interface.init_camera(
@@ -68,7 +69,7 @@ class SalamanderSimulation(Simulation):
         play = True
         if not(sim_step % 10000) and sim_step > 0:
             pybullet.restoreState(self.simulation_state)
-            network = self.elements.animat.model.controller.network
+            network = self.elements.animat.controller.network
             network.state.array[network.iteration] = (
                 network.state.default_initial_state()
             )
@@ -128,7 +129,7 @@ class SalamanderSimulation(Simulation):
             self.elements.animat.options.gait = (
                 self.interface.user_params.gait.value
             )
-            self.elements.animat.model.controller.update_gait(
+            self.elements.animat.controller.update_gait(
                 self.elements.animat.options.gait,
                 self.elements.animat.joints,
                 self.options.timestep
@@ -139,13 +140,13 @@ class SalamanderSimulation(Simulation):
                 pybullet.setGravity(0, 0, -9.81)
             self.interface.user_params.gait.changed = False
         if self.interface.user_params.frequency.changed:
-            network = self.elements.animat.model.controller.network
+            network = self.elements.animat.controller.network
             network.parameters.oscillators.freqs = (
                 self.interface.user_params.frequency.value
             )
             self.interface.user_params.frequency.changed = False
         if self.interface.user_params.body_offset.changed:
-            network = self.elements.animat.model.controller.network
+            network = self.elements.animat.controller.network
             network.parameters.joints.set_body_offset(
                 self.interface.user_params.body_offset.value
             )
@@ -154,7 +155,7 @@ class SalamanderSimulation(Simulation):
                 self.interface.user_params.drive_speed.changed
                 or self.interface.user_params.drive_turn.changed
         ):
-            self.elements.animat.model.controller.network.update_drive(
+            self.elements.animat.controller.network.update_drive(
                 self.interface.user_params.drive_speed.value,
                 self.interface.user_params.drive_turn.value
             )
@@ -169,7 +170,7 @@ def main(simulation_options=None, animat_options=None):
     if not simulation_options:
         simulation_options = SimulationOptions.with_clargs()
     if not animat_options:
-        animat_options = ModelOptions()
+        animat_options = SalamanderOptions()
 
     # Setup simulation
     print("Creating simulation")

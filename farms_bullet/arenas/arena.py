@@ -2,7 +2,6 @@
 
 from .create import create_scene
 from ..simulations.element import SimulationElement
-from ..animats.model import Model
 
 
 class Floor(SimulationElement):
@@ -11,15 +10,13 @@ class Floor(SimulationElement):
     def __init__(self, position):
         super(Floor, self).__init__()
         self._position = position
-        self.model = None
 
     def spawn(self):
         """Spawn floor"""
-        self.model = Model.from_urdf(
+        self._identity = self.from_urdf(
             "plane.urdf",
             basePosition=self._position
         )
-        self._identity = self.model.identity
 
 
 class Arena:

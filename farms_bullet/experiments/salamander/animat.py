@@ -8,7 +8,6 @@ import pybullet
 
 from ...animats.animat import Animat
 from ...animats.link import AnimatLink
-from ...animats.model import Model
 from ...plugins.swimming import viscous_swimming
 from ...sensors.sensor import (
     Sensors,
@@ -19,69 +18,21 @@ from ...sensors.sensor import (
 from .control import SalamanderController
 
 
-class SalamanderModel(Model):
-    """Salamander model"""
+class Salamander(Animat):
+    """Salamander animat"""
 
-    def __init__(
-            self, identity, base_link,
-            iterations, timestep,
-            gait="walking", **kwargs
-    ):
-        super(SalamanderModel, self).__init__(
-            identity=identity,
-            base_link=base_link
-        )
-        # Correct names
-        self.links = {}
-        for i in range(11):
-            self.links['link_body_{}'.format(i+1)] = i
-            self.joints['joint_link_body_{}'.format(i+1)] = (
-                self.joints.pop('joint{}'.format(i+1))
-            )
-        n_dof_legs = 4
-        for leg_i in range(2):
-            for side_i in range(2):
-                for part_i in range(n_dof_legs):
-                    link_index = (
-                        12 + 2*n_dof_legs*leg_i + n_dof_legs*side_i + part_i
-                    )
-                    side = "R" if side_i else "L"
-                    self.links[
-                        'link_leg_{}_{}_{}'.format(
-                            leg_i,
-                            side,
-                            part_i
-                        )
-                    ] = link_index-1
-                    self.joints[
-                        'joint_link_leg_{}_{}_{}'.format(
-                            leg_i,
-                            side,
-                            part_i
-                        )
-                    ] = self.joints.pop('joint{}'.format(link_index))
-        # Model dynamics
-        self.apply_motor_damping()
-        # Controller
-        self.controller = SalamanderController.from_gait(
-            self.identity,
-            self.joints,
-            gait=gait,
-            iterations=iterations,
-            timestep=timestep,
-            **kwargs
-        )
+    def __init__(self, options, timestep, iterations):
+        super(Salamander, self).__init__(options=options)
+        self.timestep = timestep
+        self.n_iterations = iterations
         self.feet = [
             "link_leg_0_L_3",
             "link_leg_0_R_3",
             "link_leg_1_L_3",
             "link_leg_1_R_3"
         ]
-        self.sensors = NotImplemented
 
-
-    @classmethod
-    def spawn(cls, iterations, timestep, gait="walking", **kwargs):
+    def spawn(self, gait="walking", **kwargs):
         """Spawn salamander"""
         # Body
         meshes_directory = (
@@ -182,7 +133,7 @@ class SalamanderModel(Model):
                     joint_axis=[-sign, 0, 0]
                 )
         links = links_body + links_legs
-        identity = pybullet.createMultiBody(
+        self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
@@ -199,12 +150,47 @@ class SalamanderModel(Model):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
-        return cls(
-            identity=identity,
-            base_link="link_body_0",
-            iterations=iterations,
-            timestep=timestep,
+        self.links = self.get_links(self.identity, base_link="base_link")
+        self.joints = self.get_joints(self.identity)
+        self.print_information()
+        # Correct names
+        for i in range(11):
+            self.links['link_body_{}'.format(i+1)] = i
+            self.joints['joint_link_body_{}'.format(i+1)] = (
+                self.joints.pop('joint{}'.format(i+1))
+            )
+        n_dof_legs = 4
+        for leg_i in range(2):
+            for side_i in range(2):
+                for part_i in range(n_dof_legs):
+                    link_index = (
+                        12 + 2*n_dof_legs*leg_i + n_dof_legs*side_i + part_i
+                    )
+                    side = "R" if side_i else "L"
+                    self.links[
+                        'link_leg_{}_{}_{}'.format(
+                            leg_i,
+                            side,
+                            part_i
+                        )
+                    ] = link_index-1
+                    self.joints[
+                        'joint_link_leg_{}_{}_{}'.format(
+                            leg_i,
+                            side,
+                            part_i
+                        )
+                    ] = self.joints.pop('joint{}'.format(link_index))
+        self.print_information()
+        # Model dynamics
+        self.apply_motor_damping()
+        # Controller
+        self.controller = SalamanderController.from_gait(
+            self.identity,
+            self.joints,
             gait=gait,
+            iterations=self.n_iterations,
+            timestep=self.timestep,
             **kwargs
         )
 
@@ -246,26 +232,6 @@ class SalamanderModel(Model):
                 angularDamping=angular
             )
 
-
-class Salamander(Animat):
-    """Salamander animat"""
-
-    def __init__(self, options, timestep, n_iterations):
-        super(Salamander, self).__init__(options)
-        self.model = NotImplemented
-        self.timestep = timestep
-        self.sensors = NotImplemented
-        self.n_iterations = n_iterations
-
-    def spawn(self):
-        """Spawn"""
-        self.model = SalamanderModel.spawn(
-            self.n_iterations,
-            self.timestep,
-            **self.options
-        )
-        self._identity = self.model.identity
-
     def add_sensors(self, arena_identity):
         """Add sensors"""
         # Sensors
@@ -276,7 +242,7 @@ class Salamander(Animat):
                 self.n_iterations,
                 self._identity, self.links[foot]
             )
-            for i, foot in enumerate(self.model.feet)
+            for i, foot in enumerate(self.feet)
         })
         # Joints
         self.sensors.add({
@@ -296,21 +262,11 @@ class Salamander(Animat):
             )
         })
 
-    @property
-    def links(self):
-        """Links"""
-        return self.model.links
-
-    @property
-    def joints(self):
-        """Joints"""
-        return self.model.joints
-
     def animat_control(self):
         """Control animat"""
         # Control
         tic_control = time.time()
-        self.model.controller.control()
+        self.controller.control()
         time_control = time.time() - tic_control
         return time_control
 
