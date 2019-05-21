@@ -2,13 +2,11 @@
 
 import time
 import numpy as np
-import matplotlib.pyplot as plt
 import pybullet
 
 from ...simulations.simulation import Simulation, SimulationElements
 # from ..experiments.simon import SimonExperiment
 from ...simulations.simulation_options import SimulationOptions
-from ...animats.model_options import ModelOptions
 from .animat import SimonAnimat
 from ...arenas.arena import FlooredArena
 from ...sensors.sensor import (
@@ -167,7 +165,7 @@ def run_simon(sim_options=None, animat_options=None):
     if not sim_options:
         simulation_options = SimulationOptions.with_clargs(duration=100)
     if not animat_options:
-        animat_options = ModelOptions()
+        animat_options = None
 
     # Setup simulation
     print("Creating simulation")

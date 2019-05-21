@@ -2,20 +2,20 @@
 """Run salamander simulation with bullet"""
 
 import matplotlib.pyplot as plt
-from farms_bullet.experiments.salamander.simulation import main as run_simulation
-from farms_bullet.animats.model_options import ModelOptions
+from farms_bullet.experiments.salamander.simulation import main as run_sim
+from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
 
 def main():
     """Main"""
-    animat_options = ModelOptions()
-    # animat_options = ModelOptions(
+    animat_options = SalamanderOptions()
+    # animat_options = SalamanderOptions(
     #     frequency=1.7,
     #     body_stand_amplitude=0.42
     # )
     simulation_options = SimulationOptions.with_clargs()
-    run_simulation(
+    run_sim(
         simulation_options=simulation_options,
         animat_options=animat_options
     )

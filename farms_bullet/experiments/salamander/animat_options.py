@@ -3,11 +3,11 @@
 import numpy as np
 
 
-class ModelOptions(dict):
+class SalamanderOptions(dict):
     """Simulation options"""
 
     def __init__(self, **kwargs):
-        super(ModelOptions, self).__init__()
+        super(SalamanderOptions, self).__init__()
         self["gait"] = kwargs.pop("gait", "walking")
         self["frequency"] = kwargs.pop("frequency", 1)
         self["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0)
