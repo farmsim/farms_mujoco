@@ -68,6 +68,8 @@ class AnimatLink(dict):
             **additional_kwargs
         )
         color = kwargs.pop("color", None)
+        if "height" in additional_kwargs:
+            additional_kwargs["length"] = additional_kwargs.pop("height")
         self.visual = -1 if color is None else pybullet.createVisualShape(
             shapeType=self.geometry,
             visualFramePosition=self.frame_position,
