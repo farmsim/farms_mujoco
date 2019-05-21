@@ -68,8 +68,8 @@ class SimonSimulation(Simulation):
         self.elements.animat.sensors.add({
             "contact_{}".format(i): ContactSensor(
                 self.options.n_iterations,
-                self.elements.animat.identity, 1+2*i,
-                self.elements.arena.floor.identity, -1
+                self.elements.animat.identity,
+                1+2*i
             )
             for i in range(4)
         })
