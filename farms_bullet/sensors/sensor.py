@@ -19,23 +19,37 @@ class Sensor:
         return self._data
 
 
+class ContactTarget(dict):
+    """Documentation for ContactTarget"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __init__(self, identity, link):
+        super(ContactTarget, self).__init__()
+        self.identity = identity
+        self.link = link
+
+
 class ContactSensor(Sensor):
     """Model sensors"""
 
-    def __init__(self, n_iterations, animat_id, animat_link, target_id, target_link):
+    def __init__(self, n_iterations, animat_id, animat_link, target=None):
         super(ContactSensor, self).__init__([n_iterations, 6])
         self.animat_id = animat_id
         self.animat_link = animat_link
-        self.target_id = target_id
-        self.target_link = target_link
+        self.target = target
 
     def update(self, iteration):
         """Update sensors"""
         self._contacts = pybullet.getContactPoints(
-            self.animat_id,
-            self.target_id,
-            self.animat_link,
-            self.target_link
+            bodyA=self.animat_id,
+            linkIndexA=self.animat_link
+        ) if self.target is None else pybullet.getContactPoints(
+            bodyA=self.animat_id,
+            bodyB=self.target.identity,
+            linkIndexA=self.animat_link,
+            linkIndexB=self.target.link
         )
         self._data[iteration] = np.concatenate(
             [self.get_normal_force(), self.get_lateral_friction()],

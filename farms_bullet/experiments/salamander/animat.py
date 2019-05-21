@@ -274,8 +274,7 @@ class Salamander(Animat):
         self.sensors.add({
             "contact_{}".format(i): ContactSensor(
                 self.n_iterations,
-                self._identity, self.links[foot],
-                arena_identity, -1
+                self._identity, self.links[foot]
             )
             for i, foot in enumerate(self.model.feet)
         })
