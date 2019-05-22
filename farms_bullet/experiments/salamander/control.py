@@ -50,7 +50,7 @@ class SalamanderController(ModelController):
         )
         return cls(
             model=model,
-            network=SalamanderNetworkODE.walking(iterations, timestep),
+            network=SalamanderNetworkODE.default(iterations, timestep),
             joints_controllers=joint_controllers_body + joint_controllers_legs
         )
 

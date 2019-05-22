@@ -131,7 +131,7 @@ class SalamanderSimulation(Simulation):
         if self.interface.user_params.frequency.changed:
             network = self.elements.animat.controller.network
             network.parameters.oscillators.freqs = (
-                self.interface.user_params.frequency.value
+                2*np.pi*self.interface.user_params.frequency.value
             )
             self.interface.user_params.frequency.changed = False
         if self.interface.user_params.body_offset.changed:

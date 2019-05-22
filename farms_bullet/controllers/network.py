@@ -182,12 +182,12 @@ class OscillatorArray(NetworkArray):
     @property
     def freqs(self):
         """Frequencies"""
-        return 0.5*self.array[0]/np.pi
+        return self.array[0]
 
     @freqs.setter
     def freqs(self, value):
         """Frequencies"""
-        self.array[0, :] = 2*np.pi*value
+        self.array[0, :] = value
 
     @property
     def amplitudes_rates(self):
@@ -203,11 +203,6 @@ class OscillatorArray(NetworkArray):
     def amplitudes_desired(self, value):
         """Amplitudes desired"""
         self.array[2, :] = value
-
-    def update_drives(self, drive_speed, drive_turn):
-        """Set freqs"""
-        self.freqs = 4*drive_speed*np.ones(self.shape()[1])
-        self.amplitudes_desired = self._original_amplitudes_desired
 
 
 class ConnectivityArray(NetworkArray):
