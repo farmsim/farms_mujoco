@@ -396,7 +396,7 @@ class SalamanderConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     bodyjoint2index(joint_i=i, side=side_i),
                     legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
-                    legs2body_amplitude, np.pi
+                    legs2body_amplitude, 0
                 ])
                 # connectivity.append([
                 #     bodyjoint2index(joint_i=1, side=side_i),
@@ -406,7 +406,7 @@ class SalamanderConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     bodyjoint2index(joint_i=i, side=side_i),
                     legjoint2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
-                    legs2body_amplitude, 0
+                    legs2body_amplitude, np.pi
                 ])
                 # connectivity.append([
                 #     bodyjoint2index(joint_i=1, side=side_i),
@@ -418,7 +418,7 @@ class SalamanderConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     bodyjoint2index(joint_i=i+4, side=side_i),
                     legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
-                    legs2body_amplitude, np.pi
+                    legs2body_amplitude, 0
                 ])
                 # connectivity.append([
                 #     bodyjoint2index(joint_i=4, side=side_i),
@@ -428,7 +428,7 @@ class SalamanderConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     bodyjoint2index(joint_i=i+4, side=side_i),
                     legjoint2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
-                    legs2body_amplitude, 0
+                    legs2body_amplitude, np.pi
                 ])
                 # connectivity.append([
                 #     bodyjoint2index(joint_i=4, side=side_i),
@@ -714,7 +714,7 @@ class SalamanderNetworkODE(ODESolver):
         ]
         self.dstate = np.copy(self.state.array[0, 0, :])
         self.solver = integrate.ode(f=self.fun)
-        self.solver.set_integrator("dopri5")
+        self.solver.set_integrator("dopri853")
         self._time = 0
         self._parameters = self.parameters.to_ode_parameters().function
 

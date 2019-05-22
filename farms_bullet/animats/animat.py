@@ -23,9 +23,9 @@ class Animat(SimulationElement):
     def __init__(self, identity=None, options=None):
         super(Animat, self).__init__(identity=identity)
         self.options = options
-        self.links = []
-        self.joints = []
-        self.sensors = []
+        self.links = {}
+        self.joints = {}
+        self.sensors = {}
         self.controller = None
 
     def n_joints(self):
@@ -33,8 +33,8 @@ class Animat(SimulationElement):
         return pybullet.getNumJoints(self._identity)
 
     @staticmethod
-    def get_links(identity, base_link="base_link"):
-        """Get joints"""
+    def get_parent_links_info(identity, base_link="base_link"):
+        """Get links (parent of joint)"""
         links = {base_link: -1}
         links.update({
             info[12].decode("UTF-8"): info[16] + 1
@@ -46,7 +46,7 @@ class Animat(SimulationElement):
         return links
 
     @staticmethod
-    def get_joints(identity, base_link="base_link"):
+    def get_joints_info(identity, base_link="base_link"):
         """Get joints"""
         joints = {
             info[1].decode("UTF-8"): info[0]

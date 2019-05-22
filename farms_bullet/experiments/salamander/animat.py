@@ -178,15 +178,11 @@ class Salamander(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
-        self.links = self.get_links(self.identity, base_link="base_link")
-        self.joints = self.get_joints(self.identity)
-        self.print_information()
-        # Correct names
+        # Set names
+        self.links['link_body_{}'.format(0)] = -1
         for i in range(11):
             self.links['link_body_{}'.format(i+1)] = i
-            self.joints['joint_link_body_{}'.format(i+1)] = (
-                self.joints.pop('joint{}'.format(i+1))
-            )
+            self.joints['joint_link_body_{}'.format(i)] = i
         n_dof_legs = 4
         for leg_i in range(2):
             for side_i in range(2):
@@ -208,7 +204,7 @@ class Salamander(Animat):
                             side,
                             part_i
                         )
-                    ] = self.joints.pop('joint{}'.format(link_index))
+                    ] = link_index-1
         self.print_information()
 
     # @classmethod

@@ -44,7 +44,6 @@ class Snake(Animat):
 
     def spawn_body(self):
         """Spawn body"""
-        # Body
         # body_color = [0, 0.3, 0, 1]
         body_link_positions = np.zeros([12, 3])
         body_link_positions[1:, 0] = 0.06
@@ -91,15 +90,12 @@ class Snake(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
-        self.links = self.get_links(self.identity, base_link="base_link")
-        self.joints = self.get_joints(self.identity)
-        self.print_information()
+        # Get links and joints
         # Correct names
+        self.links['link_body_{}'.format(0)] = -1
         for i in range(11):
             self.links['link_body_{}'.format(i+1)] = i
-            self.joints['joint_link_body_{}'.format(i+1)] = (
-                self.joints.pop('joint{}'.format(i+1))
-            )
+            self.joints['joint_link_body_{}'.format(i)] = i
         self.print_information()
 
     def add_sensors(self):
