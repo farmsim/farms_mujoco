@@ -66,7 +66,7 @@ class SalamanderController(ModelController):
         )
         joint_controllers_body = [
             JointController(
-                joint=joints["joint_link_body_{}".format(joint_i+1)],
+                joint=joints["joint_link_body_{}".format(joint_i)],
                 sine=SineControl(
                     amplitude=amplitudes[joint_i] + (
                         options["body_stand_amplitude"]*np.sin(
