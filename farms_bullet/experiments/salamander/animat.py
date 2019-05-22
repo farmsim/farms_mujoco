@@ -266,7 +266,7 @@ class Salamander(Animat):
         """Animat physics"""
         # Swimming
         forces = None
-        if self.options.gait == "swimming":
+        if self.options.control.gait == "swimming":
             forces = viscous_swimming(
                 self.identity,
                 self.links

@@ -15,24 +15,10 @@ class SalamanderOptions(dict):
             "morphology",
             SalamanderMorphologyOptions()
         )
-        self.control = kwargs.pop("control", SalamanderControlOptions({}))
-
-        self.gait = kwargs.pop("gait", "walking")
-        self.frequency = kwargs.pop("frequency", 1)
-        self.body_amplitude_0 = kwargs.pop("body_amplitude_0", 0)
-        self.body_amplitude_1 = kwargs.pop("body_amplitude_1", 0)
-        self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
-        self.body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
-
-        # Legs
-        self.leg_0_amplitude = kwargs.pop("leg_0_amplitude", 0.8)
-        self.leg_0_offset = kwargs.pop("leg_0_offset", 0)
-
-        self.leg_1_amplitude = kwargs.pop("leg_1_amplitude", np.pi/32)
-        self.leg_1_offset = kwargs.pop("leg_1_offset", np.pi/32)
-
-        self.leg_2_amplitude = kwargs.pop("leg_2_amplitude", np.pi/8)
-        self.leg_2_offset = kwargs.pop("leg_2_offset", np.pi/8)
+        self.control = kwargs.pop(
+            "control",
+            SalamanderControlOptions.walking()
+        )
 
 
 class SalamanderMorphologyOptions(dict):
@@ -60,6 +46,22 @@ class SalamanderControlOptions(dict):
 
     def __init__(self, options):
         super(SalamanderControlOptions, self).__init__()
+        self.gait = options.pop("gait", "walking")
+        self.frequency = options.pop("frequency", 1)
+        self.body_amplitude_0 = options.pop("body_amplitude_0", 0)
+        self.body_amplitude_1 = options.pop("body_amplitude_1", 0)
+        self.body_stand_amplitude = options.pop("body_stand_amplitude", 0.2)
+        self.body_stand_shift = options.pop("body_stand_shift", np.pi/4)
+
+        # Legs
+        self.leg_0_amplitude = options.pop("leg_0_amplitude", 0.8)
+        self.leg_0_offset = options.pop("leg_0_offset", 0)
+
+        self.leg_1_amplitude = options.pop("leg_1_amplitude", np.pi/32)
+        self.leg_1_offset = options.pop("leg_1_offset", np.pi/32)
+
+        self.leg_2_amplitude = options.pop("leg_2_amplitude", np.pi/8)
+        self.leg_2_offset = options.pop("leg_2_offset", np.pi/8)
         self.update(options)
 
     @classmethod

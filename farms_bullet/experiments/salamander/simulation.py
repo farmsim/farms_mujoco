@@ -115,15 +115,15 @@ class SalamanderSimulation(Simulation):
         """Animat interface"""
         # Control
         if self.interface.user_params.gait.changed:
-            self.elements.animat.options.gait = (
+            self.elements.animat.options.control.gait = (
                 self.interface.user_params.gait.value
             )
             self.elements.animat.controller.update_gait(
-                self.elements.animat.options.gait,
+                self.elements.animat.options.control.gait,
                 self.elements.animat.joints,
                 self.options.timestep
             )
-            if self.elements.animat.options.gait == "swimming":
+            if self.elements.animat.options.control.gait == "swimming":
                 pybullet.setGravity(0, 0, -0.01)
             else:
                 pybullet.setGravity(0, 0, -9.81)

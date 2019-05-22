@@ -57,8 +57,8 @@ class Interfaces:
         """Initialise debug"""
         # User parameters
         self.user_params = UserParameters(
-            animat_options.gait,
-            animat_options.frequency
+            animat_options.control.gait,
+            animat_options.control.frequency
         )
 
         # Debug info
