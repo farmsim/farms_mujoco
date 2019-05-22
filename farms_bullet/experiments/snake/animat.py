@@ -45,24 +45,32 @@ class Snake(Animat):
     def spawn_body(self):
         """Spawn body"""
         # Body
-        body_color = [0, 0.3, 0, 1]
+        # body_color = [0, 0.3, 0, 1]
         body_link_positions = np.zeros([12, 3])
-        body_link_positions[1:, 0] = 0.05
+        body_link_positions[1:, 0] = 0.06
+        body_shape = {
+            "geometry": pybullet.GEOM_BOX,
+            "size": [0.03, 0.02, 0.02]
+        }
+        body_shape = {
+            "geometry": pybullet.GEOM_CAPSULE,
+            "radius": 0.03,
+            "height": 0.06,
+            "frame_orientation": [0, 0.5*np.pi, 0]
+        }
         base_link = AnimatLink(
-            geometry=pybullet.GEOM_BOX,
-            size=[0.03, 0.02, 0.01],
+            **body_shape,
             position=body_link_positions[0],
             joint_axis=[0, 0, 1],
-            color=body_color
+            # color=body_color
         )
         links = [
             AnimatLink(
-                geometry=pybullet.GEOM_BOX,
-                size=[0.03, 0.02, 0.01],
+                **body_shape,
                 position=body_link_positions[i+1],
                 parent=i,
                 joint_axis=[0, 0, 1],
-                color=body_color
+                # color=body_color
             )
             for i in range(11)
         ]
