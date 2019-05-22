@@ -3,7 +3,6 @@
 import numpy as np
 from scipy import integrate
 from .convention import bodyosc2index, legosc2index  # legjoint2index
-from .control_options import SalamanderControlOptions
 from ...controllers.network import (
     ODE,
     ODESolver,
@@ -14,7 +13,7 @@ from ...controllers.network import (
     JointsArray
 )
 from ...cy_controller import ode_oscillators_sparse, rk4  # euler
-from .animat_options import SalamanderOptions
+from .animat_options import SalamanderOptions, SalamanderControlOptions
 
 
 class SalamanderOscillatorNetworkState(OscillatorNetworkState):

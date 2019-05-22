@@ -9,7 +9,7 @@ from ...controllers.control import (
     JointController
 )
 
-from .control_options import SalamanderControlOptions
+from .animat_options import SalamanderControlOptions
 from .network import SalamanderNetworkODE
 
 
