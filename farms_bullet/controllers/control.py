@@ -117,15 +117,13 @@ class ModelController:
 
     def control(self):
         """Control"""
-        _phases = self.network.control_step()
-        position = self.network.get_position_output()
-        velocity = self.network.get_velocity_output()
+        self.network.control_step()
         pybullet.setJointMotorControlArray(
             self.model,
             self._joint_order,  # [ctrl["joint"] for ctrl in controls]
             pybullet.POSITION_CONTROL,
-            targetPositions=position,  # [ctrl["cmd"]["pos"] for ctrl in controls],
-            targetVelocities=velocity,  # [ctrl["cmd"]["vel"] for ctrl in controls],
+            targetPositions=self.network.get_position_output(),  # [ctrl["cmd"]["pos"] for ctrl in controls],
+            targetVelocities=self.network.get_velocity_output(),  # [ctrl["cmd"]["vel"] for ctrl in controls],
             # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
             # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
             # forces=[ctrl["pdf"]["f"] for ctrl in controls]

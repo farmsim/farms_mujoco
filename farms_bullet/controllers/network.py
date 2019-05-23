@@ -49,15 +49,15 @@ class CyODESolver:
 
     def step(self):
         """Control step"""
-        # self.ode.solver(
-        #     self.ode.function,
-        #     self._timestep,
-        #     self._state,
-        #     self._n_dim,
-        #     self._iteration,
-        #     *self._parameters.solver,
-        #     self._parameters.function
-        # )
+        self.ode.solver(
+            self.ode.function,
+            self._timestep,
+            self._state,
+            self._n_dim,
+            self._iteration,
+            *self._parameters.solver,
+            self._parameters.function
+        )
         self._iteration += 1
 
 

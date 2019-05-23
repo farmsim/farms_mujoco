@@ -1053,6 +1053,8 @@ class SalamanderNetworkODE(ODESolver):
             for side_i in range(2)
             for joint_i in range(n_legs_dofs)
         ]
+
+        # Adaptive timestep
         self.dstate = np.copy(self.state.array[0, 0, :])
         self.solver = integrate.ode(f=self.fun)
         self.solver.set_integrator("dopri5")
@@ -1105,12 +1107,10 @@ class SalamanderNetworkODE(ODESolver):
 
     def control_step(self):
         """Control step"""
-        # self.state.array[self._iteration+1, 0, :] = integrate.odeint(
-        #     func=self.fun,
-        #     y0=np.copy(self.state.array[self._iteration, 0, :]),
-        #     t=np.linspace(0, self._timestep, 10),
-        #     tfirst=True
-        # )[-1]
+        # # Fixed timestep
+        # self.step()
+
+        # Adaptive timestep
         self.solver.set_initial_value(
             self.state.array[self._iteration, 0, :],
             self._time
@@ -1123,8 +1123,14 @@ class SalamanderNetworkODE(ODESolver):
             self.state.array[self._iteration+1, 0, :]
             - self.state.array[self._iteration, 0, :]
         )/self._timestep
-        self.step()
-        return self.current_state
+        self._iteration += 1
+        # self.state.array[self._iteration+1, 0, :] = integrate.odeint(
+        #     func=self.fun,
+        #     y0=np.copy(self.state.array[self._iteration, 0, :]),
+        #     t=np.linspace(0, self._timestep, 10),
+        #     tfirst=True
+        # )[-1]
+        
 
     @property
     def phases(self):
