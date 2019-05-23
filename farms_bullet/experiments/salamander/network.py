@@ -1055,7 +1055,7 @@ class SalamanderNetworkODE(ODESolver):
         ]
         self.dstate = np.copy(self.state.array[0, 0, :])
         self.solver = integrate.ode(f=self.fun)
-        self.solver.set_integrator("dopri853")
+        self.solver.set_integrator("dopri5")
         self._time = 0
         self._parameters = self.parameters.to_ode_parameters().function
 
@@ -1116,8 +1116,9 @@ class SalamanderNetworkODE(ODESolver):
             self._time
         )
         self._time += self._timestep
-        self.solver.integrate(self._time)
-        self.state.array[self._iteration+1, 0, :] = self.solver.y
+        self.state.array[self._iteration+1, 0, :] = (
+            self.solver.integrate(self._time)
+        )
         self.state.array[self._iteration+1, 1, :] = (
             self.state.array[self._iteration+1, 0, :]
             - self.state.array[self._iteration, 0, :]
