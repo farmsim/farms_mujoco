@@ -24,7 +24,7 @@ setup(
     #     "Topic :: Utilities",
     #     "License :: OSI Approved :: BSD License",
     # ],
-    scripts=['scripts/farms_sim_salamander.py'],
+    scripts=['scripts/farms_salamander.py'],
     # package_data={'farms_bullet': [
     #     'farms_bullet/templates/*',
     #     'farms_bullet/config/*'

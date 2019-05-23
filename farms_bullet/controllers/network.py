@@ -6,18 +6,14 @@ import numpy as np
 class ODE(dict):
     """ODE"""
 
-    def __init__(self, solver, function):
-        super(ODE, self).__init__({"solver": solver, "function": function})
+    __getattr__ = dict.__getitem__
 
-    @property
-    def solver(self):
-        """Solver"""
-        return self["solver"]
-
-    @property
-    def function(self):
-        """Function"""
-        return self["function"]
+    def __init__(self, solver, function, gradient=None):
+        super(ODE, self).__init__({
+            "solver": solver,
+            "function": function,
+            "gradient": gradient
+        })
 
 
 class CyODESolver:

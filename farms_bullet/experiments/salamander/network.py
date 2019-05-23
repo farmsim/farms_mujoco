@@ -12,7 +12,12 @@ from ...controllers.network import (
     ConnectivityArray,
     JointsArray
 )
-from ...cy_controller import ode_oscillators_sparse, rk4  # euler
+from ...cy_controller import (
+    rk4,
+    # euler,
+    ode_oscillators_sparse,
+    ode_oscillators_sparse_gradient
+)
 from .animat_options import SalamanderOptions, SalamanderControlOptions
 
 
@@ -1023,7 +1028,11 @@ class SalamanderNetworkODE(ODESolver):
 
     def __init__(self, state, parameters, timestep):
         super(SalamanderNetworkODE, self).__init__(
-            ode=ODE(rk4, ode_oscillators_sparse),
+            ode=ODE(
+                solver=rk4,
+                function=ode_oscillators_sparse,
+                gradient=ode_oscillators_sparse_gradient
+            ),
             state=state.array,
             timestep=timestep,
             parameters=parameters.to_ode_parameters()
@@ -1055,8 +1064,10 @@ class SalamanderNetworkODE(ODESolver):
         ]
 
         # Adaptive timestep
-        self.dstate = np.copy(self.state.array[0, 0, :])
-        self.solver = integrate.ode(f=self.fun)
+        self.n_states = len(self.state.array[0, 0, :])
+        self.dstate = np.zeros([self.n_states], dtype=np.float64)
+        self._jac = np.zeros([self.n_states, self.n_states], dtype=np.float64)
+        self.solver = integrate.ode(f=self.fun)  # , jac=self.jac
         self.solver.set_integrator("dopri5")
         self._time = 0
         self._parameters = self.parameters.to_ode_parameters().function
@@ -1076,6 +1087,19 @@ class SalamanderNetworkODE(ODESolver):
             *self._parameters
         )
         return self.dstate
+
+    def jac(self, _time, state):
+        """ODE function"""
+        # self._jac = np.zeros([self.n_states, self.n_states], dtype=np.float64)
+        self.ode.gradient(
+            self._jac,
+            state,
+            *self._parameters
+        )
+        # np.set_printoptions(precision=3, linewidth=np.inf, threshold=np.inf)
+        # print(self._jac)
+        # raise Exception
+        return self._jac
 
     @classmethod
     def from_gait(cls, gait, n_iterations, timestep):
@@ -1110,7 +1134,7 @@ class SalamanderNetworkODE(ODESolver):
         # # Fixed timestep
         # self.step()
 
-        # Adaptive timestep
+        # Adaptive timestep (ODE)
         self.solver.set_initial_value(
             self.state.array[self._iteration, 0, :],
             self._time
@@ -1124,13 +1148,16 @@ class SalamanderNetworkODE(ODESolver):
             - self.state.array[self._iteration, 0, :]
         )/self._timestep
         self._iteration += 1
+
+        # # Adaptive timestep (ODEINT)
         # self.state.array[self._iteration+1, 0, :] = integrate.odeint(
         #     func=self.fun,
+        #     Dfun=self.jac,
         #     y0=np.copy(self.state.array[self._iteration, 0, :]),
         #     t=np.linspace(0, self._timestep, 10),
         #     tfirst=True
         # )[-1]
-        
+        # self._iteration += 1
 
     @property
     def phases(self):

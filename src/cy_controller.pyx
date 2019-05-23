@@ -12,7 +12,7 @@ import numpy as np
 cimport cython
 cimport numpy as np
 
-from libc.math cimport sin
+from libc.math cimport sin, cos
 # from libc.stdlib cimport malloc, free
 # from cython.parallel import prange
 
@@ -23,8 +23,8 @@ DTYPE = np.float64
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-@cython.profile(False)
 @cython.nonecheck(False)
+# @cython.profile(False)
 cpdef void ode_oscillators_sparse(
     CTYPE[:] dstate,
     CTYPE[:] state,
@@ -38,24 +38,61 @@ cpdef void ode_oscillators_sparse(
     """ODE"""
     cdef unsigned int i, i0, i1
     for i in range(o_dim):  # , nogil=True):
+        # Intrinsic frequency
         dstate[i] = oscillators[0][i]
+        # rate*(nominal_amplitude - amplitude)
         dstate[o_dim+i] = (
             oscillators[1][i]*(oscillators[2][i] - state[o_dim+i])
         )
     for i in range(c_dim):
         i0 = <unsigned int> (connectivity[i][0] + 0.5)
         i1 = <unsigned int> (connectivity[i][1] + 0.5)
+        # amplitude*weight*sin(phase_j - phase_i - phase_bias)
         dstate[i0] += state[o_dim+i1]*connectivity[i][2]*sin(
             state[i1] - state[i0] - connectivity[i][3]
         )
     for i in range(j_dim):
+        # rate*(joints_offset_desired - joints_offset)
         dstate[2*o_dim+i] = joints[1][i]*(joints[0][i] - state[2*o_dim+i])
 
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-@cython.profile(False)
 @cython.nonecheck(False)
+# @cython.profile(False)
+cpdef void ode_oscillators_sparse_gradient(
+    CTYPE[:, :] jac,
+    CTYPE[:] state,
+    CTYPE[:, :] oscillators,
+    CTYPE[:, :] connectivity,
+    CTYPE[:, :] joints,
+    unsigned int o_dim,
+    unsigned int c_dim,
+    unsigned int j_dim
+) nogil:
+    """ODE"""
+    cdef unsigned int i, i0, i1, j
+    for i in range(o_dim):  # , nogil=True):
+        # amplitude_i = rate_i*(nominal_amplitude_i - amplitude_i) gradient
+        jac[o_dim+i, o_dim+i] = -oscillators[1][i]
+    for i in range(c_dim):
+        i0 = <unsigned int> (connectivity[i][0] + 0.5)
+        i1 = <unsigned int> (connectivity[i][1] + 0.5)
+        # amplitude*weight*sin(phase_j - phase_i - phase_bias) gradient
+        jac[i0, i1] = connectivity[i][2]*sin(
+            state[i1] - state[i0] - connectivity[i][3]
+        ) + state[o_dim+i1]*connectivity[i][2]*cos(
+            state[i1] - state[i0] - connectivity[i][3]
+        )
+    for i in range(j_dim):
+        # rate*(joints_offset_desired - joints_offset) gradient
+        jac[2*o_dim+i, 2*o_dim+i] = -joints[1][i]
+
+
+@cython.boundscheck(False)  # Deactivate bounds checking
+@cython.wraparound(False)   # Deactivate negative indexing.
+@cython.nonecheck(False)
+# @cython.profile(False)
 cpdef void euler(
     fun,
     float timestep,
@@ -77,8 +114,8 @@ cpdef void euler(
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
-@cython.profile(False)
 @cython.nonecheck(False)
+# @cython.profile(False)
 cpdef void rk4(
     fun,
     float timestep,
