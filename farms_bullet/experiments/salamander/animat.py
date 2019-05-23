@@ -50,23 +50,30 @@ class Salamander(Animat):
         self.set_collisions(links_no_collisions, group=0, mask=0)
         # Deactivate damping
         joints_no_damping = [
-            "link_body_{}".format(body_i+1)
-            for body_i in range(11)
+            "link_body_{}".format(body_i)
+            for body_i in range(12)
         ] + [
             "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
             for leg_i in range(2)
             for side in ["L", "R"]
             for joint_i in range(4)
         ]
-        # self.set_joint_damping(joints_no_damping, linear=0, angular=0)
         self.set_links_dynamics(
             joints_no_damping,
+            linearDamping=0,
+            angularDamping=0,
             jointDamping=0
+        )
+        # Feet friction
+        self.set_links_dynamics(
+            self.feet,
+            lateralFriction=1,
+            spinningFriction=0,
+            rollingFriction=0,
         )
 
     def spawn_body(self):
         """Spawn body"""
-        # Body
         meshes_directory = (
             "{}/meshes".format(
                 os.path.dirname(os.path.realpath(__file__))
