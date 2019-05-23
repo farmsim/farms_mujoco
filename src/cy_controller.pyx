@@ -41,9 +41,7 @@ cpdef void ode_oscillators_sparse(
         # Intrinsic frequency
         dstate[i] = oscillators[0][i]
         # rate*(nominal_amplitude - amplitude)
-        dstate[o_dim+i] = (
-            oscillators[1][i]*(oscillators[2][i] - state[o_dim+i])
-        )
+        dstate[o_dim+i] = oscillators[1][i]*(oscillators[2][i] - state[o_dim+i])
     for i in range(c_dim):
         i0 = <unsigned int> (connectivity[i][0] + 0.5)
         i1 = <unsigned int> (connectivity[i][1] + 0.5)
@@ -71,7 +69,7 @@ cpdef void ode_oscillators_sparse_gradient(
     unsigned int j_dim
 ) nogil:
     """ODE"""
-    cdef unsigned int i, i0, i1, j
+    cdef unsigned int i, i0, i1
     for i in range(o_dim):  # , nogil=True):
         # amplitude_i = rate_i*(nominal_amplitude_i - amplitude_i) gradient
         jac[o_dim+i, o_dim+i] = -oscillators[1][i]
