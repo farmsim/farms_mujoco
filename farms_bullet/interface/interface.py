@@ -56,10 +56,7 @@ class Interfaces:
     def init_debug(self, animat_options):
         """Initialise debug"""
         # User parameters
-        self.user_params = UserParameters(
-            animat_options.control.gait,
-            animat_options.control.frequency
-        )
+        self.user_params = UserParameters(animat_options.control.drive)
 
         # Debug info
         test_debug_info()
@@ -127,46 +124,46 @@ class ParameterPlay(DebugParameter):
         self.value = self.get_value() > 0.5
 
 
-class ParameterGait(DebugParameter):
-    """Gait control"""
+# class ParameterGait(DebugParameter):
+#     """Gait control"""
 
-    def __init__(self, gait):
-        value = 0 if gait == "standing" else 2 if gait == "swimming" else 1
-        super(ParameterGait, self).__init__("Gait", value, 0, 2)
-        self.value = gait
-        self.changed = False
+#     def __init__(self, gait):
+#         value = 0 if gait == "standing" else 2 if gait == "swimming" else 1
+#         super(ParameterGait, self).__init__("Gait", value, 0, 2)
+#         self.value = gait
+#         self.changed = False
 
-    def update(self):
-        """Update"""
-        previous_value = self.value
-        value = self.get_value()
-        self.value = (
-            "standing"
-            if value < 0.5
-            else "walking"
-            if 0.5 < value < 1.5
-            else "swimming"
-        )
-        self.changed = (self.value != previous_value)
-        if self.changed:
-            print("Gait changed ({} > {})".format(
-                previous_value,
-                self.value
-            ))
+#     def update(self):
+#         """Update"""
+#         previous_value = self.value
+#         value = self.get_value()
+#         self.value = (
+#             "standing"
+#             if value < 0.5
+#             else "walking"
+#             if 0.5 < value < 1.5
+#             else "swimming"
+#         )
+#         self.changed = (self.value != previous_value)
+#         if self.changed:
+#             print("Gait changed ({} > {})".format(
+#                 previous_value,
+#                 self.value
+#             ))
 
 
 class UserParameters(dict):
     """Parameters control"""
 
-    def __init__(self, gait, frequency):
+    def __init__(self, drive):
         super(UserParameters, self).__init__()
         lim = np.pi/8
         self["play"] = ParameterPlay()
         self["rtl"] = DebugParameter("Real-time limiter", 1, 1e-3, 3)
-        self["gait"] = ParameterGait(gait)
-        self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
+        # self["gait"] = ParameterGait(gait)
+        # self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
         self["body_offset"] = DebugParameter("Body offset", 0, -lim, lim)
-        self["drive_speed"] = DebugParameter("Drive speed", 1, 0, 6)
+        self["drive_speed"] = DebugParameter("Drive speed", drive, 0, 6)
         self["drive_turn"] = DebugParameter("Drive turn", 1, 0, 6)
 
     def update(self):
@@ -184,15 +181,15 @@ class UserParameters(dict):
         """Real-time limiter"""
         return self["rtl"]
 
-    @property
-    def gait(self):
-        """Gait"""
-        return self["gait"]
+    # @property
+    # def gait(self):
+    #     """Gait"""
+    #     return self["gait"]
 
-    @property
-    def frequency(self):
-        """Frequency"""
-        return self["frequency"]
+    # @property
+    # def frequency(self):
+    #     """Frequency"""
+    #     return self["frequency"]
 
     @property
     def body_offset(self):
