@@ -395,6 +395,68 @@ class SalamanderDriveDependentProperty(DriveDependentProperty):
     __setattr__ = dict.__setitem__
 
     @classmethod
+    def legs_nominal_amplitudes(cls, joint_i, **kwargs):
+        """Legs nominal amplitudes"""
+        amplitude = kwargs.pop(
+            "leg_{}_amplitude".format(joint_i),
+            [0.8, np.pi/32, np.pi/4, np.pi/8][joint_i]
+        )
+        return cls(
+            val_min=amplitude,
+            val_max=amplitude,
+            drive_min=1,
+            drive_max=3,
+            val_sat=0
+        )
+
+    @classmethod
+    def body_nominal_amplitudes(cls):
+        """Body nominal amplitudes"""
+        return cls(
+            val_min=0.5,
+            val_max=1.5,
+            drive_min=1,
+            drive_max=5,
+            val_sat=0
+        )
+
+    @classmethod
+    def legs_joints_offsets(cls, joint_i, **kwargs):
+        """Legs joints offsets"""
+        return cls(
+            val_min=0.5,
+            val_max=1,
+            drive_min=1,
+            drive_max=3,
+            val_sat=0
+        )
+
+    @classmethod
+    def body_joints_offsets(cls):
+        """Body joints offsets"""
+        return cls(
+            val_min=-1,
+            val_max=1,
+            drive_min=0,
+            drive_max=0,
+            val_sat=0
+        )
+
+
+class SalamanderOscillatorFrequenciesOptions(SalamanderDriveDependentProperty):
+    """Salamander oscillator frequencies options"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __init__(self, **kwargs):
+        super(SalamanderOscillatorFrequenciesOptions, self).__init__(**kwargs)
+        self.interp = interpolate.interp1d(
+            [self.drive_min, self.drive_max],
+            [self.val_min, self.val_max],
+        )
+
+    @classmethod
     def legs_freqs(cls):
         """Legs intrinsic frequencies"""
         return cls(
@@ -416,48 +478,31 @@ class SalamanderDriveDependentProperty(DriveDependentProperty):
             val_sat=0
         )
 
-    @classmethod
-    def legs_nominal_amplitudes(cls, joint_i):
-        """Legs nominal amplitudes"""
-        return cls(
-            val_min=0.5,
-            val_max=1,
-            drive_min=1,
-            drive_max=3,
-            val_sat=0
+    def value(self, drives):
+        """Value in function of drive"""
+        return (
+            self.interp(drives.forward)
+            if self.drive_min < drives.forward < self.drive_max
+            else self.val_sat
         )
 
-    @classmethod
-    def body_nominal_amplitudes(cls):
-        """Body nominal amplitudes"""
-        return cls(
-            val_min=0.5,
-            val_max=1.5,
-            drive_min=1,
-            drive_max=5,
-            val_sat=0
+
+class SalamanderOscillatorAmplitudeOptions(SalamanderDriveDependentProperty):
+    """Salamander oscillators amplitudes options"""
+
+    def __init__(self, **kwargs):
+        super(SalamanderOscillatorAmplitudeOptions, self).__init__(**kwargs)
+        osc_options.body_stand_amplitude*np.sin(
+            2*np.pi*i/n_body
+            - osc_options.body_stand_shift
         )
 
-    @classmethod
-    def legs_joints_offsets(cls, joint_i):
-        """Legs joints offsets"""
-        return cls(
-            val_min=0.5,
-            val_max=1,
-            drive_min=1,
-            drive_max=3,
-            val_sat=0
-        )
-
-    @classmethod
-    def body_joints_offsets(cls):
-        """Body joints offsets"""
-        return cls(
-            val_min=0.5,
-            val_max=1.5,
-            drive_min=1,
-            drive_max=5,
-            val_sat=0
+    def value(self, drives):
+        """Value in function of drive"""
+        return (
+            self.interp(drives.forward)
+            if self.drive_min < drives.forward < self.drive_max
+            else self.val_sat
         )
 
 
@@ -480,23 +525,17 @@ class SalamanderOscillatorOptions(dict):
         self.body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
 
         # Frequencies
-        self.legs_freqs = SalamanderDriveDependentProperty.legs_freqs()
-        self.body_freqs = SalamanderDriveDependentProperty.body_freqs()
+        self.body_freqs = SalamanderOscillatorFrequenciesOptions.body_freqs()
+        self.legs_freqs = SalamanderOscillatorFrequenciesOptions.legs_freqs()
 
         # Nominal amplitudes
+        self.body_nominal_amplitudes = (
+            SalamanderDriveDependentProperty.body_nominal_amplitudes()
+        )
         self.legs_nominal_amplitudes = [
             SalamanderDriveDependentProperty.legs_nominal_amplitudes(joint_i)
             for joint_i in range(4)
         ]
-        self.body_nominal_amplitudes = (
-            SalamanderDriveDependentProperty.body_nominal_amplitudes()
-        )
-
-        # Legs
-        self.leg_0_amplitude = kwargs.pop("leg_0_amplitude", 0.8)
-        self.leg_1_amplitude = kwargs.pop("leg_1_amplitude", np.pi/32)
-        self.leg_2_amplitude = kwargs.pop("leg_2_amplitude", np.pi/4)
-        self.leg_3_amplitude = kwargs.pop("leg_3_amplitude", np.pi/8)
 
 
 class SalamanderConnectivityOptions(dict):
