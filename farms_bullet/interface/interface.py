@@ -56,7 +56,7 @@ class Interfaces:
     def init_debug(self, animat_options):
         """Initialise debug"""
         # User parameters
-        self.user_params = UserParameters(animat_options.control.drive)
+        self.user_params = UserParameters(animat_options)
 
         # Debug info
         test_debug_info()
@@ -155,7 +155,7 @@ class ParameterPlay(DebugParameter):
 class UserParameters(dict):
     """Parameters control"""
 
-    def __init__(self, drive):
+    def __init__(self, options):
         super(UserParameters, self).__init__()
         lim = np.pi/8
         self["play"] = ParameterPlay()
@@ -163,8 +163,16 @@ class UserParameters(dict):
         # self["gait"] = ParameterGait(gait)
         # self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
         self["body_offset"] = DebugParameter("Body offset", 0, -lim, lim)
-        self["drive_speed"] = DebugParameter("Drive speed", drive, 0, 6)
-        self["drive_turn"] = DebugParameter("Drive turn", 1, 0, 6)
+        self["drive_speed"] = DebugParameter(
+            "Drive speed",
+            options.control.drives.forward,
+            0, 6
+        )
+        self["drive_turn"] = DebugParameter(
+            "Drive turn",
+            options.control.drives.left,
+            0, 6
+        )
 
     def update(self):
         """Update parameters"""

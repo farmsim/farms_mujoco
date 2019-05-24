@@ -263,12 +263,12 @@ class Salamander(Animat):
             )
         })
 
-    def setup_controller(self, **kwargs):
+    def setup_controller(self):
         """Setup controller"""
         self.controller = SalamanderController.from_options(
             self.identity,
             self.joints,
-            options=SalamanderControlOptions.default(**kwargs),
+            options=self.options,
             iterations=self.n_iterations,
             timestep=self.timestep
         )
@@ -277,7 +277,10 @@ class Salamander(Animat):
         """Animat physics"""
         # Swimming
         forces = None
-        if self.options.control.drive > self.options.control.drive_swim_sat:
+        if (
+                self.options.control.drives.forward >
+                self.options.control.network.oscillators.body_freqs.drive_max
+        ):
             forces = viscous_swimming(
                 self.identity,
                 self.links

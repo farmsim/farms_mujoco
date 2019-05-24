@@ -1078,12 +1078,10 @@ class SalamanderNetworkODE(ODESolver):
         self._parameters = self.parameters.to_ode_parameters().function
 
     @classmethod
-    def default(cls, n_iterations, timestep):
+    def from_options(cls, options, n_iterations, timestep):
         """Salamander swimming network"""
         state = SalamanderOscillatorNetworkState.default_state(n_iterations)
-        parameters = SalamanderNetworkParameters.from_options(
-            SalamanderControlOptions.default()
-        )
+        parameters = SalamanderNetworkParameters.from_options(options)
         return cls(state, parameters, timestep)
 
     def fun(self, _time, state):

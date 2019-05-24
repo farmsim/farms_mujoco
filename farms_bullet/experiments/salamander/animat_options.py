@@ -18,8 +18,10 @@ class SalamanderOptions(dict):
         )
         self.control = kwargs.pop(
             "control",
-            SalamanderControlOptions.default()
+            SalamanderControlOptions()
         )
+        if kwargs:
+            raise Exception("Unknown kwargs: {}".format(kwargs))
 
 
 class SalamanderMorphologyOptions(dict):
@@ -45,28 +47,20 @@ class SalamanderControlOptions(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
-    def __init__(self, options):
+    def __init__(self, **kwargs):
         super(SalamanderControlOptions, self).__init__()
-        # self.gait = options.pop("gait", "walking")
-        # self.frequency = options.pop("frequency", 1)
-        self.drive = options.pop("drive", 2)
-        self.drive_swim_sat = options.pop("drive", 3)
-
-        self.body_amplitude_0 = options.pop("body_amplitude_0", 0)
-        self.body_amplitude_1 = options.pop("body_amplitude_1", 0)
-        self.body_stand_amplitude = options.pop("body_stand_amplitude", 0.2)
-        self.body_stand_shift = options.pop("body_stand_shift", np.pi/4)
-
-        # Legs
-        self.leg_0_amplitude = options.pop("leg_0_amplitude", 0.8)
-        self.leg_0_offset = options.pop("leg_0_offset", 0)
-
-        self.leg_1_amplitude = options.pop("leg_1_amplitude", np.pi/32)
-        self.leg_1_offset = options.pop("leg_1_offset", np.pi/32)
-
-        self.leg_2_amplitude = options.pop("leg_2_amplitude", np.pi/8)
-        self.leg_2_offset = options.pop("leg_2_offset", np.pi/8)
-        self.update(options)
+        self.drives = kwargs.pop(
+            "drives",
+            SalamanderDrives(**kwargs)
+        )
+        self.joints_controllers = kwargs.pop(
+            "joints_controllers",
+            SalamanderJointsControllers(**kwargs)
+        )
+        self.network = kwargs.pop(
+            "network",
+            SalamanderNetworkOptions(**kwargs)
+        )
 
     # @classmethod
     # def from_gait(cls, gait, **kwargs):
@@ -215,52 +209,52 @@ class SalamanderControlOptions(dict):
     #     options.update(kwargs)
     #     return cls(options)
 
-    @classmethod
-    def default(cls, **kwargs):
-        """Walking options"""
-        # Options
-        options = {}
+    # @classmethod
+    # def default(cls, **kwargs):
+    #     """Walking options"""
+    #     # Options
+    #     options = {}
 
-        # General
-        options["n_body_joints"] = 11
-        options["frequency"] = kwargs.pop("frequency", 1)
+    #     # General
+    #     options["n_body_joints"] = 11
+    #     options["frequency"] = kwargs.pop("frequency", 1)
 
-        # Body
-        options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0)
-        options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0)
-        options["body_stand_amplitude"] = kwargs.pop(
-            "body_stand_amplitude",
-            0.2
-        )
-        options["body_stand_shift"] = kwargs.pop("body_stand_shift", np.pi/4)
+    #     # Body
+    #     options["body_amplitude_0"] = kwargs.pop("body_amplitude_0", 0)
+    #     options["body_amplitude_1"] = kwargs.pop("body_amplitude_1", 0)
+    #     options["body_stand_amplitude"] = kwargs.pop(
+    #         "body_stand_amplitude",
+    #         0.2
+    #     )
+    #     options["body_stand_shift"] = kwargs.pop("body_stand_shift", np.pi/4)
 
-        # Legs
-        options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0.8)
-        options["leg_0_offset"] = kwargs.pop("leg_0_offset", 0)
+    #     # Legs
+    #     options["leg_0_amplitude"] = kwargs.pop("leg_0_amplitude", 0.8)
+    #     options["leg_0_offset"] = kwargs.pop("leg_0_offset", 0)
 
-        options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", np.pi/32)
-        options["leg_1_offset"] = kwargs.pop("leg_1_offset", np.pi/32)
+    #     options["leg_1_amplitude"] = kwargs.pop("leg_1_amplitude", np.pi/32)
+    #     options["leg_1_offset"] = kwargs.pop("leg_1_offset", np.pi/32)
 
-        options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", np.pi/4)
-        options["leg_2_offset"] = kwargs.pop("leg_2_offset", 0)
+    #     options["leg_2_amplitude"] = kwargs.pop("leg_2_amplitude", np.pi/4)
+    #     options["leg_2_offset"] = kwargs.pop("leg_2_offset", 0)
 
-        options["leg_3_amplitude"] = kwargs.pop("leg_3_amplitude", np.pi/8)
-        options["leg_3_offset"] = kwargs.pop("leg_3_offset", np.pi/8)
+    #     options["leg_3_amplitude"] = kwargs.pop("leg_3_amplitude", np.pi/8)
+    #     options["leg_3_offset"] = kwargs.pop("leg_3_offset", np.pi/8)
 
-        # Additional walking options
-        options["leg_turn"] = 0
+    #     # Additional walking options
+    #     options["leg_turn"] = 0
 
-        # Gains
-        options["body_p"] = 1e-1
-        options["body_d"] = 1e0
-        options["body_f"] = 1e1
-        options["legs_p"] = 1e-1
-        options["legs_d"] = 1e0
-        options["legs_f"] = 1e1
+    #     # Gains
+    #     options["body_p"] = 1e-1
+    #     options["body_d"] = 1e0
+    #     options["body_f"] = 1e1
+    #     options["legs_p"] = 1e-1
+    #     options["legs_d"] = 1e0
+    #     options["legs_f"] = 1e1
 
-        # Additional options
-        options.update(kwargs)
-        return cls(options)
+    #     # Additional options
+    #     options.update(kwargs)
+    #     return cls(options)
 
     def to_vector(self):
         """To vector"""
@@ -309,6 +303,60 @@ class SalamanderControlOptions(dict):
         ) = vector
 
 
+class SalamanderDrives(dict):
+    """Salamander drives"""
+
+    def __init__(self, **kwargs):
+        super(SalamanderDrives, self).__init__()
+        self.forward = kwargs.pop("drive_forward", 2)
+        self.left = kwargs.pop("drive_left", 0)
+        self.right = kwargs.pop("drive_right", 0)
+
+
+
+class SalamanderJointsControllers(dict):
+    """Salamander joints controllers"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __init__(self, **kwargs):
+        super(SalamanderJointsControllers, self).__init__()
+        self.body_p = kwargs.pop("body_p", 1e-1)
+        self.body_d = kwargs.pop("body_d", 1e0)
+        self.body_f = kwargs.pop("body_f", 1e1)
+        self.legs_p = kwargs.pop("legs_p", 1e-1)
+        self.legs_d = kwargs.pop("legs_d", 1e0)
+        self.legs_f = kwargs.pop("legs_f", 1e1)
+
+
+
+class SalamanderNetworkOptions(dict):
+    """Salamander network options"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __init__(self, **kwargs):
+        super(SalamanderNetworkOptions, self).__init__()
+        self.oscillators = kwargs.pop(
+            "oscillators",
+            SalamanderOscillatorOptions(**kwargs)
+        )
+        self.connectivity = kwargs.pop(
+            "connectivity",
+            SalamanderConnectivityOptions(**kwargs)
+        )
+        self.joints = kwargs.pop(
+            "joints",
+            SalamanderJointsOptions(**kwargs)
+        )
+        self.sensors = kwargs.pop(
+            "sensors",
+            None
+        )
+
+
 class DriveDependentProperty(dict):
     """Drive dependent property"""
 
@@ -338,6 +386,9 @@ class DriveDependentProperty(dict):
 
 class SalamanderDriveDependentProperty(DriveDependentProperty):
     """Salamander drive dependent properties"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
 
     @classmethod
     def legs_freqs(cls):
@@ -416,8 +467,14 @@ class SalamanderOscillatorOptions(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
-    def __init__(self, ):
+    def __init__(self, **kwargs):
         super(SalamanderOscillatorOptions, self).__init__()
+
+        self.body_head_amplitude = kwargs.pop("body_head_amplitude", 0)
+        self.body_tail_amplitude = kwargs.pop("body_tail_amplitude", 0)
+        self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
+        self.body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
+
         # Frequencies
         self.legs_freqs = SalamanderDriveDependentProperty.legs_freqs()
         self.body_freqs = SalamanderDriveDependentProperty.body_freqs()
@@ -430,6 +487,38 @@ class SalamanderOscillatorOptions(dict):
         self.body_nominal_amplitudes = (
             SalamanderDriveDependentProperty.body_nominal_amplitudes()
         )
+
+        # Legs
+        self.leg_0_amplitude = kwargs.pop("leg_0_amplitude", 0.8)
+        self.leg_1_amplitude = kwargs.pop("leg_1_amplitude", np.pi/32)
+        self.leg_2_amplitude = kwargs.pop("leg_2_amplitude", np.pi/4)
+        self.leg_3_amplitude = kwargs.pop("leg_3_amplitude", np.pi/8)
+
+
+class SalamanderConnectivityOptions(dict):
+    """Salamander connectivity options"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __init__(self, **kwargs):
+        super(SalamanderConnectivityOptions, self).__init__()
+        self.body_phase_bias = kwargs.pop("body_phase_bias", 2*np.pi/11)
+
+
+class SalamanderJointsOptions(dict):
+    """Salamander joints options"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __init__(self, **kwargs):
+        super(SalamanderJointsOptions, self).__init__()
+
+        self.leg_0_offset = kwargs.pop("leg_0_offset", 0)
+        self.leg_1_offset = kwargs.pop("leg_1_offset", np.pi/32)
+        self.leg_2_offset = kwargs.pop("leg_2_offset", 0)
+        self.leg_3_offset = kwargs.pop("leg_3_offset", np.pi/8)
 
         # Joints offsets
         self.legs_joints_offsets = [
