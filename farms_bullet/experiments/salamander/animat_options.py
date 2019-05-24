@@ -367,32 +367,51 @@ class DriveDependentProperty(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
-    def __init__(self, **kwargs):
+    def __init__(self, data):
         super(DriveDependentProperty, self).__init__()
-        self.val_min = kwargs.pop("val_min", None)
-        self.val_max = kwargs.pop("val_max", None)
-        self.drive_min = kwargs.pop("drive_min", None)
-        self.drive_max = kwargs.pop("drive_max", None)
-        self.val_sat = kwargs.pop("val_sat", None)
-        self.interp = interpolate.interp1d(
-            [self.drive_min, self.drive_max],
-            [self.val_min, self.val_max],
-        )
+        _data = np.array(data)
+        self.interp = interpolate.interp1d(_data[:, 0], _data[:, 1])
 
     def value(self, drives):
         """Value in function of drive"""
-        return (
-            self.interp(drives.forward)
-            if self.drive_min < drives.forward < self.drive_max
-            else self.val_sat
-        )
+        return self.interp(drives.forward)
 
 
-class SalamanderDriveDependentProperty(DriveDependentProperty):
-    """Salamander drive dependent properties"""
+class SalamanderOscillatorFrequenciesOptions(DriveDependentProperty):
+    """Salamander oscillator frequencies options"""
 
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
+
+    @classmethod
+    def legs_freqs(cls):
+        """Legs intrinsic frequencies"""
+        return  cls([
+            [0, 0],
+            [1, 0],
+            [3, 2],
+            [3, 0],
+            [6, 0]
+        ])
+
+    @classmethod
+    def body_freqs(cls):
+        """Body intrinsic frequencies"""
+        return cls([
+            [0, 0],
+            [1, 0],
+            [5, 4],
+            [5, 0],
+            [6, 0]
+        ])
+
+    def value(self, drives):
+        """Value in function of drive"""
+        return self.interp(drives.forward)
+
+
+class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
+    """Salamander oscillators amplitudes options"""
 
     @classmethod
     def legs_nominal_amplitudes(cls, joint_i, **kwargs):
@@ -401,109 +420,62 @@ class SalamanderDriveDependentProperty(DriveDependentProperty):
             "leg_{}_amplitude".format(joint_i),
             [0.8, np.pi/32, np.pi/4, np.pi/8][joint_i]
         )
-        return cls(
-            val_min=amplitude,
-            val_max=amplitude,
-            drive_min=1,
-            drive_max=3,
-            val_sat=0
-        )
+        return cls([
+            [0, 0],
+            [1, 0],
+            [1, amplitude],
+            [3, amplitude],
+            [3, 0],
+            [6, 0]
+        ])
 
     @classmethod
     def body_nominal_amplitudes(cls):
         """Body nominal amplitudes"""
-        return cls(
-            val_min=0.5,
-            val_max=1.5,
-            drive_min=1,
-            drive_max=5,
-            val_sat=0
-        )
-
-    @classmethod
-    def legs_joints_offsets(cls, joint_i, **kwargs):
-        """Legs joints offsets"""
-        return cls(
-            val_min=0.5,
-            val_max=1,
-            drive_min=1,
-            drive_max=3,
-            val_sat=0
-        )
-
-    @classmethod
-    def body_joints_offsets(cls):
-        """Body joints offsets"""
-        return cls(
-            val_min=-1,
-            val_max=1,
-            drive_min=0,
-            drive_max=0,
-            val_sat=0
-        )
+        amplitude = 0.1
+        # osc_options.body_stand_amplitude*np.sin(
+        #     2*np.pi*i/n_body
+        #     - osc_options.body_stand_shift
+        # )
+        return cls([
+            [0, amplitude],
+            [6, amplitude]
+        ])
 
 
-class SalamanderOscillatorFrequenciesOptions(SalamanderDriveDependentProperty):
-    """Salamander oscillator frequencies options"""
+class SalamanderOscillatorJointsOptions(DriveDependentProperty):
+    """Salamander drive dependent properties"""
 
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
-    def __init__(self, **kwargs):
-        super(SalamanderOscillatorFrequenciesOptions, self).__init__(**kwargs)
-        self.interp = interpolate.interp1d(
-            [self.drive_min, self.drive_max],
-            [self.val_min, self.val_max],
+    @classmethod
+    def legs_joints_offsets(cls, joint_i, **kwargs):
+        """Legs joints offsets"""
+        offsets_walking = kwargs.pop(
+            "legs_offsets_walking",
+            [0, np.pi/32, 0, np.pi/8]
         )
+        offsets_swimming = kwargs.pop(
+            "legs_offsets_walking",
+            [-2*np.pi/5, 0, 0, 0]
+        )
+        return cls([
+            [0, offsets_swimming[joint_i]],
+            [1, offsets_swimming[joint_i]],
+            [1, offsets_walking[joint_i]],
+            [3, offsets_walking[joint_i]],
+            [3, offsets_swimming[joint_i]],
+            [6, offsets_swimming[joint_i]]
+        ])
 
     @classmethod
-    def legs_freqs(cls):
-        """Legs intrinsic frequencies"""
-        return cls(
-            val_min=0.5,
-            val_max=1,
-            drive_min=1,
-            drive_max=3,
-            val_sat=0
-        )
-
-    @classmethod
-    def body_freqs(cls):
-        """Body intrinsic frequencies"""
-        return cls(
-            val_min=0.5,
-            val_max=1.5,
-            drive_min=1,
-            drive_max=5,
-            val_sat=0
-        )
-
-    def value(self, drives):
-        """Value in function of drive"""
-        return (
-            self.interp(drives.forward)
-            if self.drive_min < drives.forward < self.drive_max
-            else self.val_sat
-        )
-
-
-class SalamanderOscillatorAmplitudeOptions(SalamanderDriveDependentProperty):
-    """Salamander oscillators amplitudes options"""
-
-    def __init__(self, **kwargs):
-        super(SalamanderOscillatorAmplitudeOptions, self).__init__(**kwargs)
-        osc_options.body_stand_amplitude*np.sin(
-            2*np.pi*i/n_body
-            - osc_options.body_stand_shift
-        )
-
-    def value(self, drives):
-        """Value in function of drive"""
-        return (
-            self.interp(drives.forward)
-            if self.drive_min < drives.forward < self.drive_max
-            else self.val_sat
-        )
+    def body_joints_offsets(cls):
+        """Body joints offsets"""
+        return cls([
+            [0, 0],
+            [6, 0]
+        ])
 
 
 class SalamanderOscillatorOptions(dict):
@@ -530,10 +502,12 @@ class SalamanderOscillatorOptions(dict):
 
         # Nominal amplitudes
         self.body_nominal_amplitudes = (
-            SalamanderDriveDependentProperty.body_nominal_amplitudes()
+            SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes()
         )
         self.legs_nominal_amplitudes = [
-            SalamanderDriveDependentProperty.legs_nominal_amplitudes(joint_i)
+            SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
+                joint_i
+            )
             for joint_i in range(4)
         ]
 
@@ -558,16 +532,16 @@ class SalamanderJointsOptions(dict):
     def __init__(self, **kwargs):
         super(SalamanderJointsOptions, self).__init__()
 
-        self.leg_0_offset = kwargs.pop("leg_0_offset", 0)
-        self.leg_1_offset = kwargs.pop("leg_1_offset", np.pi/32)
-        self.leg_2_offset = kwargs.pop("leg_2_offset", 0)
-        self.leg_3_offset = kwargs.pop("leg_3_offset", np.pi/8)
+        # self.leg_0_offset = kwargs.pop("leg_0_offset", 0)
+        # self.leg_1_offset = kwargs.pop("leg_1_offset", np.pi/32)
+        # self.leg_2_offset = kwargs.pop("leg_2_offset", 0)
+        # self.leg_3_offset = kwargs.pop("leg_3_offset", np.pi/8)
 
         # Joints offsets
         self.legs_joints_offsets = [
-            SalamanderDriveDependentProperty.legs_joints_offsets(joint_i)
+            SalamanderOscillatorJointsOptions.legs_joints_offsets(joint_i)
             for joint_i in range(4)
         ]
         self.body_joints_offsets = (
-            SalamanderDriveDependentProperty.body_joints_offsets()
+            SalamanderOscillatorJointsOptions.body_joints_offsets()
         )

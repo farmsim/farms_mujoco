@@ -277,10 +277,7 @@ class Salamander(Animat):
         """Animat physics"""
         # Swimming
         forces = None
-        if (
-                self.options.control.drives.forward >
-                self.options.control.network.oscillators.body_freqs.drive_max
-        ):
+        if self.options.control.drives.forward > 3:
             forces = viscous_swimming(
                 self.identity,
                 self.links
