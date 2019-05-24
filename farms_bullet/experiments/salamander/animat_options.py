@@ -40,6 +40,10 @@ class SalamanderMorphologyOptions(dict):
         """Number of joints"""
         return self.n_joints_body + self.n_legs*self.n_dof_legs
 
+    def n_joints_legs(self):
+        """Number of legs joints"""
+        return self.n_legs*self.n_dof_legs
+
 
 class SalamanderControlOptions(dict):
     """Salamander control options"""
@@ -378,8 +382,8 @@ class DriveDependentProperty(dict):
     def value(self, drives):
         """Value in function of drive"""
         return (
-            self.interp(drives["speed"])
-            if self.drive_min < drives["speed"] < self.drive_max
+            self.interp(drives.forward)
+            if self.drive_min < drives.forward < self.drive_max
             else self.val_sat
         )
 

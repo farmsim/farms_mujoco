@@ -165,15 +165,16 @@ class NetworkParameters(ODE):
 class OscillatorArray(NetworkArray):
     """Oscillator array"""
 
-    def __init__(self, array):
+    def __init__(self, array, options=None):
         super(OscillatorArray, self).__init__(array)
         self._array = array
         self._original_amplitudes_desired = np.copy(array[2])
+        self.options = options
 
     @classmethod
-    def from_parameters(cls, freqs, rates, amplitudes):
+    def from_parameters(cls, freqs, rates, amplitudes, options=None):
         """From each parameter"""
-        return cls(np.array([freqs, rates, amplitudes]))
+        return cls(np.array([freqs, rates, amplitudes]), options)
 
     @property
     def freqs(self):

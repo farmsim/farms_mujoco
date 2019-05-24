@@ -134,19 +134,26 @@ class SalamanderSimulation(Simulation):
         #         2*np.pi*self.interface.user_params.frequency.value
         #     )
         #     self.interface.user_params.frequency.changed = False
+        # Body offset
         if self.interface.user_params.body_offset.changed:
             network = self.elements.animat.controller.network
             network.parameters.joints.set_body_offset(
                 self.interface.user_params.body_offset.value
             )
             self.interface.user_params.body_offset.changed = False
+        # Drives
         if (
                 self.interface.user_params.drive_speed.changed
                 or self.interface.user_params.drive_turn.changed
         ):
-            self.elements.animat.controller.network.update_drive(
-                self.interface.user_params.drive_speed.value,
+            self.elements.animat.options.control.drives.forward = (
+                self.interface.user_params.drive_speed.value
+            )
+            self.elements.animat.options.control.drives.left = (
                 self.interface.user_params.drive_turn.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
             )
             self.interface.user_params.drive_speed.changed = False
             self.interface.user_params.drive_turn.changed = False

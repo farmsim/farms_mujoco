@@ -1248,11 +1248,7 @@ class SalamanderNetworkODE(ODESolver):
         outputs = self.get_doutputs_all()
         return 0.5*(outputs[:, self.groups[0]] - outputs[:, self.groups[1]])
 
-    def update_drive(self, drive_speed, drive_turn):
+    def update(self, options):
         """Update drives"""
-        print("TODO: Update drives to speed={} and turn={}".format(
-            drive_speed,
-            drive_turn
-        ))
-        self.parameters.oscillators.update_drives(drive_speed, drive_turn)
-        self.parameters.joints.update_drives(drive_speed, drive_turn)
+        self.parameters.oscillators.update(options)
+        self.parameters.joints.update(options)
