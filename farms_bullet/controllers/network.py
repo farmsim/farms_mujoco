@@ -6,18 +6,14 @@ import numpy as np
 class ODE(dict):
     """ODE"""
 
-    def __init__(self, solver, function):
-        super(ODE, self).__init__({"solver": solver, "function": function})
+    __getattr__ = dict.__getitem__
 
-    @property
-    def solver(self):
-        """Solver"""
-        return self["solver"]
-
-    @property
-    def function(self):
-        """Function"""
-        return self["function"]
+    def __init__(self, solver, function, gradient=None):
+        super(ODE, self).__init__({
+            "solver": solver,
+            "function": function,
+            "gradient": gradient
+        })
 
 
 class CyODESolver:
@@ -49,15 +45,15 @@ class CyODESolver:
 
     def step(self):
         """Control step"""
-        # self.ode.solver(
-        #     self.ode.function,
-        #     self._timestep,
-        #     self._state,
-        #     self._n_dim,
-        #     self._iteration,
-        #     *self._parameters.solver,
-        #     self._parameters.function
-        # )
+        self.ode.solver(
+            self.ode.function,
+            self._timestep,
+            self._state,
+            self._n_dim,
+            self._iteration,
+            *self._parameters.solver,
+            self._parameters.function
+        )
         self._iteration += 1
 
 
@@ -169,25 +165,26 @@ class NetworkParameters(ODE):
 class OscillatorArray(NetworkArray):
     """Oscillator array"""
 
-    def __init__(self, array):
+    def __init__(self, array, options=None):
         super(OscillatorArray, self).__init__(array)
         self._array = array
         self._original_amplitudes_desired = np.copy(array[2])
+        self.options = options
 
     @classmethod
-    def from_parameters(cls, freqs, rates, amplitudes):
+    def from_parameters(cls, freqs, rates, amplitudes, options=None):
         """From each parameter"""
-        return cls(np.array([freqs, rates, amplitudes]))
+        return cls(np.array([freqs, rates, amplitudes]), options)
 
     @property
     def freqs(self):
         """Frequencies"""
-        return 0.5*self.array[0]/np.pi
+        return self.array[0]
 
     @freqs.setter
     def freqs(self, value):
         """Frequencies"""
-        self.array[0, :] = 2*np.pi*value
+        self.array[0, :] = value
 
     @property
     def amplitudes_rates(self):
@@ -203,11 +200,6 @@ class OscillatorArray(NetworkArray):
     def amplitudes_desired(self, value):
         """Amplitudes desired"""
         self.array[2, :] = value
-
-    def update_drives(self, drive_speed, drive_turn):
-        """Set freqs"""
-        self.freqs = 4*drive_speed*np.ones(self.shape()[1])
-        self.amplitudes_desired = self._original_amplitudes_desired
 
 
 class ConnectivityArray(NetworkArray):

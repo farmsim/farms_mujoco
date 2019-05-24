@@ -132,12 +132,11 @@ class Animat(SimulationElement):
                 collisionFilterMask=mask
             )
 
-    def set_joint_damping(self, joints, linear=0, angular=0):
+    def set_links_dynamics(self, links, **kwargs):
         """Apply motor damping"""
-        for joint in joints:
+        for link in links:
             pybullet.changeDynamics(
                 bodyUniqueId=self.identity,
-                linkIndex=self.joints[joint],
-                linearDamping=linear,
-                angularDamping=angular
+                linkIndex=self.links[link],
+                **kwargs
             )

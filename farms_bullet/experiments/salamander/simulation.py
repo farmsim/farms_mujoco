@@ -114,40 +114,51 @@ class SalamanderSimulation(Simulation):
     def animat_interface(self):
         """Animat interface"""
         # Control
-        if self.interface.user_params.gait.changed:
-            self.elements.animat.options.gait = (
-                self.interface.user_params.gait.value
-            )
-            self.elements.animat.controller.update_gait(
-                self.elements.animat.options.gait,
-                self.elements.animat.joints,
-                self.options.timestep
-            )
-            if self.elements.animat.options.gait == "swimming":
-                pybullet.setGravity(0, 0, -0.01)
-            else:
-                pybullet.setGravity(0, 0, -9.81)
-            self.interface.user_params.gait.changed = False
-        if self.interface.user_params.frequency.changed:
-            network = self.elements.animat.controller.network
-            network.parameters.oscillators.freqs = (
-                self.interface.user_params.frequency.value
-            )
-            self.interface.user_params.frequency.changed = False
+        # if self.interface.user_params.gait.changed:
+        #     self.elements.animat.options.control.gait = (
+        #         self.interface.user_params.gait.value
+        #     )
+        #     self.elements.animat.controller.update_gait(
+        #         self.elements.animat.options.control.gait,
+        #         self.elements.animat.joints,
+        #         self.options.timestep
+        #     )
+        #     if self.elements.animat.options.control.gait == "swimming":
+        #         pybullet.setGravity(0, 0, -0.01)
+        #     else:
+        #         pybullet.setGravity(0, 0, -9.81)
+        #     self.interface.user_params.gait.changed = False
+        # if self.interface.user_params.frequency.changed:
+        #     network = self.elements.animat.controller.network
+        #     network.parameters.oscillators.freqs = (
+        #         2*np.pi*self.interface.user_params.frequency.value
+        #     )
+        #     self.interface.user_params.frequency.changed = False
+        # Body offset
         if self.interface.user_params.body_offset.changed:
             network = self.elements.animat.controller.network
             network.parameters.joints.set_body_offset(
                 self.interface.user_params.body_offset.value
             )
             self.interface.user_params.body_offset.changed = False
+        # Drives
         if (
                 self.interface.user_params.drive_speed.changed
                 or self.interface.user_params.drive_turn.changed
         ):
-            self.elements.animat.controller.network.update_drive(
-                self.interface.user_params.drive_speed.value,
+            self.elements.animat.options.control.drives.forward = (
+                self.interface.user_params.drive_speed.value
+            )
+            self.elements.animat.options.control.drives.left = (
                 self.interface.user_params.drive_turn.value
             )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
+            )
+            if self.elements.animat.options.control.drives.forward > 3:
+                pybullet.setGravity(0, 0, -0.01)
+            else:
+                pybullet.setGravity(0, 0, -9.81)
             self.interface.user_params.drive_speed.changed = False
             self.interface.user_params.drive_turn.changed = False
 
