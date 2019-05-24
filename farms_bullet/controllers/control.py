@@ -59,48 +59,48 @@ class ControlPDF(dict):
 class JointController:
     """JointController"""
 
-    def __init__(self, joint, sine, pdf, **kwargs):
+    def __init__(self, joint, pdf, **kwargs):
         super(JointController, self).__init__()
         self._joint = joint
-        self._sine = sine
+        # self._sine = sine
         self._pdf = pdf
-        self._is_body = kwargs.pop("is_body", False)
+        # self._is_body = kwargs.pop("is_body", False)
 
     def joint(self):
         """Joint"""
         return self._joint
 
-    def cmds(self, phase):
-        """Commands"""
-        return {
-            "pos": self._sine.position(phase),
-            "vel": self._sine.velocity(phase)
-        }
+    # def cmds(self, phase):
+    #     """Commands"""
+    #     return {
+    #         "pos": self._sine.position(phase),
+    #         "vel": self._sine.velocity(phase)
+    #     }
 
-    def update(self, phase):
-        """Update"""
-        return {
-            "joint": self._joint,
-            "cmd": self.cmds(phase),
-            "pdf": self._pdf
-        }
+    # def update(self, phase):
+    #     """Update"""
+    #     return {
+    #         "joint": self._joint,
+    #         "cmd": self.cmds(phase),
+    #         "pdf": self._pdf
+    #     }
 
-    def angular_frequency(self):
-        """Angular frequency"""
-        return self._sine.angular_frequency
+    # def angular_frequency(self):
+    #     """Angular frequency"""
+    #     return self._sine.angular_frequency
 
-    def get_frequency(self):
-        """Get frequency"""
-        return self._sine.angular_frequency/(2*np.pi)
+    # def get_frequency(self):
+    #     """Get frequency"""
+    #     return self._sine.angular_frequency/(2*np.pi)
 
-    def set_frequency(self, frequency):
-        """Set frequency"""
-        self._sine.angular_frequency = 2*np.pi*frequency
+    # def set_frequency(self, frequency):
+    #     """Set frequency"""
+    #     self._sine.angular_frequency = 2*np.pi*frequency
 
-    def set_body_offset(self, body_offset):
-        """Set body offset"""
-        if self._is_body:
-            self._sine.offset = body_offset
+    # def set_body_offset(self, body_offset):
+    #     """Set body offset"""
+    #     if self._is_body:
+    #         self._sine.offset = body_offset
 
 
 class ModelController:
@@ -109,18 +109,19 @@ class ModelController:
     def __init__(self, model, network, joints_controllers):
         super(ModelController, self).__init__()
         self.model = model
-        self.controllers = joints_controllers
+        # self.controllers = joints_controllers
         self.network = network
-        self._frequency = self.controllers[0].get_frequency()
-        self._body_offset = 0
-        self._joint_order = [ctrl.joint() for ctrl in self.controllers]
+        # self._frequency = self.controllers[0].get_frequency()
+        # self._body_offset = 0
+        # self._joint_order = [ctrl.joint() for ctrl in self.controllers]
 
     def control(self):
         """Control"""
         self.network.control_step()
         pybullet.setJointMotorControlArray(
             self.model,
-            self._joint_order,  # [ctrl["joint"] for ctrl in controls]
+            range(11+4*4),
+            # self._joint_order,  # [ctrl["joint"] for ctrl in controls]
             pybullet.POSITION_CONTROL,
             targetPositions=self.network.get_position_output(),  # [ctrl["cmd"]["pos"] for ctrl in controls],
             targetVelocities=self.network.get_velocity_output(),  # [ctrl["cmd"]["vel"] for ctrl in controls],

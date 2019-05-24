@@ -5,21 +5,19 @@ def bodyosc2index(joint_i, side=0, n_body_joints=11):
     assert joint_i < 11, "Joint must be < 11, got {}".format(joint_i)
     return joint_i + side*n_body_joints
 
-def legosc2index(
-        leg_i, side_i, joint_i, side=0, n_body_joints=11, n_legs_dof=4
-):
+def legosc2index(leg_i, side_i, joint_i, side=0, **kwargs):
     """legosc2index"""
+    n_body_joints = kwargs.pop("n_body_joints", 11)
+    n_legs_dof = kwargs.pop("n_legs_dof", 4)
     return (
         2*n_body_joints
-        + leg_i*2*n_legs_dof*2
-        + side_i*n_legs_dof*2
+        + leg_i*2*n_legs_dof*2  # 2 oscillators, 2 legs
+        + side_i*n_legs_dof*2  # 2 oscillators
         + joint_i
         + side*n_legs_dof
     )
 
-def legjoint2index(
-        leg_i, side_i, joint_i, n_body_joints=11, n_legs_dof=4
-):
+def legjoint2index(leg_i, side_i, joint_i, n_body_joints=11, n_legs_dof=4):
     """legjoint2index"""
     return (
         n_body_joints
@@ -27,6 +25,3 @@ def legjoint2index(
         + side_i*n_legs_dof
         + joint_i
     )
-
-def leg2body_connexion(osc_i, osc_j, phi_BtoL, n_body_joints=11, w_BtoL=300):
-    return [osc_i, osc_j, w_BtoL, phi_BtoL]

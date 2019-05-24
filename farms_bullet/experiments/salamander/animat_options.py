@@ -317,7 +317,6 @@ class SalamanderDrives(dict):
         self.right = kwargs.pop("drive_right", 0)
 
 
-
 class SalamanderJointsControllers(dict):
     """Salamander joints controllers"""
 
@@ -332,7 +331,6 @@ class SalamanderJointsControllers(dict):
         self.legs_p = kwargs.pop("legs_p", 1e-1)
         self.legs_d = kwargs.pop("legs_d", 1e0)
         self.legs_f = kwargs.pop("legs_f", 1e1)
-
 
 
 class SalamanderNetworkOptions(dict):
@@ -389,7 +387,7 @@ class SalamanderOscillatorFrequenciesOptions(DriveDependentProperty):
         return  cls([
             [0, 0],
             [1, 0],
-            [3, 2],
+            [3, 1],
             [3, 0],
             [6, 0]
         ])
@@ -423,7 +421,7 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
         return cls([
             [0, 0],
             [1, 0],
-            [1, amplitude],
+            [1, 0.5*amplitude],
             [3, amplitude],
             [3, 0],
             [6, 0]
@@ -432,15 +430,29 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
     @classmethod
     def body_nominal_amplitudes(cls):
         """Body nominal amplitudes"""
-        amplitude = 0.1
+        amplitude = 0.2
+        # osc_options.body_stand_amplitude*np.sin(
+        #         2*np.pi*i/n_body
+        #         - osc_options.body_stand_shift
+        #     )
         # osc_options.body_stand_amplitude*np.sin(
         #     2*np.pi*i/n_body
         #     - osc_options.body_stand_shift
         # )
         return cls([
-            [0, amplitude],
+            [0, 0.5*amplitude],
             [6, amplitude]
         ])
+
+    @staticmethod
+    def joint_value(options, joint_i):
+        """Value in function of drive"""
+        n_body = options.morphology.n_joints_body
+        osc_options = options.control.network.oscillators
+        return osc_options.body_stand_amplitude*np.sin(
+            2*np.pi*joint_i/n_body
+            - osc_options.body_stand_shift
+        )
 
 
 class SalamanderOscillatorJointsOptions(DriveDependentProperty):
@@ -532,16 +544,14 @@ class SalamanderJointsOptions(dict):
     def __init__(self, **kwargs):
         super(SalamanderJointsOptions, self).__init__()
 
-        # self.leg_0_offset = kwargs.pop("leg_0_offset", 0)
-        # self.leg_1_offset = kwargs.pop("leg_1_offset", np.pi/32)
-        # self.leg_2_offset = kwargs.pop("leg_2_offset", 0)
-        # self.leg_3_offset = kwargs.pop("leg_3_offset", np.pi/8)
-
         # Joints offsets
         self.legs_joints_offsets = [
-            SalamanderOscillatorJointsOptions.legs_joints_offsets(joint_i)
+            SalamanderOscillatorJointsOptions.legs_joints_offsets(
+                joint_i,
+                **kwargs
+            )
             for joint_i in range(4)
         ]
         self.body_joints_offsets = (
-            SalamanderOscillatorJointsOptions.body_joints_offsets()
+            SalamanderOscillatorJointsOptions.body_joints_offsets(**kwargs)
         )

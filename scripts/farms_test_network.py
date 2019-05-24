@@ -3,7 +3,8 @@
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from farms_bullet.controllers.network import SalamanderNetworkODE
+from farms_bullet.experiments.salamander.network import SalamanderNetworkODE
+from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
 
 
 def plot_data(times, data, body_ids, figurename, label, ylabel):
@@ -27,23 +28,24 @@ def main():
     # Allocation
     tic = time.time()
     timestep = 1e-3
-    times = np.arange(0, 10, timestep)
-    network = SalamanderNetworkODE.walking(
+    times = np.arange(0, 30, timestep)
+    network = SalamanderNetworkODE.from_options(
+        options=SalamanderOptions(),
         n_iterations=len(times),
         timestep=timestep
     )
     n_iterations = len(times)
-    freqs = np.ones(np.shape(network.phases)[1])
+    # freqs = np.ones(np.shape(network.phases)[1])
     toc = time.time()
     print("Time to allocate data: {} [s]".format(toc-tic))
 
     # Simulate (method 1)
     time_control = 0
-    for i in range(n_iterations-1):
-        if i == n_iterations//2:
-            network.update_gait("swimming")
+    for _ in range(n_iterations-1):
+        # if i == n_iterations//2:
+        #     network.update_gait("swimming")
         tic0 = time.time()
-        network.parameters.oscillators.freqs = freqs
+        # network.parameters.oscillators.freqs = freqs
         network.control_step()
         tic1 = time.time()
         time_control += tic1 - tic0

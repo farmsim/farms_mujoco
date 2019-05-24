@@ -119,11 +119,11 @@ class SalamanderController(ModelController):
         joint_controllers_body = [
             JointController(
                 joint=joints["joint_link_body_{}".format(joint_i)],
-                sine=SineControl(
-                    amplitude=0,
-                    frequency=0,
-                    offset=0
-                ),
+                # sine=SineControl(
+                #     amplitude=0,
+                #     frequency=0,
+                #     offset=0
+                # ),
                 pdf=(
                     ControlPDF(
                         p=options.control.joints_controllers.body_p,
@@ -142,11 +142,11 @@ class SalamanderController(ModelController):
                     side,
                     joint_i
                 )],
-                sine=SineControl(
-                    amplitude=0,
-                    frequency=0,
-                    offset=0
-                ),
+                # sine=SineControl(
+                #     amplitude=0,
+                #     frequency=0,
+                #     offset=0
+                # ),
                 pdf=ControlPDF(
                     p=options.control.joints_controllers.legs_p,
                     d=options.control.joints_controllers.legs_d,
