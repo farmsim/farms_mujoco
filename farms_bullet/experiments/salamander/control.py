@@ -9,38 +9,38 @@ from ...controllers.control import (
     JointController
 )
 
-from .animat_options import SalamanderControlOptions
+# from .animat_options import SalamanderControlOptions
 from .network import SalamanderNetworkODE
 
 
 class SalamanderController(ModelController):
     """ModelController"""
 
-    @classmethod
-    def from_gait(cls, model, joints, gait, iterations, timestep, **kwargs):
-        """Salamander controller from gait"""
-        return cls.from_options(
-            model=model,
-            joints=joints,
-            options=SalamanderControlOptions.from_gait(gait, **kwargs),
-            iterations=iterations,
-            timestep=timestep
-        )
+    # @classmethod
+    # def from_gait(cls, model, joints, gait, iterations, timestep, **kwargs):
+    #     """Salamander controller from gait"""
+    #     return cls.from_options(
+    #         model=model,
+    #         joints=joints,
+    #         options=SalamanderControlOptions.default(**kwargs),
+    #         iterations=iterations,
+    #         timestep=timestep
+    #     )
 
-    def update_gait(self, gait, joints, timestep):
-        """Update gait"""
-        controllers_body, controllers_legs = (
-            SalamanderController.joints_controllers(
-                joints=joints,
-                options=SalamanderControlOptions.from_gait(
-                    gait=gait,
-                    frequency=self._frequency,
-                    body_offset=self._body_offset
-                )
-            )
-        )
-        self.controllers = controllers_body + controllers_legs
-        self.network.update_gait(gait)
+    # def update_gait(self, gait, joints, timestep):
+    #     """Update gait"""
+    #     controllers_body, controllers_legs = (
+    #         SalamanderController.joints_controllers(
+    #             joints=joints,
+    #             options=SalamanderControlOptions.from_gait(
+    #                 gait=gait,
+    #                 frequency=self._frequency,
+    #                 body_offset=self._body_offset
+    #             )
+    #         )
+    #     )
+    #     self.controllers = controllers_body + controllers_legs
+    #     self.network.update_gait(gait)
 
     @classmethod
     def from_options(cls, model, joints, options, iterations, timestep):

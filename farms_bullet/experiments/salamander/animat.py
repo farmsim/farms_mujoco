@@ -15,6 +15,7 @@ from ...sensors.sensor import (
     ContactSensor,
     LinkStateSensor
 )
+from .animat_options import SalamanderControlOptions
 from .control import SalamanderController
 
 
@@ -262,22 +263,21 @@ class Salamander(Animat):
             )
         })
 
-    def setup_controller(self, gait="walking", **kwargs):
+    def setup_controller(self, **kwargs):
         """Setup controller"""
-        self.controller = SalamanderController.from_gait(
+        self.controller = SalamanderController.from_options(
             self.identity,
             self.joints,
-            gait=gait,
+            options=SalamanderControlOptions.default(**kwargs),
             iterations=self.n_iterations,
-            timestep=self.timestep,
-            **kwargs
+            timestep=self.timestep
         )
 
     def animat_physics(self):
         """Animat physics"""
         # Swimming
         forces = None
-        if self.options.control.gait == "swimming":
+        if self.options.control.drive > self.options.control.drive_swim_sat:
             forces = viscous_swimming(
                 self.identity,
                 self.links
