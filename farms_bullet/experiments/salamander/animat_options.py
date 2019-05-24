@@ -386,8 +386,8 @@ class SalamanderOscillatorFrequenciesOptions(DriveDependentProperty):
         """Legs intrinsic frequencies"""
         return  cls([
             [0, 0],
-            [1, 0],
-            [3, 1],
+            [1, 0.5],
+            [3, 1.5],
             [3, 0],
             [6, 0]
         ])
@@ -421,7 +421,7 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
         return cls([
             [0, 0],
             [1, 0],
-            [1, 0.5*amplitude],
+            [1, 0.7*amplitude],
             [3, amplitude],
             [3, 0],
             [6, 0]
