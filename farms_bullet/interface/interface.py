@@ -166,7 +166,7 @@ class UserParameters(dict):
         self["drive_speed"] = DebugParameter(
             "Drive speed",
             options.control.drives.forward,
-            0, 6
+            0.9, 5.1
         )
         self["drive_turn"] = DebugParameter(
             "Drive turn",
