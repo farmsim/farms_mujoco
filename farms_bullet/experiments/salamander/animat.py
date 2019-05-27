@@ -1,7 +1,6 @@
 """Salamander"""
 
 import os
-import time
 import numpy as np
 
 import pybullet
@@ -15,7 +14,6 @@ from ...sensors.sensor import (
     ContactSensor,
     LinkStateSensor
 )
-from .animat_options import SalamanderControlOptions
 from .control import SalamanderController
 
 
@@ -26,7 +24,7 @@ class Salamander(Animat):
         super(Salamander, self).__init__(options=options)
         self.timestep = timestep
         self.n_iterations = iterations
-        self.feet = [
+        self.feet_names = [
             "link_leg_0_L_3",
             "link_leg_0_R_3",
             "link_leg_1_L_3",
@@ -36,42 +34,9 @@ class Salamander(Animat):
     def spawn(self):
         """Spawn salamander"""
         self.spawn_body()
-        self.add_sensors()
         self.setup_controller()
-        # Deactivate collisions
-        links_no_collisions = [
-            "link_body_{}".format(body_i+1)
-            for body_i in range(0)
-        ] + [
-            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
-            for leg_i in range(2)
-            for side in ["L", "R"]
-            for joint_i in range(3)
-        ]
-        self.set_collisions(links_no_collisions, group=0, mask=0)
-        # Deactivate damping
-        joints_no_damping = [
-            "link_body_{}".format(body_i)
-            for body_i in range(12)
-        ] + [
-            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
-            for leg_i in range(2)
-            for side in ["L", "R"]
-            for joint_i in range(4)
-        ]
-        self.set_links_dynamics(
-            joints_no_damping,
-            linearDamping=0,
-            angularDamping=0,
-            jointDamping=0
-        )
-        # Feet friction
-        self.set_links_dynamics(
-            self.feet,
-            lateralFriction=1,
-            spinningFriction=0,
-            rollingFriction=0,
-        )
+        self.add_sensors()
+
 
     def spawn_body(self):
         """Spawn body"""
@@ -243,7 +208,7 @@ class Salamander(Animat):
                 self.n_iterations,
                 self._identity, self.links[foot]
             )
-            for i, foot in enumerate(self.feet)
+            for i, foot in enumerate(self.feet_names)
         })
         # Joints
         self.sensors.add({
@@ -262,6 +227,43 @@ class Salamander(Animat):
                 0,  # Base link
             )
         })
+
+    def set_body_properties(self):
+        """Set body properties"""
+        # Deactivate collisions
+        links_no_collisions = [
+            "link_body_{}".format(body_i+1)
+            for body_i in range(0)
+        ] + [
+            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in ["L", "R"]
+            for joint_i in range(3)
+        ]
+        self.set_collisions(links_no_collisions, group=0, mask=0)
+        # Deactivate damping
+        joints_no_damping = [
+            "link_body_{}".format(body_i)
+            for body_i in range(12)
+        ] + [
+            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in ["L", "R"]
+            for joint_i in range(4)
+        ]
+        self.set_links_dynamics(
+            joints_no_damping,
+            linearDamping=0,
+            angularDamping=0,
+            jointDamping=0
+        )
+        # Feet friction
+        self.set_links_dynamics(
+            self.feet_names,
+            lateralFriction=1,
+            spinningFriction=0,
+            rollingFriction=0,
+        )
 
     def setup_controller(self):
         """Setup controller"""

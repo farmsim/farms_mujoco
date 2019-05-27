@@ -5,12 +5,7 @@ from scipy import integrate
 from .convention import bodyosc2index, legosc2index  # legjoint2index
 from ...controllers.network import (
     ODE,
-    ODESolver,
-    OscillatorNetworkState,
-    NetworkParameters,
-    OscillatorArray,
-    ConnectivityArray,
-    JointsArray
+    ODESolver
 )
 from ...cy_controller import (
     rk4,
@@ -78,7 +73,10 @@ class SalamanderNetworkODE(ODESolver):
     def from_options(cls, options, n_iterations, timestep):
         """Salamander swimming network"""
         state = SalamanderOscillatorNetworkState.default_state(n_iterations)
-        parameters = SalamanderNetworkParameters.from_options(options)
+        parameters = SalamanderNetworkParameters.from_options(
+            options,
+            n_iterations
+        )
         return cls(state, parameters, timestep)
 
     def fun(self, _time, state):

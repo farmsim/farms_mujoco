@@ -14,6 +14,7 @@ from ...controllers.network import (
     NetworkParameters,
     OscillatorArray,
     ConnectivityArray,
+    SensorArray,
     JointsArray
 )
 from .animat_options import (
@@ -66,12 +67,14 @@ class SalamanderNetworkParameters(NetworkParameters):
     """Salamander network parameter"""
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, n_iterations):
         """Default salamander newtwork parameters"""
         oscillators = SalamanderOscillatorArray.from_options(options)
         connectivity = SalamanderConnectivityArray.from_options(options)
+        sensors = SalamanderContactsArray.from_options(options, n_iterations)
+        # feedback = SalamanderFeedbackArray.from_options(options)
         joints = SalamanderJointsArray.from_options(options)
-        return cls(oscillators, connectivity, joints)
+        return cls(oscillators, connectivity, joints, sensors)
 
     def update(self, parameters):
         """Update"""
@@ -124,7 +127,7 @@ class SalamanderOscillatorArray(OscillatorArray):
     def from_options(cls, options):
         """Default"""
         freqs, rates, amplitudes = cls.set_options(options)
-        return cls.from_parameters(freqs, rates, amplitudes, options)
+        return cls.from_parameters(freqs, rates, amplitudes)
 
     def update(self, options):
         """Update from options
@@ -432,6 +435,65 @@ class SalamanderConnectivityArray(ConnectivityArray):
         :param options: Animat options
 
         """
+
+
+class SalamanderContactsArray(SensorArray):
+    """Salamander contacts sensors array"""
+
+    @classmethod
+    def from_options(cls, options, n_iterations):
+        """Default"""
+        # n_body = options.morphology.n_joints_body
+        n_legs = options.morphology.n_legs
+        # n_joints = options.morphology.n_joints()
+        contacts = np.zeros(3*n_legs)  # x, y, z
+        return cls.from_parameters(n_iterations, contacts)
+
+    def contact(self, leg_index):
+        """Foot contact"""
+        return self.array[3*leg_index:3*(leg_index+1)]
+
+
+# class SalamanderSensorsArray(SensorArray):
+#     """Sensor array"""
+
+#     @staticmethod
+#     def set_options(options):
+#         """Walking parameters"""
+#         # sens_options = options.control.network.sensors
+#         n_body = options.morphology.n_joints_body
+#         n_legs = options.morphology.n_legs
+#         n_joints = options.morphology.n_joints()
+#         # Sensors
+#         proprioception = np.zeros(2*n_joints)  # Position, velocity
+#         contacts = np.zeros(3*n_legs)  # x, y, z
+#         hydrodynamics = np.zeros(3*n_body)  # x, y, z
+#         return proprioception, contacts, hydrodynamics
+
+#     @classmethod
+#     def from_options(cls, options, n_iterations):
+#         """Default"""
+#         proprioception, contacts, hydrodynamics = cls.set_options(options)
+#         return cls.from_parameters(
+#             n_iterations,
+#             proprioception,
+#             contacts,
+#             hydrodynamics
+#         )
+
+#     # def get_data(self, iteration):
+#     #     """Get Data"""
+#     #     self.
+
+#     def update(self, options):
+#         """Update from options
+
+#         :param options: Animat options
+
+#         """
+#         freqs, _, amplitudes = self.set_options(options)
+#         self.freqs[:] = freqs
+#         self.amplitudes_desired[:] = amplitudes
 
 
 class SalamanderJointsArray(JointsArray):
