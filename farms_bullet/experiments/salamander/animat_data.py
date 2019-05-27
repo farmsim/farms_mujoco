@@ -71,10 +71,10 @@ class SalamanderNetworkParameters(NetworkParameters):
         """Default salamander newtwork parameters"""
         oscillators = SalamanderOscillatorArray.from_options(options)
         connectivity = SalamanderConnectivityArray.from_options(options)
-        sensors = SalamanderContactsArray.from_options(options, n_iterations)
+        contacts = SalamanderContactsArray.from_options(options, n_iterations)
         # feedback = SalamanderFeedbackArray.from_options(options)
         joints = SalamanderJointsArray.from_options(options)
-        return cls(oscillators, connectivity, joints, sensors)
+        return cls(oscillators, connectivity, joints, contacts)
 
     def update(self, parameters):
         """Update"""
@@ -444,14 +444,18 @@ class SalamanderContactsArray(SensorArray):
     def from_options(cls, options, n_iterations):
         """Default"""
         # n_body = options.morphology.n_joints_body
-        n_legs = options.morphology.n_legs
+        n_contacts = options.morphology.n_legs
         # n_joints = options.morphology.n_joints()
-        contacts = np.zeros(3*n_legs)  # x, y, z
-        return cls.from_parameters(n_iterations, contacts)
+        contacts = np.zeros([n_iterations, n_contacts, 3])  # x, y, z
+        return cls(contacts)
 
-    def contact(self, leg_index):
-        """Foot contact"""
-        return self.array[3*leg_index:3*(leg_index+1)]
+    # def contact(self, leg_index):
+    #     """Foot contact"""
+    #     return self.array[3*leg_index:3*(leg_index+1)]
+
+    def update(self, iteration, foot, value):
+        """Update contacts"""
+        self.array[iteration, foot, :] = value
 
 
 # class SalamanderSensorsArray(SensorArray):

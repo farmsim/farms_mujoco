@@ -105,7 +105,7 @@ class Salamander(Animat):
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.2*leg_radius,
                     position=position,
-                    parent=5 if leg_i else 1,
+                    parent=5 if leg_i else 1,  # Inverse seems to change nothing
                     joint_axis=[0, 0, sign],
                     mass=0,
                     color=[0.9, 0.0, 0.0, 0.3]

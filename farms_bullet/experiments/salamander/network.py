@@ -101,14 +101,14 @@ class SalamanderNetworkODE(ODESolver):
         # raise Exception
         return self._jac
 
-    @classmethod
-    def from_gait(cls, gait, n_iterations, timestep):
-        """ Salamander network from gait"""
-        return (
-            cls.swimming(n_iterations, timestep)
-            if gait == "swimming"
-            else cls.walking(n_iterations, timestep)
-        )
+    # @classmethod
+    # def from_gait(cls, gait, n_iterations, timestep):
+    #     """ Salamander network from gait"""
+    #     return (
+    #         cls.swimming(n_iterations, timestep)
+    #         if gait == "swimming"
+    #         else cls.walking(n_iterations, timestep)
+    #     )
 
     # def update_gait(self, gait):
     #     """Update from gait"""
@@ -135,6 +135,8 @@ class SalamanderNetworkODE(ODESolver):
         # self.step()
 
         # Adaptive timestep (ODE)
+        # print([self._parameters[3][self._iteration, i] for i in range(4)])
+        self._parameters[-1] = self._iteration
         self.solver.set_initial_value(
             self.state.array[self._iteration, 0, :],
             self._time

@@ -77,16 +77,15 @@ class NetworkArray:
 
     def __init__(self, array):
         super(NetworkArray, self).__init__()
-        self._array = array
-
-    @property
-    def array(self):
-        """Array"""
-        return self._array
+        self.array = array
 
     def shape(self):
         """Array shape"""
-        return np.shape(self._array)
+        return np.shape(self.array)
+
+    def copy_array(self):
+        """Copy array"""
+        return np.copy(self.array)
 
 
 class OscillatorNetworkState(NetworkArray):
@@ -122,13 +121,13 @@ class OscillatorNetworkState(NetworkArray):
 class NetworkParameters(ODE):
     """Network parameter"""
 
-    def __init__(self, oscillators, connectivity, joints, sensors):
+    def __init__(self, oscillators, connectivity, joints, contacts):
         super(NetworkParameters, self).__init__(
             [NetworkArray(np.zeros([  # Runge-Kutta parameters
                 7,
                 2*oscillators.shape()[1] + 1*joints.shape()[1]
             ]))],
-            [oscillators, connectivity, joints, sensors]
+            [oscillators, connectivity, joints, contacts]
         )
 
     @property
@@ -165,6 +164,7 @@ class NetworkParameters(ODE):
             + [self.connectivity.shape()[0]]
             + [self.joints.shape()[1]]
             + [self.contacts.shape()[1]]
+            + [0]
         )
 
 
@@ -240,12 +240,12 @@ class SensorArray(NetworkArray):
         shape = np.shape(array)
         self._n_iterations, self._shape = shape[0], shape[1:]
 
-    @classmethod
-    def from_parameters(cls, n_iterations, sensors):
-        """From each parameter"""
-        array = np.zeros((n_iterations,)+np.shape(sensors))
-        array[0, :] = sensors
-        return cls(array)
+    # @classmethod
+    # def from_parameters(cls, n_iterations, sensors):
+    #     """From each parameter"""
+    #     array = np.zeros((n_iterations,)+np.shape(sensors))
+    #     array[0, :] = sensors
+    #     return cls(array)
 
     # @classmethod
     # def from_parameters(

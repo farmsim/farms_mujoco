@@ -31,11 +31,12 @@ cpdef void ode_oscillators_sparse(
     CTYPE[:, :] oscillators,
     CTYPE[:, :] connectivity,
     CTYPE[:, :] joints,
-    CTYPE[:, :] contacts,
+    CTYPE[:, :, :] contacts,
     unsigned int o_dim,
     unsigned int c_dim,
     unsigned int j_dim,
-    unsigned int contacts_dim
+    unsigned int contacts_dim,
+    unsigned int iteration
 ) nogil:
     """ODE"""
     cdef unsigned int i, i0, i1

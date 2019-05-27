@@ -55,6 +55,11 @@ class ContactSensor(Sensor):
             [self.get_normal_force(), self.get_lateral_friction()],
             axis=0
         )
+        print("Updating contact {}: {}".format(self.animat_link, self._data[iteration]))
+
+    def total_force(self, iteration):
+        """Toral force"""
+        return self.data[iteration, :3] + self.data[iteration, 3:]
 
     def get_normal_force(self):
         """Get force"""
