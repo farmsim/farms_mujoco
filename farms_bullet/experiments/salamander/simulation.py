@@ -123,7 +123,7 @@ class SalamanderSimulation(Simulation):
             self.tic_rt[1] = time.time()
             if (
                     not self.options.fast
-                    and self.interface.user_params.rtl.value < 3
+                    and self.interface.user_params.rtl.value < 2.99
             ):
                 real_time_handing(
                     self.options.timestep,
