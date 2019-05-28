@@ -145,10 +145,10 @@ class SalamanderNetworkODE(ODESolver):
         self.state.array[self._iteration+1, 0, :] = (
             self.solver.integrate(self._time)
         )
-        self.state.array[self._iteration+1, 1, :] = (
-            self.state.array[self._iteration+1, 0, :]
-            - self.state.array[self._iteration, 0, :]
-        )/self._timestep
+        # self.state.array[self._iteration+1, 1, :] = (
+        #     self.state.array[self._iteration+1, 0, :]
+        #     - self.state.array[self._iteration, 0, :]
+        # )/self._timestep
         self._iteration += 1
 
         # # Adaptive timestep (ODEINT)

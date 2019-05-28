@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ..cy_animat_data import NetworkArray
+from ..cy_animat_data import NetworkArray2D, NetworkArray3D
 
 
 class ODE(dict):
@@ -86,7 +86,7 @@ class NetworkParameters(ODE):
             contacts_connectivity
     ):
         super(NetworkParameters, self).__init__(
-            [NetworkArray(np.zeros([  # Runge-Kutta parameters
+            [NetworkArray2D(np.zeros([  # Runge-Kutta parameters
                 7,
                 2*oscillators.shape()[1] + 1*joints.shape()[1]
             ]))],
@@ -137,7 +137,7 @@ class NetworkParameters(ODE):
         )
 
 
-class OscillatorArray(NetworkArray):
+class OscillatorArray(NetworkArray2D):
     """Oscillator array"""
 
     def __init__(self, array):
@@ -176,7 +176,7 @@ class OscillatorArray(NetworkArray):
         self.array[2, :] = value
 
 
-class ConnectivityArray(NetworkArray):
+class ConnectivityArray(NetworkArray2D):
     """Connectivity array"""
 
     @classmethod
@@ -200,7 +200,7 @@ class ConnectivityArray(NetworkArray):
         return self.array[:, 3]
 
 
-class SensorArray(NetworkArray):
+class SensorArray(NetworkArray3D):
     """Sensor array"""
 
     def __init__(self, array):
@@ -235,7 +235,7 @@ class SensorArray(NetworkArray):
     #         # len(hydrodynamics)
     #     )
 
-class JointsArray(NetworkArray):
+class JointsArray(NetworkArray2D):
     """Oscillator array"""
 
     @classmethod

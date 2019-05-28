@@ -1,14 +1,15 @@
+# cython: cdivision=True
+# cython: language_level=3
+# cython: infer_types=True
+# cython: profile=True
+
 """Animat data"""
 
 import numpy as np
 
 
-class NetworkArray:
+cdef class NetworkArray:
     """Network array"""
-
-    def __init__(self, array):
-        super(NetworkArray, self).__init__()
-        self.array = array
 
     def shape(self):
         """Array shape"""
@@ -19,8 +20,31 @@ class NetworkArray:
         return np.copy(self.array)
 
 
-class OscillatorNetworkState(NetworkArray):
+cdef class NetworkArray2D(NetworkArray):
+    """Network array"""
+
+    cdef public double[:, :] array
+
+    def __init__(self, array):
+        super(NetworkArray, self).__init__()
+        self.array = array
+
+
+cdef class NetworkArray3D(NetworkArray):
+    """Network array"""
+
+    cdef public double[:, :, :] array
+
+    def __init__(self, array):
+        super(NetworkArray, self).__init__()
+        self.array = array
+
+
+class OscillatorNetworkState(NetworkArray3D):
     """Network state"""
+
+    # cdef public unsigned int n_oscillators
+    # cdef public unsigned int _iterations
 
     def __init__(self, state, n_oscillators, iteration=0):
         self.n_oscillators = n_oscillators
