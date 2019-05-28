@@ -8,8 +8,8 @@ from .convention import (
     # legjoint2index
 )
 from ...controllers.network import (
-    ODE,
-    ODESolver,
+    # ODE,
+    # ODESolver,
     OscillatorNetworkState,
     NetworkParameters,
     OscillatorArray,
@@ -17,10 +17,10 @@ from ...controllers.network import (
     SensorArray,
     JointsArray
 )
-from .animat_options import (
-    SalamanderOptions,
-    SalamanderControlOptions
-)
+# from .animat_options import (
+#     SalamanderOptions,
+#     SalamanderControlOptions
+# )
 
 
 class SalamanderOscillatorNetworkState(OscillatorNetworkState):
@@ -70,11 +70,20 @@ class SalamanderNetworkParameters(NetworkParameters):
     def from_options(cls, options, n_iterations):
         """Default salamander newtwork parameters"""
         oscillators = SalamanderOscillatorArray.from_options(options)
-        connectivity = SalamanderConnectivityArray.from_options(options)
+        connectivity = SalamanderOscillatorConnectivityArray.from_options(options)
         contacts = SalamanderContactsArray.from_options(options, n_iterations)
+        contacts_connectivity = SalamanderContactsConnectivityArray.from_options(
+            options
+        )
         # feedback = SalamanderFeedbackArray.from_options(options)
         joints = SalamanderJointsArray.from_options(options)
-        return cls(oscillators, connectivity, joints, contacts)
+        return cls(
+            oscillators,
+            connectivity,
+            joints,
+            contacts,
+            contacts_connectivity
+        )
 
     def update(self, parameters):
         """Update"""
@@ -140,7 +149,7 @@ class SalamanderOscillatorArray(OscillatorArray):
         self.amplitudes_desired[:] = amplitudes
 
 
-class SalamanderConnectivityArray(ConnectivityArray):
+class SalamanderOscillatorConnectivityArray(ConnectivityArray):
     """Connectivity array"""
 
     @staticmethod
@@ -449,13 +458,28 @@ class SalamanderContactsArray(SensorArray):
         contacts = np.zeros([n_iterations, n_contacts, 3])  # x, y, z
         return cls(contacts)
 
-    # def contact(self, leg_index):
-    #     """Foot contact"""
-    #     return self.array[3*leg_index:3*(leg_index+1)]
-
     def update(self, iteration, foot, value):
         """Update contacts"""
         self.array[iteration, foot, :] = value
+
+
+class SalamanderContactsConnectivityArray(ConnectivityArray):
+    """Salamander contacts connectivity array"""
+
+    @classmethod
+    def from_options(cls, options):
+        """Default"""
+        connectivity = []
+        # options.morphology.n_legs
+        for leg_i in range(2):
+            for side_i in range(2):
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    2*leg_i + side_i,
+                    0  # Weight
+                ])
+        print(np.array(connectivity))
+        return cls(np.array(connectivity, dtype=np.float64))
 
 
 # class SalamanderSensorsArray(SensorArray):

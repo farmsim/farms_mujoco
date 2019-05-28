@@ -121,13 +121,20 @@ class OscillatorNetworkState(NetworkArray):
 class NetworkParameters(ODE):
     """Network parameter"""
 
-    def __init__(self, oscillators, connectivity, joints, contacts):
+    def __init__(
+            self,
+            oscillators,
+            connectivity,
+            joints,
+            contacts,
+            contacts_connectivity
+    ):
         super(NetworkParameters, self).__init__(
             [NetworkArray(np.zeros([  # Runge-Kutta parameters
                 7,
                 2*oscillators.shape()[1] + 1*joints.shape()[1]
             ]))],
-            [oscillators, connectivity, joints, contacts]
+            [oscillators, connectivity, joints, contacts, contacts_connectivity]
         )
 
     @property
@@ -155,6 +162,11 @@ class NetworkParameters(ODE):
         """Contacts parameters"""
         return self.function[3]
 
+    @property
+    def contacts_connectivity(self):
+        """Contacts parameters"""
+        return self.function[4]
+
     def to_ode_parameters(self):
         """Convert 2 arrays"""
         return ODE(
@@ -164,6 +176,7 @@ class NetworkParameters(ODE):
             + [self.connectivity.shape()[0]]
             + [self.joints.shape()[1]]
             + [self.contacts.shape()[1]]
+            + [self.contacts_connectivity.shape()[0]]
             + [0]
         )
 
