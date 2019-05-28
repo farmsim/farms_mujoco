@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from ..cy_animat_data import NetworkArray
+
 
 class ODE(dict):
     """ODE"""
@@ -70,22 +72,6 @@ class ODESolver(CyODESolver):
     def time(self):
         """Time"""
         return self._times[self._iteration]
-
-
-class NetworkArray:
-    """Network array"""
-
-    def __init__(self, array):
-        super(NetworkArray, self).__init__()
-        self.array = array
-
-    def shape(self):
-        """Array shape"""
-        return np.shape(self.array)
-
-    def copy_array(self):
-        """Copy array"""
-        return np.copy(self.array)
 
 
 class OscillatorNetworkState(NetworkArray):

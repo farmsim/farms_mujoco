@@ -32,6 +32,13 @@ setup(
     include_package_data=True,
     ext_modules=cythonize([
         Extension(
+            "farms_bullet.cy_animat_data",
+            ["src/cy_animat_data.pyx"],
+            include_dirs=[np.get_include()],
+            extra_compile_args=['-O3'],  # , '-fopenmp'
+            extra_link_args=['-O3']  # , '-fopenmp'
+        ),
+        Extension(
             "farms_bullet.cy_controller",
             ["src/cy_controller.pyx"],
             include_dirs=[np.get_include()],
