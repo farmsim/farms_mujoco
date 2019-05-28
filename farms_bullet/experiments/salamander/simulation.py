@@ -78,6 +78,26 @@ class SalamanderSimulation(Simulation):
         self.tic_rt[0] = time.time()
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
+        contact_i = 0
+        for foot in self.elements.animat.feet_names:
+            self.elements.animat.controller.network.parameters.contacts.update(
+                sim_step,
+                contact_i,
+                self.elements.animat.sensors[
+                    "contact_{}".format(foot)
+                ].total_force(sim_step)
+            )
+            # print("{}: {} ({})".format(
+            #     "contact_{}".format(foot),
+            #     self.elements.animat.sensors[
+            #         "contact_{}".format(foot)
+            #     ].animat_link,
+            #     contact_i
+            # ))
+            # print(self.elements.animat.sensors[
+            #     "contact_{}".format(foot)
+            # ].total_force(sim_step))
+            contact_i += 1
         if sim_step < self.options.n_iterations-1:
             # Interface
             if not self.options.headless:
@@ -103,7 +123,7 @@ class SalamanderSimulation(Simulation):
             self.tic_rt[1] = time.time()
             if (
                     not self.options.fast
-                    and self.interface.user_params.rtl.value < 3
+                    and self.interface.user_params.rtl.value < 2.99
             ):
                 real_time_handing(
                     self.options.timestep,

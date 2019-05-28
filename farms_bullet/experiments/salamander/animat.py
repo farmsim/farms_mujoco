@@ -1,7 +1,6 @@
 """Salamander"""
 
 import os
-import time
 import numpy as np
 
 import pybullet
@@ -15,8 +14,13 @@ from ...sensors.sensor import (
     ContactSensor,
     LinkStateSensor
 )
-from .animat_options import SalamanderControlOptions
 from .control import SalamanderController
+from .convention import (
+    leglink2index,
+    leglink2name,
+    legjoint2index,
+    legjoint2name
+)
 
 
 class Salamander(Animat):
@@ -26,7 +30,7 @@ class Salamander(Animat):
         super(Salamander, self).__init__(options=options)
         self.timestep = timestep
         self.n_iterations = iterations
-        self.feet = [
+        self.feet_names = [
             "link_leg_0_L_3",
             "link_leg_0_R_3",
             "link_leg_1_L_3",
@@ -36,42 +40,10 @@ class Salamander(Animat):
     def spawn(self):
         """Spawn salamander"""
         self.spawn_body()
-        self.add_sensors()
         self.setup_controller()
-        # Deactivate collisions
-        links_no_collisions = [
-            "link_body_{}".format(body_i+1)
-            for body_i in range(0)
-        ] + [
-            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
-            for leg_i in range(2)
-            for side in ["L", "R"]
-            for joint_i in range(3)
-        ]
-        self.set_collisions(links_no_collisions, group=0, mask=0)
-        # Deactivate damping
-        joints_no_damping = [
-            "link_body_{}".format(body_i)
-            for body_i in range(12)
-        ] + [
-            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
-            for leg_i in range(2)
-            for side in ["L", "R"]
-            for joint_i in range(4)
-        ]
-        self.set_links_dynamics(
-            joints_no_damping,
-            linearDamping=0,
-            angularDamping=0,
-            jointDamping=0
-        )
-        # Feet friction
-        self.set_links_dynamics(
-            self.feet,
-            lateralFriction=1,
-            spinningFriction=0,
-            rollingFriction=0,
-        )
+        self.add_sensors()
+        self.set_body_properties()
+
 
     def spawn_body(self):
         """Spawn body"""
@@ -106,7 +78,7 @@ class Salamander(Animat):
             joint_axis=[0, 0, 1],
             color=body_color
         )
-        links_body = [
+        links = [
             AnimatLink(
                 geometry=pybullet.GEOM_MESH,
                 filename="{}/salamander_body_{}.obj".format(
@@ -119,60 +91,59 @@ class Salamander(Animat):
                 color=body_color
             )
             for i in range(11)
-        ]
-        links_legs = [None for i in range(4) for j in range(4)]
+        ] + [None for i in range(4) for j in range(4)]
         leg_length = 0.03
         leg_radius = 0.015
-        n_body = 12
         n_dof_legs = 4
-        for leg_i in range(2):
+        for leg_i in [1, 0]:
             for side in range(2):
-                offset = 2*n_dof_legs*leg_i + n_dof_legs*side
                 sign = 1 if side else -1
-                leg_offset = sign*leg_length
                 position = np.zeros(3)
-                position[1] = leg_offset
+                position[1] = sign*leg_length
                 # Shoulder1
-                links_legs[offset+0] = AnimatLink(
+                links[leglink2index(leg_i, side, 0)] = AnimatLink(
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.2*leg_radius,
                     position=position,
-                    parent=5 if leg_i else 1,
+                    parent=5 if leg_i else 1,  # Inverse seems to change nothing
                     joint_axis=[0, 0, sign],
                     mass=0,
                     color=[0.9, 0.0, 0.0, 0.3]
                 )
                 # Shoulder2
-                links_legs[offset+1] = AnimatLink(
+                links[leglink2index(leg_i, side, 1)] = AnimatLink(
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.5*leg_radius,
-                    parent=n_body+offset,
+                    parent=leglink2index(leg_i, side, 0)+1,
                     joint_axis=[-sign, 0, 0],
                     mass=0,
                     color=[0.9, 0.9, 0.9, 0.3]
                 )
                 # Upper leg
-                links_legs[offset+2] = AnimatLink(
+                links[leglink2index(leg_i, side, 2)] = AnimatLink(
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=n_body+offset+1,
+                    parent=leglink2index(leg_i, side, 1)+1,
                     joint_axis=[0, 1, 0]
                 )
                 # Lower leg
-                links_legs[offset+3] = AnimatLink(
+                links[leglink2index(leg_i, side, 3)] = AnimatLink(
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
                     position=2*position,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=n_body+offset+2,
-                    joint_axis=[-sign, 0, 0]
+                    parent=leglink2index(leg_i, side, 2)+1,
+                    joint_axis=[-sign, 0, 0],
+                    # color=[
+                    #     [[1, 0, 0, 1], [0, 1, 0, 1]],
+                    #     [[0, 0, 1, 1], [0, 0, 0, 1]]
+                    # ][leg_i][side]
                 )
-        links = links_body + links_legs
         self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
@@ -199,24 +170,18 @@ class Salamander(Animat):
         for leg_i in range(2):
             for side_i in range(2):
                 for part_i in range(n_dof_legs):
-                    link_index = (
-                        12 + 2*n_dof_legs*leg_i + n_dof_legs*side_i + part_i
-                    )
-                    side = "R" if side_i else "L"
                     self.links[
-                        'link_leg_{}_{}_{}'.format(
-                            leg_i,
-                            side,
-                            part_i
-                        )
-                    ] = link_index-1
+                        # TODO: Find out why legs indices are reversed
+                        leglink2name((leg_i + 1)%2, side_i, part_i)
+                    ] = (
+                        leglink2index(leg_i, side_i, part_i)
+                    )
                     self.joints[
-                        'joint_link_leg_{}_{}_{}'.format(
-                            leg_i,
-                            side,
-                            part_i
-                        )
-                    ] = link_index-1
+                        # TODO: Find out why legs indices are reversed
+                        legjoint2name((leg_i + 1)%2, side_i, part_i)
+                    ] = (
+                        legjoint2index(leg_i, side_i, part_i)
+                    )
         self.print_information()
 
     # @classmethod
@@ -238,13 +203,14 @@ class Salamander(Animat):
         # Sensors
         self.sensors = Sensors()
         # Contacts
-        self.sensors.add({
-            "contact_{}".format(i): ContactSensor(
-                self.n_iterations,
-                self._identity, self.links[foot]
-            )
-            for i, foot in enumerate(self.feet)
-        })
+        for foot in self.feet_names:
+            self.sensors.add({
+                "contact_{}".format(foot): ContactSensor(
+                    self.n_iterations,
+                    self._identity,
+                    self.links[foot]
+                )
+            })
         # Joints
         self.sensors.add({
             "joints": JointsStatesSensor(
@@ -262,6 +228,49 @@ class Salamander(Animat):
                 0,  # Base link
             )
         })
+
+    def set_body_properties(self):
+        """Set body properties"""
+        # Deactivate collisions
+        links_no_collisions = [
+            "link_body_{}".format(body_i)
+            for body_i in range(0)
+        ] + [
+            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in ["L", "R"]
+            for joint_i in range(3)
+        ]
+        self.set_collisions(links_no_collisions, group=0, mask=0)
+        # Deactivate damping
+        joints_no_damping = [
+            "link_body_{}".format(body_i)
+            for body_i in range(12)
+        ] + [
+            "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+            for leg_i in range(2)
+            for side in ["L", "R"]
+            for joint_i in range(4)
+        ]
+        self.set_links_dynamics(
+            joints_no_damping,
+            linearDamping=0,
+            angularDamping=0,
+            jointDamping=0
+        )
+        # Friction
+        self.set_links_dynamics(
+            self.links,
+            lateralFriction=0,
+            spinningFriction=0,
+            rollingFriction=0,
+        )
+        self.set_links_dynamics(
+            self.feet_names,
+            lateralFriction=1,
+            spinningFriction=0,
+            rollingFriction=0,
+        )
 
     def setup_controller(self):
         """Setup controller"""

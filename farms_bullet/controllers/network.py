@@ -77,16 +77,15 @@ class NetworkArray:
 
     def __init__(self, array):
         super(NetworkArray, self).__init__()
-        self._array = array
-
-    @property
-    def array(self):
-        """Array"""
-        return self._array
+        self.array = array
 
     def shape(self):
         """Array shape"""
-        return np.shape(self._array)
+        return np.shape(self.array)
+
+    def copy_array(self):
+        """Copy array"""
+        return np.copy(self.array)
 
 
 class OscillatorNetworkState(NetworkArray):
@@ -122,13 +121,20 @@ class OscillatorNetworkState(NetworkArray):
 class NetworkParameters(ODE):
     """Network parameter"""
 
-    def __init__(self, oscillators, connectivity, joints):
+    def __init__(
+            self,
+            oscillators,
+            connectivity,
+            joints,
+            contacts,
+            contacts_connectivity
+    ):
         super(NetworkParameters, self).__init__(
             [NetworkArray(np.zeros([  # Runge-Kutta parameters
                 7,
                 2*oscillators.shape()[1] + 1*joints.shape()[1]
             ]))],
-            [oscillators, connectivity, joints]
+            [oscillators, connectivity, joints, contacts, contacts_connectivity]
         )
 
     @property
@@ -151,6 +157,16 @@ class NetworkParameters(ODE):
         """Joints parameters"""
         return self.function[2]
 
+    @property
+    def contacts(self):
+        """Contacts parameters"""
+        return self.function[3]
+
+    @property
+    def contacts_connectivity(self):
+        """Contacts parameters"""
+        return self.function[4]
+
     def to_ode_parameters(self):
         """Convert 2 arrays"""
         return ODE(
@@ -159,22 +175,24 @@ class NetworkParameters(ODE):
             + [self.oscillators.shape()[1]]
             + [self.connectivity.shape()[0]]
             + [self.joints.shape()[1]]
+            + [self.contacts.shape()[1]]
+            + [self.contacts_connectivity.shape()[0]]
+            + [0]
         )
 
 
 class OscillatorArray(NetworkArray):
     """Oscillator array"""
 
-    def __init__(self, array, options=None):
+    def __init__(self, array):
         super(OscillatorArray, self).__init__(array)
         self._array = array
         self._original_amplitudes_desired = np.copy(array[2])
-        self.options = options
 
     @classmethod
-    def from_parameters(cls, freqs, rates, amplitudes, options=None):
+    def from_parameters(cls, freqs, rates, amplitudes):
         """From each parameter"""
-        return cls(np.array([freqs, rates, amplitudes]), options)
+        return cls(np.array([freqs, rates, amplitudes]))
 
     @property
     def freqs(self):
@@ -225,6 +243,41 @@ class ConnectivityArray(NetworkArray):
         """Weights"""
         return self.array[:, 3]
 
+
+class SensorArray(NetworkArray):
+    """Sensor array"""
+
+    def __init__(self, array):
+        super(SensorArray, self).__init__(array)
+        self._array = array
+        shape = np.shape(array)
+        self._n_iterations, self._shape = shape[0], shape[1:]
+
+    # @classmethod
+    # def from_parameters(cls, n_iterations, sensors):
+    #     """From each parameter"""
+    #     array = np.zeros((n_iterations,)+np.shape(sensors))
+    #     array[0, :] = sensors
+    #     return cls(array)
+
+    # @classmethod
+    # def from_parameters(
+    #         cls,
+    #         n_iterations,
+    #         proprioception,
+    #         contacts,
+    #         hydrodynamics
+    # ):
+    #     """From each parameter"""
+    #     sensors = np.concatenate([proprioception, contacts, hydrodynamics])
+    #     array = np.zeros([n_iterations, len(sensors)])
+    #     array[0, :] = sensors
+    #     return cls(
+    #         array  # ,
+    #         # len(proprioception),
+    #         # len(contacts),
+    #         # len(hydrodynamics)
+    #     )
 
 class JointsArray(NetworkArray):
     """Oscillator array"""

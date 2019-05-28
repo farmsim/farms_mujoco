@@ -31,12 +31,18 @@ cpdef void ode_oscillators_sparse(
     CTYPE[:, :] oscillators,
     CTYPE[:, :] connectivity,
     CTYPE[:, :] joints,
+    CTYPE[:, :, :] contacts,
+    CTYPE[:, :] contacts_connectivity,
     unsigned int o_dim,
     unsigned int c_dim,
-    unsigned int j_dim
+    unsigned int j_dim,
+    unsigned int contacts_dim,
+    unsigned int cc_dim,
+    unsigned int iteration
 ) nogil:
     """ODE"""
     cdef unsigned int i, i0, i1
+    cdef double contact
     for i in range(o_dim):  # , nogil=True):
         # Intrinsic frequency
         dstate[i] = oscillators[0][i]
@@ -49,6 +55,16 @@ cpdef void ode_oscillators_sparse(
         dstate[i0] += state[o_dim+i1]*connectivity[i][2]*sin(
             state[i1] - state[i0] - connectivity[i][3]
         )
+    for i in range(cc_dim):
+        i0 = <unsigned int> (contacts_connectivity[i][0] + 0.5)
+        i1 = <unsigned int> (contacts_connectivity[i][1] + 0.5)
+        # amplitude*weight*sin(phase_j - phase_i - phase_bias)
+        contact = (
+            contacts[iteration][i1][0]**2
+            + contacts[iteration][i1][1]**2
+            + contacts[iteration][i1][2]**2
+        )**0.5
+        dstate[i0] += contacts_connectivity[i][2]*contact
     for i in range(j_dim):
         # rate*(joints_offset_desired - joints_offset)
         dstate[2*o_dim+i] = joints[1][i]*(joints[0][i] - state[2*o_dim+i])
