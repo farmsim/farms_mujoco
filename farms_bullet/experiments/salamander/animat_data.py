@@ -10,12 +10,15 @@ from .convention import (
 from ...controllers.network import (
     # ODE,
     # ODESolver,
-    OscillatorNetworkState,
+    # OscillatorNetworkState,
     NetworkParameters,
     OscillatorArray,
     ConnectivityArray,
     SensorArray,
     JointsArray
+)
+from ...cy_animat_data import (
+    OscillatorNetworkState
 )
 # from .animat_options import (
 #     SalamanderOptions,
