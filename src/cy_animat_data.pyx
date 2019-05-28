@@ -71,3 +71,123 @@ cdef class OscillatorNetworkState(NetworkArray3D):
     def damplitudes(self, iteration):
         """Amplitudes derivative"""
         return self.array[iteration, 1, self.n_oscillators:]
+
+
+class OscillatorArray(NetworkArray2D):
+    """Oscillator array"""
+
+    def __init__(self, array):
+        super(OscillatorArray, self).__init__(array)
+        self._array = array
+        self._original_amplitudes_desired = np.copy(array[2])
+
+    @classmethod
+    def from_parameters(cls, freqs, rates, amplitudes):
+        """From each parameter"""
+        return cls(np.array([freqs, rates, amplitudes]))
+
+    @property
+    def freqs(self):
+        """Frequencies"""
+        return self.array[0]
+
+    @freqs.setter
+    def freqs(self, value):
+        """Frequencies"""
+        self.array[0, :] = value
+
+    @property
+    def amplitudes_rates(self):
+        """Amplitudes rates"""
+        return self.array[1]
+
+    @property
+    def amplitudes_desired(self):
+        """Amplitudes desired"""
+        return self.array[2]
+
+    @amplitudes_desired.setter
+    def amplitudes_desired(self, value):
+        """Amplitudes desired"""
+        self.array[2, :] = value
+
+
+class ConnectivityArray(NetworkArray2D):
+    """Connectivity array"""
+
+    @classmethod
+    def from_parameters(cls, connections, weights, desired_phases):
+        """From each parameter"""
+        return cls(np.stack([connections, weights, desired_phases], axis=1))
+
+    @property
+    def connections(self):
+        """Connections"""
+        return self.array[:, [0, 1]]
+
+    @property
+    def weights(self):
+        """Weights"""
+        return self.array[:, 2]
+
+    @property
+    def desired_phases(self):
+        """Weights"""
+        return self.array[:, 3]
+
+
+class SensorArray(NetworkArray3D):
+    """Sensor array"""
+
+    def __init__(self, array):
+        super(SensorArray, self).__init__(array)
+        shape = np.shape(array)
+        self._n_iterations, self._shape = shape[0], shape[1:]
+
+    # @classmethod
+    # def from_parameters(cls, n_iterations, sensors):
+    #     """From each parameter"""
+    #     array = np.zeros((n_iterations,)+np.shape(sensors))
+    #     array[0, :] = sensors
+    #     return cls(array)
+
+    # @classmethod
+    # def from_parameters(
+    #         cls,
+    #         n_iterations,
+    #         proprioception,
+    #         contacts,
+    #         hydrodynamics
+    # ):
+    #     """From each parameter"""
+    #     sensors = np.concatenate([proprioception, contacts, hydrodynamics])
+    #     array = np.zeros([n_iterations, len(sensors)])
+    #     array[0, :] = sensors
+    #     return cls(
+    #         array  # ,
+    #         # len(proprioception),
+    #         # len(contacts),
+    #         # len(hydrodynamics)
+    #     )
+
+class JointsArray(NetworkArray2D):
+    """Oscillator array"""
+
+    @classmethod
+    def from_parameters(cls, offsets, rates):
+        """From each parameter"""
+        return cls(np.array([offsets, rates]))
+
+    @property
+    def offsets(self):
+        """Joints angles offsets"""
+        return self.array[0]
+
+    @property
+    def rates(self):
+        """Joints angles offsets rates"""
+        return self.array[1]
+
+    def set_body_offset(self, value, n_body_joints=11):
+        """Body offset"""
+        self.array[0, :n_body_joints] = value

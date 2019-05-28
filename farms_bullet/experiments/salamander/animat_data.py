@@ -12,13 +12,13 @@ from ...controllers.network import (
     # ODESolver,
     # OscillatorNetworkState,
     NetworkParameters,
+)
+from ...cy_animat_data import (
+    OscillatorNetworkState,
     OscillatorArray,
     ConnectivityArray,
     SensorArray,
     JointsArray
-)
-from ...cy_animat_data import (
-    OscillatorNetworkState
 )
 # from .animat_options import (
 #     SalamanderOptions,
