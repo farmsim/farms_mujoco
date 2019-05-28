@@ -40,11 +40,11 @@ cdef class NetworkArray3D(NetworkArray):
         self.array = array
 
 
-class OscillatorNetworkState(NetworkArray3D):
+cdef class OscillatorNetworkState(NetworkArray3D):
     """Network state"""
 
-    # cdef public unsigned int n_oscillators
-    # cdef public unsigned int _iterations
+    cdef public unsigned int n_oscillators
+    cdef public unsigned int _iterations
 
     def __init__(self, state, n_oscillators, iteration=0):
         self.n_oscillators = n_oscillators
