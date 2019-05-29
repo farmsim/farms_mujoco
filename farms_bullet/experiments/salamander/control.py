@@ -1,10 +1,7 @@
 """Control"""
 
-import numpy as np
-
 from ...controllers.control import (
     ModelController,
-    SineControl,
     ControlPDF,
     JointController
 )
