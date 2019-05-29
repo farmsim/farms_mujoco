@@ -6,6 +6,7 @@
 """Animat data"""
 
 import numpy as np
+cimport numpy as np
 
 
 class NetworkParameters:
@@ -57,8 +58,6 @@ cdef class NetworkArray:
 
 cdef class NetworkArray2D(NetworkArray):
     """Network array"""
-
-    cdef public double[:, :] array
 
     def __init__(self, array):
         super(NetworkArray, self).__init__()

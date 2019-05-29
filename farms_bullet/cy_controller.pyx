@@ -7,7 +7,7 @@
 
 
 import time
-import numpy as np
+# import numpy as np
 
 cimport cython
 cimport numpy as np
@@ -16,9 +16,7 @@ from libc.math cimport sin, cos
 # from libc.stdlib cimport malloc, free
 # from cython.parallel import prange
 
-
-ctypedef double CTYPE
-DTYPE = np.float64
+from .cy_animat_data cimport NetworkArray2D
 
 
 @cython.boundscheck(False)  # Deactivate bounds checking

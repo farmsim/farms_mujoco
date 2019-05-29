@@ -30,34 +30,28 @@ setup(
     #     'farms_bullet/config/*'
     # ]},
     include_package_data=True,
-    ext_modules=cythonize([
-        Extension(
-            "farms_bullet.cy_animat_data",
-            ["src/cy_animat_data.pyx"],
-            include_dirs=[np.get_include()],
-            extra_compile_args=['-O3'],  # , '-fopenmp'
-            extra_link_args=['-O3']  # , '-fopenmp'
-        ),
-        Extension(
-            "farms_bullet.cy_controller",
-            ["src/cy_controller.pyx"],
-            include_dirs=[np.get_include()],
-            extra_compile_args=['-O3'],  # , '-fopenmp'
-            extra_link_args=['-O3']  # , '-fopenmp'
-        ),
-        Extension(
-            "farms_bullet.cy_controller_old",
-            ["src/cy_controller_old.pyx"],
-            include_dirs=[np.get_include()],
-            extra_compile_args=['-O3'],  # , '-fopenmp'
-            extra_link_args=['-O3']  # , '-fopenmp'
-        ),
-        Extension(
-            "farms_bullet.cy_controller_test",
-            ["src/cy_controller_test.pyx"],
-            include_dirs=[np.get_include()],
-            extra_compile_args=['-O3'],  # , '-fopenmp'
-            extra_link_args=['-O3']  # , '-fopenmp'
-        ),
-    ])
+    ext_modules=cythonize(
+        [
+            Extension(
+                "farms_bullet.{}".format(filename),
+                ["farms_bullet/{}.pyx".format(filename)],
+                extra_compile_args=['-O3'],  # , '-fopenmp'
+                extra_link_args=['-O3']  # , '-fopenmp'
+            )
+            for filename in [
+                "cy_animat_data",
+                "cy_controller",
+                "cy_controller_old",
+                "cy_controller_test"
+            ]
+        ],
+        include_path=[np.get_include()],
+    ),
+    zip_safe=False,
+    install_requires=[
+        'cython',
+        'numpy',
+        'trimesh',
+        'pybullet'
+    ],
 )
