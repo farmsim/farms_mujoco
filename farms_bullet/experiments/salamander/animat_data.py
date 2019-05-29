@@ -2,28 +2,15 @@
 
 import numpy as np
 
-from .convention import (
-    bodyosc2index,
-    legosc2index
-    # legjoint2index
-)
-from ...controllers.network import (
-    # ODE,
-    # ODESolver,
-    # OscillatorNetworkState,
-    NetworkParameters,
-)
+from .convention import bodyosc2index, legosc2index
 from ...cy_animat_data import (
     OscillatorNetworkState,
+    NetworkParameters,
     OscillatorArray,
     ConnectivityArray,
     SensorArray,
     JointsArray
 )
-# from .animat_options import (
-#     SalamanderOptions,
-#     SalamanderControlOptions
-# )
 
 
 class SalamanderOscillatorNetworkState(OscillatorNetworkState):
