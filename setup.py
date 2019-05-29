@@ -16,41 +16,46 @@ setup(
     # license="BSD",
     keywords="farms simulation bullet",
     # url="",
-    # packages=['farms_bullet'],
+    # packages=["farms_bullet"],
     packages=find_packages(),
-    # long_description=read('README'),
+    # long_description=read("README"),
     # classifiers=[
     #     "Development Status :: 3 - Alpha",
     #     "Topic :: Utilities",
     #     "License :: OSI Approved :: BSD License",
     # ],
-    scripts=['scripts/farms_salamander.py'],
-    # package_data={'farms_bullet': [
-    #     'farms_bullet/templates/*',
-    #     'farms_bullet/config/*'
+    scripts=["scripts/farms_salamander.py"],
+    # package_data={"farms_bullet": [
+    #     "farms_bullet/templates/*",
+    #     "farms_bullet/config/*"
     # ]},
     include_package_data=True,
-    ext_modules=cythonize([
+    ext_modules=cythonize(
         Extension(
-            "farms_bullet.cy_controller",
-            ["src/cy_controller.pyx"],
-            include_dirs=[np.get_include()],
-            extra_compile_args=['-O3'],  # , '-fopenmp'
-            extra_link_args=['-O3']  # , '-fopenmp'
+            "farms_bullet.*",
+            ["farms_bullet/*.pyx"],
+            extra_compile_args=["-O3"],  # , "-fopenmp"
+            extra_link_args=["-O3"]  # , "-fopenmp"
         ),
-        Extension(
-            "farms_bullet.cy_controller_old",
-            ["src/cy_controller_old.pyx"],
-            include_dirs=[np.get_include()],
-            extra_compile_args=['-O3'],  # , '-fopenmp'
-            extra_link_args=['-O3']  # , '-fopenmp'
-        ),
-        Extension(
-            "farms_bullet.cy_controller_test",
-            ["src/cy_controller_test.pyx"],
-            include_dirs=[np.get_include()],
-            extra_compile_args=['-O3'],  # , '-fopenmp'
-            extra_link_args=['-O3']  # , '-fopenmp'
-        ),
-    ])
+        include_path=[np.get_include()],
+        compiler_directives={
+            "embedsignature": True,
+            "cdivision": True,
+            "language_level": 3,
+            "infer_types": True,
+            "profile": True,
+            "boundscheck": False,
+            "wraparound": False,
+            "nonecheck": False,
+            "initializedcheck": False,
+            "overflowcheck": False,
+        }
+    ),
+    zip_safe=False,
+    install_requires=[
+        "cython",
+        "numpy",
+        "trimesh",
+        "pybullet"
+    ],
 )

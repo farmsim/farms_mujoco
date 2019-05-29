@@ -2,14 +2,8 @@
 
 import numpy as np
 
-from .convention import (
-    bodyosc2index,
-    legosc2index
-    # legjoint2index
-)
-from ...controllers.network import (
-    # ODE,
-    # ODESolver,
+from .convention import bodyosc2index, legosc2index
+from ...cy_animat_data import (
     OscillatorNetworkState,
     NetworkParameters,
     OscillatorArray,
@@ -17,10 +11,6 @@ from ...controllers.network import (
     SensorArray,
     JointsArray
 )
-# from .animat_options import (
-#     SalamanderOptions,
-#     SalamanderControlOptions
-# )
 
 
 class SalamanderOscillatorNetworkState(OscillatorNetworkState):
@@ -378,58 +368,6 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
                                     + leg_i*np.pi
                                 )
                             ])
-                # # connectivity.append([
-                # #     bodyosc2index(joint_i=1, side=side_i),
-                # #     legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=0),
-                # #     legs2body_amplitude, np.pi
-                # # ])
-                    # connectivity.append([
-                    #     bodyosc2index(joint_i=i, side=(side_i+lateral)%2),
-                    #     legosc2index(
-                    #         leg_i=0,
-                    #         side_i=side_i,
-                    #         joint_i=0,
-                    #         side=side_i  # Muscle facing back
-                    #     ),
-                    #     legs2body_amplitude, 0
-                    # ])
-                # # connectivity.append([
-                # #     bodyosc2index(joint_i=1, side=side_i),
-                # #     legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=1),
-                # #     legs2body_amplitude, 0
-                # # ])
-            # for i in [2, 3, 4, 5, 6]:
-            #     # Hind limbs
-            #     connectivity.append([
-            #         bodyosc2index(joint_i=i, side=side_i),
-            #         legosc2index(
-            #             leg_i=1,
-            #             side_i=side_i,
-            #             joint_i=0,
-            #             side=side_i # Muscle facing front
-            #         ),
-            #         legs2body_amplitude, 0
-            #     ])
-            #     # connectivity.append([
-            #     #     bodyosc2index(joint_i=4, side=side_i),
-            #     #     legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=0),
-            #     #     legs2body_amplitude, np.pi
-            #     # ])
-            #     connectivity.append([
-            #         bodyosc2index(joint_i=i, side=side_i),
-            #         legosc2index(
-            #             leg_i=1,
-            #             side_i=side_i,
-            #             joint_i=0,
-            #             side=(side_i+1) % 2  # Muscle facing back
-            #         ),
-            #         legs2body_amplitude, np.pi
-            #     ])
-            #     # connectivity.append([
-            #     #     bodyosc2index(joint_i=4, side=side_i),
-            #     #     legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=1),
-            #     #     legs2body_amplitude, 0
-            #     # ])
         return connectivity
 
     @classmethod
