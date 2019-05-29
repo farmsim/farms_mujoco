@@ -23,23 +23,6 @@ cdef class NetworkParameters:
         self.contacts_connectivity = contacts_connectivity
         self.iteration = 0
 
-    def to_ode_parameters(self):
-        """Convert 2 arrays"""
-        return [
-            self.oscillators.array,
-            self.connectivity.array,
-            self.joints.array,
-            self.contacts.array,
-            self.contacts_connectivity.array,
-            self.oscillators.shape()[1],
-            self.connectivity.shape()[0],
-            self.joints.shape()[1],
-            self.contacts.shape()[1],
-            self.contacts_connectivity.shape()[0],
-            0
-        ]
-
-
 cdef class NetworkArray:
     """Network array"""
 
