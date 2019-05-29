@@ -3,15 +3,16 @@
 import pybullet
 
 
-class ModelController:
-    """ModelController"""
+class AnimatController:
+    """AnimatController"""
 
     def __init__(self, model, network):
-        super(ModelController, self).__init__()
+        super(AnimatController, self).__init__()
         self.model = model
         self.network = network
         self.positions = None
         self.velocities = None
+        self.torques = None
 
     def update(self):
         """Step"""

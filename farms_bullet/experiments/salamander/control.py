@@ -1,11 +1,11 @@
 """Control"""
 
-from ...controllers.control import ModelController
+from ...controllers.control import AnimatController
 from .network import SalamanderNetworkODE
 
 
-class SalamanderController(ModelController):
-    """ModelController"""
+class SalamanderController(AnimatController):
+    """AnimatController"""
 
     @classmethod
     def from_options(cls, model, options, iterations, timestep):
