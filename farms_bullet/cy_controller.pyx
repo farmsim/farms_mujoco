@@ -2,6 +2,12 @@
 # cython: language_level=3
 # cython: infer_types=True
 # cython: profile=True
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: nonecheck=False
+# cython: initializedcheck=False
+# cython: overflowcheck=False
+
 
 """Cython code"""
 
@@ -17,10 +23,6 @@ from libc.math cimport sin, cos
 # from cython.parallel import prange
 
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
-@cython.nonecheck(False)
-# @cython.profile(False)
 cpdef void ode_oscillators_sparse(
     CTYPE[:] dstate,
     CTYPE[:] state,
@@ -61,10 +63,6 @@ cpdef void ode_oscillators_sparse(
         )
 
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
-@cython.nonecheck(False)
-# @cython.profile(False)
 cpdef void ode_oscillators_sparse_gradient(
     CTYPE[:, :] jac,
     CTYPE[:] state,
@@ -94,10 +92,6 @@ cpdef void ode_oscillators_sparse_gradient(
         jac[2*o_dim+i, 2*o_dim+i] = -joints[1][i]
 
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
-@cython.nonecheck(False)
-# @cython.profile(False)
 cpdef void euler(
     fun,
     float timestep,
@@ -117,10 +111,6 @@ cpdef void euler(
         )
 
 
-@cython.boundscheck(False)  # Deactivate bounds checking
-@cython.wraparound(False)   # Deactivate negative indexing.
-@cython.nonecheck(False)
-# @cython.profile(False)
 cpdef void rk4(
     fun,
     float timestep,
