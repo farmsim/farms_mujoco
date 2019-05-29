@@ -16,8 +16,6 @@ from libc.math cimport sin, cos
 # from libc.stdlib cimport malloc, free
 # from cython.parallel import prange
 
-from .cy_animat_data cimport NetworkArray2D
-
 
 @cython.boundscheck(False)  # Deactivate bounds checking
 @cython.wraparound(False)   # Deactivate negative indexing.
@@ -26,46 +24,41 @@ from .cy_animat_data cimport NetworkArray2D
 cpdef void ode_oscillators_sparse(
     CTYPE[:] dstate,
     CTYPE[:] state,
-    CTYPE[:, :] oscillators,
-    CTYPE[:, :] connectivity,
-    CTYPE[:, :] joints,
-    CTYPE[:, :, :] contacts,
-    CTYPE[:, :] contacts_connectivity,
-    unsigned int o_dim,
-    unsigned int c_dim,
-    unsigned int j_dim,
-    unsigned int contacts_dim,
-    unsigned int cc_dim,
-    unsigned int iteration
+    NetworkParameters params
 ) nogil:
     """ODE"""
     cdef unsigned int i, i0, i1
+    cdef unsigned int o_dim = params.oscillators.size[1]
     cdef double contact
     for i in range(o_dim):  # , nogil=True):
         # Intrinsic frequency
-        dstate[i] = oscillators[0][i]
+        dstate[i] = params.oscillators.array[0][i]
         # rate*(nominal_amplitude - amplitude)
-        dstate[o_dim+i] = oscillators[1][i]*(oscillators[2][i] - state[o_dim+i])
-    for i in range(c_dim):
-        i0 = <unsigned int> (connectivity[i][0] + 0.5)
-        i1 = <unsigned int> (connectivity[i][1] + 0.5)
-        # amplitude*weight*sin(phase_j - phase_i - phase_bias)
-        dstate[i0] += state[o_dim+i1]*connectivity[i][2]*sin(
-            state[i1] - state[i0] - connectivity[i][3]
+        dstate[o_dim+i] = params.oscillators.array[1][i]*(
+            params.oscillators.array[2][i] - state[o_dim+i]
         )
-    for i in range(cc_dim):
-        i0 = <unsigned int> (contacts_connectivity[i][0] + 0.5)
-        i1 = <unsigned int> (contacts_connectivity[i][1] + 0.5)
+    for i in range(params.connectivity.size[0]):
+        i0 = <unsigned int> (params.connectivity.array[i][0] + 0.5)
+        i1 = <unsigned int> (params.connectivity.array[i][1] + 0.5)
         # amplitude*weight*sin(phase_j - phase_i - phase_bias)
+        dstate[i0] += state[o_dim+i1]*params.connectivity.array[i][2]*sin(
+            state[i1] - state[i0] - params.connectivity.array[i][3]
+        )
+    for i in range(params.contacts_connectivity.size[0]):
+        i0 = <unsigned int> (params.contacts_connectivity.array[i][0] + 0.5)
+        i1 = <unsigned int> (params.contacts_connectivity.array[i][1] + 0.5)
+        # contact_weight*contact_force
         contact = (
-            contacts[iteration][i1][0]**2
-            + contacts[iteration][i1][1]**2
-            + contacts[iteration][i1][2]**2
+            params.contacts.array[params.iteration][i1][0]**2
+            + params.contacts.array[params.iteration][i1][1]**2
+            + params.contacts.array[params.iteration][i1][2]**2
         )**0.5
-        dstate[i0] += contacts_connectivity[i][2]*contact
-    for i in range(j_dim):
+        dstate[i0] += params.contacts_connectivity.array[i][2]*contact
+    for i in range(params.joints.size[1]):
         # rate*(joints_offset_desired - joints_offset)
-        dstate[2*o_dim+i] = joints[1][i]*(joints[0][i] - state[2*o_dim+i])
+        dstate[2*o_dim+i] = params.joints.array[1][i]*(
+            params.joints.array[0][i] - state[2*o_dim+i]
+        )
 
 
 @cython.boundscheck(False)  # Deactivate bounds checking

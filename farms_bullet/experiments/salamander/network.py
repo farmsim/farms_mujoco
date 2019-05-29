@@ -21,10 +21,8 @@ class SalamanderNetworkODE:
         self._timestep = timestep
         self.iteration = 0
         self._n_oscillators = state.n_oscillators
-        # self._n_joints = parameters.joints.shape()[1]
         n_body = 11
         n_legs_dofs = 4
-        # n_legs = 4
         self.groups = [None, None]
         self.groups[0] = [
             bodyosc2index(joint_i=i, side=0)
@@ -52,7 +50,6 @@ class SalamanderNetworkODE:
         self.solver = integrate.ode(f=self.fun)  # , jac=self.jac
         self.solver.set_integrator("dopri5")
         self._time = 0
-        self._parameters = self.parameters.to_ode_parameters()# .function
 
     @classmethod
     def from_options(cls, options, n_iterations, timestep):
@@ -69,7 +66,7 @@ class SalamanderNetworkODE:
         self.ode(
             self.dstate,
             state,
-            *self._parameters
+            self.parameters
         )
         return self.dstate
 
@@ -79,14 +76,14 @@ class SalamanderNetworkODE:
         self.ode.gradient(
             self._jac,
             state,
-            *self._parameters
+            self.parameters
         )
         return self._jac
 
     def control_step(self):
         """Control step"""
         # Adaptive timestep (ODE)
-        self._parameters[-1] = self.iteration
+        self.parameters.iteration = self.iteration
         self.solver.set_initial_value(
             self.state.array[self.iteration, 0, :],
             self._time

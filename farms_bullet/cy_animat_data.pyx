@@ -9,7 +9,7 @@ import numpy as np
 cimport numpy as np
 
 
-class NetworkParameters:
+cdef class NetworkParameters:
     """Network parameter"""
 
     def __init__(
@@ -26,6 +26,7 @@ class NetworkParameters:
         self.joints = joints
         self.contacts = contacts
         self.contacts_connectivity = contacts_connectivity
+        self.iteration = 0
 
     def to_ode_parameters(self):
         """Convert 2 arrays"""
@@ -62,57 +63,56 @@ cdef class NetworkArray2D(NetworkArray):
     def __init__(self, array):
         super(NetworkArray, self).__init__()
         self.array = array
+        shape = np.array(np.shape(array), dtype=np.uint)
+        cdef unsigned int i
+        for i in range(2):
+            self.size[i] = shape[i]
 
 
 cdef class NetworkArray3D(NetworkArray):
     """Network array"""
 
-    cdef public double[:, :, :] array
-
     def __init__(self, array):
         super(NetworkArray, self).__init__()
         self.array = array
+        shape = np.array(np.shape(array), dtype=np.uint)
+        cdef unsigned int i
+        for i in range(3):
+            self.size[i] = shape[i]
 
 
 cdef class OscillatorNetworkState(NetworkArray3D):
     """Network state"""
 
-    cdef public unsigned int n_oscillators
-    cdef public unsigned int _iterations
-
     def __init__(self, state, n_oscillators, iteration=0):
+        super(OscillatorNetworkState, self).__init__(state)
         self.n_oscillators = n_oscillators
         self._iteration = iteration
-        super(OscillatorNetworkState, self).__init__(state)
 
     @classmethod
     def from_solver(cls, solver, n_oscillators):
         """From solver"""
         return cls(solver.state, n_oscillators, solver.iteration)
 
-    def phases(self, iteration):
+    def phases(self, unsigned int iteration):
         """Phases"""
         return self.array[iteration, 0, :self.n_oscillators]
 
-    def amplitudes(self, iteration):
+    def amplitudes(self, unsigned int iteration):
         """Amplitudes"""
         return self.array[iteration, 0, self.n_oscillators:]
 
-    def dphases(self, iteration):
+    def dphases(self, unsigned int iteration):
         """Phases derivative"""
         return self.array[iteration, 1, :self.n_oscillators]
 
-    def damplitudes(self, iteration):
+    def damplitudes(self, unsigned int iteration):
         """Amplitudes derivative"""
         return self.array[iteration, 1, self.n_oscillators:]
 
 
 cdef class OscillatorArray(NetworkArray2D):
     """Oscillator array"""
-
-    # def __init__(self, array):
-    #     super(OscillatorArray, self).__init__(array)
-        # self._original_amplitudes_desired = np.copy(array[2])
 
     @classmethod
     def from_parameters(cls, freqs, rates, amplitudes):
@@ -171,8 +171,6 @@ cdef class ConnectivityArray(NetworkArray2D):
 
 cdef class SensorArray(NetworkArray3D):
     """Sensor array"""
-
-    cdef public unsigned int _n_iterations
 
     def __init__(self, array):
         super(SensorArray, self).__init__(array)

@@ -7,21 +7,15 @@
 
 cimport numpy as np
 
+from .cy_animat_data cimport (
+    NetworkParameters
+)
+
 ctypedef double CTYPE
 ctypedef np.float64_t DTYPE
 
 cpdef void ode_oscillators_sparse(
     CTYPE[:] dstate,
     CTYPE[:] state,
-    CTYPE[:, :] oscillators,
-    CTYPE[:, :] connectivity,
-    CTYPE[:, :] joints,
-    CTYPE[:, :, :] contacts,
-    CTYPE[:, :] contacts_connectivity,
-    unsigned int o_dim,
-    unsigned int c_dim,
-    unsigned int j_dim,
-    unsigned int contacts_dim,
-    unsigned int cc_dim,
-    unsigned int iteration
+    NetworkParameters params,
 ) nogil
