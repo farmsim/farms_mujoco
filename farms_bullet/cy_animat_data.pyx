@@ -1,13 +1,3 @@
-# cython: cdivision=True
-# cython: language_level=3
-# cython: infer_types=True
-# cython: profile=False
-# cython: boundscheck=False
-# cython: wraparound=False
-# cython: nonecheck=False
-# cython: initializedcheck=False
-# cython: overflowcheck=False
-
 """Animat data"""
 
 import numpy as np
