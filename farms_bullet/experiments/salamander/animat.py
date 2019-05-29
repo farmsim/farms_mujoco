@@ -276,7 +276,6 @@ class Salamander(Animat):
         """Setup controller"""
         self.controller = SalamanderController.from_options(
             self.identity,
-            self.joints,
             options=self.options,
             iterations=self.n_iterations,
             timestep=self.timestep
