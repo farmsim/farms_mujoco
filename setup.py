@@ -31,20 +31,12 @@ setup(
     # ]},
     include_package_data=True,
     ext_modules=cythonize(
-        [
-            Extension(
-                "farms_bullet.{}".format(filename),
-                ["farms_bullet/{}.pyx".format(filename)],
-                extra_compile_args=['-O3'],  # , '-fopenmp'
-                extra_link_args=['-O3']  # , '-fopenmp'
-            )
-            for filename in [
-                "cy_animat_data",
-                "cy_controller",
-                "cy_controller_old",
-                "cy_controller_test"
-            ]
-        ],
+        Extension(
+            "farms_bullet.*",
+            ["farms_bullet/*.pyx"],
+            extra_compile_args=['-O3'],  # , '-fopenmp'
+            extra_link_args=['-O3']  # , '-fopenmp'
+        ),
         include_path=[np.get_include()],
     ),
     zip_safe=False,
