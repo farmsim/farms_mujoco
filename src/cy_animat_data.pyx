@@ -73,13 +73,12 @@ cdef class OscillatorNetworkState(NetworkArray3D):
         return self.array[iteration, 1, self.n_oscillators:]
 
 
-class OscillatorArray(NetworkArray2D):
+cdef class OscillatorArray(NetworkArray2D):
     """Oscillator array"""
 
-    def __init__(self, array):
-        super(OscillatorArray, self).__init__(array)
-        self._array = array
-        self._original_amplitudes_desired = np.copy(array[2])
+    # def __init__(self, array):
+    #     super(OscillatorArray, self).__init__(array)
+        # self._original_amplitudes_desired = np.copy(array[2])
 
     @classmethod
     def from_parameters(cls, freqs, rates, amplitudes):
@@ -112,7 +111,7 @@ class OscillatorArray(NetworkArray2D):
         self.array[2, :] = value
 
 
-class ConnectivityArray(NetworkArray2D):
+cdef class ConnectivityArray(NetworkArray2D):
     """Connectivity array"""
 
     @classmethod
@@ -123,26 +122,29 @@ class ConnectivityArray(NetworkArray2D):
     @property
     def connections(self):
         """Connections"""
-        return self.array[:, [0, 1]]
+        return self.array[:][0, 1]
 
     @property
     def weights(self):
         """Weights"""
-        return self.array[:, 2]
+        return self.array[:][2]
 
     @property
     def desired_phases(self):
         """Weights"""
-        return self.array[:, 3]
+        return self.array[:][3]
 
 
-class SensorArray(NetworkArray3D):
+cdef class SensorArray(NetworkArray3D):
     """Sensor array"""
+
+    cdef public unsigned int _n_iterations
 
     def __init__(self, array):
         super(SensorArray, self).__init__(array)
         shape = np.shape(array)
-        self._n_iterations, self._shape = shape[0], shape[1:]
+        self._n_iterations = shape[0]
+        self._shape = shape[1:]
 
     # @classmethod
     # def from_parameters(cls, n_iterations, sensors):
@@ -170,7 +172,7 @@ class SensorArray(NetworkArray3D):
     #         # len(hydrodynamics)
     #     )
 
-class JointsArray(NetworkArray2D):
+cdef class JointsArray(NetworkArray2D):
     """Oscillator array"""
 
     @classmethod
