@@ -11,7 +11,7 @@ from ...plugins.swimming import viscous_swimming
 from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
-    ContactSensor,
+    ContactsSensors,
     LinkStateSensor
 )
 from .control import SalamanderController
@@ -203,14 +203,13 @@ class Salamander(Animat):
         # Sensors
         self.sensors = Sensors()
         # Contacts
-        for foot in self.feet_names:
-            self.sensors.add({
-                "contact_{}".format(foot): ContactSensor(
-                    self.n_iterations,
-                    self._identity,
-                    self.links[foot]
-                )
-            })
+        self.sensors.add({
+            "contacts": ContactsSensors(
+                self.n_iterations,
+                [self._identity for _ in self.feet_names],
+                [self.links[foot] for foot in self.feet_names]
+            )
+        })
         # Joints
         self.sensors.add({
             "joints": JointsStatesSensor(

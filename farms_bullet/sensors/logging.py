@@ -5,7 +5,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pybullet
 
-from .sensors import JointsStatesSensor, ContactSensor, LinkStateSensor
+from .sensors import (
+    JointsStatesSensor,
+    ContactsSensors,
+    ContactSensor,
+    LinkStateSensor
+)
 
 
 def global2local(vector_global, orientation):
@@ -122,6 +127,44 @@ class JointsStatesLogger(SensorLogger):
         self.plot_array(times, 8, label=label)
         plt.xlabel("Time [s]")
         plt.ylabel("Torque [Nm]")
+
+
+class ContactsLogger(SensorLogger):
+    """Joints states logger"""
+
+    def plot(self, times, figure=None, label=None):
+        """Plot"""
+        for sensor in range(np.shape(self.array)[1]):
+            self.plot_normal_force(sensor, times, figure, label=label)
+            self.plot_lateral_force(sensor, times, figure, label=label)
+
+    def plot_normal_force(self, sensor, times, figure=None, label=None):
+        """Plot normal force"""
+        if figure is None:
+            figure = "Contact"
+        plt.figure(figure+"_normal")
+        label = "" if label is None else (label + "_")
+        labels = [label + lab for lab in ["x", "y", "z"]]
+        for i, array in enumerate(self.array[:, sensor, :3].T):
+            plt.plot(times, array[:len(times)], label=labels[i])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Normal force [N]")
+        plt.legend()
+        plt.grid(True)
+
+    def plot_lateral_force(self, sensor, times, figure=None, label=None):
+        """Plot lateral force"""
+        if figure is None:
+            figure = "Contact"
+        plt.figure(figure+"_lateral")
+        label = "" if label is None else (label + "_")
+        labels = [label + lab for lab in ["x", "y", "z"]]
+        for i, array in enumerate(self.array[:, sensor, 3:].T):
+            plt.plot(times, array[:len(times)], label=labels[i])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Force [N]")
+        plt.legend()
+        plt.grid(True)
 
 
 class ContactLogger(SensorLogger):
@@ -303,6 +346,7 @@ class SensorsLogger(dict):
 
     mapping = {
         JointsStatesSensor: JointsStatesLogger,
+        ContactsSensors: ContactsLogger,
         ContactSensor: ContactLogger,
         LinkStateSensor: LinkStateLogger
     }

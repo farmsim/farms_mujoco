@@ -3,6 +3,11 @@
 from ..animats.array cimport NetworkArray2D, NetworkArray3D
 
 
+cdef class Sensors(dict):
+    """Sensors"""
+    pass
+
+
 # cdef class ContactSensor(NetworkArray2D):
 #     """Model sensors"""
 
