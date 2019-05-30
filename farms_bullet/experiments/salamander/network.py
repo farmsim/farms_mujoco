@@ -3,7 +3,7 @@
 import numpy as np
 from scipy import integrate
 from .convention import bodyosc2index, legosc2index  # legjoint2index
-from ...controllers.cy_controller import ode_oscillators_sparse
+from ...controllers.controller import ode_oscillators_sparse
 from .animat_data import (
     SalamanderOscillatorNetworkState,
     SalamanderNetworkParameters

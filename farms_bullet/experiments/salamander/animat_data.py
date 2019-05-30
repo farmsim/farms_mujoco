@@ -3,7 +3,7 @@
 import numpy as np
 
 from .convention import bodyosc2index, legosc2index
-from ...animats.cy_animat_data import (
+from ...animats.animat_data import (
     OscillatorNetworkState,
     NetworkParameters,
     OscillatorArray,
