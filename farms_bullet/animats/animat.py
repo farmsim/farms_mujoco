@@ -27,6 +27,7 @@ class Animat(SimulationElement):
         self.joints = {}
         self.sensors = {}
         self.controller = None
+        self.data = None
 
     def n_joints(self):
         """Get number of joints"""

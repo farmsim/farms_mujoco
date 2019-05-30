@@ -8,13 +8,9 @@ class SalamanderController(AnimatController):
     """AnimatController"""
 
     @classmethod
-    def from_options(cls, model, options, iterations, timestep):
+    def from_data(cls, model, animat_data, timestep):
         """Salamander controller from options"""
         return cls(
             model=model,
-            network=SalamanderNetworkODE.from_options(
-                options,
-                iterations,
-                timestep
-            )
+            network=SalamanderNetworkODE(animat_data, timestep)
         )
