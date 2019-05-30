@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run salamander simulation with bullet"""
 
+import time
 import matplotlib.pyplot as plt
 from farms_bullet.experiments.salamander.simulation import main as run_sim
 from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
@@ -41,6 +42,8 @@ def pycall():
 
 
 if __name__ == '__main__':
+    TIC = time.time()
     # main()
     profile()
     # pycall()
+    print("Total simulation time: {} [s]".format(time.time() - TIC))
