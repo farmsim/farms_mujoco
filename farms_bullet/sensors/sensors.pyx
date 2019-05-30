@@ -1,6 +1,8 @@
-"""Sensors"""
+"""Cython sensors"""
 
 import numpy as np
+cimport numpy as np
+
 import pybullet
 
 
@@ -8,15 +10,10 @@ class Sensor:
     """Sensor base class for simulation elements"""
     def __init__(self, shape):
         super(Sensor, self).__init__()
-        self._data = np.zeros(shape)
+        self.array = np.zeros(shape)
 
     def update(self, iteration):
         """Update"""
-
-    @property
-    def data(self):
-        """Sensor data"""
-        return self._data
 
 
 class ContactTarget(dict):
@@ -51,11 +48,11 @@ class ContactSensor(Sensor):
             linkIndexA=self.animat_link,
             linkIndexB=self.target.link
         )
-        self._data[iteration] = self.get_total_forces()
+        self.array[iteration] = self.get_total_forces()
 
     def total_force(self, iteration):
         """Toral force"""
-        return self.data[iteration, :3] + self.data[iteration, 3:]
+        return self.array[iteration, :3] + self.array[iteration, 3:]
 
     def get_total_forces(self):
         """Get force"""
@@ -94,7 +91,7 @@ class JointsStatesSensor(Sensor):
 
     def update(self, iteration):
         """Update sensor"""
-        self._data[iteration] = np.array([
+        self.array[iteration] = np.array([
             (state[0], state[1]) + state[2] + (state[3],)
             for joint_i, state in enumerate(
                 pybullet.getJointStates(self._model_id, self._joints)
@@ -112,7 +109,7 @@ class LinkStateSensor(Sensor):
 
     def update(self, iteration):
         """Update sensor"""
-        self._data[iteration] = np.concatenate(
+        self.array[iteration] = np.concatenate(
             pybullet.getLinkState(
                 bodyUniqueId=self._model_id,
                 linkIndex=self._link,

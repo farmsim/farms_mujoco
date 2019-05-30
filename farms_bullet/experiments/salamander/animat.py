@@ -8,7 +8,7 @@ import pybullet
 from ...animats.animat import Animat
 from ...animats.link import AnimatLink
 from ...plugins.swimming import viscous_swimming
-from ...sensors.sensor import (
+from ...sensors.cy_sensors import (
     Sensors,
     JointsStatesSensor,
     ContactSensor,

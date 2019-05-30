@@ -31,12 +31,20 @@ setup(
     # ]},
     include_package_data=True,
     ext_modules=cythonize(
-        Extension(
-            "farms_bullet.*",
-            ["farms_bullet/*.pyx"],
-            extra_compile_args=["-O3"],  # , "-fopenmp"
-            extra_link_args=["-O3"]  # , "-fopenmp"
-        ),
+        [
+            Extension(
+                "farms_bullet.*",
+                ["farms_bullet/*.pyx"],
+                extra_compile_args=["-O3"],  # , "-fopenmp"
+                extra_link_args=["-O3"]  # , "-fopenmp"
+            ),
+            Extension(
+                "farms_bullet.sensors.*",
+                ["farms_bullet/sensors/*.pyx"],
+                extra_compile_args=["-O3"],  # , "-fopenmp"
+                extra_link_args=["-O3"]  # , "-fopenmp"
+            )
+        ],
         include_path=[np.get_include()],
         compiler_directives={
             "embedsignature": True,
