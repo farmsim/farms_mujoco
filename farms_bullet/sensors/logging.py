@@ -142,7 +142,7 @@ class ContactsLogger(SensorLogger):
         """Plot normal force"""
         if figure is None:
             figure = "Contact"
-        plt.figure(figure+"_normal")
+        plt.figure(figure+"_{}_normal".format(sensor))
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
         for i, array in enumerate(self.array[:, sensor, :3].T):
@@ -156,7 +156,7 @@ class ContactsLogger(SensorLogger):
         """Plot lateral force"""
         if figure is None:
             figure = "Contact"
-        plt.figure(figure+"_lateral")
+        plt.figure(figure+"_{}_lateral".format(sensor))
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
         for i, array in enumerate(self.array[:, sensor, 3:].T):
