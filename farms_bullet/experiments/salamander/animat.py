@@ -14,13 +14,18 @@ from ...sensors.sensors import (
     ContactsSensors,
     LinkStateSensor
 )
-from .control import SalamanderController
 from .convention import (
     leglink2index,
     leglink2name,
     legjoint2index,
     legjoint2name
 )
+from .animat_data import (
+    SalamanderOscillatorNetworkState,
+    SalamanderData
+)
+from .control import SalamanderController
+
 
 
 class Salamander(Animat):
@@ -36,6 +41,11 @@ class Salamander(Animat):
             "link_leg_1_L_3",
             "link_leg_1_R_3"
         ]
+        self.data = SalamanderData.from_options(
+            SalamanderOscillatorNetworkState.default_state(iterations),
+            options,
+            iterations
+        )
 
     def spawn(self):
         """Spawn salamander"""
@@ -273,10 +283,9 @@ class Salamander(Animat):
 
     def setup_controller(self):
         """Setup controller"""
-        self.controller = SalamanderController.from_options(
+        self.controller = SalamanderController.from_data(
             self.identity,
-            options=self.options,
-            iterations=self.n_iterations,
+            animat_data=self.data,
             timestep=self.timestep
         )
 
