@@ -1,8 +1,3 @@
-# cython: cdivision=True
-# cython: language_level=3
-# cython: infer_types=True
-# cython: profile=True
-
 """Cython controller code"""
 
 cimport numpy as np
