@@ -9,7 +9,7 @@ from ...simulations.simulation import Simulation, SimulationElements
 from ...simulations.simulation_options import SimulationOptions
 from .animat import SimonAnimat
 from ...arenas.arena import FlooredArena
-from ...sensors.sensor import (
+from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
     ContactSensor,

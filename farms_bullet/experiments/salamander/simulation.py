@@ -78,14 +78,12 @@ class SalamanderSimulation(Simulation):
         self.tic_rt[0] = time.time()
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
-        contact_i = 0
-        for foot in self.elements.animat.feet_names:
-            self.elements.animat.controller.network.parameters.contacts.update(
+        forces = self.elements.animat.sensors["contacts"].total_force(sim_step)
+        for foot_i, _ in enumerate(self.elements.animat.feet_names):
+            self.elements.animat.controller.network.animat_data.sensors.contacts.update(
                 sim_step,
-                contact_i,
-                self.elements.animat.sensors[
-                    "contact_{}".format(foot)
-                ].total_force(sim_step)
+                foot_i,
+                forces[foot_i]
             )
             # print("{}: {} ({})".format(
             #     "contact_{}".format(foot),
@@ -97,7 +95,6 @@ class SalamanderSimulation(Simulation):
             # print(self.elements.animat.sensors[
             #     "contact_{}".format(foot)
             # ].total_force(sim_step))
-            contact_i += 1
         if sim_step < self.options.n_iterations-1:
             # Interface
             if not self.options.headless:

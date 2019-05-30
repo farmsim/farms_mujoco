@@ -1,6 +1,8 @@
-"""Sensors"""
+"""Cython sensors"""
 
 import numpy as np
+cimport numpy as np
+
 import pybullet
 
 
@@ -8,15 +10,53 @@ class Sensor:
     """Sensor base class for simulation elements"""
     def __init__(self, shape):
         super(Sensor, self).__init__()
-        self._data = np.zeros(shape)
+        self.array = np.zeros(shape)
 
     def update(self, iteration):
         """Update"""
 
-    @property
-    def data(self):
-        """Sensor data"""
-        return self._data
+
+class ContactsSensors(Sensor):
+    """Model sensors"""
+
+    def __init__(self, n_iterations, animat_ids, animat_links):
+        self.animat_ids = animat_ids
+        self.animat_links = animat_links
+        self.n_sensors = len(animat_links)
+        self._contacts = [None for _ in range(self.n_sensors)]
+        super(ContactsSensors, self).__init__([n_iterations, self.n_sensors, 6])
+
+    def update(self, iteration):
+        """Update sensors"""
+        for sensor in range(self.n_sensors):
+            self._contacts[sensor] = pybullet.getContactPoints(
+                bodyA=self.animat_ids[sensor],
+                linkIndexA=self.animat_links[sensor]
+            )
+            self.array[iteration, sensor, :] = self.get_total_forces(sensor)
+
+    def total_force(self, iteration):
+        """Toral force"""
+        return self.array[iteration, :, :3] + self.array[iteration, :, 3:]
+
+    def get_total_forces(self, sensor):
+        """Get force"""
+        return np.sum(
+            [
+                [
+                    # Collision normal reaction
+                    contact[9]*contact[7][0],
+                    contact[9]*contact[7][1],
+                    contact[9]*contact[7][2],
+                    # Lateral friction dir 1 + Lateral friction dir 2
+                    contact[10]*contact[11][0]+contact[12]*contact[13][0],
+                    contact[10]*contact[11][1]+contact[12]*contact[13][1],
+                    contact[10]*contact[11][2]+contact[12]*contact[13][2]
+                ]
+                for contact in self._contacts[sensor]
+            ],
+            axis=0
+        ) if self._contacts[sensor] else np.zeros(6)
 
 
 class ContactTarget(dict):
@@ -51,11 +91,11 @@ class ContactSensor(Sensor):
             linkIndexA=self.animat_link,
             linkIndexB=self.target.link
         )
-        self._data[iteration] = self.get_total_forces()
+        self.array[iteration] = self.get_total_forces()
 
     def total_force(self, iteration):
         """Toral force"""
-        return self.data[iteration, :3] + self.data[iteration, 3:]
+        return self.array[iteration, :3] + self.array[iteration, 3:]
 
     def get_total_forces(self):
         """Get force"""
@@ -94,7 +134,7 @@ class JointsStatesSensor(Sensor):
 
     def update(self, iteration):
         """Update sensor"""
-        self._data[iteration] = np.array([
+        self.array[iteration] = np.array([
             (state[0], state[1]) + state[2] + (state[3],)
             for joint_i, state in enumerate(
                 pybullet.getJointStates(self._model_id, self._joints)
@@ -112,7 +152,7 @@ class LinkStateSensor(Sensor):
 
     def update(self, iteration):
         """Update sensor"""
-        self._data[iteration] = np.concatenate(
+        self.array[iteration] = np.concatenate(
             pybullet.getLinkState(
                 bodyUniqueId=self._model_id,
                 linkIndex=self._link,
@@ -122,7 +162,7 @@ class LinkStateSensor(Sensor):
         )
 
 
-class Sensors(dict):
+cdef class Sensors(dict):
     """Sensors"""
 
     def add(self, new_dict):

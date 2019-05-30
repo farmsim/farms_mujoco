@@ -3,23 +3,23 @@
 import numpy as np
 from scipy import integrate
 from .convention import bodyosc2index, legosc2index  # legjoint2index
-from ...cy_controller import ode_oscillators_sparse
+from ...controllers.controller import ode_oscillators_sparse
 from .animat_data import (
     SalamanderOscillatorNetworkState,
-    SalamanderNetworkParameters
+    # SalamanderNetworkParameters
+    SalamanderData
 )
 
 
 class SalamanderNetworkODE:
     """Salamander network"""
 
-    def __init__(self, state, parameters, timestep):
+    def __init__(self, state, animat_data, timestep):
         super(SalamanderNetworkODE, self).__init__()
         self.ode = ode_oscillators_sparse
         self.state = state
-        self.parameters = parameters
+        self.animat_data = animat_data
         self._timestep = timestep
-        self.iteration = 0
         self._n_oscillators = state.n_oscillators
         n_body = 11
         n_legs_dofs = 4
@@ -44,59 +44,34 @@ class SalamanderNetworkODE:
         ]
 
         # Adaptive timestep parameters
-        self.n_states = len(self.state.array[0, 0, :])
-        self.dstate = np.zeros([self.n_states], dtype=np.float64)
-        self._jac = np.zeros([self.n_states, self.n_states], dtype=np.float64)
-        self.solver = integrate.ode(f=self.fun)  # , jac=self.jac
+        self.solver = integrate.ode(f=self.ode)  # , jac=self.jac
         self.solver.set_integrator("dopri5")
+        self.solver.set_f_params(self.animat_data)
         self._time = 0
 
     @classmethod
     def from_options(cls, options, n_iterations, timestep):
         """Salamander swimming network"""
         state = SalamanderOscillatorNetworkState.default_state(n_iterations)
-        parameters = SalamanderNetworkParameters.from_options(
+        animat_data = SalamanderData.from_options(
+            state,
             options,
             n_iterations
         )
-        return cls(state, parameters, timestep)
-
-    def fun(self, _time, state):
-        """ODE function"""
-        self.ode(
-            self.dstate,
-            state,
-            self.parameters
-        )
-        return self.dstate
-
-    def jac(self, _time, state):
-        """ODE function"""
-        # self._jac = np.zeros([self.n_states, self.n_states], dtype=np.float64)
-        self.ode.gradient(
-            self._jac,
-            state,
-            self.parameters
-        )
-        return self._jac
+        return cls(state, animat_data, timestep)
 
     def control_step(self):
         """Control step"""
         # Adaptive timestep (ODE)
-        self.parameters.iteration = self.iteration
         self.solver.set_initial_value(
-            self.state.array[self.iteration, 0, :],
+            self.state.array[self.animat_data.iteration, 0, :],
             self._time
         )
         self._time += self._timestep
-        self.state.array[self.iteration+1, 0, :] = (
+        self.state.array[self.animat_data.iteration+1, 0, :] = (
             self.solver.integrate(self._time)
         )
-        # self.state.array[self.iteration+1, 1, :] = (
-        #     self.state.array[self.iteration+1, 0, :]
-        #     - self.state.array[self.iteration, 0, :]
-        # )/self._timestep
-        self.iteration += 1
+        self.animat_data.iteration += 1
 
         # # Adaptive timestep (ODEINT)
         # self.state.array[self.iteration+1, 0, :] = integrate.odeint(
@@ -140,8 +115,8 @@ class SalamanderNetworkODE:
 
     def get_outputs(self):
         """Outputs"""
-        return self.amplitudes[self.iteration]*(
-            1 + np.cos(self.phases[self.iteration])
+        return self.amplitudes[self.animat_data.iteration]*(
+            1 + np.cos(self.phases[self.animat_data.iteration])
         )
 
     def get_outputs_all(self):
@@ -152,12 +127,12 @@ class SalamanderNetworkODE:
 
     def get_doutputs(self):
         """Outputs velocity"""
-        return self.damplitudes[self.iteration]*(
-            1 + np.cos(self.phases[self.iteration])
+        return self.damplitudes[self.animat_data.iteration]*(
+            1 + np.cos(self.phases[self.animat_data.iteration])
         ) - (
-            self.amplitudes[self.iteration]
-            *np.sin(self.phases[self.iteration])
-            *self.dphases[self.iteration]
+            self.amplitudes[self.animat_data.iteration]
+            *np.sin(self.phases[self.animat_data.iteration])
+            *self.dphases[self.animat_data.iteration]
         )
 
     def get_doutputs_all(self):
@@ -171,7 +146,7 @@ class SalamanderNetworkODE:
         outputs = self.get_outputs()
         return (
             0.5*(outputs[self.groups[0]] - outputs[self.groups[1]])
-            + self.offsets[self.iteration]
+            + self.offsets[self.animat_data.iteration]
         )
 
     def get_position_output_all(self):
@@ -194,5 +169,5 @@ class SalamanderNetworkODE:
 
     def update(self, options):
         """Update drives"""
-        self.parameters.oscillators.update(options)
-        self.parameters.joints.update(options)
+        self.animat_data.network.oscillators.update(options)
+        self.animat_data.joints.update(options)

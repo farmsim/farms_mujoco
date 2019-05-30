@@ -6,6 +6,7 @@ from setuptools.extension import Extension
 from Cython.Build import cythonize
 import numpy as np
 
+DEBUG = False
 
 setup(
     name="farms_bullet",
@@ -31,12 +32,19 @@ setup(
     # ]},
     include_package_data=True,
     ext_modules=cythonize(
-        Extension(
-            "farms_bullet.*",
-            ["farms_bullet/*.pyx"],
-            extra_compile_args=["-O3"],  # , "-fopenmp"
-            extra_link_args=["-O3"]  # , "-fopenmp"
-        ),
+        [
+            Extension(
+                "farms_bullet.{}*".format(folder + "." if folder else ""),
+                ["farms_bullet/{}*.pyx".format(folder + "/" if folder else "")],
+                extra_compile_args=["-O3"],  # , "-fopenmp"
+                extra_link_args=["-O3"]  # , "-fopenmp"
+            )
+            for folder in [
+                "animats",
+                "controllers",
+                "sensors"
+            ]
+        ],
         include_path=[np.get_include()],
         compiler_directives={
             "embedsignature": True,
@@ -44,11 +52,11 @@ setup(
             "language_level": 3,
             "infer_types": True,
             "profile": True,
-            "boundscheck": False,
             "wraparound": False,
-            "nonecheck": False,
-            "initializedcheck": False,
-            "overflowcheck": False,
+            "boundscheck": DEBUG,
+            "nonecheck": DEBUG,
+            "initializedcheck": DEBUG,
+            "overflowcheck": DEBUG,
         }
     ),
     zip_safe=False,

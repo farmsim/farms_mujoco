@@ -5,7 +5,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pybullet
 
-from .sensor import JointsStatesSensor, ContactSensor, LinkStateSensor
+from .sensors import (
+    JointsStatesSensor,
+    ContactsSensors,
+    ContactSensor,
+    LinkStateSensor
+)
 
 
 def global2local(vector_global, orientation):
@@ -24,16 +29,16 @@ class SensorLogger:
         self._element = sensor
 
     @property
-    def data(self):
-        """Log data"""
-        return self._element.data
+    def array(self):
+        """Log array"""
+        return self._element.array
 
     def plot(self, times, figure=None, label=None):
         """Plot"""
         if figure is not None:
             plt.figure(figure)
-        for data in self.data.T:
-            plt.plot(times, data[:len(times)], label=label)
+        for array in self.array.T:
+            plt.plot(times, array[:len(times)], label=label)
         plt.grid(True)
         plt.legend()
 
@@ -49,13 +54,13 @@ class JointsStatesLogger(SensorLogger):
         self.plot_torques(times, figure, label=label)
         self.plot_torque_cmds(times, figure, label=label)
 
-    def plot_data(self, times, data_id, label=None):
-        """Plot data"""
-        n_sensors = np.shape(self.data)[1]
+    def plot_array(self, times, array_id, label=None):
+        """Plot array"""
+        n_sensors = np.shape(self.array)[1]
         for sensor in range(n_sensors):
             plt.plot(
                 times,
-                self.data[:len(times), sensor, data_id],
+                self.array[:len(times), sensor, array_id],
                 label=(
                     label + "_" if label is not None else ""
                     + "sensor_{}".format(sensor)
@@ -64,15 +69,15 @@ class JointsStatesLogger(SensorLogger):
         plt.grid(True)
         plt.legend()
 
-    def plot_data_norm(self, times, data_ids, label=None):
-        """Plot data"""
-        n_sensors = np.shape(self.data)[1]
+    def plot_array_norm(self, times, array_ids, label=None):
+        """Plot array"""
+        n_sensors = np.shape(self.array)[1]
         for sensor in range(n_sensors):
-            data = self.data[:len(times), sensor, data_ids]
-            data_norm = np.sqrt(np.sum(data**2, axis=1))
+            array = self.array[:len(times), sensor, array_ids]
+            array_norm = np.sqrt(np.sum(array**2, axis=1))
             plt.plot(
                 times,
-                data_norm,
+                array_norm,
                 label=(
                     label
                     if label is not None
@@ -87,7 +92,7 @@ class JointsStatesLogger(SensorLogger):
         """Plot positions"""
         if figure is not None:
             plt.figure(figure+"_positions")
-        self.plot_data(times, 0, label=label)
+        self.plot_array(times, 0, label=label)
         plt.xlabel("Time [s]")
         plt.ylabel("Position [rad]")
 
@@ -95,7 +100,7 @@ class JointsStatesLogger(SensorLogger):
         """Plot velocities"""
         if figure is not None:
             plt.figure(figure+"_velocities")
-        self.plot_data(times, 1, label=label)
+        self.plot_array(times, 1, label=label)
         plt.xlabel("Time [s]")
         plt.ylabel("Angular velocity [rad/s]")
 
@@ -103,7 +108,7 @@ class JointsStatesLogger(SensorLogger):
         """Plot forces"""
         if figure is not None:
             plt.figure(figure+"_forces")
-        self.plot_data_norm(times, [2, 3, 4], label=label)
+        self.plot_array_norm(times, [2, 3, 4], label=label)
         plt.xlabel("Times [s]")
         plt.ylabel("Force norm [N]")
 
@@ -111,7 +116,7 @@ class JointsStatesLogger(SensorLogger):
         """Plot torques"""
         if figure is not None:
             plt.figure(figure+"_torques")
-        self.plot_data_norm(times, [5, 6, 7], label=label)
+        self.plot_array_norm(times, [5, 6, 7], label=label)
         plt.xlabel("Times [s]")
         plt.ylabel("Torque norm [N]")
 
@@ -119,9 +124,47 @@ class JointsStatesLogger(SensorLogger):
         """Plot torque commands"""
         if figure is not None:
             plt.figure(figure+"_torque_cmds")
-        self.plot_data(times, 8, label=label)
+        self.plot_array(times, 8, label=label)
         plt.xlabel("Time [s]")
         plt.ylabel("Torque [Nm]")
+
+
+class ContactsLogger(SensorLogger):
+    """Joints states logger"""
+
+    def plot(self, times, figure=None, label=None):
+        """Plot"""
+        for sensor in range(np.shape(self.array)[1]):
+            self.plot_normal_force(sensor, times, figure, label=label)
+            self.plot_lateral_force(sensor, times, figure, label=label)
+
+    def plot_normal_force(self, sensor, times, figure=None, label=None):
+        """Plot normal force"""
+        if figure is None:
+            figure = "Contact"
+        plt.figure(figure+"_{}_normal".format(sensor))
+        label = "" if label is None else (label + "_")
+        labels = [label + lab for lab in ["x", "y", "z"]]
+        for i, array in enumerate(self.array[:, sensor, :3].T):
+            plt.plot(times, array[:len(times)], label=labels[i])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Normal force [N]")
+        plt.legend()
+        plt.grid(True)
+
+    def plot_lateral_force(self, sensor, times, figure=None, label=None):
+        """Plot lateral force"""
+        if figure is None:
+            figure = "Contact"
+        plt.figure(figure+"_{}_lateral".format(sensor))
+        label = "" if label is None else (label + "_")
+        labels = [label + lab for lab in ["x", "y", "z"]]
+        for i, array in enumerate(self.array[:, sensor, 3:].T):
+            plt.plot(times, array[:len(times)], label=labels[i])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Force [N]")
+        plt.legend()
+        plt.grid(True)
 
 
 class ContactLogger(SensorLogger):
@@ -139,8 +182,8 @@ class ContactLogger(SensorLogger):
         plt.figure(figure+"_normal")
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
-        for i, data in enumerate(self.data[:, :3].T):
-            plt.plot(times, data[:len(times)], label=labels[i])
+        for i, array in enumerate(self.array[:, :3].T):
+            plt.plot(times, array[:len(times)], label=labels[i])
         plt.xlabel("Time [s]")
         plt.ylabel("Normal force [N]")
         plt.legend()
@@ -153,8 +196,8 @@ class ContactLogger(SensorLogger):
         plt.figure(figure+"_lateral")
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
-        for i, data in enumerate(self.data[:, 3:].T):
-            plt.plot(times, data[:len(times)], label=labels[i])
+        for i, array in enumerate(self.array[:, 3:].T):
+            plt.plot(times, array[:len(times)], label=labels[i])
         plt.xlabel("Time [s]")
         plt.ylabel("Force [N]")
         plt.legend()
@@ -200,33 +243,33 @@ class LinkStateLogger(SensorLogger):
             label="angular_vel_global" if label is None else label
         )
 
-    def plot_data(self, times, data_ids, figure=None, labels=None):
-        """Plot data"""
+    def plot_array(self, times, array_ids, figure=None, labels=None):
+        """Plot array"""
         if figure is not None:
             plt.figure(figure)
-        for data_i, data_id in enumerate(data_ids):
+        for array_i, array_id in enumerate(array_ids):
             plt.plot(
                 times,
-                self.data[:len(times), data_id],
-                label=labels[data_i]
+                self.array[:len(times), array_id],
+                label=labels[array_i]
             )
         plt.grid(True)
         plt.legend()
 
-    def plot_local_data(self, times, data, figure=None, **kwargs):
+    def plot_local_array(self, times, array, figure=None, **kwargs):
         """Plot linear velocity in local frame"""
         if figure is not None:
             plt.figure(figure)
-        data_local = np.array([
-            global2local(data[i], self.data[i, 3:7])
+        array_local = np.array([
+            global2local(array[i], self.array[i, 3:7])
             for i, _ in enumerate(times)
         ]).T
         labels = kwargs.pop("labels", ["x", "y", "z"])
-        for data_i, data_id in enumerate(data_local):
+        for array_i, array_id in enumerate(array_local):
             plt.plot(
                 times,
-                data_id,
-                label=labels[data_i]
+                array_id,
+                label=labels[array_i]
             )
         plt.grid(True)
         plt.legend()
@@ -235,9 +278,9 @@ class LinkStateLogger(SensorLogger):
         """Plot positions"""
         figure = kwargs.pop("figure", "") + "_position"
         label = kwargs.pop("label", "pos")
-        self.plot_data(
+        self.plot_array(
             times=times,
-            data_ids=[0, 1, 2],
+            array_ids=[0, 1, 2],
             figure=figure,
             labels=[label + "_" + element for element in ["x", "y", "z"]]
         )
@@ -248,8 +291,8 @@ class LinkStateLogger(SensorLogger):
         """Plot positions"""
         plt.figure(kwargs.pop("figure", "") + "_trajectory_top")
         plt.plot(
-            self.data[:len(times), 0],
-            self.data[:len(times), 1]
+            self.array[:len(times), 0],
+            self.array[:len(times), 1]
         )
         plt.grid(True)
         plt.xlabel("Position x [m]")
@@ -260,16 +303,16 @@ class LinkStateLogger(SensorLogger):
         figure = kwargs.pop("figure", "") + "_linear_velocity"
         label = kwargs.pop("label", "pos")
         if local:
-            self.plot_local_data(
+            self.plot_local_array(
                 times=times,
-                data=self.data[:, 7:10],
+                array=self.array[:, 7:10],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
         else:
-            self.plot_data(
+            self.plot_array(
                 times=times,
-                data_ids=[7, 8, 9],
+                array_ids=[7, 8, 9],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
@@ -281,16 +324,16 @@ class LinkStateLogger(SensorLogger):
         figure = kwargs.pop("figure", "") + "_angular_velocity"
         label = kwargs.pop("label", "pos")
         if local:
-            self.plot_local_data(
+            self.plot_local_array(
                 times=times,
-                data=self.data[:, 10:],
+                array=self.array[:, 10:],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
         else:
-            self.plot_data(
+            self.plot_array(
                 times=times,
-                data_ids=[10, 11, 12],
+                array_ids=[10, 11, 12],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
@@ -303,6 +346,7 @@ class SensorsLogger(dict):
 
     mapping = {
         JointsStatesSensor: JointsStatesLogger,
+        ContactsSensors: ContactsLogger,
         ContactSensor: ContactLogger,
         LinkStateSensor: LinkStateLogger
     }
@@ -345,17 +389,17 @@ class SensorsLogger(dict):
             nosplit = False
         else:
             raise Exception(
-                "Format {} is not valid for logging data".format(extension)
+                "Format {} is not valid for logging array".format(extension)
             )
         save_function(folder+"/times."+extension, times)
         for sensor_name, sensor in self._sensors.items():
-            if nosplit or self[sensor].data.ndim == 2:
+            if nosplit or self[sensor].array.ndim == 2:
                 path = folder + "/" + sensor_name + "." + extension
-                save_function(path, self[sensor].data[:len(times)])
-            elif self[sensor].data.ndim == 3:
-                for i in range(np.shape(self[sensor].data)[1]):
+                save_function(path, self[sensor].array[:len(times)])
+            elif self[sensor].array.ndim == 3:
+                for i in range(np.shape(self[sensor].array)[1]):
                     path = folder+"/"+sensor_name+"_{}.".format(i)+extension
-                    save_function(path, self[sensor].data[:len(times), i])
+                    save_function(path, self[sensor].array[:len(times), i])
             else:
                 msg = "Dimensionality {} is not valid for extension of type {}"
-                raise Exception(msg.format(self[sensor].data.ndim, extension))
+                raise Exception(msg.format(self[sensor].array.ndim, extension))
