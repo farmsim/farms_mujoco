@@ -52,10 +52,10 @@ setup(
         }
     ),
     zip_safe=False,
-    install_requires=[
-        "cython",
-        "numpy",
-        "trimesh",
-        "pybullet"
-    ],
+    # install_requires=[
+    #     "cython",
+    #     "numpy",
+    #     "trimesh",
+    #     "pybullet"
+    # ],
 )
