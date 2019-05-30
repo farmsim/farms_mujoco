@@ -5,10 +5,12 @@ import numpy as np
 from .convention import bodyosc2index, legosc2index
 from ...animats.animat_data import (
     OscillatorNetworkState,
+    AnimatData,
     NetworkParameters,
     OscillatorArray,
     ConnectivityArray,
-    SensorArray,
+    Sensors,
+    ContactsArray,
     JointsArray
 )
 
@@ -53,27 +55,26 @@ class SalamanderOscillatorNetworkState(OscillatorNetworkState):
         return cls(state, n_oscillators)
 
 
-class SalamanderNetworkParameters(NetworkParameters):
+class SalamanderData(AnimatData):
     """Salamander network parameter"""
 
     @classmethod
-    def from_options(cls, options, n_iterations):
+    def from_options(cls, state, options, n_iterations):
         """Default salamander newtwork parameters"""
         oscillators = SalamanderOscillatorArray.from_options(options)
         connectivity = SalamanderOscillatorConnectivityArray.from_options(options)
-        contacts = SalamanderContactsArray.from_options(options, n_iterations)
         contacts_connectivity = SalamanderContactsConnectivityArray.from_options(
             options
         )
-        # feedback = SalamanderFeedbackArray.from_options(options)
-        joints = SalamanderJointsArray.from_options(options)
-        return cls(
+        network = NetworkParameters(
             oscillators,
             connectivity,
-            joints,
-            contacts,
             contacts_connectivity
         )
+        joints = SalamanderJointsArray.from_options(options)
+        contacts = SalamanderContactsArray.from_options(options, n_iterations)
+        sensors = Sensors(contacts)
+        return cls(state, network, joints, sensors)
 
     def update(self, parameters):
         """Update"""
@@ -82,6 +83,7 @@ class SalamanderNetworkParameters(NetworkParameters):
             self.connectivity.update(parameters),
             self.joints.update(parameters)
         ]
+        raise NotImplementedError  # TODO
 
 
 class SalamanderOscillatorArray(OscillatorArray):
@@ -384,7 +386,7 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
         """
 
 
-class SalamanderContactsArray(SensorArray):
+class SalamanderContactsArray(ContactsArray):
     """Salamander contacts sensors array"""
 
     @classmethod

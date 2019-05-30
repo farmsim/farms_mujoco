@@ -80,7 +80,7 @@ class SalamanderSimulation(Simulation):
         self.elements.animat.sensors.update(sim_step)
         contact_i = 0
         for foot in self.elements.animat.feet_names:
-            self.elements.animat.controller.network.parameters.contacts.update(
+            self.elements.animat.controller.network.parameters.sensors.contacts.update(
                 sim_step,
                 contact_i,
                 self.elements.animat.sensors[

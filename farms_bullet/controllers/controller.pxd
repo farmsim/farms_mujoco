@@ -2,15 +2,15 @@
 
 cimport numpy as np
 
-from ..animats.animat_data cimport (
-    NetworkParameters
-)
+from ..animats.animat_data cimport AnimatData
+
 
 ctypedef double CTYPE
 ctypedef np.float64_t DTYPE
 
-cpdef void ode_oscillators_sparse(
-    CTYPE[:] dstate,
+
+cpdef double[:] ode_oscillators_sparse(
+    double time,
     CTYPE[:] state,
-    NetworkParameters params,
+    AnimatData data
 ) nogil

@@ -6,6 +6,7 @@ from setuptools.extension import Extension
 from Cython.Build import cythonize
 import numpy as np
 
+DEBUG = False
 
 setup(
     name="farms_bullet",
@@ -51,11 +52,11 @@ setup(
             "language_level": 3,
             "infer_types": True,
             "profile": True,
-            "boundscheck": False,
             "wraparound": False,
-            "nonecheck": False,
-            "initializedcheck": False,
-            "overflowcheck": False,
+            "boundscheck": DEBUG,
+            "nonecheck": DEBUG,
+            "initializedcheck": DEBUG,
+            "overflowcheck": DEBUG,
         }
     ),
     zip_safe=False,

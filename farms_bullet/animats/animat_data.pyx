@@ -4,6 +4,18 @@ import numpy as np
 cimport numpy as np
 
 
+cdef class AnimatData:
+    """Network parameter"""
+
+    def __init__(self, state, network, joints, sensors):
+        super(AnimatData, self).__init__()
+        self.state = state
+        self.network = network
+        self.joints = joints
+        self.sensors = sensors
+        self.iteration = 0
+
+
 cdef class NetworkParameters:
     """Network parameter"""
 
@@ -11,52 +23,12 @@ cdef class NetworkParameters:
             self,
             oscillators,
             connectivity,
-            joints,
-            contacts,
             contacts_connectivity
     ):
         super(NetworkParameters, self).__init__()
         self.oscillators = oscillators
         self.connectivity = connectivity
-        self.joints = joints
-        self.contacts = contacts
         self.contacts_connectivity = contacts_connectivity
-        self.iteration = 0
-
-cdef class NetworkArray:
-    """Network array"""
-
-    def shape(self):
-        """Array shape"""
-        return np.shape(self.array)
-
-    def copy_array(self):
-        """Copy array"""
-        return np.copy(self.array)
-
-
-cdef class NetworkArray2D(NetworkArray):
-    """Network array"""
-
-    def __init__(self, array):
-        super(NetworkArray, self).__init__()
-        self.array = array
-        shape = np.array(np.shape(array), dtype=np.uint)
-        cdef unsigned int i
-        for i in range(2):
-            self.size[i] = shape[i]
-
-
-cdef class NetworkArray3D(NetworkArray):
-    """Network array"""
-
-    def __init__(self, array):
-        super(NetworkArray, self).__init__()
-        self.array = array
-        shape = np.array(np.shape(array), dtype=np.uint)
-        cdef unsigned int i
-        for i in range(3):
-            self.size[i] = shape[i]
 
 
 cdef class OscillatorNetworkState(NetworkArray3D):
@@ -147,11 +119,19 @@ cdef class ConnectivityArray(NetworkArray2D):
         return self.array[:][3]
 
 
-cdef class SensorArray(NetworkArray3D):
+cdef class Sensors:
+    """Sensors"""
+
+    def __init__(self, contacts):
+        super(Sensors, self).__init__()
+        self.contacts = contacts
+
+
+cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
 
     def __init__(self, array):
-        super(SensorArray, self).__init__(array)
+        super(ContactsArray, self).__init__(array)
         shape = np.shape(array)
         self._n_iterations = shape[0]
         self._shape = shape[1:]
