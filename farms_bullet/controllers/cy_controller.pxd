@@ -7,7 +7,7 @@
 
 cimport numpy as np
 
-from .cy_animat_data cimport (
+from ..animats.cy_animat_data cimport (
     NetworkParameters
 )
 
