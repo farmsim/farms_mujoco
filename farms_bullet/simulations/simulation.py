@@ -1,6 +1,5 @@
 """Simulation"""
 
-import time
 import numpy as np
 import pybullet
 
@@ -101,7 +100,6 @@ class Simulation:
                 if ord("q") in keys:
                     break
             if self.pre_step(self.iteration):
-                tic_loop = time.time()
                 self.step(self.iteration)
                 self.iteration += 1
 
