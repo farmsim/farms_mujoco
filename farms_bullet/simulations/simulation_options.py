@@ -14,7 +14,7 @@ class SimulationOptions(dict):
         self.timestep = kwargs.pop("timestep", 1e-3)
         self.duration = kwargs.pop("duration", 100)
         self.n_iterations = int(self.duration / self.timestep)
-        self.gait = kwargs.pop("gait", "walking")
+        self.n_solver_iters = kwargs.pop("n_solver_iters", 50)
         self.free_camera = kwargs.pop("free_camera", False)
         self.rotating_camera = kwargs.pop("rotating_camera", False)
         self.top_camera = kwargs.pop("top_camera", False)
@@ -34,6 +34,7 @@ class SimulationOptions(dict):
         return cls(
             timestep=kwargs.pop("free_camera", clargs.timestep),
             duration=kwargs.pop("duration", clargs.duration),
+            n_solver_iters=kwargs.pop("n_solver_iters", clargs.n_solver_iters),
             free_camera=kwargs.pop("free_camera", clargs.free_camera),
             rotating_camera=kwargs.pop(
                 "rotating_camera",
@@ -68,11 +69,6 @@ class SimulationOptions(dict):
     def duration(self):
         """Simulation duration"""
         return self["duration"]
-
-    @property
-    def gait(self):
-        """Model gait"""
-        return self["gait"]
 
     @property
     def free_camera(self):

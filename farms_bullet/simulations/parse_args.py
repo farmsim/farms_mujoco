@@ -21,6 +21,13 @@ def parse_args():
         help="Simulation duration"
     )
     parser.add_argument(
+        "--n_solver_iters",
+        type=int,
+        dest="n_solver_iters",
+        default=50,
+        help="Number of solver iterations for physics simulation"
+    )
+    parser.add_argument(
         "-f", "--free_camera",
         action="store_true",
         dest="free_camera",
