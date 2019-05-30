@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pybullet
 
-from .cy_sensors import JointsStatesSensor, ContactSensor, LinkStateSensor
+from .sensors import JointsStatesSensor, ContactSensor, LinkStateSensor
 
 
 def global2local(vector_global, orientation):
