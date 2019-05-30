@@ -80,7 +80,7 @@ class SalamanderSimulation(Simulation):
         self.elements.animat.sensors.update(sim_step)
         forces = self.elements.animat.sensors["contacts"].total_force(sim_step)
         for foot_i, _ in enumerate(self.elements.animat.feet_names):
-            self.elements.animat.controller.network.parameters.sensors.contacts.update(
+            self.elements.animat.controller.network.animat_data.sensors.contacts.update(
                 sim_step,
                 foot_i,
                 forces[foot_i]
