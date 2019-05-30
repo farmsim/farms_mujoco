@@ -33,17 +33,16 @@ setup(
     ext_modules=cythonize(
         [
             Extension(
-                "farms_bullet.*",
-                ["farms_bullet/*.pyx"],
-                extra_compile_args=["-O3"],  # , "-fopenmp"
-                extra_link_args=["-O3"]  # , "-fopenmp"
-            ),
-            Extension(
-                "farms_bullet.sensors.*",
-                ["farms_bullet/sensors/*.pyx"],
+                "farms_bullet.{}*".format(folder + "." if folder else ""),
+                ["farms_bullet/{}*.pyx".format(folder + "/" if folder else "")],
                 extra_compile_args=["-O3"],  # , "-fopenmp"
                 extra_link_args=["-O3"]  # , "-fopenmp"
             )
+            for folder in [
+                "",
+                "controllers",
+                "sensors"
+            ]
         ],
         include_path=[np.get_include()],
         compiler_directives={
