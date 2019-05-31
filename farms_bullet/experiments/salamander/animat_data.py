@@ -76,15 +76,6 @@ class SalamanderData(AnimatData):
         sensors = Sensors(contacts)
         return cls(state, network, joints, sensors)
 
-    def update(self, parameters):
-        """Update"""
-        self.function[0:3] = [
-            self.oscillators.update(parameters),
-            self.connectivity.update(parameters),
-            self.joints.update(parameters)
-        ]
-        raise NotImplementedError  # TODO
-
 
 class SalamanderOscillatorArray(OscillatorArray):
     """Oscillator array"""
@@ -395,7 +386,7 @@ class SalamanderContactsArray(ContactsArray):
         # n_body = options.morphology.n_joints_body
         n_contacts = options.morphology.n_legs
         # n_joints = options.morphology.n_joints()
-        contacts = np.zeros([n_iterations, n_contacts, 3])  # x, y, z
+        contacts = np.zeros([n_iterations, n_contacts, 9])  # x, y, z
         return cls(contacts)
 
     def update(self, iteration, foot, value):
