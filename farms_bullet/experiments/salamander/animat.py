@@ -215,7 +215,7 @@ class Salamander(Animat):
         # Contacts
         self.sensors.add({
             "contacts": ContactsSensors(
-                self.n_iterations,
+                self.data.sensors.contacts.array,
                 [self._identity for _ in self.feet_names],
                 [self.links[foot] for foot in self.feet_names]
             )
