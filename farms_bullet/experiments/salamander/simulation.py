@@ -115,8 +115,7 @@ class SalamanderSimulation(Simulation):
         """Animat interface"""
         # Body offset
         if self.interface.user_params.body_offset.changed:
-            network = self.elements.animat.controller.network
-            network.parameters.joints.set_body_offset(
+            self.elements.animat.data.joints.set_body_offset(
                 self.interface.user_params.body_offset.value
             )
             self.interface.user_params.body_offset.changed = False
