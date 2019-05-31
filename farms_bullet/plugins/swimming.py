@@ -19,7 +19,7 @@ def viscous_swimming(iteration, data, model, links, plot=False):
                 model,
                 link,
                 computeLinkVelocity=1,
-                computeForwardKinematics=1
+                computeForwardKinematics=0
             )
             pos, ori, lin_velocity, ang_velocity = (
                 link_state[0],
