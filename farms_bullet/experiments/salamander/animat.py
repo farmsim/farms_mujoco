@@ -223,7 +223,7 @@ class Salamander(Animat):
         # Joints
         self.sensors.add({
             "joints": JointsStatesSensor(
-                self.n_iterations,
+                self.data.sensors.proprioception.array,
                 self._identity,
                 np.arange(self.n_joints()),
                 enable_ft=True
@@ -289,13 +289,11 @@ class Salamander(Animat):
             timestep=self.timestep
         )
 
-    def animat_physics(self):
-        """Animat physics"""
-        # Swimming
-        forces = None
-        if self.options.control.drives.forward > 3:
-            forces = viscous_swimming(
-                self.identity,
-                self.links
-            )
-        return forces
+    def animat_swimming_physics(self, iteration):
+        """Animat swimming physics"""
+        viscous_swimming(
+            iteration,
+            self.data.sensors.hydrodynamics.array,
+            self.identity,
+            self.links
+        )

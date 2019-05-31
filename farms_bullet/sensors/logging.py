@@ -73,7 +73,7 @@ class JointsStatesLogger(SensorLogger):
         """Plot array"""
         n_sensors = np.shape(self.array)[1]
         for sensor in range(n_sensors):
-            array = self.array[:len(times), sensor, array_ids]
+            array = np.array(self.array)[:len(times), sensor, array_ids]
             array_norm = np.sqrt(np.sum(array**2, axis=1))
             plt.plot(
                 times,
@@ -159,7 +159,7 @@ class ContactsLogger(SensorLogger):
         plt.figure(figure+"_{}_lateral".format(sensor))
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
-        for i, array in enumerate(self.array[:, sensor, 3:].T):
+        for i, array in enumerate(self.array[:, sensor, 3:6].T):
             plt.plot(times, array[:len(times)], label=labels[i])
         plt.xlabel("Time [s]")
         plt.ylabel("Force [N]")

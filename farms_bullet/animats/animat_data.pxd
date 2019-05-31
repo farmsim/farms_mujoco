@@ -43,14 +43,20 @@ cdef class JointsArray(NetworkArray2D):
 cdef class Sensors:
     """Sensors"""
     cdef public ContactsArray contacts
-    # cdef public HydrodynamicsArray hydrodynamics
+    cdef public ProprioceptionArray proprioception
+    cdef public HydrodynamicsArray hydrodynamics
 
 
 cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
-    cdef public unsigned int _n_iterations
+    pass
+
+
+cdef class ProprioceptionArray(NetworkArray3D):
+    """Proprioception array"""
+    pass
 
 
 cdef class HydrodynamicsArray(NetworkArray3D):
-    """Hydrodynamcics array"""
+    """Hydrodynamics array"""
     pass

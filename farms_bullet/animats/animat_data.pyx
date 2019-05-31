@@ -119,49 +119,6 @@ cdef class ConnectivityArray(NetworkArray2D):
         return self.array[:][3]
 
 
-cdef class Sensors:
-    """Sensors"""
-
-    def __init__(self, contacts):
-        super(Sensors, self).__init__()
-        self.contacts = contacts
-
-
-cdef class ContactsArray(NetworkArray3D):
-    """Sensor array"""
-
-    def __init__(self, array):
-        super(ContactsArray, self).__init__(array)
-        shape = np.shape(array)
-        self._n_iterations = shape[0]
-        self._shape = shape[1:]
-
-    # @classmethod
-    # def from_parameters(cls, n_iterations, sensors):
-    #     """From each parameter"""
-    #     array = np.zeros((n_iterations,)+np.shape(sensors))
-    #     array[0, :] = sensors
-    #     return cls(array)
-
-    # @classmethod
-    # def from_parameters(
-    #         cls,
-    #         n_iterations,
-    #         proprioception,
-    #         contacts,
-    #         hydrodynamics
-    # ):
-    #     """From each parameter"""
-    #     sensors = np.concatenate([proprioception, contacts, hydrodynamics])
-    #     array = np.zeros([n_iterations, len(sensors)])
-    #     array[0, :] = sensors
-    #     return cls(
-    #         array  # ,
-    #         # len(proprioception),
-    #         # len(contacts),
-    #         # len(hydrodynamics)
-    #     )
-
 cdef class JointsArray(NetworkArray2D):
     """Oscillator array"""
 
@@ -183,3 +140,33 @@ cdef class JointsArray(NetworkArray2D):
     def set_body_offset(self, value, n_body_joints=11):
         """Body offset"""
         self.array[0, :n_body_joints] = value
+
+
+cdef class Sensors:
+    """Sensors"""
+
+    def __init__(
+            self,
+            ContactsArray contacts,
+            ProprioceptionArray proprioception,
+            HydrodynamicsArray hydrodynamics
+    ):
+        super(Sensors, self).__init__()
+        self.contacts = contacts
+        self.proprioception = proprioception
+        self.hydrodynamics = hydrodynamics
+
+
+cdef class ContactsArray(NetworkArray3D):
+    """Sensor array"""
+    pass
+
+
+cdef class ProprioceptionArray(NetworkArray3D):
+    """Proprioception array"""
+    pass
+
+
+cdef class HydrodynamicsArray(NetworkArray3D):
+    """Hydrodynamics array"""
+    pass
