@@ -48,7 +48,7 @@ cdef class Sensors:
 
 cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
-    cdef public unsigned int _n_iterations
+    pass
 
 
 cdef class HydrodynamicsArray(NetworkArray3D):
