@@ -463,7 +463,7 @@ class SalamanderHydrodynamicsArray(HydrodynamicsArray):
     def from_options(cls, options, n_iterations):
         """Default"""
         n_body = options.morphology.n_links_body()
-        hydrodynamics = np.zeros([n_iterations, n_body, 3])  # x, y, z
+        hydrodynamics = np.zeros([n_iterations, n_body, 6])  # Fxyz, Mxyz
         return cls(hydrodynamics)
 
     def update(self, iteration, foot, value):
