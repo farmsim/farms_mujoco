@@ -153,6 +153,7 @@ cdef class Sensors:
     ):
         super(Sensors, self).__init__()
         self.contacts = contacts
+        self.proprioception = proprioception
         self.hydrodynamics = hydrodynamics
 
 

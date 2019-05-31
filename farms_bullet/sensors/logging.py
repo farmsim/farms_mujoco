@@ -73,7 +73,7 @@ class JointsStatesLogger(SensorLogger):
         """Plot array"""
         n_sensors = np.shape(self.array)[1]
         for sensor in range(n_sensors):
-            array = self.array[:len(times), sensor, array_ids]
+            array = np.array(self.array)[:len(times), sensor, array_ids]
             array_norm = np.sqrt(np.sum(array**2, axis=1))
             plt.plot(
                 times,

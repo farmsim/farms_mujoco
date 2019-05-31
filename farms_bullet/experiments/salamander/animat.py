@@ -223,7 +223,7 @@ class Salamander(Animat):
         # Joints
         self.sensors.add({
             "joints": JointsStatesSensor(
-                self.n_iterations,
+                self.data.sensors.proprioception.array,
                 self._identity,
                 np.arange(self.n_joints()),
                 enable_ft=True

@@ -464,7 +464,7 @@ class SalamanderProprioceptionArray(ProprioceptionArray):
     def from_options(cls, options, n_iterations):
         """Default"""
         n_joints = options.morphology.n_joints()
-        proprioception = np.zeros([n_iterations, n_joints, 2])  # Pos, vel
+        proprioception = np.zeros([n_iterations, n_joints, 9])
         return cls(proprioception)
 
 

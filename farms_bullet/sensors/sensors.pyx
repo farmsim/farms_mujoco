@@ -148,11 +148,11 @@ class ContactSensor(Sensor):
         ) if self._contacts else np.zeros(6)
 
 
-class JointsStatesSensor(Sensor):
+class JointsStatesSensor(NetworkArray3D):
     """Joint state sensor"""
 
-    def __init__(self, n_iterations, model_id, joints, enable_ft=False):
-        super(JointsStatesSensor, self).__init__([n_iterations, len(joints), 9])
+    def __init__(self, array, model_id, joints, enable_ft=False):
+        super(JointsStatesSensor, self).__init__(array)
         self._model_id = model_id
         self._joints = joints
         self._enable_ft = enable_ft
