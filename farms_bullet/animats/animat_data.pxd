@@ -43,7 +43,7 @@ cdef class JointsArray(NetworkArray2D):
 cdef class Sensors:
     """Sensors"""
     cdef public ContactsArray contacts
-    # cdef public HydrodynamicsArray hydrodynamics
+    cdef public HydrodynamicsArray hydrodynamics
 
 
 cdef class ContactsArray(NetworkArray3D):

@@ -145,9 +145,14 @@ cdef class JointsArray(NetworkArray2D):
 cdef class Sensors:
     """Sensors"""
 
-    def __init__(self, ContactsArray contacts):
+    def __init__(
+            self,
+            ContactsArray contacts,
+            HydrodynamicsArray hydrodynamics
+    ):
         super(Sensors, self).__init__()
         self.contacts = contacts
+        self.hydrodynamics = hydrodynamics
 
 
 cdef class ContactsArray(NetworkArray3D):

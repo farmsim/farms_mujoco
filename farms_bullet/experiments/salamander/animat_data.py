@@ -9,9 +9,10 @@ from ...animats.animat_data import (
     NetworkParameters,
     OscillatorArray,
     ConnectivityArray,
+    JointsArray,
     Sensors,
     ContactsArray,
-    JointsArray
+    HydrodynamicsArray
 )
 
 
@@ -73,7 +74,11 @@ class SalamanderData(AnimatData):
         )
         joints = SalamanderJointsArray.from_options(options)
         contacts = SalamanderContactsArray.from_options(options, n_iterations)
-        sensors = Sensors(contacts)
+        hydrodynamics = SalamanderHydrodynamicsArray.from_options(
+            options,
+            n_iterations
+        )
+        sensors = Sensors(contacts, hydrodynamics)
         return cls(state, network, joints, sensors)
 
 
@@ -377,84 +382,6 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
         """
 
 
-class SalamanderContactsArray(ContactsArray):
-    """Salamander contacts sensors array"""
-
-    @classmethod
-    def from_options(cls, options, n_iterations):
-        """Default"""
-        # n_body = options.morphology.n_joints_body
-        n_contacts = options.morphology.n_legs
-        # n_joints = options.morphology.n_joints()
-        contacts = np.zeros([n_iterations, n_contacts, 9])  # x, y, z
-        return cls(contacts)
-
-    def update(self, iteration, foot, value):
-        """Update contacts"""
-        self.array[iteration, foot, :] = value
-
-
-class SalamanderContactsConnectivityArray(ConnectivityArray):
-    """Salamander contacts connectivity array"""
-
-    @classmethod
-    def from_options(cls, options):
-        """Default"""
-        connectivity = []
-        # options.morphology.n_legs
-        for leg_i in range(2):
-            for side_i in range(2):
-                connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    2*leg_i + side_i,
-                    0  # Weight
-                ])
-        print(np.array(connectivity))
-        return cls(np.array(connectivity, dtype=np.float64))
-
-
-# class SalamanderSensorsArray(SensorArray):
-#     """Sensor array"""
-
-#     @staticmethod
-#     def set_options(options):
-#         """Walking parameters"""
-#         # sens_options = options.control.network.sensors
-#         n_body = options.morphology.n_joints_body
-#         n_legs = options.morphology.n_legs
-#         n_joints = options.morphology.n_joints()
-#         # Sensors
-#         proprioception = np.zeros(2*n_joints)  # Position, velocity
-#         contacts = np.zeros(3*n_legs)  # x, y, z
-#         hydrodynamics = np.zeros(3*n_body)  # x, y, z
-#         return proprioception, contacts, hydrodynamics
-
-#     @classmethod
-#     def from_options(cls, options, n_iterations):
-#         """Default"""
-#         proprioception, contacts, hydrodynamics = cls.set_options(options)
-#         return cls.from_parameters(
-#             n_iterations,
-#             proprioception,
-#             contacts,
-#             hydrodynamics
-#         )
-
-#     # def get_data(self, iteration):
-#     #     """Get Data"""
-#     #     self.
-
-#     def update(self, options):
-#         """Update from options
-
-#         :param options: Animat options
-
-#         """
-#         freqs, _, amplitudes = self.set_options(options)
-#         self.freqs[:] = freqs
-#         self.amplitudes_desired[:] = amplitudes
-
-
 class SalamanderJointsArray(JointsArray):
     """Oscillator array"""
 
@@ -491,3 +418,54 @@ class SalamanderJointsArray(JointsArray):
         """
         offsets, _ = self.set_options(options)
         self.offsets[:] = offsets
+
+
+class SalamanderContactsArray(ContactsArray):
+    """Salamander contacts sensors array"""
+
+    @classmethod
+    def from_options(cls, options, n_iterations):
+        """Default"""
+        # n_body = options.morphology.n_joints_body
+        n_contacts = options.morphology.n_legs
+        # n_joints = options.morphology.n_joints()
+        contacts = np.zeros([n_iterations, n_contacts, 9])  # x, y, z
+        return cls(contacts)
+
+    def update(self, iteration, foot, value):
+        """Update contacts"""
+        self.array[iteration, foot, :] = value
+
+
+class SalamanderContactsConnectivityArray(ConnectivityArray):
+    """Salamander contacts connectivity array"""
+
+    @classmethod
+    def from_options(cls, options):
+        """Default"""
+        connectivity = []
+        # options.morphology.n_legs
+        for leg_i in range(2):
+            for side_i in range(2):
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    2*leg_i + side_i,
+                    0  # Weight
+                ])
+        print(np.array(connectivity))
+        return cls(np.array(connectivity, dtype=np.float64))
+
+
+class SalamanderHydrodynamicsArray(HydrodynamicsArray):
+    """Salamander hydrodynamics sensors array"""
+
+    @classmethod
+    def from_options(cls, options, n_iterations):
+        """Default"""
+        n_body = options.morphology.n_links_body()
+        hydrodynamics = np.zeros([n_iterations, n_body, 3])  # x, y, z
+        return cls(hydrodynamics)
+
+    def update(self, iteration, foot, value):
+        """Update hydrodynamics"""
+        self.array[iteration, foot, :] = value
