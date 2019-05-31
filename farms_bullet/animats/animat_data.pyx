@@ -148,6 +148,7 @@ cdef class Sensors:
     def __init__(
             self,
             ContactsArray contacts,
+            ProprioceptionArray proprioception,
             HydrodynamicsArray hydrodynamics
     ):
         super(Sensors, self).__init__()
@@ -160,6 +161,11 @@ cdef class ContactsArray(NetworkArray3D):
     pass
 
 
+cdef class ProprioceptionArray(NetworkArray3D):
+    """Proprioception array"""
+    pass
+
+
 cdef class HydrodynamicsArray(NetworkArray3D):
-    """Hydrodynamcics array"""
+    """Hydrodynamics array"""
     pass

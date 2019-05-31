@@ -10,11 +10,14 @@ def viscous_swimming(iteration, data, model, links, plot=False):
     force_coefficients = np.array([-1e-1, -1e0, -1e0])
     torque_coefficients = np.array([-1e-2, -1e-2, -1e-2])
     for link_i in range(12):
+        # Collect data
         link = links["link_body_{}".format(link_i)]
         if link_i == 0:
+            # Base link
             pos, ori = pybullet.getBasePositionAndOrientation(model)
             lin_velocity, ang_velocity = pybullet.getBaseVelocity(model)
         else:
+            # Children links
             link_state = pybullet.getLinkState(
                 model,
                 link,

@@ -12,6 +12,7 @@ from ...animats.animat_data import (
     JointsArray,
     Sensors,
     ContactsArray,
+    ProprioceptionArray,
     HydrodynamicsArray
 )
 
@@ -74,11 +75,15 @@ class SalamanderData(AnimatData):
         )
         joints = SalamanderJointsArray.from_options(options)
         contacts = SalamanderContactsArray.from_options(options, n_iterations)
+        proprioception = SalamanderProprioceptionArray.from_options(
+            options,
+            n_iterations
+        )
         hydrodynamics = SalamanderHydrodynamicsArray.from_options(
             options,
             n_iterations
         )
-        sensors = Sensors(contacts, hydrodynamics)
+        sensors = Sensors(contacts, proprioception, hydrodynamics)
         return cls(state, network, joints, sensors)
 
 
@@ -432,10 +437,6 @@ class SalamanderContactsArray(ContactsArray):
         contacts = np.zeros([n_iterations, n_contacts, 9])  # x, y, z
         return cls(contacts)
 
-    def update(self, iteration, foot, value):
-        """Update contacts"""
-        self.array[iteration, foot, :] = value
-
 
 class SalamanderContactsConnectivityArray(ConnectivityArray):
     """Salamander contacts connectivity array"""
@@ -456,6 +457,17 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
         return cls(np.array(connectivity, dtype=np.float64))
 
 
+class SalamanderProprioceptionArray(ProprioceptionArray):
+    """Salamander proprioception sensors array"""
+
+    @classmethod
+    def from_options(cls, options, n_iterations):
+        """Default"""
+        n_joints = options.morphology.n_joints()
+        proprioception = np.zeros([n_iterations, n_joints, 2])  # Pos, vel
+        return cls(proprioception)
+
+
 class SalamanderHydrodynamicsArray(HydrodynamicsArray):
     """Salamander hydrodynamics sensors array"""
 
@@ -465,7 +477,3 @@ class SalamanderHydrodynamicsArray(HydrodynamicsArray):
         n_body = options.morphology.n_links_body()
         hydrodynamics = np.zeros([n_iterations, n_body, 6])  # Fxyz, Mxyz
         return cls(hydrodynamics)
-
-    def update(self, iteration, foot, value):
-        """Update hydrodynamics"""
-        self.array[iteration, foot, :] = value
