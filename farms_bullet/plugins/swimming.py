@@ -21,10 +21,12 @@ def viscous_swimming(iteration, data, model, links, plot=False):
                 computeLinkVelocity=1,
                 computeForwardKinematics=1
             )
-            pos = link_state[0]
-            ori = link_state[5]
-            lin_velocity = link_state[6]
-            ang_velocity = link_state[7]
+            pos, ori, lin_velocity, ang_velocity = (
+                link_state[0],
+                link_state[5],
+                link_state[6],
+                link_state[7]
+            )
         link_orientation_inv = np.linalg.inv(np.array(
             pybullet.getMatrixFromQuaternion(ori)
         ).reshape([3, 3]))
