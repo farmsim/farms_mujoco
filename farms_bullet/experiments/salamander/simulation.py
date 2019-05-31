@@ -60,9 +60,9 @@ class SalamanderSimulation(Simulation):
         play = True
         if not(sim_step % 10000) and sim_step > 0:
             pybullet.restoreState(self.simulation_state)
-            network = self.elements.animat.controller.network
-            network.state.array[network.iteration] = (
-                network.state.default_initial_state()
+            state = self.elements.animat.data.state
+            state.array[self.elements.animat.data.iteration] = (
+                state.default_initial_state()
             )
         if not self.options.headless:
             play = self.interface.user_params.play.value
