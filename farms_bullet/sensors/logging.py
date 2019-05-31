@@ -159,7 +159,7 @@ class ContactsLogger(SensorLogger):
         plt.figure(figure+"_{}_lateral".format(sensor))
         label = "" if label is None else (label + "_")
         labels = [label + lab for lab in ["x", "y", "z"]]
-        for i, array in enumerate(self.array[:, sensor, 3:].T):
+        for i, array in enumerate(self.array[:, sensor, 3:6].T):
             plt.plot(times, array[:len(times)], label=labels[i])
         plt.xlabel("Time [s]")
         plt.ylabel("Force [N]")
