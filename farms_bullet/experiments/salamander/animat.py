@@ -68,7 +68,6 @@ class Salamander(Animat):
             for i in range(12)
         ]
 
-
     def spawn_body(self):
         """Spawn body"""
         meshes_directory = (
@@ -311,6 +310,9 @@ class Salamander(Animat):
             self.identity,
             self.links
         )
+
+    def draw_hydrodynamics(self, iteration):
+        """Draw hydrodynamics forces"""
         for i, line in enumerate(self.hydrodynamics):
             force = self.data.sensors.hydrodynamics.array[iteration, i, :3]
             self.hydrodynamics[i] = pybullet.addUserDebugLine(
