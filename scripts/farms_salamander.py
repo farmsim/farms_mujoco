@@ -10,11 +10,9 @@ from farms_bullet.simulations.simulation_options import SimulationOptions
 
 def main():
     """Main"""
-    animat_options = SalamanderOptions()
-    # animat_options = SalamanderOptions(
-    #     frequency=1.7,
-    #     body_stand_amplitude=0.42
-    # )
+    animat_options = SalamanderOptions(
+        show_hydrodynamics=True
+    )
     simulation_options = SimulationOptions.with_clargs()
     run_sim(
         simulation_options=simulation_options,

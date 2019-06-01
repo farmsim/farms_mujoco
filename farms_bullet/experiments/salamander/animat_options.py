@@ -20,6 +20,10 @@ class SalamanderOptions(dict):
             "control",
             SalamanderControlOptions()
         )
+        self.show_hydrodynamics = kwargs.pop(
+            "show_hydrodynamics",
+            False
+        )
         if kwargs:
             raise Exception("Unknown kwargs: {}".format(kwargs))
 
