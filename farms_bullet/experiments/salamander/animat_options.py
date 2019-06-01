@@ -238,20 +238,25 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
         ])
 
     @classmethod
-    def body_nominal_amplitudes(cls):
+    def body_nominal_amplitudes(cls, joint_i, **kwargs):
         """Body nominal amplitudes"""
-        amplitude = 0.2
-        # osc_options.body_stand_amplitude*np.sin(
-        #         2*np.pi*i/n_body
-        #         - osc_options.body_stand_shift
-        #     )
+        body_stand_amplitude = 0.2
+        n_body = 11
+        body_stand_shift = np.pi/4
+        amplitude = body_stand_amplitude*np.sin(
+            2*np.pi*joint_i/n_body - body_stand_shift
+        )
         # osc_options.body_stand_amplitude*np.sin(
         #     2*np.pi*i/n_body
         #     - osc_options.body_stand_shift
         # )
         return cls([
-            [0, 0.5*amplitude],
-            [6, amplitude]
+            [0, 0.3*amplitude],
+            [3, amplitude],
+            [3, 0.1*joint_i/n_body],
+            [5, 0.6*joint_i/n_body+0.2],
+            [5, 0],
+            [6, 0]
         ])
 
     @staticmethod
@@ -323,9 +328,12 @@ class SalamanderOscillatorOptions(dict):
         self.legs_freqs = SalamanderOscillatorFrequenciesOptions.legs_freqs()
 
         # Nominal amplitudes
-        self.body_nominal_amplitudes = (
-            SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes()
-        )
+        self.body_nominal_amplitudes = [
+            SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes(
+                joint_i
+            )
+            for joint_i in range(11)
+        ]
         self.legs_nominal_amplitudes = [
             SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
                 joint_i
