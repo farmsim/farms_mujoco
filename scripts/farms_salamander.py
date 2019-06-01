@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from farms_bullet.experiments.salamander.simulation import main as run_sim
 from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
-
+from farms_bullet.experiments.salamander.animat_data import SalamanderOscillatorConnectivityArray
 
 def main():
     """Main"""
@@ -47,3 +47,5 @@ if __name__ == '__main__':
     profile()
     # pycall()
     print("Total simulation time: {} [s]".format(time.time() - TIC))
+    SalamanderOscillatorConnectivityArray.show_connectivity()
+
