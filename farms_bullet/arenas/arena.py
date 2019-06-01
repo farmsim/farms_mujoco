@@ -92,6 +92,7 @@ class ArenaExperiment1:
                 size=arena_dimensions,
                 mass=0,
                 parent=1,
+                position=[-2 * arena_dimensions[0], 0, 2 * arena_dimensions[2]],
                 frame_position=[-2 * arena_dimensions[0], 0, 2 * arena_dimensions[2]],
                 frame_orientation=[0, 0, 0],
                 joint_axis=[0, 0, 1],
