@@ -513,7 +513,7 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
                     2 * leg_i + side_i,
-                    -1  # Weight
+                    -1  #-1 Weight
                 ])
         print(np.array(connectivity))
         return cls(np.array(connectivity, dtype=np.float64))
