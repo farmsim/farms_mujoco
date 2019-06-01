@@ -46,6 +46,8 @@ class Salamander(Animat):
             options,
             iterations
         )
+        # Hydrodynamic forces
+        self.hydrodynamics = None
 
     def spawn(self):
         """Spawn salamander"""
@@ -53,6 +55,18 @@ class Salamander(Animat):
         self.setup_controller()
         self.add_sensors()
         self.set_body_properties()
+        self.hydrodynamics = [
+            pybullet.addUserDebugLine(
+                lineFromXYZ=[0, 0, 0],
+                lineToXYZ=[0, 0, 1],
+                lineColorRGB=[0, 0, 0],
+                lineWidth=3,
+                lifeTime=0,
+                parentObjectUniqueId=self.identity,
+                parentLinkIndex=i
+            )
+            for i in range(12)
+        ]
 
 
     def spawn_body(self):
@@ -297,3 +311,14 @@ class Salamander(Animat):
             self.identity,
             self.links
         )
+        for i, line in enumerate(self.hydrodynamics):
+            force = self.data.sensors.hydrodynamics.array[iteration, i, :3]
+            self.hydrodynamics[i] = pybullet.addUserDebugLine(
+                lineFromXYZ=[0, 0, 0],
+                lineToXYZ=force,
+                lineColorRGB=[0, 0, 0],
+                lineWidth=3,
+                parentObjectUniqueId=self.identity,
+                parentLinkIndex=i-1,
+                replaceItemUniqueId=line
+            )
