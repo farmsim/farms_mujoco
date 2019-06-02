@@ -4,40 +4,12 @@ import numpy as np
 import pybullet
 
 
-def get_gps(iteration, data, model, links, _links):
-    """Get GPS of links"""
-    for link_i, link in _links:
-        # Collect data
-        if link_i == 0:
-            # Base link
-            pos, ori = pybullet.getBasePositionAndOrientation(model)
-            lin_velocity, ang_velocity = pybullet.getBaseVelocity(model)
-        else:
-            # Children links
-            link_state = pybullet.getLinkState(
-                model,
-                links[link],
-                computeLinkVelocity=1,
-                computeForwardKinematics=0
-            )
-            pos, ori, lin_velocity, ang_velocity = (
-                link_state[0],
-                link_state[5],
-                link_state[6],
-                link_state[7]
-            )
-        data[iteration, link_i, :3] = np.array(pos)
-        data[iteration, link_i, 3:7] = np.array(ori)
-        data[iteration, link_i, 7:10] = np.array(lin_velocity)
-        data[iteration, link_i, 10:13] = np.array(ang_velocity)
-
-
-def viscous_swimming(iteration, data_gps, data_hydrodynamics, model, links, _links):
+def viscous_swimming(iteration, data_gps, data_hydrodynamics, model, links):
     """Viscous swimming"""
     # Swimming
     force_coefficients = np.array([-1e-1, -1e0, -1e0])
     torque_coefficients = np.array([-1e-2, -1e-2, -1e-2])
-    for link_i, link in _links:
+    for link_i, link in links:
         ori, lin_velocity, ang_velocity = (
             data_gps[iteration, link_i, 3:7],
             data_gps[iteration, link_i, 7:10],
@@ -58,14 +30,14 @@ def viscous_swimming(iteration, data_gps, data_hydrodynamics, model, links, _lin
         # Forces
         pybullet.applyExternalForce(
             model,
-            links[link],
+            link,
             forceObj=data_hydrodynamics[iteration, link_i, :3],
             posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
         )
         pybullet.applyExternalTorque(
             model,
-            links[link],
+            link,
             torqueObj=data_hydrodynamics[iteration, link_i, 3:6],
             flags=pybullet.LINK_FRAME
         )
