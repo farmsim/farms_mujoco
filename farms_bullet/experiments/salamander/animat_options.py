@@ -20,6 +20,10 @@ class SalamanderOptions(dict):
             "control",
             SalamanderControlOptions()
         )
+        self.collect_gps = kwargs.pop(
+            "collect_gps",
+            False
+        )
         self.show_hydrodynamics = kwargs.pop(
             "show_hydrodynamics",
             False
@@ -51,6 +55,10 @@ class SalamanderMorphologyOptions(dict):
     def n_links_body(self):
         """Number of body links"""
         return self.n_joints_body + 1
+
+    def n_links(self):
+        """Number of links"""
+        return self.n_links_body() + self.n_joints_legs()
 
 
 class SalamanderControlOptions(dict):

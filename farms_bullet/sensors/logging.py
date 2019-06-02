@@ -9,8 +9,10 @@ from .sensors import (
     JointsStatesSensor,
     ContactsSensors,
     ContactSensor,
+    LinksStatesSensor,
     LinkStateSensor
 )
+from ..experiments.salamander.sensors import SalamanderGPS
 
 
 def global2local(vector_global, orientation):
@@ -204,6 +206,143 @@ class ContactLogger(SensorLogger):
         plt.grid(True)
 
 
+class LinksStatesLogger(SensorLogger):
+    """Link state logger"""
+
+    def plot(self, times, figure=None, label=None):
+        """Plot"""
+        self.plot_positions(
+            times=times,
+            figure=figure,
+            label="pos" if label is None else label
+        )
+        self.plot_trajectory_top(
+            times=times,
+            figure=figure
+        )
+        self.plot_linear_velocities(
+            times=times,
+            local=True,
+            figure=figure+"_local",
+            label="linear_vel_local" if label is None else label
+        )
+        self.plot_linear_velocities(
+            times=times,
+            local=False,
+            figure=figure+"_global",
+            label="linal_vel_global" if label is None else label
+        )
+        self.plot_angular_velocities(
+            times=times,
+            figure=figure,
+            local=True,
+            label="angular_vel_local" if label is None else label
+        )
+        self.plot_angular_velocities(
+            times=times,
+            figure=figure,
+            local=False,
+            label="angular_vel_global" if label is None else label
+        )
+
+    def plot_array(self, times, array_ids, figure=None, labels=None):
+        """Plot array"""
+        if figure is not None:
+            plt.figure(figure)
+        for array_i, array_id in enumerate(array_ids):
+            plt.plot(
+                times,
+                self.array[:len(times), 0, array_id],
+                label=labels[array_i]
+            )
+        plt.grid(True)
+        plt.legend()
+
+    def plot_local_array(self, times, array, figure=None, **kwargs):
+        """Plot linear velocity in local frame"""
+        if figure is not None:
+            plt.figure(figure)
+        array_local = np.array([
+            global2local(array[i], self.array[i, 0, 3:7])
+            for i, _ in enumerate(times)
+        ]).T
+        labels = kwargs.pop("labels", ["x", "y", "z"])
+        for array_i, array_id in enumerate(array_local):
+            plt.plot(
+                times,
+                array_id,
+                label=labels[array_i]
+            )
+        plt.grid(True)
+        plt.legend()
+
+    def plot_positions(self, times, **kwargs):
+        """Plot positions"""
+        figure = kwargs.pop("figure", "") + "_position"
+        label = kwargs.pop("label", "pos")
+        self.plot_array(
+            times=times,
+            array_ids=[0, 1, 2],
+            figure=figure,
+            labels=[label + "_" + element for element in ["x", "y", "z"]]
+        )
+        plt.xlabel("Time [s]")
+        plt.ylabel("Position [m]")
+
+    def plot_trajectory_top(self, times, **kwargs):
+        """Plot positions"""
+        plt.figure(kwargs.pop("figure", "") + "_trajectory_top")
+        plt.plot(
+            self.array[:len(times), 0, 0],
+            self.array[:len(times), 0, 1]
+        )
+        plt.grid(True)
+        plt.xlabel("Position x [m]")
+        plt.ylabel("Position y [m]")
+
+    def plot_linear_velocities(self, times, local=False, **kwargs):
+        """Plot velocities"""
+        figure = kwargs.pop("figure", "") + "_linear_velocity"
+        label = kwargs.pop("label", "pos")
+        if local:
+            self.plot_local_array(
+                times=times,
+                array=self.array[:, 0, 7:10],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
+        else:
+            self.plot_array(
+                times=times,
+                array_ids=[7, 8, 9],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
+        plt.xlabel("Time [s]")
+        plt.ylabel("Velocity [m/s]")
+
+    def plot_angular_velocities(self, times, local=False, **kwargs):
+        """Plot velocities"""
+        figure = kwargs.pop("figure", "") + "_angular_velocity"
+        label = kwargs.pop("label", "pos")
+        if local:
+            self.plot_local_array(
+                times=times,
+                array=self.array[:, 0, 10:],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
+        else:
+            self.plot_array(
+                times=times,
+                array_ids=[10, 11, 12],
+                figure=figure,
+                labels=[label + "_" + element for element in ["x", "y", "z"]]
+            )
+        plt.xlabel("Time [s]")
+        plt.ylabel("Angular velocity [rad/s]")
+
+
 class LinkStateLogger(SensorLogger):
     """Link state logger"""
 
@@ -348,6 +487,8 @@ class SensorsLogger(dict):
         JointsStatesSensor: JointsStatesLogger,
         ContactsSensors: ContactsLogger,
         ContactSensor: ContactLogger,
+        SalamanderGPS: LinksStatesLogger,
+        LinksStatesSensor: LinksStatesLogger,
         LinkStateSensor: LinkStateLogger
     }
     default = SensorLogger

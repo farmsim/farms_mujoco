@@ -149,11 +149,13 @@ cdef class Sensors:
             self,
             ContactsArray contacts,
             ProprioceptionArray proprioception,
+            GpsArray gps,
             HydrodynamicsArray hydrodynamics
     ):
         super(Sensors, self).__init__()
         self.contacts = contacts
         self.proprioception = proprioception
+        self.gps = gps
         self.hydrodynamics = hydrodynamics
 
 
@@ -164,6 +166,11 @@ cdef class ContactsArray(NetworkArray3D):
 
 cdef class ProprioceptionArray(NetworkArray3D):
     """Proprioception array"""
+    pass
+
+
+cdef class GpsArray(NetworkArray3D):
+    """Gps array"""
     pass
 
 
