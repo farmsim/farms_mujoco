@@ -1,13 +1,13 @@
 """Salamander"""
 
 import os
-import numpy as np
 
+import numpy as np
 import pybullet
 
 from ...animats.animat import Animat
 from ...animats.link import AnimatLink
-from ...plugins.swimming import viscous_swimming
+from ...plugins.swimming import get_gps, viscous_swimming
 from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
@@ -310,13 +310,43 @@ class Salamander(Animat):
             timestep=self.timestep
         )
 
+    def collect_gps(self, iteration, body_only=False):
+        """Animat GPS"""
+        get_gps(
+            iteration,
+            self.data.sensors.gps.array,
+            self.identity,
+            self.links,
+            [
+                [i, "link_body_{}".format(i)]
+                for i in range(12)
+            ] + (
+                [
+                    [
+                        12 + leg_i*2*4 + side_i*4 + joint_i,
+                        "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
+                    ]
+                    for leg_i in range(2)
+                    for side_i, side in enumerate(["L", "R"])
+                    for joint_i in range(4)
+                ]
+                if not body_only
+                else []
+            )
+        )
+
     def animat_swimming_physics(self, iteration):
         """Animat swimming physics"""
         viscous_swimming(
             iteration,
+            self.data.sensors.gps.array,
             self.data.sensors.hydrodynamics.array,
             self.identity,
-            self.links
+            self.links,
+            [
+                [i, "link_body_{}".format(i)]
+                for i in range(12)
+            ]
         )
 
     def draw_hydrodynamics(self, iteration):

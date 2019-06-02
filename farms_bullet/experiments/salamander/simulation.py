@@ -83,6 +83,7 @@ class SalamanderSimulation(Simulation):
             if not self.options.headless:
                 self.animat_interface()
             # Plugins
+            self.elements.animat.collect_gps(sim_step)
             if self.elements.animat.options.control.drives.forward > 3:
                 # Swimming
                 self.elements.animat.animat_swimming_physics(sim_step)
