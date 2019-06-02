@@ -270,7 +270,7 @@ class Salamander(Animat):
             for joint_i in range(4)
         ]
         self.sensors.add({
-            "base_link": SalamanderGPS(
+            "links": SalamanderGPS(
                 array=self.data.sensors.gps.array,
                 animat_id=self.identity,
                 links=links,
