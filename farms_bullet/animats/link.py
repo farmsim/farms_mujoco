@@ -54,11 +54,23 @@ class AnimatLink(dict):
             self.frame_orientation = pybullet.getQuaternionFromEuler(
                 self.frame_orientation
             )
-        self.f_position = kwargs.pop("f_position", self.frame_position)
-        self.f_orientation = kwargs.pop("f_orientation", self.frame_orientation)
-        if len(self.f_orientation) == 3:
-            self.f_orientation = pybullet.getQuaternionFromEuler(
-                self.f_orientation
+        self.inertial_position = kwargs.pop(
+            "inertial_position",
+            None
+        )
+        if self.inertial_position is None:
+            self.inertial_position = (
+                self.frame_position + tri.load_mesh(self.filename).center_mass
+                if self.geometry is pybullet.GEOM_MESH
+                else self.frame_position
+            )
+        self.inertial_orientation = kwargs.pop(
+            "inertial_orientation",
+            self.frame_orientation
+        )
+        if len(self.inertial_orientation) == 3:
+            self.inertial_orientation = pybullet.getQuaternionFromEuler(
+                self.inertial_orientation
             )
         self.parent = kwargs.pop("parent", None)
         self.collision = pybullet.createCollisionShape(

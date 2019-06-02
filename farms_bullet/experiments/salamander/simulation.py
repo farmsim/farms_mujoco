@@ -86,6 +86,8 @@ class SalamanderSimulation(Simulation):
             if self.elements.animat.options.control.drives.forward > 3:
                 # Swimming
                 self.elements.animat.animat_swimming_physics(sim_step)
+            if self.elements.animat.options.show_hydrodynamics:
+                self.elements.animat.draw_hydrodynamics(sim_step)
             # Control animat
             self.elements.animat.controller.control()
             # Physics step

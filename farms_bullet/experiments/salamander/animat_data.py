@@ -111,7 +111,10 @@ class SalamanderOscillatorArray(OscillatorArray):
         # Amplitudes
         amplitudes = np.zeros(n_oscillators)
         for i in range(n_body):
-            amplitudes[[i, i+n_body]] = 0.1+0.2*i/(n_body-1)
+            # amplitudes[[i, i+n_body]] = 0.1+0.2*i/(n_body-1)
+            amplitudes[[i, i+n_body]] = (
+                osc_options.body_nominal_amplitudes[i].value(drives)
+            )
             # osc_options.body_stand_amplitude*np.sin(
             #     2*np.pi*i/n_body
             #     - osc_options.body_stand_shift

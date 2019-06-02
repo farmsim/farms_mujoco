@@ -46,6 +46,8 @@ class Salamander(Animat):
             options,
             iterations
         )
+        # Hydrodynamic forces
+        self.hydrodynamics = None
 
     def spawn(self):
         """Spawn salamander"""
@@ -53,7 +55,18 @@ class Salamander(Animat):
         self.setup_controller()
         self.add_sensors()
         self.set_body_properties()
-
+        self.hydrodynamics = [
+            pybullet.addUserDebugLine(
+                lineFromXYZ=[0, 0, 0],
+                lineToXYZ=[0, 0, 0],
+                lineColorRGB=[0, 0, 0],
+                lineWidth=3,
+                lifeTime=0,
+                parentObjectUniqueId=self.identity,
+                parentLinkIndex=i
+            )
+            for i in range(12)
+        ]
 
     def spawn_body(self):
         """Spawn body"""
@@ -160,13 +173,21 @@ class Salamander(Animat):
             baseVisualShapeIndex=base_link.visual,
             basePosition=[0, 0, 0],
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
+            baseInertialFramePosition=base_link.inertial_position,
+            baseInertialFrameOrientation=base_link.inertial_orientation,
             linkMasses=[link.mass for link in links],
             linkCollisionShapeIndices=[link.collision for link in links],
             linkVisualShapeIndices=[link.visual for link in links],
             linkPositions=[link.position for link in links],
             linkOrientations=[link.orientation for link in links],
-            linkInertialFramePositions=[link.f_position for link in links],
-            linkInertialFrameOrientations=[link.f_orientation for link in links],
+            linkInertialFramePositions=[
+                link.inertial_position
+                for link in links
+            ],
+            linkInertialFrameOrientations=[
+                link.inertial_orientation
+                for link in links
+            ],
             linkParentIndices=[link.parent for link in links],
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
@@ -297,3 +318,17 @@ class Salamander(Animat):
             self.identity,
             self.links
         )
+
+    def draw_hydrodynamics(self, iteration):
+        """Draw hydrodynamics forces"""
+        for i, line in enumerate(self.hydrodynamics):
+            force = self.data.sensors.hydrodynamics.array[iteration, i, :3]
+            self.hydrodynamics[i] = pybullet.addUserDebugLine(
+                lineFromXYZ=[0, 0, 0],
+                lineToXYZ=force,
+                lineColorRGB=[0, 0, 0],
+                lineWidth=3,
+                parentObjectUniqueId=self.identity,
+                parentLinkIndex=i-1,
+                replaceItemUniqueId=line
+            )
