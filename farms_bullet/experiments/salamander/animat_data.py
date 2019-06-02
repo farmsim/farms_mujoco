@@ -13,6 +13,7 @@ from ...animats.animat_data import (
     Sensors,
     ContactsArray,
     ProprioceptionArray,
+    GpsArray,
     HydrodynamicsArray
 )
 
@@ -79,11 +80,15 @@ class SalamanderData(AnimatData):
             options,
             n_iterations
         )
+        gps = SalamanderGpsArray.from_options(
+            options,
+            n_iterations
+        )
         hydrodynamics = SalamanderHydrodynamicsArray.from_options(
             options,
             n_iterations
         )
-        sensors = Sensors(contacts, proprioception, hydrodynamics)
+        sensors = Sensors(contacts, proprioception, gps, hydrodynamics)
         return cls(state, network, joints, sensors)
 
 
@@ -469,6 +474,17 @@ class SalamanderProprioceptionArray(ProprioceptionArray):
         n_joints = options.morphology.n_joints()
         proprioception = np.zeros([n_iterations, n_joints, 9])
         return cls(proprioception)
+
+
+class SalamanderGpsArray(GpsArray):
+    """Salamander gps sensors array"""
+
+    @classmethod
+    def from_options(cls, options, n_iterations):
+        """Default"""
+        n_links = options.morphology.n_links()
+        gps = np.zeros([n_iterations, n_links, 13])
+        return cls(gps)
 
 
 class SalamanderHydrodynamicsArray(HydrodynamicsArray):

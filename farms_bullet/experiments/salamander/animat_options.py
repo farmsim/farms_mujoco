@@ -52,6 +52,10 @@ class SalamanderMorphologyOptions(dict):
         """Number of body links"""
         return self.n_joints_body + 1
 
+    def n_links(self):
+        """Number of links"""
+        return self.n_links_body() + self.n_joints_legs()
+
 
 class SalamanderControlOptions(dict):
     """Salamander control options"""
