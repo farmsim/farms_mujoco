@@ -173,6 +173,67 @@ class JointsStatesSensor(NetworkArray3D):
         ])
 
 
+class LinksStatesSensor(NetworkArray3D):
+    """Links states sensor
+
+    links is an array of size (N, 3) where the 3 values are:
+    [
+        link_name,  # Name of the link
+        link_i,  # Index in table
+        link_id  # Index in animat
+    ]
+    """
+
+    def __init__(self, array, animat_id, links):
+        super(LinksStatesSensor, self).__init__(array)
+        self.animat = animat_id
+        self.links = links
+
+    def update(self, iteration):
+        """Update sensor"""
+        self.collect(iteration, self.links)
+
+    def collect(self, iteration, links):
+        """Collect gps data"""
+        for _, link_i, link_id in links:
+            # Collect data
+            if link_id == -1:
+                # Base link
+                pos, ori = pybullet.getBasePositionAndOrientation(
+                    self.animat
+                )
+                lin_velocity, ang_velocity = pybullet.getBaseVelocity(
+                    self.animat
+                )
+            else:
+                # Children links
+                link_state = pybullet.getLinkState(
+                    self.animat,
+                    link_id,
+                    computeLinkVelocity=1,
+                    computeForwardKinematics=1
+                )
+                pos, ori, lin_velocity, ang_velocity = (
+                    link_state[0],
+                    link_state[5],
+                    link_state[6],
+                    link_state[7]
+                )
+            self.array[iteration, link_i, 0] = pos[0]
+            self.array[iteration, link_i, 1] = pos[1]
+            self.array[iteration, link_i, 2] = pos[2]
+            self.array[iteration, link_i, 3] = ori[0]
+            self.array[iteration, link_i, 4] = ori[1]
+            self.array[iteration, link_i, 5] = ori[2]
+            self.array[iteration, link_i, 6] = ori[3]
+            self.array[iteration, link_i, 7] = lin_velocity[0]
+            self.array[iteration, link_i, 8] = lin_velocity[1]
+            self.array[iteration, link_i, 9] = lin_velocity[2]
+            self.array[iteration, link_i, 10] = ang_velocity[0]
+            self.array[iteration, link_i, 11] = ang_velocity[1]
+            self.array[iteration, link_i, 12] = ang_velocity[2]
+
+
 class LinkStateSensor(Sensor):
     """Links states sensor"""
 

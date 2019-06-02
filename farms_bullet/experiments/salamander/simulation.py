@@ -76,16 +76,18 @@ class SalamanderSimulation(Simulation):
     def step(self, sim_step):
         """Simulation step"""
         self.tic_rt[0] = time.time()
+        # Interface
+        if not self.options.headless:
+            self.animat_interface()
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
         if sim_step < self.options.n_iterations-1:
-            # Interface
-            if not self.options.headless:
-                self.animat_interface()
             # Plugins
             if self.elements.animat.options.control.drives.forward > 3:
                 # Swimming
                 self.elements.animat.animat_swimming_physics(sim_step)
+            if self.elements.animat.options.show_hydrodynamics:
+                self.elements.animat.draw_hydrodynamics(sim_step)
             # Control animat
             self.elements.animat.controller.control()
             # Physics step

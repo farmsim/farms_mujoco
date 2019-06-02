@@ -1,8 +1,8 @@
 """Salamander"""
 
 import os
-import numpy as np
 
+import numpy as np
 import pybullet
 
 from ...animats.animat import Animat
@@ -11,8 +11,7 @@ from ...plugins.swimming import viscous_swimming
 from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
-    ContactsSensors,
-    LinkStateSensor
+    ContactsSensors
 )
 from .convention import (
     leglink2index,
@@ -25,7 +24,7 @@ from .animat_data import (
     SalamanderData
 )
 from .control import SalamanderController
-
+from .sensors import SalamanderGPS
 
 
 class Salamander(Animat):
@@ -46,6 +45,8 @@ class Salamander(Animat):
             options,
             iterations
         )
+        # Hydrodynamic forces
+        self.hydrodynamics = None
 
     def spawn(self):
         """Spawn salamander"""
@@ -53,7 +54,18 @@ class Salamander(Animat):
         self.setup_controller()
         self.add_sensors()
         self.set_body_properties()
-
+        self.hydrodynamics = [
+            pybullet.addUserDebugLine(
+                lineFromXYZ=[0, 0, 0],
+                lineToXYZ=[0, 0, 0],
+                lineColorRGB=[0, 0, 0],
+                lineWidth=3,
+                lifeTime=0,
+                parentObjectUniqueId=self.identity,
+                parentLinkIndex=i
+            )
+            for i in range(12)
+        ]
 
     def spawn_body(self):
         """Spawn body"""
@@ -104,7 +116,6 @@ class Salamander(Animat):
         ] + [None for i in range(4) for j in range(4)]
         leg_length = 0.03
         leg_radius = 0.015
-        n_dof_legs = 4
         for leg_i in [1, 0]:
             for side in range(2):
                 sign = 1 if side else -1
@@ -160,13 +171,21 @@ class Salamander(Animat):
             baseVisualShapeIndex=base_link.visual,
             basePosition=[0, 0, 0],
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
+            baseInertialFramePosition=base_link.inertial_position,
+            baseInertialFrameOrientation=base_link.inertial_orientation,
             linkMasses=[link.mass for link in links],
             linkCollisionShapeIndices=[link.collision for link in links],
             linkVisualShapeIndices=[link.visual for link in links],
             linkPositions=[link.position for link in links],
             linkOrientations=[link.orientation for link in links],
-            linkInertialFramePositions=[link.f_position for link in links],
-            linkInertialFrameOrientations=[link.f_orientation for link in links],
+            linkInertialFramePositions=[
+                link.inertial_position
+                for link in links
+            ],
+            linkInertialFrameOrientations=[
+                link.inertial_orientation
+                for link in links
+            ],
             linkParentIndices=[link.parent for link in links],
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
@@ -176,10 +195,9 @@ class Salamander(Animat):
         for i in range(11):
             self.links['link_body_{}'.format(i+1)] = i
             self.joints['joint_link_body_{}'.format(i)] = i
-        n_dof_legs = 4
         for leg_i in range(2):
             for side_i in range(2):
-                for part_i in range(n_dof_legs):
+                for part_i in range(self.options.morphology.n_dof_legs):
                     self.links[
                         # TODO: Find out why legs indices are reversed
                         leglink2name((leg_i + 1)%2, side_i, part_i)
@@ -230,11 +248,33 @@ class Salamander(Animat):
             )
         })
         # Base link
+        links = [
+            [
+                "link_body_{}".format(i),
+                i,
+                self.links["link_body_{}".format(i)]
+            ]
+            for i in range(12)
+        ] + [
+            [
+                "link_leg_{}_{}_{}".format(leg_i, side, joint_i),
+                12 + leg_i*2*4 + side_i*4 + joint_i,
+                self.links["link_leg_{}_{}_{}".format(
+                    leg_i,
+                    side,
+                    joint_i
+                )]
+            ]
+            for leg_i in range(2)
+            for side_i, side in enumerate(["L", "R"])
+            for joint_i in range(4)
+        ]
         self.sensors.add({
-            "base_link": LinkStateSensor(
-                self.n_iterations,
-                self._identity,
-                0,  # Base link
+            "links": SalamanderGPS(
+                array=self.data.sensors.gps.array,
+                animat_id=self.identity,
+                links=links,
+                options=self.options
             )
         })
 
@@ -293,7 +333,25 @@ class Salamander(Animat):
         """Animat swimming physics"""
         viscous_swimming(
             iteration,
+            self.data.sensors.gps.array,
             self.data.sensors.hydrodynamics.array,
             self.identity,
-            self.links
+            [
+                [i, self.links["link_body_{}".format(i)]]
+                for i in range(12)
+            ]
         )
+
+    def draw_hydrodynamics(self, iteration):
+        """Draw hydrodynamics forces"""
+        for i, line in enumerate(self.hydrodynamics):
+            force = self.data.sensors.hydrodynamics.array[iteration, i, :3]
+            self.hydrodynamics[i] = pybullet.addUserDebugLine(
+                lineFromXYZ=[0, 0, 0],
+                lineToXYZ=force,
+                lineColorRGB=[0, 0, 0],
+                lineWidth=3,
+                parentObjectUniqueId=self.identity,
+                parentLinkIndex=i-1,
+                replaceItemUniqueId=line
+            )
