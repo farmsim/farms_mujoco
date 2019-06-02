@@ -468,18 +468,24 @@ class SalamanderJointsArray(JointsArray):
                     )
                 )
 
-        max_amp = 0.3
+        max_amp = 0.2
         if 1 <= options.control.drives.right <= 3:
             if options.control.drives.right <= max_amp:
+
+                offsets[0:11] = 10#options.control.drives.left/3
                 offsets[19] = options.control.drives.left
                 offsets[23] = -options.control.drives.left
                 offsets[11] = -options.control.drives.left
                 offsets[15] = options.control.drives.left
             else:
+                offsets[6] = 10
                 offsets[19] = max_amp
                 offsets[23] = -max_amp
                 offsets[11] = -max_amp
                 offsets[15] = max_amp
+                print(offsets)
+                import pdb
+                pdb.set_trace()
 
         if 1 <= options.control.drives.left <= 3:
             if options.control.drives.left <= max_amp:
