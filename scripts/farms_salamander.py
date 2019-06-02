@@ -11,7 +11,7 @@ from farms_bullet.simulations.simulation_options import SimulationOptions
 def main():
     """Main"""
     animat_options = SalamanderOptions(
-        show_hydrodynamics=True
+        show_hydrodynamics=False
     )
     simulation_options = SimulationOptions.with_clargs()
     run_sim(
