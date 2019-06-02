@@ -60,7 +60,7 @@ class salamander_arena:
         # creating the collision shape for the 3 geometries
         upperPlatId = p.createCollisionShape(p.GEOM_BOX,
                                              halfExtents=upper_platform_dimensions,
-                                             collisionFramePosition=[0, self.upperPlatWidth, 0])
+                                             collisionFramePosition=[0, -self.upperPlatWidth, 0])
         lowerPlatId = p.createCollisionShape(p.GEOM_BOX,
                                              halfExtents=lower_platform_dimensions,
                                              collisionFramePosition=[0, self.lowerPlatWidth, 0])

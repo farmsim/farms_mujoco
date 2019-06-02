@@ -5,7 +5,7 @@ import numpy as np
 import pybullet
 from ...simulations.simulation import Simulation, SimulationElements
 from ...simulations.simulation_options import SimulationOptions
-from ...arenas.arena import FlooredArena, ArenaExperiment1
+from ...arenas.arena import FlooredArena, ArenaRamp
 from ...interface.interface import Interfaces
 from ...simulations.simulator import real_time_handing
 from ...sensors.logging import SensorsLogger
@@ -25,8 +25,7 @@ class SalamanderSimulation(Simulation):
                     simulation_options.timestep,
                     simulation_options.n_iterations
                 ),
-                #arena=FlooredArena()
-                arena=ArenaExperiment1()
+                arena=ArenaRamp(-30)
             ),
             options=simulation_options
         )

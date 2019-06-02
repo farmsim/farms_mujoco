@@ -59,19 +59,24 @@ class ArenaScaffold(FlooredArena):
         create_scene(self.floor.identity)
 
 
-class ArenaExperiment1:
-    def __init__(self):
-        super(ArenaExperiment1, self).__init__()
+class ArenaRamp:
+    def __init__(self, ramp_angle=None):
+        super(ArenaRamp, self).__init__()
+        if ramp_angle is None:
+            self.angle = np.deg2rad(30)
+        else:
+            self.angle = np.deg2rad(ramp_angle)
 
     def spawn(self):
         """create the arena for experiment 1"""
-        arena_dimensions = [1, 3, 0.1]
-        arena_color = [1, 0.3, 0, 1]
-        arena_color2 = [1, 0.3, 1, 1]
-        arena_angle = np.pi / 15
+        ground_dim = [1, 3, 0.1]
+        ramp_dim = [1, 3, 0.1]
+        upper_lower_dim = [1, 3, 0.1]
+        arena_color = [1, 0.8, 0.5, 1]
+
         base_link = AnimatLink(
             geometry=pybullet.GEOM_BOX,
-            size=arena_dimensions,
+            size=ground_dim,
             mass=0,
             joint_axis=[0, 0, 1],
             color=arena_color
@@ -79,21 +84,22 @@ class ArenaExperiment1:
         links = [
             AnimatLink(
                 geometry=pybullet.GEOM_BOX,
-                size=arena_dimensions,
+                size=ramp_dim,
                 mass=0,
                 parent=0,
-                frame_position=[-2 * arena_dimensions[0], 0, 2 * arena_dimensions[2]],
-                frame_orientation=[0, arena_angle, 0],
+                frame_position=[-ground_dim[0] - np.cos(self.angle) * ramp_dim[0], 0,
+                                np.sin(self.angle) * ramp_dim[0]],
+                frame_orientation=[0, self.angle, 0],
                 joint_axis=[0, 0, 1],
-                color=arena_color2
+                color=arena_color
             ),
             AnimatLink(
                 geometry=pybullet.GEOM_BOX,
-                size=arena_dimensions,
+                size=ground_dim,
                 mass=0,
                 parent=1,
-                position=[-2 * arena_dimensions[0], 0, 2 * arena_dimensions[2]],
-                frame_position=[-2 * arena_dimensions[0], 0, 2 * arena_dimensions[2]],
+                frame_position=[-ground_dim[0] - 2 * np.cos(self.angle) * ramp_dim[0] - upper_lower_dim[0], 0,
+                                2 * np.sin(self.angle) * ramp_dim[0]],
                 frame_orientation=[0, 0, 0],
                 joint_axis=[0, 0, 1],
                 color=arena_color
