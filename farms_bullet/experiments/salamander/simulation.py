@@ -25,7 +25,7 @@ class SalamanderSimulation(Simulation):
                     simulation_options.timestep,
                     simulation_options.n_iterations
                 ),
-                arena=ArenaRamp(-30)
+                arena=ArenaRamp(0)
             ),
             options=simulation_options
         )
@@ -124,14 +124,19 @@ class SalamanderSimulation(Simulation):
         # Drives
         if (
                 self.interface.user_params.drive_speed.changed
-                or self.interface.user_params.drive_turn.changed
+                or self.interface.user_params.drive_left.changed
+                or self.interface.user_params.drive_right.changed
         ):
             self.elements.animat.options.control.drives.forward = (
                 self.interface.user_params.drive_speed.value
             )
             self.elements.animat.options.control.drives.left = (
-                self.interface.user_params.drive_turn.value
+                self.interface.user_params.drive_left.value
             )
+            self.elements.animat.options.control.drives.right = (
+                self.interface.user_params.drive_right.value
+            )
+
             self.elements.animat.controller.network.update(
                 self.elements.animat.options
             )
@@ -140,7 +145,8 @@ class SalamanderSimulation(Simulation):
             else:
                 pybullet.setGravity(0, 0, -9.81)
             self.interface.user_params.drive_speed.changed = False
-            self.interface.user_params.drive_turn.changed = False
+            self.interface.user_params.drive_left.changed = False
+            self.interface.user_params.drive_right.changed = False
 
 
 def main(simulation_options=None, animat_options=None):

@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy import interpolate
+import pdb
 
 
 class SalamanderOptions(dict):
@@ -122,7 +123,7 @@ class SalamanderDrives(dict):
 
     def __init__(self, **kwargs):
         super(SalamanderDrives, self).__init__()
-        self.forward = kwargs.pop("drive_forward", 2)
+        self.forward = kwargs.pop("drive_forward", 1.5)
         self.left = kwargs.pop("drive_left", 0)
         self.right = kwargs.pop("drive_right", 0)
 
@@ -179,6 +180,9 @@ class DriveDependentProperty(dict):
         super(DriveDependentProperty, self).__init__()
         _data = np.array(data)
         self.interp = interpolate.interp1d(_data[:, 0], _data[:, 1])
+
+    # def forward(self, drives):
+    #     return self.interp(drives.forward)
 
     def value(self, drives):
         """Value in function of drive"""

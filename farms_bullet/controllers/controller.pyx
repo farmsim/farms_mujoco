@@ -51,7 +51,7 @@ cpdef double[:] ode_oscillators_sparse(
             + data.sensors.contacts.array[data.iteration][i1][1]**2
             + data.sensors.contacts.array[data.iteration][i1][2]**2
         )**0.5
-        dstate[i0] += data.network.contacts_connectivity.array[i][2]*contact
+        dstate[i0] += data.network.contacts_connectivity.array[i][2]*contact*cos(state[i0])
     for i in range(data.joints.size[1]):
         # rate*(joints_offset_desired - joints_offset)
         dstate[2*o_dim+i] = data.joints.array[1][i]*(

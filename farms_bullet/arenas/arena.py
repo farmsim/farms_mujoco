@@ -6,6 +6,7 @@ import numpy as np
 import pybullet
 import os
 from farms_bullet.experiments.salamander.animat import AnimatLink
+import pdb
 
 
 class Floor(SimulationElement):
@@ -121,4 +122,12 @@ class ArenaRamp:
             linkParentIndices=[link.parent for link in links],
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
+        )
+
+        pybullet.changeDynamics(
+            bodyUniqueId=1,
+            linkIndex=0,
+            lateralFriction=2,
+            spinningFriction=0,
+            rollingFriction=0,
         )

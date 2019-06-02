@@ -168,8 +168,13 @@ class UserParameters(dict):
             options.control.drives.forward,
             0.9, 5.1
         )
-        self["drive_turn"] = DebugParameter(
-            "Drive turn",
+        self["drive_left"] = DebugParameter(
+            "Drive left",
+            options.control.drives.left,
+            0, 6
+        )
+        self["drive_right"] = DebugParameter(
+            "Drive right",
             options.control.drives.left,
             0, 6
         )
@@ -210,6 +215,11 @@ class UserParameters(dict):
         return self["drive_speed"]
 
     @property
-    def drive_turn(self):
+    def drive_left(self):
         """Drive turn"""
-        return self["drive_turn"]
+        return self["drive_left"]
+
+    @property
+    def drive_right(self):
+        """Drive turn"""
+        return self["drive_right"]
