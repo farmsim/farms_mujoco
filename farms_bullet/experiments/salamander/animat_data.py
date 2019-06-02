@@ -476,30 +476,36 @@ class SalamanderJointsArray(JointsArray):
                     )
                 )
 
-        max_amp = 0.3
-        if 1 <= options.control.drives.right <= 3:
-            if options.control.drives.right <= max_amp:
-                offsets[19] = options.control.drives.left
-                offsets[23] = -options.control.drives.left
-                offsets[11] = -options.control.drives.left
-                offsets[15] = options.control.drives.left
-            else:
-                offsets[19] = max_amp
-                offsets[23] = -max_amp
-                offsets[11] = -max_amp
-                offsets[15] = max_amp
-
-        if 1 <= options.control.drives.left <= 3:
-            if options.control.drives.left <= max_amp:
+        max_amp = 0.2
+        low_sat = 1
+        up_sat = 3
+        if low_sat <= options.control.drives.left <= up_sat:
+            if low_sat <= options.control.drives.left <= low_sat + max_amp:
+                offsets[0:11] = (-options.control.drives.left + low_sat)
                 offsets[19] = -options.control.drives.left
                 offsets[23] = +options.control.drives.left
                 offsets[11] = +options.control.drives.left
                 offsets[15] = -options.control.drives.left
             else:
+                offsets[0:11] = -max_amp
                 offsets[19] = -max_amp
                 offsets[23] = +max_amp
                 offsets[11] = +max_amp
                 offsets[15] = -max_amp
+
+        if low_sat <= options.control.drives.right <= up_sat:
+            if low_sat <= options.control.drives.right <= low_sat + max_amp:
+                offsets[0:11] = (options.control.drives.right-low_sat)
+                offsets[19] = options.control.drives.right
+                offsets[23] = -options.control.drives.right
+                offsets[11] = -options.control.drives.right
+                offsets[15] = options.control.drives.right
+            else:
+                offsets[0:11] = max_amp
+                offsets[19] = max_amp
+                offsets[23] = -max_amp
+                offsets[11] = -max_amp
+                offsets[15] = max_amp
 
         rates = 5 * np.ones(n_joints)
         return offsets, rates
