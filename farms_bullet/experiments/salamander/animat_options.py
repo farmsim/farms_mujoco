@@ -20,6 +20,10 @@ class SalamanderOptions(dict):
             "control",
             SalamanderControlOptions()
         )
+        self.collect_gps = kwargs.pop(
+            "collect_gps",
+            False
+        )
         self.show_hydrodynamics = kwargs.pop(
             "show_hydrodynamics",
             False
