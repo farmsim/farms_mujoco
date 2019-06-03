@@ -349,7 +349,7 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
                         legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
                         legs_amplitude, np.pi
                     ])
-        case = 'blaise'
+        case = 'jon'
         if case == 'blaise':
             for leg_i in [0]:
                 for side_i in [0]:
