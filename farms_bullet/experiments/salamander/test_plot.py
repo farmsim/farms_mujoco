@@ -5,11 +5,14 @@ from scipy import interpolate
 # from farms_bullet.experiments.salamander.animat_data import *
 
 from farms_bullet.experiments.salamander import animat_data
-from farms_bullet.experiments.salamander.animat_options import SalamanderOptions, SalamanderOscillatorFrequenciesOptions
+from farms_bullet.experiments.salamander.animat_options import SalamanderOptions, \
+    SalamanderOscillatorFrequenciesOptions, SalamanderOscillatorAmplitudeOptions
 from farms_bullet.experiments.salamander.convention import bodyosc2index, legosc2index
 import importlib
 
 importlib.reload(animat_data)
+
+plt.close('all')
 
 n_joints = 11
 n_dofs_leg = 4
@@ -69,9 +72,8 @@ M = G.reverse()
 colors = ['g'] * dim + ['r'] * 4
 nx.draw(M, with_labels=True, node_color=colors, node_size=500, pos=graph_pose)
 plt.axis('equal')
-#plt.show()
+# plt.show()
 plt.show(block=False)
-
 
 print('------test indexing--------')
 for leg_i in range(2):
@@ -101,33 +103,111 @@ for leg_i in range(2):
 #                             + leg_i * np.pi
 #                     )
 
+x = np.arange(0, 6, 0.01)
+body_stand_amplitude = 0.2
+n_body = 11
+body_stand_shift = np.pi / 4
+plt.figure()
+for joint_i in range(11):
+    amplitude = body_stand_amplitude * np.sin(
+        2 * np.pi * joint_i / n_body - body_stand_shift
+    )
+    body_amp = np.array([
+        [0, 0.3 * amplitude],
+        [3, amplitude],
+        [3, 0.1 * joint_i / n_body],
+        [5, 0.6 * joint_i / n_body + 0.2],
+        [5, 0],
+        [6, 0]
+    ])
+    f_body = interpolate.interp1d(body_amp[:,0],body_amp[:,1])
+    plt.plot(x,f_body(x),label='Joint_{} amplitude'.format(joint_i),color=[np.random.rand(),0,joint_i/11])
+plt.legend()
+plt.xlabel('Drive [-]')
+plt.ylabel('Amplitude [-]')
+plt.grid()
+plt.show(block=False)
+plt.savefig('body_amp.pdf',bbox_inches='tight')
+
+
+
+
+
+#plot saturation for legs
 leg_freqs = np.array([
-            [0, 0],
-            [1, 0],
-            [1, 0.5],
-            [3, 1.5],
-            [3, 0],
-            [6, 0]
-        ])
+    [0, 0],
+    [1, 0],
+    [1, 0.5],
+    [3, 1.5],
+    [3, 0],
+    [6, 0]
+])
 
 body_freqs = np.array([
-            [0, 0],
-            [1, 0],
-            [1, 1.5],
-            [5, 4],
-            [5, 0],
-            [6, 0]
-        ])
-x = np.arange(0,6,0.01)
-f = interpolate.interp1d(leg_freqs[:,0],leg_freqs[:,1])
-f2 = interpolate.interp1d(body_freqs[:,0],body_freqs[:,1])
+    [0, 0],
+    [1, 0],
+    [1, 1.5],
+    [5, 4],
+    [5, 0],
+    [6, 0]
+])
+
+amplitude = [0.8, np.pi / 32, np.pi / 4, np.pi / 8]
+
+amp_dic = {'amplitude': {'joint0': np.array([
+    [0, 0],
+    [1, 0],
+    [1, 0.7 * amplitude[0]],
+    [3, amplitude[0]],
+    [3, 0],
+    [6, 0]
+]),
+    'joint1': np.array([
+        [0, 0],
+        [1, 0],
+        [1, 0.7 * amplitude[1]],
+        [3, amplitude[1]],
+        [3, 0],
+        [6, 0]
+    ]),
+    'joint2': np.array([
+        [0, 0],
+        [1, 0],
+        [1, 0.7 * amplitude[2]],
+        [3, amplitude[2]],
+        [3, 0],
+        [6, 0]
+    ]),
+    'joint3': np.array([
+        [0, 0],
+        [1, 0],
+        [1, 0.7 * amplitude[3]],
+        [3, amplitude[3]],
+        [3, 0],
+        [6, 0]
+    ])}
+}
+
 plt.figure()
-plt.plot(x,f(x),color='darkblue',label='Beg frequency')
-plt.plot(x,f2(x),color='steelblue',label='Body frequency')
+for i in range(4):
+    f_amp = interpolate.interp1d(amp_dic['amplitude']['joint{}'.format(i)][:, 0],
+                                 amp_dic['amplitude']['joint{}'.format(i)][:, 1])
+    plt.plot(x, f_amp(x), label='joint_{} amplitude'.format(i), color=[0, 0, i / 3])
+plt.legend()
+plt.xlabel('Drive [-]')
+plt.ylabel('Amplitude [-]')
+plt.grid()
+plt.show(block=False)
+plt.savefig('joint_amp_func.pdf', bbox_inches='tight')
+
+f = interpolate.interp1d(leg_freqs[:, 0], leg_freqs[:, 1])
+f2 = interpolate.interp1d(body_freqs[:, 0], body_freqs[:, 1])
+plt.figure()
+plt.plot(x, f(x), color='darkblue', label='Leg frequency')
+plt.plot(x, f2(x), color='steelblue', label='Body frequency')
 plt.legend()
 plt.xlabel('Drive [-]')
 plt.ylabel('Frequency [Hz]')
 plt.grid()
 plt.show(block=False)
-plt.savefig('drive_func.pdf',bbox_inches='tight')
-
+plt.savefig('drive_func.pdf', bbox_inches='tight')

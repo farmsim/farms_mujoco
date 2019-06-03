@@ -277,6 +277,10 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
             [6, 0]
         ])
 
+    # def show_body_amplitudes(self):
+    #     for joint_i in range(11):
+    #         print(self.body_nominal_amplitudes(joint_i=joint_i))
+
     @staticmethod
     def joint_value(options, joint_i):
         """Value in function of drive"""

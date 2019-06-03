@@ -110,7 +110,7 @@ class ArenaRamp:
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=[0, 0, 0],
+            basePosition=[0, 0, -0.12],
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
             linkMasses=[link.mass for link in links],
             linkCollisionShapeIndices=[link.collision for link in links],
@@ -130,4 +130,6 @@ class ArenaRamp:
             lateralFriction=2,
             spinningFriction=0,
             rollingFriction=0,
+            contactDamping=1e2,
+            contactStiffness=1e4
         )
