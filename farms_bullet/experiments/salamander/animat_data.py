@@ -321,67 +321,145 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
                     legs_amplitude, np.pi
                 ])
-
-        # Opposite leg interaction
-        for leg_i in range(2):
-            for side in range(2):
+        if 1:
+            # Opposite leg interaction
+            for leg_i in range(2):
+                for side in range(2):
+                    connectivity.append([
+                        legosc2index(leg_i=leg_i, side_i=0, joint_i=0, side=side),
+                        legosc2index(leg_i=leg_i, side_i=1, joint_i=0, side=side),
+                        legs_amplitude, np.pi
+                    ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=0, joint_i=0, side=side),
                     legosc2index(leg_i=leg_i, side_i=1, joint_i=0, side=side),
-                    legs_amplitude, np.pi
-                ])
-                connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=1, joint_i=0, side=side),
                     legosc2index(leg_i=leg_i, side_i=0, joint_i=0, side=side),
                     legs_amplitude, np.pi
                 ])
-
-        # Following leg interaction
-        for side_i in range(2):
-            for side in range(2):
-                connectivity.append([
-                    legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
-                    legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
-                    legs_amplitude, np.pi
-                ])
-                connectivity.append([
-                    legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
-                    legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
-                    legs_amplitude, np.pi
-                ])
-
-        # Body-legs interaction
-        for leg_i in range(2):
+        if 1:
+            # Following leg interaction
             for side_i in range(2):
-                for i in range(11):  # [0, 1, 7, 8, 9, 10]
-                    for side_leg in range(2):  # Muscle facing front/back
-                        for lateral in range(2):
-                            walk_phase = (
-                                np.pi
-                                if i in [0, 1, 7, 8, 9, 10]
-                                else 0
-                            )
-                            # Forelimbs
-                            connectivity.append([
-                                bodyosc2index(
-                                    joint_i=i,
-                                    side=(side_i + lateral) % 2
-                                ),
-                                legosc2index(
-                                    leg_i=leg_i,
-                                    side_i=side_i,
-                                    joint_i=0,
-                                    side=(side_i + side_leg) % 2
-                                ),
-                                legs2body_amplitude,
-                                (
-                                        walk_phase
-                                        + np.pi * (side_i + 1)
-                                        + lateral * np.pi
-                                        + side_leg * np.pi
-                                        + leg_i * np.pi
+                for side in range(2):
+                    connectivity.append([
+                        legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
+                        legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
+                        legs_amplitude, np.pi
+                    ])
+                    connectivity.append([
+                        legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
+                        legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
+                        legs_amplitude, np.pi
+                    ])
+        case = 'blaise'
+        if case == 'blaise':
+            for leg_i in [0]:
+                for side_i in [0]:
+                    for i in np.arange(0, 6):
+                        walk_phase = (
+                            np.pi
+                            if i in [0, 1, 7, 8, 9, 10]
+                            else 0
+                        )
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                            legs2body_amplitude, walk_phase
+                        ])
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                            legs2body_amplitude, walk_phase
+                        ])
+
+            for leg_i in [0]:
+                for side_i in [1]:
+                    for i in np.arange(0 + n_body_joints, 6 + n_body_joints):
+                        walk_phase = (
+                            np.pi
+                            if i in [0, 1, 7, 8, 9, 10] + np.ones(6) * n_body_joints
+                            else 0
+                        )
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                            legs2body_amplitude, walk_phase
+                        ])
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                            legs2body_amplitude, walk_phase
+                        ])
+
+            for leg_i in [1]:
+                for side_i in [0]:
+                    for i in np.arange(4, 11):
+                        walk_phase = (
+                            np.pi
+                            if i in [0, 1, 7, 8, 9, 10]
+                            else 0
+                        )
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                            legs2body_amplitude, walk_phase
+                        ])
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                            legs2body_amplitude, walk_phase
+                        ])
+
+            for leg_i in [1]:
+                for side_i in [1]:
+                    for i in np.arange(4 + n_body_joints, 11 + n_body_joints):
+                        walk_phase = (
+                            np.pi
+                            if i in [0, 1, 7, 8, 9, 10] + np.ones(6) * n_body_joints
+                            else 0
+                        )
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                            legs2body_amplitude, walk_phase
+                        ])
+                        connectivity.append([
+                            i,
+                            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                            legs2body_amplitude, walk_phase
+                        ])
+
+        if case == 'jon':
+            # Body-legs interaction
+            for leg_i in range(2):
+                for side_i in range(2):
+                    for i in range(11):  # [0, 1, 7, 8, 9, 10]
+                        for side_leg in range(2):  # Muscle facing front/back
+                            for lateral in range(2):
+                                walk_phase = (
+                                    np.pi
+                                    if i in [0, 1, 7, 8, 9, 10]
+                                    else 0
                                 )
-                            ])
+                                # Forelimbs
+                                connectivity.append([
+                                    bodyosc2index(
+                                        joint_i=i,
+                                        side=(side_i + lateral) % 2
+                                    ),
+                                    legosc2index(
+                                        leg_i=leg_i,
+                                        side_i=side_i,
+                                        joint_i=0,
+                                        side=(side_i + side_leg) % 2
+                                    ),
+                                    legs2body_amplitude,
+                                    (
+                                            walk_phase
+                                            + np.pi * (side_i + 1)
+                                            + lateral * np.pi
+                                            + side_leg * np.pi
+                                            + leg_i * np.pi
+                                    )
+                                ])
         return connectivity
 
     @staticmethod
@@ -417,13 +495,13 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
             if i < dim_body + 4 * n_dofs_leg and i >= dim_body + 3 * n_dofs_leg:
                 G.add_node(i, pos=(scale_factor * (i - dim_body - 3 * n_dofs_leg) + offset_leg, -scale_factor))
             if i < dim_body + 5 * n_dofs_leg and i >= dim_body + 4 * n_dofs_leg:
-                G.add_node(i, pos=(scale_factor * (-i + dim_body + 4 * n_dofs_leg) - offset_leg, -3))
+                G.add_node(i, pos=(scale_factor * (-i + dim_body + 4 * n_dofs_leg) - offset_leg, -2))
             if i < dim_body + 6 * n_dofs_leg and i >= dim_body + 5 * n_dofs_leg:
-                G.add_node(i, pos=(scale_factor * (-i + dim_body + 5 * n_dofs_leg) - offset_leg, -3.5))
+                G.add_node(i, pos=(scale_factor * (-i + dim_body + 5 * n_dofs_leg) - offset_leg, -2.5))
             if i < dim_body + 7 * n_dofs_leg and i >= dim_body + 6 * n_dofs_leg:
-                G.add_node(i, pos=(scale_factor * (i - dim_body - 6 * n_dofs_leg) + offset_leg, -3))
+                G.add_node(i, pos=(scale_factor * (i - dim_body - 6 * n_dofs_leg) + offset_leg, -2))
             if i < dim_body + 8 * n_dofs_leg and i >= dim_body + 7 * n_dofs_leg:
-                G.add_node(i, pos=(scale_factor * (i - dim_body - 7 * n_dofs_leg) + offset_leg, -3.5))
+                G.add_node(i, pos=(scale_factor * (i - dim_body - 7 * n_dofs_leg) + offset_leg, -2.5))
 
         G.add_node(dim + 1, pos=(-5, -1), node_color='r')
         G.add_node(dim + 2, pos=(5, -1))
@@ -476,34 +554,34 @@ class SalamanderJointsArray(JointsArray):
                     )
                 )
 
-        max_amp = 0.2
+        max_amp = 0.1
         low_sat = 1
         up_sat = 3
         if low_sat <= options.control.drives.left <= up_sat:
             if low_sat <= options.control.drives.left <= low_sat + max_amp:
-                offsets[0:11] = (-options.control.drives.left + low_sat)
-                offsets[19] = -options.control.drives.left
-                offsets[23] = +options.control.drives.left
-                offsets[11] = +options.control.drives.left
-                offsets[15] = -options.control.drives.left
+                offsets[0:11] = -(options.control.drives.left - low_sat)
+                offsets[19] = +options.control.drives.left
+                offsets[23] = -options.control.drives.left
+                offsets[11] = -options.control.drives.left
+                offsets[15] = +options.control.drives.left
             else:
                 offsets[0:11] = -max_amp
-                offsets[19] = -max_amp
-                offsets[23] = +max_amp
+                offsets[19] = -2 * max_amp
+                offsets[23] = 2 * max_amp
                 offsets[11] = +max_amp
                 offsets[15] = -max_amp
 
         if low_sat <= options.control.drives.right <= up_sat:
             if low_sat <= options.control.drives.right <= low_sat + max_amp:
-                offsets[0:11] = (options.control.drives.right-low_sat)
+                offsets[0:11] = (options.control.drives.right - low_sat)
                 offsets[19] = options.control.drives.right
                 offsets[23] = -options.control.drives.right
                 offsets[11] = -options.control.drives.right
                 offsets[15] = options.control.drives.right
             else:
                 offsets[0:11] = max_amp
-                offsets[19] = max_amp
-                offsets[23] = -max_amp
+                offsets[19] = 2 * max_amp
+                offsets[23] = -2 * max_amp
                 offsets[11] = -max_amp
                 offsets[15] = max_amp
 
@@ -547,19 +625,32 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
         """Default"""
         connectivity = []
         foot_id = [26, 30, 34, 38, 42, 46, 50, 54]
-        sigma = -0.1
+        sigma_foot = -0.1
+        sigma_shoulder = -0.5
         # connection for foot
         for leg_i in range(2):
             for side_i in range(2):
+                # ====================foot=======================================
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
                     2 * leg_i + side_i,
-                    sigma
+                    sigma_foot
                 ])
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
                     2 * leg_i + side_i,
-                    sigma
+                    sigma_foot
+                ])
+                # ====================lower shoulder============================
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    2 * leg_i + side_i,
+                    sigma_shoulder
+                ])
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    2 * leg_i + side_i,
+                    sigma_shoulder
                 ])
 
         return cls(np.array(connectivity, dtype=np.float64))
