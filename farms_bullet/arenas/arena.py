@@ -117,8 +117,8 @@ class ArenaRamp:
             linkVisualShapeIndices=[link.visual for link in links],
             linkPositions=[link.position for link in links],
             linkOrientations=[link.orientation for link in links],
-            linkInertialFramePositions=[link.f_position for link in links],
-            linkInertialFrameOrientations=[link.f_orientation for link in links],
+            linkInertialFramePositions=[link.inertial_position for link in links],
+            linkInertialFrameOrientations=[link.inertial_orientation for link in links],
             linkParentIndices=[link.parent for link in links],
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]

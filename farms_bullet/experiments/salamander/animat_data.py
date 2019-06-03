@@ -15,6 +15,7 @@ from ...animats.animat_data import (
     Sensors,
     ContactsArray,
     ProprioceptionArray,
+    GpsArray,
     HydrodynamicsArray
 )
 
@@ -81,11 +82,15 @@ class SalamanderData(AnimatData):
             options,
             n_iterations
         )
+        gps = SalamanderGpsArray.from_options(
+            options,
+            n_iterations
+        )
         hydrodynamics = SalamanderHydrodynamicsArray.from_options(
             options,
             n_iterations
         )
-        sensors = Sensors(contacts, proprioception, hydrodynamics)
+        sensors = Sensors(contacts, proprioception, gps, hydrodynamics)
         return cls(state, network, joints, sensors)
 
 
@@ -114,7 +119,10 @@ class SalamanderOscillatorArray(OscillatorArray):
         # Amplitudes
         amplitudes = np.zeros(n_oscillators)
         for i in range(n_body):
-            amplitudes[[i, i + n_body]] = 0.1 + 0.2 * i / (n_body - 1)
+            # amplitudes[[i, i+n_body]] = 0.1+0.2*i/(n_body-1)
+            amplitudes[[i, i+n_body]] = (
+                osc_options.body_nominal_amplitudes[i].value(drives)
+            )
             # osc_options.body_stand_amplitude*np.sin(
             #     2*np.pi*i/n_body
             #     - osc_options.body_stand_shift
@@ -341,7 +349,7 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
                         legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
                         legs_amplitude, np.pi
                     ])
-        case = 'blaise'
+        case = 'jon'
         if case == 'blaise':
             for leg_i in [0]:
                 for side_i in [0]:
@@ -692,6 +700,17 @@ class SalamanderProprioceptionArray(ProprioceptionArray):
         n_joints = options.morphology.n_joints()
         proprioception = np.zeros([n_iterations, n_joints, 9])
         return cls(proprioception)
+
+
+class SalamanderGpsArray(GpsArray):
+    """Salamander gps sensors array"""
+
+    @classmethod
+    def from_options(cls, options, n_iterations):
+        """Default"""
+        n_links = options.morphology.n_links()
+        gps = np.zeros([n_iterations, n_links, 13])
+        return cls(gps)
 
 
 class SalamanderHydrodynamicsArray(HydrodynamicsArray):

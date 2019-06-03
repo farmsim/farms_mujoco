@@ -44,6 +44,7 @@ cdef class Sensors:
     """Sensors"""
     cdef public ContactsArray contacts
     cdef public ProprioceptionArray proprioception
+    cdef public GpsArray gps
     cdef public HydrodynamicsArray hydrodynamics
 
 
@@ -54,6 +55,11 @@ cdef class ContactsArray(NetworkArray3D):
 
 cdef class ProprioceptionArray(NetworkArray3D):
     """Proprioception array"""
+    pass
+
+
+cdef class GpsArray(NetworkArray3D):
+    """Gps array"""
     pass
 
 
