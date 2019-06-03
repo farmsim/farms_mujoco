@@ -554,36 +554,42 @@ class SalamanderJointsArray(JointsArray):
                     )
                 )
 
-        max_amp = 0.1
+        max_amp = 0.15
         low_sat = 1
         up_sat = 3
-        if low_sat <= options.control.drives.left <= up_sat:
-            if low_sat <= options.control.drives.left <= low_sat + max_amp:
-                offsets[0:11] = -(options.control.drives.left - low_sat)
-                offsets[19] = +options.control.drives.left
-                offsets[23] = -options.control.drives.left
-                offsets[11] = -options.control.drives.left
-                offsets[15] = +options.control.drives.left
-            else:
-                offsets[0:11] = -max_amp
-                offsets[19] = -2 * max_amp
-                offsets[23] = 2 * max_amp
-                offsets[11] = +max_amp
-                offsets[15] = -max_amp
+        if low_sat <= options.control.drives.forward <= up_sat:
+            if low_sat <= options.control.drives.left <= up_sat:
+                if low_sat <= options.control.drives.left <= low_sat + max_amp:
+                    offsets[0:11] = -abs(options.control.drives.left - low_sat)
+                    offsets[19] = +abs(options.control.drives.left - low_sat)
+                    offsets[23] = -abs(options.control.drives.left - low_sat)
+                    offsets[11] = -abs(options.control.drives.left - low_sat)
+                    offsets[15] = +abs(options.control.drives.left - low_sat)
+                else:
+                    offsets[0:11] = -max_amp
+                    offsets[19] = -max_amp
+                    offsets[23] = max_amp
+                    offsets[11] = max_amp
+                    offsets[15] = -max_amp
 
-        if low_sat <= options.control.drives.right <= up_sat:
-            if low_sat <= options.control.drives.right <= low_sat + max_amp:
-                offsets[0:11] = (options.control.drives.right - low_sat)
-                offsets[19] = options.control.drives.right
-                offsets[23] = -options.control.drives.right
-                offsets[11] = -options.control.drives.right
-                offsets[15] = options.control.drives.right
-            else:
-                offsets[0:11] = max_amp
-                offsets[19] = 2 * max_amp
-                offsets[23] = -2 * max_amp
-                offsets[11] = -max_amp
-                offsets[15] = max_amp
+            if low_sat <= options.control.drives.right <= up_sat:
+                if low_sat <= options.control.drives.right <= low_sat + max_amp:
+                    offsets[0:11] = abs(options.control.drives.right - low_sat)
+                    offsets[19] = abs(options.control.drives.right - low_sat)
+                    offsets[23] = -abs(options.control.drives.right - low_sat)
+                    offsets[11] = -abs(options.control.drives.right - low_sat)
+                    offsets[15] = abs(options.control.drives.right - low_sat)
+                else:
+                    offsets[0:11] = max_amp
+                    offsets[19] = max_amp
+                    offsets[23] = -max_amp
+                    offsets[11] = -max_amp
+                    offsets[15] = max_amp
+
+        if options.control.drives.forward > up_sat:
+            if low_sat <= options.control.drives.left <= up_sat:
+                for i in range(11):
+                    offsets[i] = np.pi / 16
 
         rates = 5 * np.ones(n_joints)
         return offsets, rates
@@ -656,23 +662,23 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
                     2 * leg_i + side_i,
-                    sigma_shoulder/2
+                    sigma_shoulder / 2
                 ])
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
                     2 * leg_i + side_i,
-                    -sigma_shoulder/2
+                    -sigma_shoulder / 2
                 ])
                 # ====================upper shoulder 1============================
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=4, side=0),
                     2 * leg_i + side_i,
-                    sigma_shoulder/10
+                    sigma_shoulder / 10
                 ])
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=4, side=1),
                     2 * leg_i + side_i,
-                    -sigma_shoulder/10
+                    -sigma_shoulder / 10
                 ])
 
         return cls(np.array(connectivity, dtype=np.float64))
