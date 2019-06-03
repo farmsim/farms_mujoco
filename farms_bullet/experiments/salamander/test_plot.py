@@ -1,9 +1,11 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+from scipy import interpolate
 # from farms_bullet.experiments.salamander.animat_data import *
+
 from farms_bullet.experiments.salamander import animat_data
-from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
+from farms_bullet.experiments.salamander.animat_options import SalamanderOptions, SalamanderOscillatorFrequenciesOptions
 from farms_bullet.experiments.salamander.convention import bodyosc2index, legosc2index
 import importlib
 
@@ -67,8 +69,8 @@ M = G.reverse()
 colors = ['g'] * dim + ['r'] * 4
 nx.draw(M, with_labels=True, node_color=colors, node_size=500, pos=graph_pose)
 plt.axis('equal')
-plt.show()
-# plt.show(block=False)
+#plt.show()
+plt.show(block=False)
 
 
 print('------test indexing--------')
@@ -81,20 +83,51 @@ for leg_i in range(2):
         for i in np.arange(11, 16):
             print(legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1), i)
 
-for leg_i in range(2):
-    for side_i in range(2):
-        for i in range(11):  # [0, 1, 7, 8, 9, 10]
-            for side_leg in range(2):  # Muscle facing front/back
-                for lateral in range(2):
-                    walk_phase = (
-                        np.pi
-                        if i in [0, 1, 7, 8, 9, 10]
-                        else 0
-                    )
-                    print(
-                            walk_phase
-                            + np.pi * (side_i + 1)
-                            + lateral * np.pi
-                            + side_leg * np.pi
-                            + leg_i * np.pi
-                    )
+# for leg_i in range(2):
+#     for side_i in range(2):
+#         for i in range(11):  # [0, 1, 7, 8, 9, 10]
+#             for side_leg in range(2):  # Muscle facing front/back
+#                 for lateral in range(2):
+#                     walk_phase = (
+#                         np.pi
+#                         if i in [0, 1, 7, 8, 9, 10]
+#                         else 0
+#                     )
+#                     print(
+#                             walk_phase
+#                             + np.pi * (side_i + 1)
+#                             + lateral * np.pi
+#                             + side_leg * np.pi
+#                             + leg_i * np.pi
+#                     )
+
+leg_freqs = np.array([
+            [0, 0],
+            [1, 0],
+            [1, 0.5],
+            [3, 1.5],
+            [3, 0],
+            [6, 0]
+        ])
+
+body_freqs = np.array([
+            [0, 0],
+            [1, 0],
+            [1, 1.5],
+            [5, 4],
+            [5, 0],
+            [6, 0]
+        ])
+x = np.arange(0,6,0.01)
+f = interpolate.interp1d(leg_freqs[:,0],leg_freqs[:,1])
+f2 = interpolate.interp1d(body_freqs[:,0],body_freqs[:,1])
+plt.figure()
+plt.plot(x,f(x),color='darkblue',label='Beg frequency')
+plt.plot(x,f2(x),color='steelblue',label='Body frequency')
+plt.legend()
+plt.xlabel('Drive [-]')
+plt.ylabel('Frequency [Hz]')
+plt.grid()
+plt.show(block=False)
+plt.savefig('drive_func.pdf',bbox_inches='tight')
+
