@@ -2,8 +2,9 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 # from farms_bullet.experiments.salamander.animat_data import *
+
 from farms_bullet.experiments.salamander import animat_data
-from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
+from farms_bullet.experiments.salamander.animat_options import SalamanderOptions, SalamanderOscillatorFrequenciesOptions
 from farms_bullet.experiments.salamander.convention import bodyosc2index, legosc2index
 import importlib
 
