@@ -85,6 +85,11 @@ class SalamanderSimulation(Simulation):
         self.tic_rt[0] = time.time()
         # Interface
         if not self.options.headless:
+            if self.elements.animat.options.transition:
+                self.interface.user_params.drive_speed.value = (
+                    1+4*sim_step/self.options.n_iterations
+                )
+                self.interface.user_params.drive_speed.changed = True
             self.animat_interface()
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
