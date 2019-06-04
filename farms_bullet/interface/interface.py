@@ -38,19 +38,31 @@ class Interfaces:
             timestep=timestep
         )
 
-    def init_video(self, target_identity, timestep, size, **kwargs):
+    def init_video(self, target_identity, simulation_options, **kwargs):
         """Init video"""
         # Video recording
+        # self.video = CameraRecord(
+        #     target_identity=target_identity,
+        #     size=size,
+        #     fps=kwargs.pop("fps", 40),
+        #     yaw=kwargs.pop("yaw", 0),
+        #     yaw_speed=360/10 if kwargs.pop("rotating_camera", False) else 0,
+        #     pitch=-89 if kwargs.pop("top_camera", False) else -45,
+        #     distance=1,
+        #     timestep=timestep,
+        #     motion_filter=1e-1
+        # )
+        skips = kwargs.pop("skips", 1)
         self.video = CameraRecord(
             target_identity=target_identity,
-            size=size,
-            fps=kwargs.pop("fps", 40),
-            yaw=kwargs.pop("yaw", 0),
-            yaw_speed=360/10 if kwargs.pop("rotating_camera", False) else 0,
-            pitch=-89 if kwargs.pop("top_camera", False) else -45,
-            distance=1,
-            timestep=timestep,
-            motion_filter=1e-1
+            size=simulation_options.n_iterations,
+            timestep=simulation_options.timestep,
+            fps=1./(skips*simulation_options.timestep),
+            pitch=-30,
+            yaw=0,
+            skips=skips,
+            motion_filter=2*skips*simulation_options.timestep,
+            distance=1
         )
 
     def init_debug(self, animat_options):

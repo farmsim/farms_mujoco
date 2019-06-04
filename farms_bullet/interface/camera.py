@@ -81,37 +81,40 @@ class CameraRecord(CameraTarget):
         self.width = kwargs.pop("width", 640)
         self.height = kwargs.pop("height", 480)
         self.fps = fps
+        self.skips = kwargs.pop("skips", 1)
         self.data = np.zeros(
             [size, self.height, self.width, 4],
             dtype=np.uint8
         )
         self.iteration = 0
 
-    def record(self, sample):
+    def record(self, step):
         """Record camera"""
-        self.update_yaw()
-        self.update_target_pos()
-        self.data[sample, :, :] = pybullet.getCameraImage(
-            width=self.width,
-            height=self.height,
-            viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
-                cameraTargetPosition=self.target_pos,
-                distance=self.distance,
-                yaw=self.yaw,
-                pitch=self.pitch,
-                roll=0,
-                upAxisIndex=2
-            ),
-            projectionMatrix = pybullet.computeProjectionMatrixFOV(
-                fov=60,
-                aspect=640/480,
-                nearVal=0.1,
-                farVal=5
-            ),
-            renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
-            flags=pybullet.ER_NO_SEGMENTATION_MASK
-        )[2]
-        self.iteration += 1
+        if not step % self.skips:
+            sample = step//self.skips-1
+            self.update_yaw()
+            self.update_target_pos()
+            self.data[sample, :, :] = pybullet.getCameraImage(
+                width=self.width,
+                height=self.height,
+                viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
+                    cameraTargetPosition=self.target_pos,
+                    distance=self.distance,
+                    yaw=self.yaw,
+                    pitch=self.pitch,
+                    roll=0,
+                    upAxisIndex=2
+                ),
+                projectionMatrix = pybullet.computeProjectionMatrixFOV(
+                    fov=60,
+                    aspect=640/480,
+                    nearVal=0.1,
+                    farVal=5
+                ),
+                renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
+                flags=pybullet.ER_NO_SEGMENTATION_MASK
+            )[2]
+            self.iteration += 1
 
     def save(self, filename="video.avi"):
         """Save recording"""
