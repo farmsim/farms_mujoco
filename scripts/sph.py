@@ -143,7 +143,7 @@ class RigidFluidCoupling(Application):
         # print("Spacing: {} [mm]".format(self._spacing))
         # self.spacing = self._spacing * 1e-3  # [m]
         # self.dx = self.spacing
-        self.dx = 1e-2
+        self.dx = 2e-2
         self.hdx = 1.2
         self.ro = 1000
         self.solid_rho = 800
@@ -226,10 +226,10 @@ class RigidFluidCoupling(Application):
         yc = [None for _ in range(12)]
         zc = [None for _ in range(12)]
         for i in range(12):
-            xc[i], yc[i], zc[i] = mesh_to_particles(i, dx=self.dx)
+            xc[i], yc[i], zc[i] = mesh_to_particles(i, dx=self.dx/2)
             xc[i], yc[i], zc[i] = (
                 (
-                    (xc[i] + self.tank_size[0] - 1 + link_positions[i][0])
+                    (xc[i] + self.tank_size[0] - 1.1 + link_positions[i][0])
                     + d_dx_ratio * layers * self.dx
                 ),
                 (
@@ -237,7 +237,7 @@ class RigidFluidCoupling(Application):
                     + d_dx_ratio * layers * self.dx
                 ),
                 (
-                    (zc[i] +  + self.tank_size[2] + 0.05 + link_positions[i][2])
+                    (zc[i] +  + self.tank_size[2] + 0.03 + link_positions[i][2])
                     + d_dx_ratio * layers * self.dx
                 )
             )
@@ -319,7 +319,7 @@ class RigidFluidCoupling(Application):
         )
 
         # dt = 0.125 * self.dx * self.hdx / (self.co * 1.1) / 2.
-        dt = 1e-4
+        dt = 1e-3
         print("DT: %s" % dt)
         tf = 1  # 5
         solver = Solver(
@@ -344,6 +344,67 @@ class RigidFluidCoupling(Application):
                 real=False
             )
             for i in range(12)
+        ]
+        continuity = [
+            Group(
+                equations=[
+                    ContinuityEquation(
+                        dest='fluid',
+                        sources=['fluid', 'tank'] + ['cube_{}'.format(i) for i in range(12)]
+                    ),
+                    ContinuityEquation(
+                        dest='tank',
+                        sources=['tank', 'fluid'] + ['cube_{}'.format(i) for i in range(12)]
+                    )
+                ]
+            )
+        ]
+        tait = [
+            # Tait equation of state
+            Group(
+                equations=[
+                    TaitEOSHGCorrection(
+                        dest='fluid',
+                        sources=None,
+                        rho0=self.ro,
+                        c0=self.co,
+                        gamma=self.gamma
+                    ),
+                    TaitEOSHGCorrection(
+                        dest='tank',
+                        sources=None,
+                        rho0=self.ro,
+                        c0=self.co,
+                        gamma=self.gamma
+                    ),
+                ],
+                real=False
+            )
+        ]
+        fluid_motion = [
+            Group(
+                equations=[
+                    MomentumEquation(
+                        dest='fluid',
+                        sources=['fluid', 'tank'],
+                        alpha=self.alpha,
+                        beta=self.beta,
+                        c0=self.co,
+                        gz=-9.81
+                    )
+                ] + [
+                    AkinciRigidFluidCoupling(
+                        dest='fluid',
+                        sources=['cube_{}'.format(i)]
+                    )
+                    for i in range(12)
+                ] + [
+                    XSPHCorrection(
+                        dest='fluid',
+                        sources=['fluid', 'tank']
+                    ),
+                ]
+            )
         ]
         cube_moment = [
             Group(
@@ -379,63 +440,15 @@ class RigidFluidCoupling(Application):
             )
             for i in range(12)
         ]
-        equations = cube_gravity + cube_moment + cube_motion + cube_collisions + [
-            Group(
-                equations=[
-                    ContinuityEquation(
-                        dest='fluid',
-                        sources=['fluid', 'tank'] + ['cube_{}'.format(i) for i in range(12)]
-                    ),
-                    ContinuityEquation(
-                        dest='tank',
-                        sources=['tank', 'fluid'] + ['cube_{}'.format(i) for i in range(12)]
-                    )
-                ]
-            ),
-            # Tait equation of state
-            Group(
-                equations=[
-                    TaitEOSHGCorrection(
-                        dest='fluid',
-                        sources=None,
-                        rho0=self.ro,
-                        c0=self.co,
-                        gamma=self.gamma
-                    ),
-                    TaitEOSHGCorrection(
-                        dest='tank',
-                        sources=None,
-                        rho0=self.ro,
-                        c0=self.co,
-                        gamma=self.gamma
-                    ),
-                ],
-                real=False
-            ),
-            Group(
-                equations=[
-                    MomentumEquation(
-                        dest='fluid',
-                        sources=['fluid', 'tank'],
-                        alpha=self.alpha,
-                        beta=self.beta,
-                        c0=self.co,
-                        gz=-9.81
-                    )
-                ] + [
-                    AkinciRigidFluidCoupling(
-                        dest='fluid',
-                        sources=['cube_{}'.format(i)]
-                    )
-                    for i in range(12)
-                ] + [
-                    XSPHCorrection(
-                        dest='fluid',
-                        sources=['fluid', 'tank']
-                    ),
-                ]
-            )
-        ]
+        equations = (
+            cube_gravity
+            + continuity
+            + tait
+            + fluid_motion
+            + cube_moment
+            + cube_motion
+            + cube_collisions
+        )
         return equations
 
 
