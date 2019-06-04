@@ -41,9 +41,34 @@ def run_walking_demos():
         sim.end()
 
 
+def run_gaits_demos():
+    """Run salamander demos"""
+    animat_options = SalamanderOptions(
+        collect_gps=False,
+        show_hydrodynamics=True
+    )
+    simulation_options = SimulationOptions.with_clargs()
+    for drive in [0, 1.1, 2, 2.9, 3.1, 4, 4.9, 6]:
+        animat_options.control.drives.forward = drive
+        sim = SalamanderSimulation(
+            simulation_options=simulation_options,
+            animat_options=animat_options
+        )
+        sim.run()
+        sim.postprocess(
+            iteration=sim.iteration,
+            plot=simulation_options.plot,
+            log_path=simulation_options.log_path,
+            log_extension=simulation_options.log_extension,
+            record=sim.options.record and not sim.options.headless
+        )
+        sim.end()
+
+
 def main():
     """Main"""
-    run_walking_demos()
+    # run_walking_demos()
+    run_gaits_demos()
     plt.show()
 
 
