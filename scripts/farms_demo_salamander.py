@@ -2,7 +2,6 @@
 """Run salamander simulation with bullet"""
 
 import time
-import matplotlib.pyplot as plt
 from farms_bullet.arenas.arena import FlooredArena, ArenaRamp
 from farms_bullet.experiments.salamander.simulation import SalamanderSimulation
 from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
@@ -97,6 +96,8 @@ def run_transition_demo():
         transition=True
     )
     simulation_options = SimulationOptions.with_clargs()
+    simulation_options.duration = 20
+    simulation_options.timestep = 0.002
     sim = SalamanderSimulation(
         simulation_options=simulation_options,
         animat_options=animat_options

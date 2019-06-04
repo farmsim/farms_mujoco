@@ -13,7 +13,6 @@ class SimulationOptions(dict):
         super(SimulationOptions, self).__init__()
         self.timestep = kwargs.pop("timestep", 1e-3)
         self.duration = kwargs.pop("duration", 100)
-        self.n_iterations = int(self.duration / self.timestep)
         self.n_solver_iters = kwargs.pop("n_solver_iters", 50)
         self.free_camera = kwargs.pop("free_camera", False)
         self.rotating_camera = kwargs.pop("rotating_camera", False)
@@ -26,6 +25,11 @@ class SimulationOptions(dict):
         self.plot = kwargs.pop("plot", True)
         self.log_path = kwargs.pop("log_path", False)
         self.log_extension = kwargs.pop("log_extension", "npy")
+
+    @property
+    def n_iterations(self):
+        """Number of simulation iterations"""
+        return int(self.duration / self.timestep)
 
     @classmethod
     def with_clargs(cls, **kwargs):
