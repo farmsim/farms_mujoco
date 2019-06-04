@@ -58,8 +58,8 @@ class Interfaces:
         # User parameters
         self.user_params = UserParameters(animat_options)
 
-        # Debug info
-        test_debug_info()
+        # # Debug info
+        # test_debug_info()
 
 
 class DebugParameter:
