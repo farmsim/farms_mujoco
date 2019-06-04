@@ -13,7 +13,7 @@ class Camera:
         self.target = target_identity
         cam_info = self.get_camera()
         self.timestep = timestep
-        self.motion_filter = kwargs.pop("motion_filter", timestep)
+        self.motion_filter = kwargs.pop("motion_filter", 2*timestep)
         self.yaw = kwargs.pop("yaw", cam_info[8])
         self.yaw_speed = kwargs.pop("yaw_speed", 0)
         self.pitch = kwargs.pop("pitch", cam_info[9])
