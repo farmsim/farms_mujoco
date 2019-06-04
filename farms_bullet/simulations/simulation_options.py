@@ -19,6 +19,7 @@ class SimulationOptions(dict):
         self.top_camera = kwargs.pop("top_camera", False)
         self.fast = kwargs.pop("fast", False)
         self.record = kwargs.pop("record", False)
+        self.video_name = kwargs.pop("video_name", "video")
         self.headless = kwargs.pop("headless", False)
         self.frequency = kwargs.pop("frequency", 1)
         self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)

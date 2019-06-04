@@ -130,7 +130,9 @@ class Simulation:
         # Record video
         record = kwargs.pop("record", None)
         if record:
-            self.interface.video.save("video.avi")
+            self.interface.video.save(
+                "{}.avi".format(self.options.video_name)
+            )
 
     def end(self):
         """Terminate simulation"""

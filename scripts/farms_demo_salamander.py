@@ -15,14 +15,16 @@ def run_walking_demos():
         show_hydrodynamics=False
     )
     simulation_options = SimulationOptions.with_clargs()
-    for arena in [
-            FlooredArena(),
-            ArenaRamp(ramp_angle=10),
-            ArenaRamp(ramp_angle=20),
-            ArenaRamp(ramp_angle=40),
-            ArenaRamp(ramp_angle=-10),
-            ArenaRamp(ramp_angle=-40)
+    for arena_name, arena in [
+            ["arena_floor", FlooredArena()],
+            ["arena_ramp_p10", ArenaRamp(ramp_angle=10)],
+            ["arena_ramp_p20", ArenaRamp(ramp_angle=20)],
+            ["arena_ramp_p40", ArenaRamp(ramp_angle=40)],
+            ["arena_ramp_n10", ArenaRamp(ramp_angle=-10)],
+            ["arena_ramp_n20", ArenaRamp(ramp_angle=-20)],
+            ["arena_ramp_n40", ArenaRamp(ramp_angle=-40)]
     ]:
+        simulation_options.video_name = arena_name
         # animat_options.control.drives.forward = 4.9
         sim = SalamanderSimulation(
             simulation_options=simulation_options,
@@ -48,6 +50,9 @@ def run_swimming_demos():
     )
     simulation_options = SimulationOptions.with_clargs()
     for drive in [3.001, 3.5, 4, 4.5, 4.999]:
+        simulation_options.video_name = "swim_drive_{}".format(
+            str(drive).replace(".", "d")
+        )
         animat_options.control.drives.forward = drive
         sim = SalamanderSimulation(
             simulation_options=simulation_options,
@@ -72,6 +77,9 @@ def run_gaits_demos():
     )
     simulation_options = SimulationOptions.with_clargs()
     for drive in [0, 1.1, 2, 2.9, 3.1, 4, 4.9, 6]:
+        simulation_options.video_name = "gait_drive_{}".format(
+            str(drive).replace(".", "d")
+        )
         animat_options.control.drives.forward = drive
         sim = SalamanderSimulation(
             simulation_options=simulation_options,
@@ -98,6 +106,7 @@ def run_transition_demo():
     simulation_options = SimulationOptions.with_clargs()
     simulation_options.duration = 20
     simulation_options.timestep = 0.002
+    simulation_options.video_name = "gait_transition"
     sim = SalamanderSimulation(
         simulation_options=simulation_options,
         animat_options=animat_options
@@ -115,9 +124,9 @@ def run_transition_demo():
 
 def main():
     """Main"""
-    # run_walking_demos()
-    # run_swimming_demos()
-    # run_gaits_demos()
+    run_walking_demos()
+    run_swimming_demos()
+    run_gaits_demos()
     run_transition_demo()
 
 
