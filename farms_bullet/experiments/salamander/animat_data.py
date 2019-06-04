@@ -557,39 +557,32 @@ class SalamanderJointsArray(JointsArray):
         max_amp = 0.15
         low_sat = 1
         up_sat = 3
+        scaling_factor = max_amp / (up_sat - low_sat)
         if low_sat <= options.control.drives.forward <= up_sat:
             if low_sat <= options.control.drives.left <= up_sat:
-                if low_sat <= options.control.drives.left <= low_sat + max_amp:
-                    offsets[0:11] = -abs(options.control.drives.left - low_sat)
-                    offsets[19] = +abs(options.control.drives.left - low_sat)
-                    offsets[23] = -abs(options.control.drives.left - low_sat)
-                    offsets[11] = -abs(options.control.drives.left - low_sat)
-                    offsets[15] = +abs(options.control.drives.left - low_sat)
-                else:
-                    offsets[0:11] = -max_amp
-                    offsets[19] = -max_amp
-                    offsets[23] = max_amp
-                    offsets[11] = max_amp
-                    offsets[15] = -max_amp
+                offsets[0:11] = -scaling_factor * abs(options.control.drives.left - low_sat)
+                offsets[19] = -scaling_factor * abs(options.control.drives.left - low_sat)
+                offsets[23] = scaling_factor * abs(options.control.drives.left - low_sat)
+                offsets[11] = -scaling_factor * abs(options.control.drives.left - low_sat)
+                offsets[15] = +scaling_factor * abs(options.control.drives.left - low_sat)
 
             if low_sat <= options.control.drives.right <= up_sat:
-                if low_sat <= options.control.drives.right <= low_sat + max_amp:
-                    offsets[0:11] = abs(options.control.drives.right - low_sat)
-                    offsets[19] = abs(options.control.drives.right - low_sat)
-                    offsets[23] = -abs(options.control.drives.right - low_sat)
-                    offsets[11] = -abs(options.control.drives.right - low_sat)
-                    offsets[15] = abs(options.control.drives.right - low_sat)
-                else:
-                    offsets[0:11] = max_amp
-                    offsets[19] = max_amp
-                    offsets[23] = -max_amp
-                    offsets[11] = -max_amp
-                    offsets[15] = max_amp
+                offsets[0:11] = scaling_factor * abs(options.control.drives.right - low_sat)
+                offsets[19] = scaling_factor * abs(options.control.drives.right - low_sat)
+                offsets[23] = -scaling_factor * abs(options.control.drives.right - low_sat)
+                offsets[11] = scaling_factor * abs(options.control.drives.right - low_sat)
+                offsets[15] = -scaling_factor * abs(options.control.drives.right - low_sat)
+
 
         if options.control.drives.forward > up_sat:
             if low_sat <= options.control.drives.left <= up_sat:
                 for i in range(11):
                     offsets[i] = np.pi / 16
+
+
+            if low_sat <= options.control.drives.right <= up_sat:
+                for i in range(11):
+                    offsets[i] = -np.pi / 16
 
         rates = 5 * np.ones(n_joints)
         return offsets, rates
