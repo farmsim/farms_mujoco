@@ -137,8 +137,14 @@ class ArenaRamp:
                 size=ramp_dim,
                 mass=0,
                 parent=0,
-                frame_position=[-ground_dim[0] - np.cos(self.angle) * ramp_dim[0], 0,
-                                np.sin(self.angle) * ramp_dim[0]],
+                frame_position=[
+                    (
+                        - ground_dim[0]
+                        - np.cos(self.angle) * ramp_dim[0]
+                    ),
+                    0,
+                    np.sin(self.angle) * ramp_dim[0]
+                ],
                 frame_orientation=[0, self.angle, 0],
                 joint_axis=[0, 0, 1],
                 color=arena_color
@@ -148,8 +154,15 @@ class ArenaRamp:
                 size=ground_dim,
                 mass=0,
                 parent=1,
-                frame_position=[-ground_dim[0] - 2 * np.cos(self.angle) * ramp_dim[0] - upper_lower_dim[0], 0,
-                                2 * np.sin(self.angle) * ramp_dim[0]],
+                frame_position=[
+                    (
+                        - ground_dim[0]
+                        - 2 * np.cos(self.angle) * ramp_dim[0]
+                        - upper_lower_dim[0]
+                    ),
+                    0,
+                    2 * np.sin(self.angle) * ramp_dim[0]
+                ],
                 frame_orientation=[0, 0, 0],
                 joint_axis=[0, 0, 1],
                 color=arena_color
@@ -166,8 +179,14 @@ class ArenaRamp:
             linkVisualShapeIndices=[link.visual for link in links],
             linkPositions=[link.position for link in links],
             linkOrientations=[link.orientation for link in links],
-            linkInertialFramePositions=[link.inertial_position for link in links],
-            linkInertialFrameOrientations=[link.inertial_orientation for link in links],
+            linkInertialFramePositions=[
+                link.inertial_position
+                for link in links
+            ],
+            linkInertialFrameOrientations=[
+                link.inertial_orientation
+                for link in links
+            ],
             linkParentIndices=[link.parent for link in links],
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
