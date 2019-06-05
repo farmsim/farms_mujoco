@@ -1,5 +1,7 @@
 """Simulation"""
 
+import pickle
+
 import numpy as np
 import pybullet
 
@@ -126,6 +128,17 @@ class Simulation:
                 folder=log_path,
                 extension=log_extension
             )
+            print(self.options)
+            with open(log_path+"/simulation_options.pickle", "wb") as options:
+                pickle.dump(self.options, options)
+            with open(log_path+"/simulation_options.pickle", "rb") as options:
+                test = pickle.load(options)
+                print("Wrote simulation options:\n{}".format(test))
+            with open(log_path+"/animat_options.pickle", "wb") as options:
+                pickle.dump(self.elements.animat.options, options)
+            with open(log_path+"/animat_options.pickle", "rb") as options:
+                test = pickle.load(options)
+                print("Wrote animat options:\n{}".format(test))
 
         # Record video
         record = kwargs.pop("record", None)
