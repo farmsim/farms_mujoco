@@ -342,6 +342,10 @@ class Salamander(Animat):
             [
                 [i, self.links["link_body_{}".format(i)]]
                 for i in range(12)
+            ],
+            coefficients=[
+                self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
+                self.options.morphology.scale**6*np.array([-1e-2, -1e-2, -1e-2])
             ]
         )
 
