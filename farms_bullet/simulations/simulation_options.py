@@ -3,7 +3,23 @@
 from .parse_args import parse_args
 
 
-class SimulationOptions(dict):
+class Options(dict):
+    """Options"""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+    def __getstate__(self):
+        """Get state"""
+        return self
+
+    def __setstate__(self, value):
+        """Get state"""
+        for item in value:
+            self[item] = value[item]
+
+
+class SimulationOptions(Options):
     """Simulation options"""
 
     __getattr__ = dict.__getitem__
