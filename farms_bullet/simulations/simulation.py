@@ -86,7 +86,12 @@ class Simulation:
             numSolverIterations=self.options.n_solver_iters,
             erp=0,
             contactERP=0,
-            frictionERP=0
+            frictionERP=0,
+            # solverResidualThreshold=1e-12,
+            # restitutionVelocityThreshold=1e-3,
+            # useSplitImpulse=False,
+            # splitImpulsePenetrationThreshold=1e-5,
+            # contactBreakingThreshold=1e-5
         )
         print("Physics parameters:\n{}".format(
             pybullet.getPhysicsEngineParameters()
