@@ -34,7 +34,7 @@ class Salamander(Animat):
         super(Salamander, self).__init__(options=options)
         self.timestep = timestep
         self.n_iterations = iterations
-        self.scale = 1.0
+        self.scale = options.morphology.scale
         self.feet_names = [
             "link_leg_0_L_3",
             "link_leg_0_R_3",
@@ -342,6 +342,10 @@ class Salamander(Animat):
             [
                 [i, self.links["link_body_{}".format(i)]]
                 for i in range(12)
+            ],
+            coefficients=[
+                self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
+                self.options.morphology.scale**6*np.array([-1e-2, -1e-2, -1e-2])
             ]
         )
 
