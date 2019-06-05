@@ -349,8 +349,8 @@ class Salamander(Animat):
             self.hydrodynamics[i] = pybullet.addUserDebugLine(
                 lineFromXYZ=[0, 0, 0],
                 lineToXYZ=force,
-                lineColorRGB=[0, 0, 0],
-                lineWidth=3,
+                lineColorRGB=[0, 0, 1],
+                lineWidth=7,
                 parentObjectUniqueId=self.identity,
                 parentLinkIndex=i-1,
                 replaceItemUniqueId=line

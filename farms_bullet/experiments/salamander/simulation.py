@@ -17,7 +17,7 @@ from .animat_options import SalamanderOptions
 class SalamanderSimulation(Simulation):
     """Salamander simulation"""
 
-    def __init__(self, simulation_options, animat_options):
+    def __init__(self, simulation_options, animat_options, **kwargs):
         super(SalamanderSimulation, self).__init__(
             elements=SimulationElements(
                 animat=Salamander(
@@ -25,7 +25,7 @@ class SalamanderSimulation(Simulation):
                     simulation_options.timestep,
                     simulation_options.n_iterations
                 ),
-                arena=FlooredArena()
+                arena=kwargs.pop("arena", FlooredArena())
             ),
             options=simulation_options
         )
@@ -41,11 +41,18 @@ class SalamanderSimulation(Simulation):
                 top_camera=self.options.top_camera
             )
             self.interface.init_debug(animat_options=self.elements.animat.options)
+
         if self.options.record and not self.options.headless:
+            skips = int(2e-2/simulation_options.timestep)  # 50 fps
             self.interface.init_video(
                 target_identity=self.elements.animat.identity,
-                timestep=self.options.timestep*25,
-                size=self.options.n_iterations//25,
+                simulation_options=simulation_options,
+                fps=1./(skips*simulation_options.timestep),
+                pitch=-45,
+                yaw=0,
+                skips=skips,
+                motion_filter=2*skips*simulation_options.timestep,
+                distance=1,
                 rotating_camera=self.options.rotating_camera,
                 top_camera=self.options.top_camera
             )
@@ -78,6 +85,11 @@ class SalamanderSimulation(Simulation):
         self.tic_rt[0] = time.time()
         # Interface
         if not self.options.headless:
+            if self.elements.animat.options.transition:
+                self.interface.user_params.drive_speed.value = (
+                    1+4*sim_step/self.options.n_iterations
+                )
+                self.interface.user_params.drive_speed.changed = True
             self.animat_interface()
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
@@ -95,14 +107,10 @@ class SalamanderSimulation(Simulation):
             sim_step += 1
             # Camera
             if not self.options.headless:
-                if self.options.record and not sim_step % 25:
-                    self.elements.camera_record.record(sim_step//25-1)
+                if self.options.record:
+                    self.interface.video.record(sim_step)
                 # User camera
-                if (
-                        not sim_step % self.interface.camera_skips
-                        and not self.options.free_camera
-                ):
-                    self.interface.camera.update()
+                self.interface.camera.update()
             # Real-time
             self.tic_rt[1] = time.time()
             if (

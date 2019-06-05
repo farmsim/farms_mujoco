@@ -28,6 +28,10 @@ class SalamanderOptions(dict):
             "show_hydrodynamics",
             False
         )
+        self.transition = kwargs.pop(
+            "transition",
+            False
+        )
         if kwargs:
             raise Exception("Unknown kwargs: {}".format(kwargs))
 

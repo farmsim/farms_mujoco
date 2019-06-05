@@ -73,22 +73,34 @@ class AnimatLink(dict):
                 self.inertial_orientation
             )
         self.parent = kwargs.pop("parent", None)
+        collision_options = kwargs.pop("collision_options", {})
         self.collision = pybullet.createCollisionShape(
             shapeType=self.geometry,
             collisionFramePosition=self.frame_position,
             collisionFrameOrientation=self.frame_orientation,
-            **additional_kwargs
+            **additional_kwargs,
+            **collision_options
         )
         color = kwargs.pop("color", None)
         if "height" in additional_kwargs:
             additional_kwargs["length"] = additional_kwargs.pop("height")
-        self.visual = -1 if color is None else pybullet.createVisualShape(
-            shapeType=self.geometry,
-            visualFramePosition=self.frame_position,
-            visualFrameOrientation=self.frame_orientation,
-            rgbaColor=color,
-            **additional_kwargs
+        visual_options = kwargs.pop("visual_options", {})
+        if visual_options:
+            if color is None:
+                color = [1, 1, 1, 1]
+        self.visual = (
+            -1
+            if color is None
+            else pybullet.createVisualShape(
+                shapeType=self.geometry,
+                visualFramePosition=self.frame_position,
+                visualFrameOrientation=self.frame_orientation,
+                rgbaColor=color,
+                **additional_kwargs,
+                **visual_options
+            )
         )
+        print(self.visual)
 
         # Joint
         self.joint_type = kwargs.pop("joint_type", pybullet.JOINT_REVOLUTE)

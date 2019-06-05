@@ -64,6 +64,9 @@ class Simulation:
         self.simulation_state = None
         self.logger = NotImplemented
 
+        # Interface
+        self.interface = None
+
         rendering(1)
 
     def save(self):
@@ -127,7 +130,9 @@ class Simulation:
         # Record video
         record = kwargs.pop("record", None)
         if record:
-            self.camera_record.save("video.avi")
+            self.interface.video.save(
+                "{}.avi".format(self.options.video_name)
+            )
 
     def end(self):
         """Terminate simulation"""
