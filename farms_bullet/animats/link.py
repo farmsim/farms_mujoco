@@ -29,7 +29,12 @@ class AnimatLink(dict):
         if self.filename is not None:
             additional_kwargs["fileName"] = self.filename
             if self.mass is None:
-                self.volume = tri.load_mesh(self.filename).volume
+                scale = kwargs.pop("scale", 1.0)
+                additional_kwargs["meshScale"] = scale
+                self.volume = (
+                    scale[0]*scale[1]*scale[2]
+                    *tri.load_mesh(self.filename).volume
+                )
                 self.mass = self.density*self.volume
         self.geometry = kwargs.pop("geometry", pybullet.GEOM_BOX)
         if self.mass is None:

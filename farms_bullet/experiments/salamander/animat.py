@@ -34,6 +34,7 @@ class Salamander(Animat):
         super(Salamander, self).__init__(options=options)
         self.timestep = timestep
         self.n_iterations = iterations
+        self.scale = 1.0
         self.feet_names = [
             "link_leg_0_L_3",
             "link_leg_0_R_3",
@@ -74,7 +75,7 @@ class Salamander(Animat):
                 os.path.dirname(os.path.realpath(__file__))
             )
         )
-        body_link_positions = np.diff(
+        body_link_positions = self.scale*np.diff(
             [  # From SDF
                 [0, 0, 0],
                 [0.200000003, 0, 0.0069946074],
@@ -98,7 +99,8 @@ class Salamander(Animat):
             filename="{}/salamander_body_0.obj".format(meshes_directory),
             position=body_link_positions[0],
             joint_axis=[0, 0, 1],
-            color=body_color
+            color=body_color,
+            scale=[self.scale, self.scale, self.scale]
         )
         links = [
             AnimatLink(
@@ -110,12 +112,13 @@ class Salamander(Animat):
                 position=body_link_positions[i+1],
                 parent=i,
                 joint_axis=[0, 0, 1],
-                color=body_color
+                color=body_color,
+                scale=[self.scale, self.scale, self.scale]
             )
             for i in range(11)
         ] + [None for i in range(4) for j in range(4)]
-        leg_length = 0.03
-        leg_radius = 0.015
+        leg_length = self.scale*0.03
+        leg_radius = self.scale*0.015
         for leg_i in [1, 0]:
             for side in range(2):
                 sign = 1 if side else -1
