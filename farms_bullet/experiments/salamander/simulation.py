@@ -48,7 +48,7 @@ class SalamanderSimulation(Simulation):
                 target_identity=self.elements.animat.identity,
                 simulation_options=simulation_options,
                 fps=1./(skips*simulation_options.timestep),
-                pitch=-30,
+                pitch=-45,
                 yaw=0,
                 skips=skips,
                 motion_filter=2*skips*simulation_options.timestep,

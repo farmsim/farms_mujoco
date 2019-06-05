@@ -58,8 +58,8 @@ class Interfaces:
             size=simulation_options.n_iterations,
             timestep=simulation_options.timestep,
             fps=1./(skips*simulation_options.timestep),
-            pitch=-30,
-            yaw=0,
+            pitch=kwargs.pop("pitch", -45),
+            yaw=kwargs.pop("yaw", 0),
             skips=skips,
             motion_filter=2*skips*simulation_options.timestep,
             distance=1
