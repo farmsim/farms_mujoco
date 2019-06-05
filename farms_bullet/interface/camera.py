@@ -78,8 +78,8 @@ class CameraRecord(CameraTarget):
 
     def __init__(self, target_identity, size, fps, **kwargs):
         super(CameraRecord, self).__init__(target_identity, **kwargs)
-        self.width = kwargs.pop("width", 640)
-        self.height = kwargs.pop("height", 480)
+        self.width = kwargs.pop("width", 1280)
+        self.height = kwargs.pop("height", 720)
         self.fps = fps
         self.skips = kwargs.pop("skips", 1)
         self.data = np.zeros(
@@ -107,7 +107,7 @@ class CameraRecord(CameraTarget):
                 ),
                 projectionMatrix = pybullet.computeProjectionMatrixFOV(
                     fov=60,
-                    aspect=640/480,
+                    aspect=self.width/self.height,
                     nearVal=0.1,
                     farVal=5
                 ),
