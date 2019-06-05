@@ -40,6 +40,7 @@ class SalamanderMorphologyOptions(Options):
 
     def __init__(self, **kwargs):
         super(SalamanderMorphologyOptions, self).__init__()
+        self.scale = kwargs.pop("scale", 1.0)
         self.n_joints_body = kwargs.pop("n_joints_body", 11)
         self.n_dof_legs = kwargs.pop("n_dof_legs", 4)
         self.n_legs = kwargs.pop("n_legs", 4)
