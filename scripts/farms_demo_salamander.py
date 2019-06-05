@@ -8,6 +8,34 @@ from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
 
+def run_timestep_demos():
+    """Run salamander demos"""
+    animat_options = SalamanderOptions(
+        collect_gps=False,
+        show_hydrodynamics=False
+    )
+    simulation_options = SimulationOptions.with_clargs()
+    for timestep in [0.001, 0.01]:
+        simulation_options.timestep = timestep
+        simulation_options.video_name = "walking_timestep_{}".format(
+            str(timestep).replace(".", "d")
+        )
+        # animat_options.control.drives.forward = 4.9
+        sim = SalamanderSimulation(
+            simulation_options=simulation_options,
+            animat_options=animat_options
+        )
+        sim.run()
+        sim.postprocess(
+            iteration=sim.iteration,
+            plot=simulation_options.plot,
+            log_path=simulation_options.log_path,
+            log_extension=simulation_options.log_extension,
+            record=sim.options.record and not sim.options.headless
+        )
+        sim.end()
+
+
 def run_walking_demos():
     """Run salamander demos"""
     animat_options = SalamanderOptions(
@@ -124,6 +152,7 @@ def run_transition_demo():
 
 def main():
     """Main"""
+    run_timestep_demos()
     run_walking_demos()
     run_swimming_demos()
     run_gaits_demos()
