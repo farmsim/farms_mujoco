@@ -1,5 +1,7 @@
 """Simulation"""
 
+import pickle
+
 import numpy as np
 import pybullet
 
@@ -64,6 +66,9 @@ class Simulation:
         self.simulation_state = None
         self.logger = NotImplemented
 
+        # Interface
+        self.interface = None
+
         rendering(1)
 
     def save(self):
@@ -81,7 +86,12 @@ class Simulation:
             numSolverIterations=self.options.n_solver_iters,
             erp=0,
             contactERP=0,
-            frictionERP=0
+            frictionERP=0,
+            # solverResidualThreshold=1e-12,
+            # restitutionVelocityThreshold=1e-3,
+            # useSplitImpulse=False,
+            # splitImpulsePenetrationThreshold=1e-5,
+            # contactBreakingThreshold=1e-5
         )
         print("Physics parameters:\n{}".format(
             pybullet.getPhysicsEngineParameters()
@@ -123,11 +133,24 @@ class Simulation:
                 folder=log_path,
                 extension=log_extension
             )
+            print(self.options)
+            with open(log_path+"/simulation_options.pickle", "wb") as options:
+                pickle.dump(self.options, options)
+            with open(log_path+"/simulation_options.pickle", "rb") as options:
+                test = pickle.load(options)
+                print("Wrote simulation options:\n{}".format(test))
+            with open(log_path+"/animat_options.pickle", "wb") as options:
+                pickle.dump(self.elements.animat.options, options)
+            with open(log_path+"/animat_options.pickle", "rb") as options:
+                test = pickle.load(options)
+                print("Wrote animat options:\n{}".format(test))
 
         # Record video
         record = kwargs.pop("record", None)
         if record:
-            self.camera_record.save("video.avi")
+            self.interface.video.save(
+                "{}.avi".format(self.options.video_name)
+            )
 
     def end(self):
         """Terminate simulation"""

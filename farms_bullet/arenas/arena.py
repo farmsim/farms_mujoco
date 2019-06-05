@@ -1,12 +1,13 @@
 """Arena"""
 
-from .create import create_scene
-from ..simulations.element import SimulationElement
+import os
+
 import numpy as np
 import pybullet
-import os
-from farms_bullet.experiments.salamander.animat import AnimatLink
-import pdb
+
+from .create import create_scene
+from ..simulations.element import SimulationElement
+from ..animats.link import AnimatLink
 
 
 class Floor(SimulationElement):
@@ -14,6 +15,46 @@ class Floor(SimulationElement):
 
     def __init__(self, position):
         super(Floor, self).__init__()
+        self._position = np.array(position)
+
+    def spawn(self):
+        """Spawn floor"""
+        size = 0.5*np.array([10, 10, 10])
+        base_link = AnimatLink(
+            geometry=pybullet.GEOM_BOX,
+            size=size,
+            inertial_position=[0, 0, 0],
+            position=[0, 0, 0],
+            joint_axis=[0, 0, 1],
+            mass=0,
+            color=[1, 0, 0, 1],
+            # collision_options=collision_options,
+            # visual_options=visual_options
+        )
+        self._identity = pybullet.createMultiBody(
+            baseMass=base_link.mass,
+            baseCollisionShapeIndex=base_link.collision,
+            baseVisualShapeIndex=base_link.visual,
+            basePosition=self._position-np.array([0, 0, size[2]]),
+            baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
+            baseInertialFramePosition=base_link.inertial_position,
+            baseInertialFrameOrientation=base_link.inertial_orientation
+        )
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        texUid = pybullet.loadTexture(dir_path+"/BIOROB.jpg")
+        pybullet.changeVisualShape(
+            self._identity, -1,
+            textureUniqueId=texUid,
+            # rgbaColor=[1, 1, 1, 1],
+            # specularColor=[1, 1, 1]
+        )
+
+
+class FloorURDF(SimulationElement):
+    """Floor"""
+
+    def __init__(self, position):
+        super(FloorURDF, self).__init__()
         self._position = position
 
     def spawn(self):
@@ -21,6 +62,14 @@ class Floor(SimulationElement):
         self._identity = self.from_urdf(
             "plane.urdf",
             basePosition=self._position
+        )
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        texUid = pybullet.loadTexture(dir_path+"/BIOROB.jpg")
+        pybullet.changeVisualShape(
+            self._identity, -1,
+            textureUniqueId=texUid,
+            rgbaColor=[1, 1, 1, 1],
+            specularColor=[1, 1, 1]
         )
 
 
@@ -42,7 +91,7 @@ class FlooredArena(Arena):
 
     def __init__(self, position=None):
         super(FlooredArena, self).__init__(
-            [Floor(position if position is not None else [0, 0, -0.1])]
+            [FloorURDF(position if position is not None else [0, 0, -0.1])]
         )
 
     @property
@@ -88,8 +137,14 @@ class ArenaRamp:
                 size=ramp_dim,
                 mass=0,
                 parent=0,
-                frame_position=[-ground_dim[0] - np.cos(self.angle) * ramp_dim[0], 0,
-                                np.sin(self.angle) * ramp_dim[0]],
+                frame_position=[
+                    (
+                        - ground_dim[0]
+                        - np.cos(self.angle) * ramp_dim[0]
+                    ),
+                    0,
+                    np.sin(self.angle) * ramp_dim[0]
+                ],
                 frame_orientation=[0, self.angle, 0],
                 joint_axis=[0, 0, 1],
                 color=arena_color
@@ -99,8 +154,15 @@ class ArenaRamp:
                 size=ground_dim,
                 mass=0,
                 parent=1,
-                frame_position=[-ground_dim[0] - 2 * np.cos(self.angle) * ramp_dim[0] - upper_lower_dim[0], 0,
-                                2 * np.sin(self.angle) * ramp_dim[0]],
+                frame_position=[
+                    (
+                        - ground_dim[0]
+                        - 2 * np.cos(self.angle) * ramp_dim[0]
+                        - upper_lower_dim[0]
+                    ),
+                    0,
+                    2 * np.sin(self.angle) * ramp_dim[0]
+                ],
                 frame_orientation=[0, 0, 0],
                 joint_axis=[0, 0, 1],
                 color=arena_color
@@ -117,8 +179,14 @@ class ArenaRamp:
             linkVisualShapeIndices=[link.visual for link in links],
             linkPositions=[link.position for link in links],
             linkOrientations=[link.orientation for link in links],
-            linkInertialFramePositions=[link.inertial_position for link in links],
-            linkInertialFrameOrientations=[link.inertial_orientation for link in links],
+            linkInertialFramePositions=[
+                link.inertial_position
+                for link in links
+            ],
+            linkInertialFrameOrientations=[
+                link.inertial_orientation
+                for link in links
+            ],
             linkParentIndices=[link.parent for link in links],
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
