@@ -35,7 +35,11 @@ class SalamanderSimulation(Simulation):
         self.interface = Interfaces(int(10*1e-3/simulation_options.timestep))
         if not self.options.headless:
             self.interface.init_camera(
-                target_identity=self.elements.animat.identity,
+                target_identity=(
+                    self.elements.animat.identity
+                    if not self.options.free_camera
+                    else None
+                ),
                 timestep=self.options.timestep,
                 rotating_camera=self.options.rotating_camera,
                 top_camera=self.options.top_camera
