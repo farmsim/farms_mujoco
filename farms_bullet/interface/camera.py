@@ -64,7 +64,8 @@ class UserCamera(CameraTarget):
         if use_camera:
             self.yaw, self.pitch, self.distance = self.get_camera()[8:11]
         self.update_yaw()
-        self.update_target_pos()
+        if self.target is not None:
+            self.update_target_pos()
         pybullet.resetDebugVisualizerCamera(
             cameraDistance=self.distance,
             cameraYaw=self.yaw,
