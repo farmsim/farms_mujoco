@@ -13,11 +13,11 @@ class SalamanderOptions(Options):
         super(SalamanderOptions, self).__init__()
         self.morphology = kwargs.pop(
             "morphology",
-            SalamanderMorphologyOptions()
+            SalamanderMorphologyOptions(kwargs)
         )
         self.control = kwargs.pop(
             "control",
-            SalamanderControlOptions()
+            SalamanderControlOptions(**kwargs)
         )
         self.collect_gps = kwargs.pop(
             "collect_gps",
@@ -38,12 +38,12 @@ class SalamanderOptions(Options):
 class SalamanderMorphologyOptions(Options):
     """Salamander morphology options"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, options):
         super(SalamanderMorphologyOptions, self).__init__()
-        self.scale = kwargs.pop("scale", 1.0)
-        self.n_joints_body = kwargs.pop("n_joints_body", 11)
-        self.n_dof_legs = kwargs.pop("n_dof_legs", 4)
-        self.n_legs = kwargs.pop("n_legs", 4)
+        self.scale = options.pop("scale", 1.0)
+        self.n_joints_body = options.pop("n_joints_body", 11)
+        self.n_dof_legs = options.pop("n_dof_legs", 4)
+        self.n_legs = options.pop("n_legs", 4)
 
     def n_joints(self):
         """Number of joints"""
@@ -359,5 +359,5 @@ class SalamanderJointsOptions(Options):
             for joint_i in range(4)
         ]
         self.body_joints_offsets = (
-            SalamanderOscillatorJointsOptions.body_joints_offsets(**kwargs)
+            SalamanderOscillatorJointsOptions.body_joints_offsets()
         )

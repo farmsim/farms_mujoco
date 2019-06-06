@@ -20,6 +20,7 @@ class AnimatLink(dict):
         self.mass = kwargs.pop("mass", None)
         self.volume = kwargs.pop("volume", None)
         self.density = kwargs.pop("density", 1000)
+        self.scale = np.array(kwargs.pop("scale", [1.0, 1.0, 1.0]))
         if self.size is not None:
             additional_kwargs["halfExtents"] = self.size
         if self.radius is not None:
@@ -29,10 +30,9 @@ class AnimatLink(dict):
         if self.filename is not None:
             additional_kwargs["fileName"] = self.filename
             if self.mass is None:
-                scale = kwargs.pop("scale", 1.0)
-                additional_kwargs["meshScale"] = scale
+                additional_kwargs["meshScale"] = self.scale
                 self.volume = (
-                    scale[0]*scale[1]*scale[2]
+                    self.scale[0]*self.scale[1]*self.scale[2]
                     *tri.load_mesh(self.filename).volume
                 )
                 self.mass = self.density*self.volume
@@ -65,7 +65,9 @@ class AnimatLink(dict):
         )
         if self.inertial_position is None:
             self.inertial_position = (
-                self.frame_position + tri.load_mesh(self.filename).center_mass
+                self.frame_position + (
+                    self.scale*tri.load_mesh(self.filename).center_mass
+                )
                 if self.geometry is pybullet.GEOM_MESH
                 else self.frame_position
             )
