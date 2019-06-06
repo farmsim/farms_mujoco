@@ -41,7 +41,7 @@ class Floor(SimulationElement):
             baseInertialFrameOrientation=base_link.inertial_orientation
         )
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        texUid = pybullet.loadTexture(dir_path+"/BIOROB.jpg")
+        texUid = pybullet.loadTexture(dir_path+"/BIOROB2.jpg")
         pybullet.changeVisualShape(
             self._identity, -1,
             textureUniqueId=texUid,
@@ -64,7 +64,7 @@ class FloorURDF(SimulationElement):
             basePosition=self._position
         )
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        texUid = pybullet.loadTexture(dir_path+"/BIOROB.jpg")
+        texUid = pybullet.loadTexture(dir_path+"/BIOROB2.jpg")
         pybullet.changeVisualShape(
             self._identity, -1,
             textureUniqueId=texUid,
