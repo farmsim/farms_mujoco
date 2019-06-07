@@ -129,6 +129,11 @@ class SalamanderSimulation(Simulation):
 
     def animat_interface(self):
         """Animat interface"""
+        # Camera zoom
+        if self.interface.user_params.zoom.changed:
+            self.interface.camera.set_zoom(
+                self.interface.user_params.zoom.value
+            )
         # Body offset
         if self.interface.user_params.body_offset.changed:
             self.elements.animat.data.joints.set_body_offset(
