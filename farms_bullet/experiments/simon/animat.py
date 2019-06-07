@@ -4,16 +4,22 @@ import numpy as np
 import pybullet
 from ...animats.animat import Animat
 from ...animats.link import AnimatLink
+from .animat_data import SimonData
 
 
 class SimonAnimat(Animat):
     """Documentation for SimonAnimat"""
 
     def __init__(self, options, timestep, n_iterations):
-        super(SimonAnimat, self).__init__(options)
+        super(SimonAnimat, self).__init__(None, options)
         self.timestep = timestep
         self.n_iterations = n_iterations
         self.sensors = None
+        self.data = SimonData.from_options(
+            state=None,
+            options=self.options,
+            n_iterations=n_iterations
+        )
 
     def spawn(self):
         """Spawn"""
@@ -95,11 +101,11 @@ class SimonAnimat(Animat):
             pybullet.changeDynamics(
                 self.identity,
                 joint,
-                lateralFriction=1e3,
-                spinningFriction=1e-3,
-                rollingFriction=1e-3,
-                linearDamping=1e-3,
-                jointDamping=1e-3
+                lateralFriction=0.1,
+                spinningFriction=0,
+                rollingFriction=0,
+                linearDamping=0,
+                jointDamping=0
             )
         print("Number of joints: {}".format(n_joints))
         for joint in range(n_joints):
@@ -136,4 +142,6 @@ class SimonAnimat(Animat):
 
         pybullet.getNumJoints(self.identity)
         for i in range(pybullet.getNumJoints(self.identity)):
-            print(pybullet.getJointInfo(self.identity, i))
+            print("Joint information: {}".format(
+                pybullet.getJointInfo(self.identity, i)
+            ))
