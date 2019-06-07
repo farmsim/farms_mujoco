@@ -3,22 +3,21 @@
 import numpy as np
 from scipy import interpolate
 
+from ...simulations.simulation_options import Options
 
-class SalamanderOptions(dict):
+
+class SalamanderOptions(Options):
     """Simulation options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SalamanderOptions, self).__init__()
         self.morphology = kwargs.pop(
             "morphology",
-            SalamanderMorphologyOptions()
+            SalamanderMorphologyOptions(kwargs)
         )
         self.control = kwargs.pop(
             "control",
-            SalamanderControlOptions()
+            SalamanderControlOptions(**kwargs)
         )
         self.collect_gps = kwargs.pop(
             "collect_gps",
@@ -28,21 +27,23 @@ class SalamanderOptions(dict):
             "show_hydrodynamics",
             False
         )
+        self.transition = kwargs.pop(
+            "transition",
+            False
+        )
         if kwargs:
             raise Exception("Unknown kwargs: {}".format(kwargs))
 
 
-class SalamanderMorphologyOptions(dict):
+class SalamanderMorphologyOptions(Options):
     """Salamander morphology options"""
 
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-
-    def __init__(self, **kwargs):
+    def __init__(self, options):
         super(SalamanderMorphologyOptions, self).__init__()
-        self.n_joints_body = kwargs.pop("n_joints_body", 11)
-        self.n_dof_legs = kwargs.pop("n_dof_legs", 4)
-        self.n_legs = kwargs.pop("n_legs", 4)
+        self.scale = options.pop("scale", 1.0)
+        self.n_joints_body = options.pop("n_joints_body", 11)
+        self.n_dof_legs = options.pop("n_dof_legs", 4)
+        self.n_legs = options.pop("n_legs", 4)
 
     def n_joints(self):
         """Number of joints"""
@@ -61,11 +62,8 @@ class SalamanderMorphologyOptions(dict):
         return self.n_links_body() + self.n_joints_legs()
 
 
-class SalamanderControlOptions(dict):
+class SalamanderControlOptions(Options):
     """Salamander control options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SalamanderControlOptions, self).__init__()
@@ -129,7 +127,7 @@ class SalamanderControlOptions(dict):
         ) = vector
 
 
-class SalamanderDrives(dict):
+class SalamanderDrives(Options):
     """Salamander drives"""
 
     def __init__(self, **kwargs):
@@ -139,11 +137,8 @@ class SalamanderDrives(dict):
         self.right = kwargs.pop("drive_right", 0)
 
 
-class SalamanderJointsControllers(dict):
+class SalamanderJointsControllers(Options):
     """Salamander joints controllers"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SalamanderJointsControllers, self).__init__()
@@ -155,11 +150,8 @@ class SalamanderJointsControllers(dict):
         self.legs_f = kwargs.pop("legs_f", 1e1)
 
 
-class SalamanderNetworkOptions(dict):
+class SalamanderNetworkOptions(Options):
     """Salamander network options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SalamanderNetworkOptions, self).__init__()
@@ -181,11 +173,8 @@ class SalamanderNetworkOptions(dict):
         )
 
 
-class DriveDependentProperty(dict):
+class DriveDependentProperty(Options):
     """Drive dependent property"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, data):
         super(DriveDependentProperty, self).__init__()
@@ -199,9 +188,6 @@ class DriveDependentProperty(dict):
 
 class SalamanderOscillatorFrequenciesOptions(DriveDependentProperty):
     """Salamander oscillator frequencies options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     @classmethod
     def legs_freqs(cls):
@@ -287,9 +273,6 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
 class SalamanderOscillatorJointsOptions(DriveDependentProperty):
     """Salamander drive dependent properties"""
 
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-
     @classmethod
     def legs_joints_offsets(cls, joint_i, **kwargs):
         """Legs joints offsets"""
@@ -319,15 +302,12 @@ class SalamanderOscillatorJointsOptions(DriveDependentProperty):
         ])
 
 
-class SalamanderOscillatorOptions(dict):
+class SalamanderOscillatorOptions(Options):
     """Salamander oscillator options
 
     Includes frequencies, amplitudes rates and nominal amplitudes
 
     """
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SalamanderOscillatorOptions, self).__init__()
@@ -356,22 +336,16 @@ class SalamanderOscillatorOptions(dict):
         ]
 
 
-class SalamanderConnectivityOptions(dict):
+class SalamanderConnectivityOptions(Options):
     """Salamander connectivity options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SalamanderConnectivityOptions, self).__init__()
         self.body_phase_bias = kwargs.pop("body_phase_bias", 2*np.pi/11)
 
 
-class SalamanderJointsOptions(dict):
+class SalamanderJointsOptions(Options):
     """Salamander joints options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SalamanderJointsOptions, self).__init__()
@@ -385,5 +359,5 @@ class SalamanderJointsOptions(dict):
             for joint_i in range(4)
         ]
         self.body_joints_offsets = (
-            SalamanderOscillatorJointsOptions.body_joints_offsets(**kwargs)
+            SalamanderOscillatorJointsOptions.body_joints_offsets()
         )

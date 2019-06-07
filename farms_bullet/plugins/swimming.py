@@ -4,11 +4,20 @@ import numpy as np
 import pybullet
 
 
-def viscous_swimming(iteration, data_gps, data_hydrodynamics, model, links):
+def viscous_swimming(
+        iteration,
+        data_gps,
+        data_hydrodynamics,
+        model,
+        links,
+        **kwargs
+):
     """Viscous swimming"""
     # Swimming
-    force_coefficients = np.array([-1e-1, -1e0, -1e0])
-    torque_coefficients = np.array([-1e-2, -1e-2, -1e-2])
+    force_coefficients, torque_coefficients = kwargs.pop(
+        "coefficients",
+        [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
+    )
     for link_i, link in links:
         ori, lin_velocity, ang_velocity = (
             data_gps[iteration, link_i, 3:7],
