@@ -7,15 +7,17 @@ import pybullet
 from ...simulations.simulation import Simulation, SimulationElements
 # from ..experiments.simon import SimonExperiment
 from ...simulations.simulation_options import SimulationOptions
-from .animat import SimonAnimat
 from ...arenas.arena import FlooredArena
 from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
-    ContactSensor,
-    LinkStateSensor
+    ContactsSensors,
+    LinksStatesSensor
 )
 from ...sensors.logging import SensorsLogger
+
+from .animat import SimonAnimat
+from .animat_options import SimonOptions
 
 
 class SimonSimulation(Simulation):
@@ -63,18 +65,25 @@ class SimonSimulation(Simulation):
         n_joints = pybullet.getNumJoints(self.elements.animat.identity)
         self.elements.animat.sensors = Sensors()
         # Contacts
+        # self.elements.animat.sensors.add({
+        #     "contact_{}".format(i): ContactSensor(
+        #         self.options.n_iterations,
+        #         self.elements.animat.identity,
+        #         1+2*i
+        #     )
+        #     for i in range(4)
+        # })
         self.elements.animat.sensors.add({
-            "contact_{}".format(i): ContactSensor(
-                self.options.n_iterations,
-                self.elements.animat.identity,
-                1+2*i
+            "contacts": ContactsSensors(
+                self.elements.animat.data.sensors.contacts.array,
+                [self.elements.animat.identity for _ in range(4)],
+                [1+2*i for i in range(4)]
             )
-            for i in range(4)
         })
         # Joints
         self.elements.animat.sensors.add({
             "joints": JointsStatesSensor(
-                self.options.n_iterations,
+                self.elements.animat.data.sensors.proprioception.array,
                 self.elements.animat.identity,
                 np.arange(n_joints),
                 enable_ft=True
@@ -82,10 +91,10 @@ class SimonSimulation(Simulation):
         })
         # Base link
         self.elements.animat.sensors.add({
-            "base_link": LinkStateSensor(
-                self.options.n_iterations,
+            "base_link": LinksStatesSensor(
+                self.elements.animat.data.sensors.gps.array,
                 self.elements.animat.identity,
-                0,  # Base link
+                [["base_link", 0, -1]],  # Base link
             )
         })
 
@@ -117,11 +126,12 @@ class SimonSimulation(Simulation):
         # )
         target_positions = np.zeros(n_joints)
         target_velocities = np.zeros(n_joints)
-        joint_control = int((1e-3 * sim_step) % n_joints)
+        joint_control = int(5e-4*sim_step) % n_joints
         _sim_step = sim_step % 1000
+        sign = 1 if sim_step % 2000 < 1000 else -1
         target_positions[joint_control] = (
-            0.3*(_sim_step-100)/300 if 100 < _sim_step < 400
-            else -0.3*(_sim_step-600)/300 if 600 < _sim_step < 900
+            sign*0.3*(_sim_step-100)/400 if 100 < _sim_step < 500
+            else -sign*0.3*(_sim_step-900)/400 if 500 < _sim_step < 900
             else 0
         )
         joints_states = pybullet.getJointStates(
@@ -142,7 +152,7 @@ class SimonSimulation(Simulation):
             pybullet.TORQUE_CONTROL,
             forces=(
                 1e1*(target_positions - joints_positions)
-                - 1e-2*joints_velocity
+                + 1e-1*(target_velocities - joints_velocity)
             )
         )
         # pybullet.setJointMotorControlArray(
@@ -151,7 +161,7 @@ class SimonSimulation(Simulation):
         #     pybullet.POSITION_CONTROL,
         #     targetPositions=target_positions,
         #     targetVelocities=target_velocities,
-        #     forces=10*np.ones(n_joints)
+        #     # forces=10*np.ones(n_joints)
         # )
         pybullet.stepSimulation()
         sim_step += 1
@@ -162,10 +172,10 @@ def run_simon(sim_options=None, animat_options=None):
     """Run Simon's experiment"""
 
     # Parse command line arguments
-    if not sim_options:
+    if sim_options is None:
         simulation_options = SimulationOptions.with_clargs(duration=100)
-    if not animat_options:
-        animat_options = None
+    if animat_options is None:
+        animat_options = SimonOptions()
 
     # Setup simulation
     print("Creating simulation")
