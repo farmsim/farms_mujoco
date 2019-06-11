@@ -2,17 +2,6 @@
 
 import numpy as np
 import platypus as pla
-# from platypus import (
-#     NSGAII,
-#     NSGAIII,
-#     Problem,
-#     Real,
-#     Hypervolume,
-#     experiment,
-#     calculate,
-#     display,
-#     nondominated
-# )
 import matplotlib.pyplot as plt
 
 
@@ -33,9 +22,9 @@ class ProblemLogger:
             self.objectives[self.iteration] = objectives
         self.iteration += 1
 
-    def plot(self, algorithm):
+    def plot(self, result):
         """Plot variables"""
-        nondominated_solutions = pla.nondominated(algorithm.result)
+        nondominated_solutions = pla.nondominated(result)
 
         for solution in nondominated_solutions:
             print("Decision vector: {} Fitness: {}".format(
@@ -103,45 +92,61 @@ class Schaffer(pla.Problem):
 def main():
     """Main"""
 
-    n_evaluations = int(1e5)
+    n_evaluations = int(1e1)
 
     problem = Schaffer(n_evaluations)
     # algorithm = pla.NSGAII(problem)
     # algorithm = pla.NSGAIII(problem, divisions_outer=10)
     # algorithm = pla.CMAES(problem)
-    algorithm = pla.MOEAD(problem)
-    # algorithms = [
-    #     NSGAII,
-    #     (NSGAIII, {"divisions_outer":12}),
-    #     (CMAES, {"epsilons":[0.05]}),
-    #     GDE3,
-    #     IBEA,
-    #     (MOEAD, {
-    #         "weight_generator":normal_boundary_weights,
-    #         "divisions_outer":12
-    #     }),
-    #     (OMOPSO, {"epsilons":[0.05]}),
-    #     SMPSO,
-    #     SPEA2,
-    #     (EpsMOEA, {"epsilons":[0.05]})
-    # ]
-    algorithm.run(n_evaluations)
+    # algorithm = pla.MOEAD(problem)
+    # algorithm.run(n_evaluations)
+    # problem.logger.plot(algorithm)
+    # plt.show()
 
-    problem.logger.plot(algorithm)
+    algorithms = [
+        pla.NSGAII,
+        (pla.NSGAIII, {"divisions_outer":12}),
+        (pla.CMAES, {"epsilons":[0.05]}),
+        pla.GDE3,
+        pla.IBEA,
+        (pla.MOEAD, {
+            # "weight_generator": normal_boundary_weights,
+            "divisions_outer":12
+        }),
+        (pla.OMOPSO, {"epsilons":[0.05]}),
+        pla.SMPSO,
+        pla.SPEA2,
+        (pla.EpsMOEA, {"epsilons":[0.05]})
+    ]
 
-    plt.show()
+    # archive1 = pla.Archive()
+    # archive2 = pla.Archive()
+    # archive = archive1.append(archive2) + archive2
+    archive = pla.Archive()
+    for _ in range(10):
+        algorithm = algorithms[0](problem, archive=archive)
+        algorithm.run(n_evaluations)
+        problem.logger.plot(algorithm.result)
+        print(len(algorithm.archive))
+        plt.show()
 
-    # problems = [problem]
+    # with pla.ProcessPoolEvaluator() as evaluator:
+    #     results = pla.experiment(
+    #         algorithms,
+    #         problem,
+    #         seeds=1,
+    #         nfe=n_evaluations,
+    #         evaluator=evaluator,
+    #         display_stats=True
+    #     )
 
-    # algorithms = [NSGAII, (NSGAIII, {"divisions_outer":12})]
+    # from IPython import embed
+    # embed()
 
-    # # run the experiment
-    # results = experiment(algorithms, problems, nfe=1000, seeds=10)
+    # for item in results:
+    #     problem.logger.plot(results[item]["Schaffer"][0])
+    #     plt.show()
 
-    # # calculate the hypervolume indicator
-    # hyp = Hypervolume(minimum=[0, 0, 0], maximum=[1, 1, 1])
-    # hyp_result = calculate(results, hyp)
-    # display(hyp_result, ndigits=3)
 
 
 if __name__ == "__main__":
