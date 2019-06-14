@@ -295,7 +295,7 @@ class Salamander(Animat):
         ]
         self.set_collisions(links_no_collisions, group=0, mask=0)
         # Deactivate damping
-        joints_no_damping = [
+        links_no_damping = [
             "link_body_{}".format(body_i)
             for body_i in range(12)
         ] + [
@@ -305,7 +305,7 @@ class Salamander(Animat):
             for joint_i in range(4)
         ]
         self.set_links_dynamics(
-            joints_no_damping,
+            links_no_damping,
             linearDamping=0,
             angularDamping=0,
             jointDamping=0
