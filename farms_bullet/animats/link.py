@@ -17,35 +17,27 @@ class AnimatLink(dict):
         additional_kwargs = {}
         self.units = units
         self.size = kwargs.pop("size", None)
-        if self.size is not None:
-            self.size = np.array(self.size)*self.units.meters
         self.radius = kwargs.pop("radius", None)
-        if self.radius is not None:
-            self.radius = np.array(self.radius)*self.units.meters
         self.height = kwargs.pop("height", None)
-        if self.height is not None:
-            self.height = np.array(self.height)*self.units.meters
         self.filename = kwargs.pop("filename", None)
         self.mass = kwargs.pop("mass", None)
-        if self.mass is not None:
-            self.mass = np.array(self.mass)*self.units.kilograms
         self.volume = kwargs.pop("volume", None)
-        if self.volume is not None:
-            self.volume = np.array(self.volume)*self.units.volume
-        self.density = kwargs.pop("density", 1000*self.units.density)
+        self.density = kwargs.pop("density", 1000)
         self.scale = np.array(kwargs.pop("scale", [1.0, 1.0, 1.0]))
         if self.size is not None:
-            additional_kwargs["halfExtents"] = self.size
+            additional_kwargs["halfExtents"] = np.array(
+                self.size
+            )*self.units.meters
         if self.radius is not None:
-            additional_kwargs["radius"] = self.radius
+            additional_kwargs["radius"] = self.radius*self.units.meters
         if self.height is not None:
-            additional_kwargs["height"] = self.height
+            additional_kwargs["height"] = self.height*self.units.meters
         if self.filename is not None:
             additional_kwargs["fileName"] = self.filename
             if self.mass is None:
                 additional_kwargs["meshScale"] = self.scale*self.units.meters
                 self.volume = (
-                    self.scale[0]*self.scale[1]*self.scale[2]*self.units.volume
+                    self.scale[0]*self.scale[1]*self.scale[2]
                     *tri.load_mesh(self.filename).volume
                 )
                 self.mass = self.density*self.volume
@@ -62,15 +54,11 @@ class AnimatLink(dict):
                 volume_cylinder = np.pi*self.radius**2*self.height
                 self.volume = volume_sphere + volume_cylinder
             self.mass = self.density*self.volume
-        self.position = np.array(
-            kwargs.pop("position", [0, 0, 0])
-        )*self.units.meters
+        self.position = kwargs.pop("position", [0, 0, 0])
         self.orientation = pybullet.getQuaternionFromEuler(
             kwargs.pop("orientation", [0, 0, 0])
         )
-        self.frame_position = np.array(
-            kwargs.pop("frame_position", [0, 0, 0])
-        )*self.units.meters
+        self.frame_position = kwargs.pop("frame_position", [0, 0, 0])
         self.frame_orientation = kwargs.pop("frame_orientation", [0, 0, 0])
         if len(self.frame_orientation) == 3:
             self.frame_orientation = pybullet.getQuaternionFromEuler(
@@ -88,9 +76,6 @@ class AnimatLink(dict):
                 if self.geometry is pybullet.GEOM_MESH
                 else self.frame_position
             )
-        self.inertial_position = (
-            np.array(self.inertial_position)*self.units.meters
-        )
         self.inertial_orientation = kwargs.pop(
             "inertial_orientation",
             self.frame_orientation
@@ -101,9 +86,13 @@ class AnimatLink(dict):
             )
         self.parent = kwargs.pop("parent", None)
         collision_options = kwargs.pop("collision_options", {})
+        if collision_options:
+            raise Exception("Check for scaling")
         self.collision = pybullet.createCollisionShape(
             shapeType=self.geometry,
-            collisionFramePosition=self.frame_position,
+            collisionFramePosition=np.array(
+                self.frame_position
+            )*self.units.meters,
             collisionFrameOrientation=self.frame_orientation,
             **additional_kwargs,
             **collision_options
@@ -115,12 +104,16 @@ class AnimatLink(dict):
         if visual_options:
             if color is None:
                 color = [1, 1, 1, 1]
+        if visual_options:
+            raise Exception("Check for scaling")
         self.visual = (
             -1
             if color is None
             else pybullet.createVisualShape(
                 shapeType=self.geometry,
-                visualFramePosition=self.frame_position,
+                visualFramePosition=np.array(
+                    self.frame_position
+                )*self.units.meters,
                 visualFrameOrientation=self.frame_orientation,
                 rgbaColor=color,
                 **additional_kwargs,
