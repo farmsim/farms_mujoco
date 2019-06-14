@@ -13,12 +13,12 @@ def main():
     animat_options = SalamanderOptions(
         collect_gps=False,
         show_hydrodynamics=False,
-        scale=1.0
+        scale=1
     )
     simulation_options = SimulationOptions.with_clargs()
     simulation_options.units.meters = 1
     simulation_options.units.seconds = 1
-    simulation_options.units.kilograms = 1
+    simulation_options.units.kilograms = 0.1
     run_sim(
         simulation_options=simulation_options,
         animat_options=animat_options

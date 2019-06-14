@@ -88,6 +88,24 @@ class SimulationUnitScaling(Options):
         """
         return self.acceleration
 
+    @property
+    def volume(self):
+        """Volume
+
+        Scaled as self.volume = self.meters**3
+
+        """
+        return self.meters**3
+
+    @property
+    def density(self):
+        """Density
+
+        Scaled as self.density = self.kilograms/self.meters**3
+
+        """
+        return self.kilograms/self.volume
+
 
 class SimulationOptions(Options):
     """Simulation options"""

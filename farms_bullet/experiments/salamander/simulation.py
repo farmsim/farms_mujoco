@@ -23,7 +23,8 @@ class SalamanderSimulation(Simulation):
                 animat=Salamander(
                     animat_options,
                     simulation_options.timestep,
-                    simulation_options.n_iterations
+                    simulation_options.n_iterations,
+                    simulation_options.units
                 ),
                 arena=kwargs.pop("arena", FlooredArena())
             ),

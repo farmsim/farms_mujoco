@@ -30,11 +30,10 @@ from .sensors import SalamanderGPS
 class Salamander(Animat):
     """Salamander animat"""
 
-    def __init__(self, options, timestep, iterations):
+    def __init__(self, options, timestep, iterations, units):
         super(Salamander, self).__init__(options=options)
         self.timestep = timestep
         self.n_iterations = iterations
-        self.scale = options.morphology.scale
         self.feet_names = [
             "link_leg_0_L_3",
             "link_leg_0_R_3",
@@ -48,6 +47,9 @@ class Salamander(Animat):
         )
         # Hydrodynamic forces
         self.hydrodynamics = None
+        # Physics
+        self.units = units
+        self.scale = options.morphology.scale
 
     def spawn(self):
         """Spawn salamander"""
@@ -60,7 +62,7 @@ class Salamander(Animat):
                 lineFromXYZ=[0, 0, 0],
                 lineToXYZ=[0, 0, 0],
                 lineColorRGB=[0, 0, 0],
-                lineWidth=3,
+                lineWidth=3*self.units.meters,
                 lifeTime=0,
                 parentObjectUniqueId=self.identity,
                 parentLinkIndex=i
@@ -100,7 +102,8 @@ class Salamander(Animat):
             position=body_link_positions[0],
             joint_axis=[0, 0, 1],
             color=body_color,
-            scale=[self.scale, self.scale, self.scale]
+            scale=[self.scale, self.scale, self.scale],
+            units=self.units
         )
         links = [
             AnimatLink(
@@ -113,7 +116,8 @@ class Salamander(Animat):
                 parent=i,
                 joint_axis=[0, 0, 1],
                 color=body_color,
-                scale=[self.scale, self.scale, self.scale]
+                scale=[self.scale, self.scale, self.scale],
+                units=self.units
             )
             for i in range(11)
         ] + [None for i in range(4) for j in range(4)]
@@ -132,7 +136,8 @@ class Salamander(Animat):
                     parent=5 if leg_i else 1,  # Inverse seems to change nothing
                     joint_axis=[0, 0, sign],
                     mass=0,
-                    color=[0.9, 0.0, 0.0, 0.3]
+                    color=[0.9, 0.0, 0.0, 0.3],
+                    units=self.units
                 )
                 # Shoulder2
                 links[leglink2index(leg_i, side, 1)] = AnimatLink(
@@ -141,7 +146,8 @@ class Salamander(Animat):
                     parent=leglink2index(leg_i, side, 0)+1,
                     joint_axis=[-sign, 0, 0],
                     mass=0,
-                    color=[0.9, 0.9, 0.9, 0.3]
+                    color=[0.9, 0.9, 0.9, 0.3],
+                    units=self.units
                 )
                 # Upper leg
                 links[leglink2index(leg_i, side, 2)] = AnimatLink(
@@ -151,7 +157,8 @@ class Salamander(Animat):
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     parent=leglink2index(leg_i, side, 1)+1,
-                    joint_axis=[0, 1, 0]
+                    joint_axis=[0, 1, 0],
+                    units=self.units
                 )
                 # Lower leg
                 links[leglink2index(leg_i, side, 3)] = AnimatLink(
@@ -163,6 +170,7 @@ class Salamander(Animat):
                     frame_orientation=[np.pi/2, 0, 0],
                     parent=leglink2index(leg_i, side, 2)+1,
                     joint_axis=[-sign, 0, 0],
+                    units=self.units
                     # color=[
                     #     [[1, 0, 0, 1], [0, 1, 0, 1]],
                     #     [[0, 0, 1, 1], [0, 0, 0, 1]]
