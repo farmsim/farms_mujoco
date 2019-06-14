@@ -1,5 +1,8 @@
 """Farms multi-objective optimisation for salamander experiment"""
 
+# import time
+from multiprocessing import Pool
+
 import numpy as np
 import platypus as pla
 import matplotlib.pyplot as plt
@@ -22,15 +25,23 @@ class ProblemLogger:
             self.objectives[self.iteration] = objectives
         self.iteration += 1
 
-    def plot(self, result):
+    def plot_non_dominated_front(self, result):
         """Plot variables"""
-        nondominated_solutions = pla.nondominated(result)
+        nondominated = pla.nondominated(result)
+        plot_non_dominated_fronts(nondominated)
+        print("Pareto front size: {}/{}".format(
+            len(nondominated),
+            self.iteration
+        ))
 
-        for solution in nondominated_solutions:
-            print("Decision vector: {} Fitness: {}".format(
-                solution.variables,
-                list(solution.objectives)
-            ))
+    def plot_evaluations(self):
+        """Plot variables"""
+
+        # for solution in nondominated_solutions:
+        #     print("Decision vector: {} Fitness: {}".format(
+        #         solution.variables,
+        #         list(solution.objectives)
+        #     ))
 
         # Variables
         plt.figure("Varable space")
@@ -39,12 +50,6 @@ class ProblemLogger:
             self.variables[:, 1],
             "bo"
         )
-        plt.plot(
-            [s.variables[0] for s in nondominated_solutions],
-            [s.variables[1] for s in nondominated_solutions],
-            "ro"
-        )
-        plt.grid(True)
 
         # Fitness
         plt.figure("Fitness space")
@@ -53,18 +58,33 @@ class ProblemLogger:
             self.objectives[:, 1],
             "bo"
         )
-        plt.plot(
-            [s.objectives[0] for s in nondominated_solutions],
-            [s.objectives[1] for s in nondominated_solutions],
-            "ro"
-        )
-        plt.grid(True)
-        # for solution in algorithm.result:
-        #     plt.plot(solution.variables[0], solution.variables[1], "bx")
-        print("Pareto front size: {}/{}".format(
-            len(nondominated_solutions),
-            self.iteration
-        ))
+
+
+def plot_non_dominated_fronts(result):
+    """Plot nondominated front"""
+    nondominated_solutions = pla.nondominated(result)
+
+    # Fitness
+    plt.figure("Fitness space")
+    plt.plot(
+        [s.objectives[0] for s in nondominated_solutions],
+        [s.objectives[1] for s in nondominated_solutions],
+        "ro"
+    )
+    plt.grid(True)
+
+    # Variables
+    plt.figure("Varable space")
+    plt.plot(
+        [s.variables[0] for s in nondominated_solutions],
+        [s.variables[1] for s in nondominated_solutions],
+        "ro"
+    )
+    plt.grid(True)
+
+    print("Pareto front size: {}".format(
+        len(nondominated_solutions)
+    ))
 
 
 class Schaffer(pla.Problem):
@@ -77,31 +97,60 @@ class Schaffer(pla.Problem):
         self.logger = ProblemLogger(n_evaluations, n_vars, n_objs)
 
     def evaluate(self, solution):
+        # print("Evaluating {}".format(self.logger.iteration))
+        # solution.objectives[0] = (
+        #     + (solution.variables[0]-4)**2
+        #     + (solution.variables[0]-2)**3
+        #     + (solution.variables[1]-7)**4
+        # )
+        # solution.objectives[1] = (
+        #     + (solution.variables[0]-7)**2
+        #     + (solution.variables[1]-0)**2
+        # )
         solution.objectives[0] = (
-            + (solution.variables[0]-4)**2
-            + (solution.variables[0]-2)**3
-            + (solution.variables[1]-7)**4
+            + (solution.variables[0]-0)**2
+            + (solution.variables[1]-1)**2
         )
         solution.objectives[1] = (
-            + (solution.variables[0]-7)**2
+            + (solution.variables[0]-1)**2
             + (solution.variables[1]-0)**2
         )
         self.logger.log(solution.variables, solution.objectives)
 
 
+def island(algorithm, problem, n_evaluations, archive):
+    """Island"""
+    algorithm = algorithm(
+        problem,
+        population_size=n_evaluations,
+        # divisions_inner=0,
+        # divisions_outer=10,  # n_evaluations//10,
+        # epsilons=0.05,
+        archive=archive
+    )
+    algorithm.run(n_evaluations)
+    return algorithm, problem
+
+
+def update_archive(archive, solutions, rtol=1e-8, atol=1e-8):
+    """Update archive"""
+    for solution in solutions:
+        in_archive = False
+        for _archive in archive:
+            if np.allclose(
+                    solution.variables,
+                    _archive.variables,
+                    rtol=rtol,
+                    atol=atol
+            ):
+                in_archive = True
+                break
+        if not in_archive:
+            archive += solution
+
+
 def main():
     """Main"""
-
-    n_evaluations = int(1e1)
-
-    problem = Schaffer(n_evaluations)
-    # algorithm = pla.NSGAII(problem)
-    # algorithm = pla.NSGAIII(problem, divisions_outer=10)
-    # algorithm = pla.CMAES(problem)
-    # algorithm = pla.MOEAD(problem)
-    # algorithm.run(n_evaluations)
-    # problem.logger.plot(algorithm)
-    # plt.show()
 
     algorithms = [
         pla.NSGAII,
@@ -119,35 +168,50 @@ def main():
         (pla.EpsMOEA, {"epsilons":[0.05]})
     ]
 
-    # archive1 = pla.Archive()
-    # archive2 = pla.Archive()
-    # archive = archive1.append(archive2) + archive2
+    pool = Pool()
     archive = pla.Archive()
-    for _ in range(10):
-        algorithm = algorithms[0](problem, archive=archive)
-        algorithm.run(n_evaluations)
-        problem.logger.plot(algorithm.result)
-        print(len(algorithm.archive))
-        plt.show()
+    n_evaluations = 1000  # int(1e2)
+    problem = Schaffer(n_evaluations)
+    nfe = 0
+    for generation in range(10):
+        print("Generation {}".format(generation))
+        results = pool.starmap(
+            island,
+            [
+                (pla.NSGAII, problem, n_evaluations, archive)
+                for _ in range(4)
+            ]
+        )
+        print("Updating archive")
+        _archive = archive
+        archive = pla.Archive()
+        update_archive(archive, _archive)
+        for algorithm, _problem in results:
+            nfe += algorithm.nfe
+            print("Computing nondominated front")
+            nondominated = pla.nondominated(algorithm.result)
+            print("Updating archive (n={})".format(len(algorithm.result)))
+            update_archive(archive, nondominated)
+            print("Archive size: {}".format(len(archive)))
+            # _problem.logger.plot_evaluations()
+    print("Evolution complete")
+    print("Number of evaluations: {}".format(nfe))
+    plot_non_dominated_fronts(archive)
+    plt.xlim([-10, 10])
+    plt.ylim([-10, 10])
+    plt.show()
 
-    # with pla.ProcessPoolEvaluator() as evaluator:
-    #     results = pla.experiment(
-    #         algorithms,
-    #         problem,
-    #         seeds=1,
-    #         nfe=n_evaluations,
-    #         evaluator=evaluator,
-    #         display_stats=True
-    #     )
 
-    # from IPython import embed
-    # embed()
-
-    # for item in results:
-    #     problem.logger.plot(results[item]["Schaffer"][0])
-    #     plt.show()
-
+def profile():
+    """Profile with cProfile"""
+    import cProfile
+    import pstats
+    cProfile.run("main()", "simulation.profile")
+    pstat = pstats.Stats("simulation.profile")
+    pstat.sort_stats('time').print_stats(30)
+    pstat.sort_stats('cumtime').print_stats(30)
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    profile()

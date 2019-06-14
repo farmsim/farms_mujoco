@@ -1,6 +1,6 @@
 """Farms multi-objective optimisation for salamander experiment"""
 
-import time
+# import time
 from multiprocessing import Pool
 
 import numpy as np
@@ -15,56 +15,76 @@ class SphereFunction:
         super(SphereFunction, self).__init__()
         self.dim = dim
 
-    def fitness(self, x):
-        """Fitness"""
-        print("Fitness called")
-        time.sleep(0.2)
-        return [sum(x*x)]
+    @staticmethod
+    def get_nobj():
+        """Get number of objectives"""
+        return 2
 
-    def batch_fitness(self, x):
+    @staticmethod
+    def fitness(variables):
         """Fitness"""
-        n = len(x)//self.dim
-        print("Batch ({} individuals)".format(n))
-        pool = Pool(4)
+        return (
+            + (variables[0]-0)**2
+            + (variables[1]-1)**2,
+            + (variables[0]-1)**2
+            + (variables[1]-0)**2
+        )
+
+    def batch_fitness(self, variables):
+        """Fitness"""
+        n_objs = len(variables)//self.dim
+        print("Batch ({} individuals)".format(n_objs))
+        pool = Pool()
         batch = np.concatenate(
             pool.map(
                 self.fitness,
                 [
-                    x[i*self.dim:(i+1)*self.dim]
-                    for i in range(n)
+                    variables[i*self.dim:(i+1)*self.dim]
+                    for i in range(n_objs)
                 ]
             )
         )
-        print("Batch complete ({} fitnesses)".format(len(batch)))
+        print("Batch complete ({} fitnesses)".format(np.shape(batch)))
         return batch
 
     def get_bounds(self):
         """Get bounds"""
-        return ([-10, -10], [10, 10])
+        return (
+            [-10 for _ in range(self.dim)],
+            [10 for _ in range(self.dim)]
+        )
 
 
 def main():
     """Main"""
     prob = pg.problem(SphereFunction(dim=2))
-    algo = pg.algorithm(pg.pso(gen=3))
     pop = pg.population(
         prob=prob,
-        size=4,
+        size=10,
         b=pg.default_bfe()
     )
-    # pop = algo.evolve(pop)
-    # print(pop.champion_f)
-    print("Running island")
-    isl = pg.island(
-        algo=algo,
-        pop=pop,
-        # b=pg.default_bfe(),
-        udi=pg.mp_island()
+    algo = pg.algorithm(
+        pg.moead(
+            gen=1,
+            neighbours=len(pop)//5,
+        )
     )
-    isl.evolve(1)
-    isl.wait()
-    pop = isl.get_population()
-    print("Champion fitness: {}".format(pop.champion_f))
+    for generation in range(1000):
+        pop = algo.evolve(pop)
+    print("Population:\n{}".format(pop))
+
+    # Plot decisions
+    decisions = pop.get_x()
+    plt.figure("Decisions")
+    plt.plot(decisions[:, 0], decisions[:, 1], "ro")
+    plt.grid(True)
+    plt.show()
+    # Plot fitnesses
+    fitnesses = pop.get_f()
+    plt.figure("Fitnesses")
+    plt.plot(fitnesses[:, 0], fitnesses[:, 1], "ro")
+    plt.grid(True)
+    plt.show()
 
 
 if __name__ == '__main__':
