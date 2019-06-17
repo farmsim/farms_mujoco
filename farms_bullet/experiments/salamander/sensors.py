@@ -6,11 +6,12 @@ from ...sensors.sensors import LinksStatesSensor
 class SalamanderGPS(LinksStatesSensor):
     """Salamander GPS"""
 
-    def __init__(self, array, animat_id, links, options):
+    def __init__(self, array, animat_id, links, options, units):
         super(SalamanderGPS, self).__init__(
             array=array,
             animat_id=animat_id,
-            links=links
+            links=links,
+            units=units
         )
         self.options = options
 

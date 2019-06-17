@@ -30,11 +30,10 @@ from .sensors import SalamanderGPS
 class Salamander(Animat):
     """Salamander animat"""
 
-    def __init__(self, options, timestep, iterations):
+    def __init__(self, options, timestep, iterations, units):
         super(Salamander, self).__init__(options=options)
         self.timestep = timestep
         self.n_iterations = iterations
-        self.scale = options.morphology.scale
         self.feet_names = [
             "link_leg_0_L_3",
             "link_leg_0_R_3",
@@ -48,6 +47,9 @@ class Salamander(Animat):
         )
         # Hydrodynamic forces
         self.hydrodynamics = None
+        # Physics
+        self.units = units
+        self.scale = options.morphology.scale
 
     def spawn(self):
         """Spawn salamander"""
@@ -60,7 +62,7 @@ class Salamander(Animat):
                 lineFromXYZ=[0, 0, 0],
                 lineToXYZ=[0, 0, 0],
                 lineColorRGB=[0, 0, 0],
-                lineWidth=3,
+                lineWidth=3*self.units.meters,
                 lifeTime=0,
                 parentObjectUniqueId=self.identity,
                 parentLinkIndex=i
@@ -95,6 +97,7 @@ class Salamander(Animat):
         )
         body_color = [0, 0.3, 0, 1]
         base_link = AnimatLink(
+            self.units,
             geometry=pybullet.GEOM_MESH,
             filename="{}/salamander_body_0.obj".format(meshes_directory),
             position=body_link_positions[0],
@@ -104,6 +107,7 @@ class Salamander(Animat):
         )
         links = [
             AnimatLink(
+                self.units,
                 geometry=pybullet.GEOM_MESH,
                 filename="{}/salamander_body_{}.obj".format(
                     meshes_directory,
@@ -126,6 +130,7 @@ class Salamander(Animat):
                 position[1] = sign*leg_length
                 # Shoulder1
                 links[leglink2index(leg_i, side, 0)] = AnimatLink(
+                    self.units,
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.2*leg_radius,
                     position=position,
@@ -136,6 +141,7 @@ class Salamander(Animat):
                 )
                 # Shoulder2
                 links[leglink2index(leg_i, side, 1)] = AnimatLink(
+                    self.units,
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.5*leg_radius,
                     parent=leglink2index(leg_i, side, 0)+1,
@@ -145,6 +151,7 @@ class Salamander(Animat):
                 )
                 # Upper leg
                 links[leglink2index(leg_i, side, 2)] = AnimatLink(
+                    self.units,
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
@@ -155,6 +162,7 @@ class Salamander(Animat):
                 )
                 # Lower leg
                 links[leglink2index(leg_i, side, 3)] = AnimatLink(
+                    self.units,
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
                     height=0.9*2*leg_length,
@@ -169,22 +177,26 @@ class Salamander(Animat):
                     # ][leg_i][side]
                 )
         self._identity = pybullet.createMultiBody(
-            baseMass=base_link.mass,
+            baseMass=base_link.mass*self.units.kilograms,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=[0, 0, 0],
+            basePosition=np.array([0, 0, 0])*self.units.meters,
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
-            baseInertialFramePosition=base_link.inertial_position,
+            baseInertialFramePosition=np.array(
+                base_link.inertial_position
+            )*self.units.meters,
             baseInertialFrameOrientation=base_link.inertial_orientation,
-            linkMasses=[link.mass for link in links],
+            linkMasses=[link.mass*self.units.kilograms for link in links],
             linkCollisionShapeIndices=[link.collision for link in links],
             linkVisualShapeIndices=[link.visual for link in links],
-            linkPositions=[link.position for link in links],
+            linkPositions=np.array(
+                [link.position for link in links]
+            )*self.units.meters,
             linkOrientations=[link.orientation for link in links],
-            linkInertialFramePositions=[
+            linkInertialFramePositions=np.array([
                 link.inertial_position
                 for link in links
-            ],
+            ])*self.units.meters,
             linkInertialFrameOrientations=[
                 link.inertial_orientation
                 for link in links
@@ -238,7 +250,8 @@ class Salamander(Animat):
             "contacts": ContactsSensors(
                 self.data.sensors.contacts.array,
                 [self._identity for _ in self.feet_names],
-                [self.links[foot] for foot in self.feet_names]
+                [self.links[foot] for foot in self.feet_names],
+                self.units.newtons
             )
         })
         # Joints
@@ -247,6 +260,7 @@ class Salamander(Animat):
                 self.data.sensors.proprioception.array,
                 self._identity,
                 np.arange(self.n_joints()),
+                self.units,
                 enable_ft=True
             )
         })
@@ -277,7 +291,8 @@ class Salamander(Animat):
                 array=self.data.sensors.gps.array,
                 animat_id=self.identity,
                 links=links,
-                options=self.options
+                options=self.options,
+                units=self.units
             )
         })
 
@@ -295,7 +310,7 @@ class Salamander(Animat):
         ]
         self.set_collisions(links_no_collisions, group=0, mask=0)
         # Deactivate damping
-        joints_no_damping = [
+        links_no_damping = [
             "link_body_{}".format(body_i)
             for body_i in range(12)
         ] + [
@@ -305,7 +320,7 @@ class Salamander(Animat):
             for joint_i in range(4)
         ]
         self.set_links_dynamics(
-            joints_no_damping,
+            links_no_damping,
             linearDamping=0,
             angularDamping=0,
             jointDamping=0
@@ -346,7 +361,8 @@ class Salamander(Animat):
             coefficients=[
                 self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
                 self.options.morphology.scale**6*np.array([-1e-2, -1e-2, -1e-2])
-            ]
+            ],
+            units=self.units
         )
 
     def draw_hydrodynamics(self, iteration):
@@ -355,9 +371,9 @@ class Salamander(Animat):
             force = self.data.sensors.hydrodynamics.array[iteration, i, :3]
             self.hydrodynamics[i] = pybullet.addUserDebugLine(
                 lineFromXYZ=[0, 0, 0],
-                lineToXYZ=force,
+                lineToXYZ=np.array(force),
                 lineColorRGB=[0, 0, 1],
-                lineWidth=7,
+                lineWidth=7*self.units.meters,
                 parentObjectUniqueId=self.identity,
                 parentLinkIndex=i-1,
                 replaceItemUniqueId=line
