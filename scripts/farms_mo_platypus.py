@@ -107,6 +107,7 @@ class Schaffer(pla.Problem):
         #     + (solution.variables[0]-7)**2
         #     + (solution.variables[1]-0)**2
         # )
+
         solution.objectives[0] = (
             + (solution.variables[0]-0)**2
             + (solution.variables[1]-1)**2
@@ -115,20 +116,33 @@ class Schaffer(pla.Problem):
             + (solution.variables[0]-1)**2
             + (solution.variables[1]-0)**2
         )
+
+        # solution.objectives[0] = (
+        #     (solution.variables[0] - solution.variables[1])**2
+        # )
+        # solution.objectives[1] = (
+        #     (solution.variables[0])**2
+        # )
+        # solution.objectives[2] = (
+        #     (solution.variables[1])**2
+        # )
+
         self.logger.log(solution.variables, solution.objectives)
 
 
-def island(algorithm, problem, n_evaluations, archive):
+def island(algorithm, problem, n_population, n_generations, archive, options):
     """Island"""
     algorithm = algorithm(
         problem,
-        population_size=n_evaluations,
+        population_size=n_population,
         # divisions_inner=0,
         # divisions_outer=10,  # n_evaluations//10,
         # epsilons=0.05,
-        archive=archive
+        archive=archive,
+        **options
     )
-    algorithm.run(n_evaluations)
+    for _ in range(n_generations):
+        algorithm.run(n_population)
     return algorithm, problem
 
 
@@ -170,35 +184,43 @@ def main():
 
     pool = Pool()
     archive = pla.Archive()
-    n_evaluations = 1000  # int(1e2)
-    problem = Schaffer(n_evaluations)
+    n_population = 10  # int(1e2)
+    n_generations = 10  # int(1e2)
+    n_runs = 10  # int(1e2)
+    problem = Schaffer(n_generations*n_population)
     nfe = 0
-    for generation in range(10):
+    archive = pla.Archive()
+    for generation in range(n_runs):
         print("Generation {}".format(generation))
         results = pool.starmap(
             island,
             [
-                (pla.NSGAII, problem, n_evaluations, archive)
+                (
+                    pla.GDE3,
+                    problem,
+                    n_population,
+                    n_generations,
+                    archive,
+                    {
+                        # "divisions_outer": 10
+                    }
+                )
                 for _ in range(4)
             ]
         )
         print("Updating archive")
-        _archive = archive
-        archive = pla.Archive()
-        update_archive(archive, _archive)
         for algorithm, _problem in results:
             nfe += algorithm.nfe
             print("Computing nondominated front")
             nondominated = pla.nondominated(algorithm.result)
-            print("Updating archive (n={})".format(len(algorithm.result)))
+            print("Updating archive (n={})".format(len(nondominated)))
             update_archive(archive, nondominated)
             print("Archive size: {}".format(len(archive)))
-            # _problem.logger.plot_evaluations()
     print("Evolution complete")
     print("Number of evaluations: {}".format(nfe))
     plot_non_dominated_fronts(archive)
-    plt.xlim([-10, 10])
-    plt.ylim([-10, 10])
+    plt.xlim([-0.5, 1.5])
+    plt.ylim([-0.5, 1.5])
     plt.show()
 
 
