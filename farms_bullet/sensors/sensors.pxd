@@ -12,6 +12,7 @@ cdef class ContactsSensors(NetworkArray3D):
     """Model sensors"""
     cdef public unsigned int [:] animat_ids
     cdef public int [:] animat_links
+    cdef public double inewtons
     cdef public unsigned int n_sensors
     cdef public list _contacts
     cdef public void _set_contact_forces(
