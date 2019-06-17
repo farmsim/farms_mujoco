@@ -183,7 +183,31 @@ cdef class GpsArray(NetworkArray3D):
     @classmethod
     def from_parameters(cls, n_iterations, n_links):
         """From parameters"""
-        return cls(np.zeros([n_iterations, n_links, 13]))
+        return cls(np.zeros([n_iterations, n_links, 20]))
+
+    cpdef double[:] com_position(self, unsigned int iteration, unsigned int link_i):
+        """ CoM position of a link"""
+        return self.array[iteration, link_i, 0:3]
+
+    cpdef double[:] com_orientation(self, unsigned int iteration, unsigned int link_i):
+        """ CoM orientation of a link"""
+        return self.array[iteration, link_i, 3:7]
+
+    cpdef double[:] urdf_position(self, unsigned int iteration, unsigned int link_i):
+        """ URDF position of a link"""
+        return self.array[iteration, link_i, 0:3]
+
+    cpdef double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i):
+        """ URDF orientation of a link"""
+        return self.array[iteration, link_i, 3:7]
+
+    cpdef double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i):
+        """ CoM linear velocity of a link"""
+        return self.array[iteration, link_i, 14:17]
+
+    cpdef double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i):
+        """ CoM angular velocity of a link"""
+        return self.array[iteration, link_i, 17:20]
 
 
 cdef class HydrodynamicsArray(NetworkArray3D):

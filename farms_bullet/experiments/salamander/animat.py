@@ -351,7 +351,7 @@ class Salamander(Animat):
         """Animat swimming physics"""
         viscous_swimming(
             iteration,
-            self.data.sensors.gps.array,
+            self.data.sensors.gps,
             self.data.sensors.hydrodynamics.array,
             self.identity,
             [

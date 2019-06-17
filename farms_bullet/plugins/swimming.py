@@ -22,9 +22,9 @@ def viscous_swimming(
     )
     for link_i, link in links:
         ori, lin_velocity, ang_velocity = (
-            data_gps[iteration, link_i, 3:7],
-            data_gps[iteration, link_i, 7:10],
-            data_gps[iteration, link_i, 10:13]
+            data_gps.urdf_orientation(iteration, link_i),
+            data_gps.com_lin_velocity(iteration, link_i),
+            data_gps.com_ang_velocity(iteration, link_i)
         )
         link_orientation_inv = np.linalg.inv(np.array(
             pybullet.getMatrixFromQuaternion(ori)
