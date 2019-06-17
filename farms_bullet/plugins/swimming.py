@@ -3,6 +3,8 @@
 import numpy as np
 import pybullet
 
+from ..simulations.simulation_options import SimulationUnitScaling
+
 
 def viscous_swimming(
         iteration,
@@ -13,7 +15,7 @@ def viscous_swimming(
         **kwargs
 ):
     """Viscous swimming"""
-    # Swimming
+    units = kwargs.pop("units", SimulationUnitScaling())
     force_coefficients, torque_coefficients = kwargs.pop(
         "coefficients",
         [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
@@ -40,13 +42,19 @@ def viscous_swimming(
         pybullet.applyExternalForce(
             model,
             link,
-            forceObj=data_hydrodynamics[iteration, link_i, :3],
+            forceObj=(
+                np.array(data_hydrodynamics[iteration, link_i, :3])
+                *units.newtons
+            ),
             posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
         )
         pybullet.applyExternalTorque(
             model,
             link,
-            torqueObj=data_hydrodynamics[iteration, link_i, 3:6],
+            torqueObj=(
+                np.array(data_hydrodynamics[iteration, link_i, 3:6])
+                *units.torques
+            ),
             flags=pybullet.LINK_FRAME
         )

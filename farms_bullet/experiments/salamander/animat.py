@@ -361,7 +361,8 @@ class Salamander(Animat):
             coefficients=[
                 self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
                 self.options.morphology.scale**6*np.array([-1e-2, -1e-2, -1e-2])
-            ]
+            ],
+            units=self.units
         )
 
     def draw_hydrodynamics(self, iteration):
