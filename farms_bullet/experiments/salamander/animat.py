@@ -250,7 +250,8 @@ class Salamander(Animat):
             "contacts": ContactsSensors(
                 self.data.sensors.contacts.array,
                 [self._identity for _ in self.feet_names],
-                [self.links[foot] for foot in self.feet_names]
+                [self.links[foot] for foot in self.feet_names],
+                self.units.newtons
             )
         })
         # Joints
@@ -259,6 +260,7 @@ class Salamander(Animat):
                 self.data.sensors.proprioception.array,
                 self._identity,
                 np.arange(self.n_joints()),
+                self.units,
                 enable_ft=True
             )
         })
@@ -289,7 +291,8 @@ class Salamander(Animat):
                 array=self.data.sensors.gps.array,
                 animat_id=self.identity,
                 links=links,
-                options=self.options
+                options=self.options,
+                units=self.units
             )
         })
 

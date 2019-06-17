@@ -12,7 +12,7 @@ def main():
     """Main"""
     animat_options = SalamanderOptions(
         collect_gps=False,
-        show_hydrodynamics=True,
+        show_hydrodynamics=False,
         scale=1
     )
     simulation_options = SimulationOptions.with_clargs()
