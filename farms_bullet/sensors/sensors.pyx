@@ -223,9 +223,10 @@ class LinksStatesSensor(NetworkArray3D):
             # Collect data
             if link_id == -1:
                 # Base link
-                pos, ori = pybullet.getBasePositionAndOrientation(
+                pos_com, ori_com = pybullet.getBasePositionAndOrientation(
                     self.animat
                 )
+                pos_urdf, ori_urdf = pos_com, ori_com
                 lin_velocity, ang_velocity = pybullet.getBaseVelocity(
                     self.animat
                 )
@@ -237,25 +238,41 @@ class LinksStatesSensor(NetworkArray3D):
                     computeLinkVelocity=1,
                     computeForwardKinematics=1
                 )
-                pos, ori, lin_velocity, ang_velocity = (
-                    link_state[0],
-                    link_state[5],
-                    link_state[6],
-                    link_state[7]
+                (
+                    pos_com,
+                    ori_com,
+                    pos_urdf,
+                    ori_urdf,
+                    lin_velocity,
+                    ang_velocity
+                )= (
+                    link_state[0],  # Position of CoM
+                    link_state[1],  # Orientation of CoM
+                    link_state[4],  # Position of URDF frame
+                    link_state[5],  # Orientation of URDF frame
+                    link_state[6],  # Velocity of CoM
+                    link_state[7]   # Angular velocity of CoM
                 )
-            self.array[iteration, link_i, 0] = pos[0]*imeters
-            self.array[iteration, link_i, 1] = pos[1]*imeters
-            self.array[iteration, link_i, 2] = pos[2]*imeters
-            self.array[iteration, link_i, 3] = ori[0]
-            self.array[iteration, link_i, 4] = ori[1]
-            self.array[iteration, link_i, 5] = ori[2]
-            self.array[iteration, link_i, 6] = ori[3]
-            self.array[iteration, link_i, 7] = lin_velocity[0]*ivelocity
-            self.array[iteration, link_i, 8] = lin_velocity[1]*ivelocity
-            self.array[iteration, link_i, 9] = lin_velocity[2]*ivelocity
-            self.array[iteration, link_i, 10] = ang_velocity[0]*seconds
-            self.array[iteration, link_i, 11] = ang_velocity[1]*seconds
-            self.array[iteration, link_i, 12] = ang_velocity[2]*seconds
+            self.array[iteration, link_i, 0] = pos_com[0]*imeters
+            self.array[iteration, link_i, 1] = pos_com[1]*imeters
+            self.array[iteration, link_i, 2] = pos_com[2]*imeters
+            self.array[iteration, link_i, 3] = ori_com[0]
+            self.array[iteration, link_i, 4] = ori_com[1]
+            self.array[iteration, link_i, 5] = ori_com[2]
+            self.array[iteration, link_i, 6] = ori_com[3]
+            self.array[iteration, link_i, 7] = pos_urdf[0]*imeters
+            self.array[iteration, link_i, 8] = pos_urdf[1]*imeters
+            self.array[iteration, link_i, 9] = pos_urdf[2]*imeters
+            self.array[iteration, link_i, 10] = ori_urdf[0]
+            self.array[iteration, link_i, 11] = ori_urdf[1]
+            self.array[iteration, link_i, 12] = ori_urdf[2]
+            self.array[iteration, link_i, 13] = ori_urdf[3]
+            self.array[iteration, link_i, 14] = lin_velocity[0]*ivelocity
+            self.array[iteration, link_i, 15] = lin_velocity[1]*ivelocity
+            self.array[iteration, link_i, 16] = lin_velocity[2]*ivelocity
+            self.array[iteration, link_i, 17] = ang_velocity[0]*seconds
+            self.array[iteration, link_i, 18] = ang_velocity[1]*seconds
+            self.array[iteration, link_i, 19] = ang_velocity[2]*seconds
 
 
 class LinkStateSensor(Sensor):
