@@ -216,8 +216,8 @@ class LinksStatesSensor(NetworkArray3D):
 
     def collect(self, iteration, links):
         """Collect gps data"""
-        imeters = self.units.meters
-        ivelocity = self.units.velocity
+        imeters = 1./self.units.meters
+        ivelocity = 1./self.units.velocity
         seconds = self.units.seconds
         for _, link_i, link_id in links:
             # Collect data
