@@ -16,12 +16,13 @@ def run_experiment():
     )
     simulation_options = SimulationOptions.with_clargs()
     animat_options.morphology.scale = 1
-    animat_options.control.drives.forward = 2.8
-    #animat_options.control.drives.left = 0
-    #animat_options.control.drives.right = 0
+    animat_options.control.drives.forward = 2
+    animat_options.control.drives.left = 0
+    animat_options.control.drives.right = 0
     simulation_options.duration = 20
     simulation_options.timestep = 0.001
-    arena = ArenaRamp(ramp_angle=10)
+    #arena = ArenaRamp(ramp_angle=0)
+    arena = FlooredArena()
     sim = SalamanderSimulation(
         simulation_options=simulation_options,
         animat_options=animat_options,

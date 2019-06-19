@@ -62,9 +62,16 @@ class UserCamera(CameraTarget):
     def update(self, use_camera=True):
         """Camera view"""
         if use_camera:
-            self.yaw, self.pitch, self.distance = self.get_camera()[8:11]
+            (
+                self.yaw,
+                self.pitch,
+                self.distance,
+                target_pos
+            ) = self.get_camera()[8:12]
+            self.target_pos = np.array(target_pos)
         self.update_yaw()
-        self.update_target_pos()
+        if self.target is not None:
+            self.update_target_pos()
         pybullet.resetDebugVisualizerCamera(
             cameraDistance=self.distance,
             cameraYaw=self.yaw,

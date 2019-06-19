@@ -35,7 +35,11 @@ class SalamanderSimulation(Simulation):
         self.interface = Interfaces(int(10*1e-3/simulation_options.timestep))
         if not self.options.headless:
             self.interface.init_camera(
-                target_identity=self.elements.animat.identity,
+                target_identity=(
+                    self.elements.animat.identity
+                    if not self.options.free_camera
+                    else None
+                ),
                 timestep=self.options.timestep,
                 rotating_camera=self.options.rotating_camera,
                 top_camera=self.options.top_camera
@@ -65,12 +69,12 @@ class SalamanderSimulation(Simulation):
     def pre_step(self, sim_step):
         """New step"""
         play = True
-        if not(sim_step % 10000) and sim_step > 0:
-            pybullet.restoreState(self.simulation_state)
-            state = self.elements.animat.data.state
-            state.array[self.elements.animat.data.iteration] = (
-                state.default_initial_state()
-            )
+        # if not(sim_step % 10000) and sim_step > 0:
+        #     pybullet.restoreState(self.simulation_state)
+        #     state = self.elements.animat.data.state
+        #     state.array[self.elements.animat.data.iteration] = (
+        #         state.default_initial_state()
+        #     )
         if not self.options.headless:
             play = self.interface.user_params.play.value
             if not sim_step % 100:

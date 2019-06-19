@@ -132,8 +132,8 @@ def run_transition_demo():
         transition=True
     )
     simulation_options = SimulationOptions.with_clargs()
-    simulation_options.duration = 20
-    simulation_options.timestep = 0.002
+    simulation_options.duration = 10
+    simulation_options.timestep = 0.001
     simulation_options.video_name = "gait_transition"
     sim = SalamanderSimulation(
         simulation_options=simulation_options,

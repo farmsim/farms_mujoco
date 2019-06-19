@@ -510,8 +510,8 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
         G.add_weighted_edges_from(array[:, 0:3], colors='k')
 
         G.add_weighted_edges_from(
-            np.vstack((contact_array[:, 0], contact_array[:, 1] + 55, np.zeros(len(contact_array)))).T,
-            colors='r')
+             np.vstack((contact_array[:, 0], contact_array[:, 1] + 55, np.zeros(len(contact_array)))).T,
+             colors='r')
         graph_pose = nx.get_node_attributes(G, 'pos')
         M = G.reverse()
         colors = ['g'] * dim + ['r'] * 4
@@ -566,12 +566,12 @@ class SalamanderJointsArray(JointsArray):
                 offsets[11] = -scaling_factor * abs(options.control.drives.left - low_sat)
                 offsets[15] = +scaling_factor * abs(options.control.drives.left - low_sat)
 
-            if low_sat <= options.control.drives.right <= up_sat:
-                offsets[0:11] = scaling_factor * abs(options.control.drives.right - low_sat)
-                offsets[19] = scaling_factor * abs(options.control.drives.right - low_sat)
-                offsets[23] = -scaling_factor * abs(options.control.drives.right - low_sat)
-                offsets[11] = scaling_factor * abs(options.control.drives.right - low_sat)
-                offsets[15] = -scaling_factor * abs(options.control.drives.right - low_sat)
+            # if low_sat <= options.control.drives.right <= up_sat:
+            #     offsets[0:11] = scaling_factor * abs(options.control.drives.right - low_sat)
+            #     offsets[19] = scaling_factor * abs(options.control.drives.right - low_sat)
+            #     offsets[23] = -scaling_factor * abs(options.control.drives.right - low_sat)
+            #     offsets[11] = scaling_factor * abs(options.control.drives.right - low_sat)
+            #     offsets[15] = -scaling_factor * abs(options.control.drives.right - low_sat)
 
 
         if options.control.drives.forward > up_sat:
@@ -623,10 +623,15 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
     def from_options(cls, options):
         """Default"""
         connectivity = []
+        close_loop = True
         foot_id = [26, 30, 34, 38, 42, 46, 50, 54]
-        sigma_foot = -0.2
+        sigma_foot = -0.3
         sigma_shoulder = -0.6
         # connection for foot
+        if close_loop == False:
+            sigma_foot = 0
+            sigma_shoulder = 0
+
         for leg_i in range(2):
             for side_i in range(2):
                 # ====================foot=======================================
@@ -680,8 +685,8 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
     def export_params():
         connectivity = []
         foot_id = [26, 30, 34, 38, 42, 46, 50, 54]
-        sigma_foot = -0.1
-        sigma_shoulder = -2
+        sigma_foot = -0.2
+        sigma_shoulder = -0.6
         # connection for foot
         for leg_i in range(2):
             for side_i in range(2):
@@ -689,23 +694,45 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
                     2 * leg_i + side_i,
-                    -sigma_foot
+                    sigma_foot
                 ])
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
                     2 * leg_i + side_i,
-                    sigma_foot
+                    -sigma_foot
                 ])
                 # ====================lower shoulder============================
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
                     2 * leg_i + side_i,
-                    -sigma_shoulder
+                    sigma_shoulder
                 ])
                 connectivity.append([
                     legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
                     2 * leg_i + side_i,
-                    sigma_shoulder
+                    -sigma_shoulder
+                ])
+                # ====================upper shoulder 1============================
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
+                    2 * leg_i + side_i,
+                    sigma_shoulder / 2
+                ])
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
+                    2 * leg_i + side_i,
+                    -sigma_shoulder / 2
+                ])
+                # ====================upper shoulder 1============================
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=4, side=0),
+                    2 * leg_i + side_i,
+                    sigma_shoulder / 10
+                ])
+                connectivity.append([
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=4, side=1),
+                    2 * leg_i + side_i,
+                    -sigma_shoulder / 10
                 ])
 
         print(np.array(connectivity))
