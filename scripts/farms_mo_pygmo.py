@@ -24,10 +24,14 @@ class SphereFunction:
     def fitness(variables):
         """Fitness"""
         return (
-            + (variables[0]-0)**2
-            + (variables[1]-1)**2,
-            + (variables[0]-1)**2
-            + (variables[1]-0)**2
+            np.sqrt(
+                + (variables[0]-0)**2
+                + (variables[1]-1)**2
+            ),
+            np.sqrt(
+                + (variables[0]-1)**2
+                + (variables[1]-0)**2
+            )
         )
 
     def batch_fitness(self, variables):
@@ -69,7 +73,7 @@ def main():
             neighbours=len(pop)//5,
         )
     )
-    for generation in range(1000):
+    for generation in range(100):
         pop = algo.evolve(pop)
     print("Population:\n{}".format(pop))
 

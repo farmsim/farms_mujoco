@@ -37,7 +37,7 @@ class ProblemLogger:
         """Plot variables"""
 
         # Variables
-        plt.figure("Varable space")
+        plt.figure("Variable space")
         plt.plot(
             self.variables[:, 0],
             self.variables[:, 1],
@@ -56,16 +56,18 @@ class ProblemLogger:
 class Evolution:
     """Evolution"""
 
-    def __init__(self, problem, algorithms, n_population, n_generations, n_runs):
+    def __init__(self, problem, algorithms, **kwargs):
         super(Evolution, self).__init__()
         self.problem = problem
         self.algorithms = algorithms
-        self.n_population = n_population
-        self.n_generations = n_generations
-        self.n_runs = n_runs
+        self.n_population = kwargs.pop("n_population", None)
+        self.n_generations = kwargs.pop("n_generations", None)
+        self.n_runs = kwargs.pop("n_runs", None)
+        self.options = kwargs.pop("options", {})
         self.nfe = 0
         self.archive = pla.Archive()
         self.pool = Pool()
+        self.evaluations = []
 
     def run_evolution(self):
         """Run evolution"""
@@ -80,66 +82,74 @@ class Evolution:
                         self.n_population,
                         self.n_generations,
                         self.archive,
-                        {
-                            # "divisions_outer": 10
-                        }
+                        self.options
                     )
                     for algorithm in self.algorithms
                 ]
             )
-            print("Updating archive")
-            for algorithm, problem in results:
-                self.nfe += algorithm.nfe
+            for algorithm, problem, _archive, nfe in results:
+                self.nfe += nfe
                 print("Computing nondominated front")
-                nondominated = pla.nondominated(algorithm.result)
-                print("Updating archive (n={})".format(len(nondominated)))
-                self.update_archive(self.archive, nondominated)
+                # nondominated = pla.nondominated(algorithm.result)
+                print("Updating archive (n={})".format(len(_archive)))
+                self.update_archive(self.archive, _archive)
+                # self.update_archive(self.archive, nondominated)
                 print("Archive size: {}".format(len(self.archive)))
-                problem.logger.plot_evaluations()
+                self.evaluations.append(problem)
 
     @staticmethod
     def island(algorithm, problem, n_population, n_generations, archive, options):
         """Island"""
         problem = problem(n_generations*n_population)
-        algorithm = algorithm(
-            problem,
-            population_size=n_population,
-            # divisions_inner=0,
-            # divisions_outer=10,  # n_evaluations//10,
-            # epsilons=0.05,
-            archive=archive,
-            **options
-        )
+        nfe = 0
         for _ in range(n_generations):
-            algorithm.run(n_population)
-        return algorithm, problem
+            options["generator"] = pla.InjectedPopulation(archive)
+            _algorithm = algorithm(
+                problem,
+                population_size=n_population,
+                # divisions_inner=0,
+                # divisions_outer=10,  # n_evaluations//10,
+                # epsilons=0.05,
+                archive=archive,
+                **options
+            )
+            _algorithm.run(n_population)
+            Evolution.update_archive(
+                archive,
+                pla.nondominated(_algorithm.result)
+            )
+            nfe += _algorithm.nfe
+            # options["generator"] = pla.InjectedPopulation(_algorithm.result)
+        return _algorithm, problem, archive, nfe
 
     @staticmethod
     def plot_non_dominated_fronts(result):
         """Plot nondominated front"""
         nondominated_solutions = pla.nondominated(result)
+        Evolution.plot_result(nondominated_solutions)
+        print("Pareto front size: {}".format(len(nondominated_solutions)))
+
+    @staticmethod
+    def plot_result(result):
+        """Plot result"""
 
         # Fitness
         plt.figure("Fitness space")
         plt.plot(
-            [s.objectives[0] for s in nondominated_solutions],
-            [s.objectives[1] for s in nondominated_solutions],
+            [s.objectives[0] for s in result],
+            [s.objectives[1] for s in result],
             "ro"
         )
         plt.grid(True)
 
         # Variables
-        plt.figure("Varable space")
+        plt.figure("Variable space")
         plt.plot(
-            [s.variables[0] for s in nondominated_solutions],
-            [s.variables[1] for s in nondominated_solutions],
+            [s.variables[0] for s in result],
+            [s.variables[1] for s in result],
             "ro"
         )
         plt.grid(True)
-
-        print("Pareto front size: {}".format(
-            len(nondominated_solutions)
-        ))
 
     @staticmethod
     def update_archive(archive, solutions, rtol=1e-8, atol=1e-8):
@@ -160,6 +170,7 @@ class Evolution:
 
 
 class ExampleProblem(pla.Problem):
+    """ Example problem"""
 
     def __init__(self, n_evaluations):
         n_vars, n_objs = 2, 2
@@ -200,5 +211,3 @@ class ExampleProblem(pla.Problem):
         # )
 
         self.logger.log(solution.variables, solution.objectives)
-
-
