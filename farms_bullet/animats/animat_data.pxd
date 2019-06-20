@@ -60,7 +60,13 @@ cdef class ProprioceptionArray(NetworkArray3D):
 
 cdef class GpsArray(NetworkArray3D):
     """Gps array"""
-    pass
+
+    cpdef public double[:] com_position(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:] com_orientation(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:] urdf_position(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i)
 
 
 cdef class HydrodynamicsArray(NetworkArray3D):

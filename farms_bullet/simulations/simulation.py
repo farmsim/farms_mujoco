@@ -78,11 +78,11 @@ class Simulation:
     def init_physics(self):
         """Initialise physics"""
         pybullet.resetSimulation()
-        pybullet.setGravity(0, 0, -9.81)
-        pybullet.setTimeStep(self.options.timestep)
+        pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
+        pybullet.setTimeStep(self.options.timestep*self.options.units.seconds)
         pybullet.setRealTimeSimulation(0)
         pybullet.setPhysicsEngineParameter(
-            fixedTimeStep=self.options.timestep,
+            fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
             erp=0,
             contactERP=0,
@@ -92,6 +92,26 @@ class Simulation:
             # useSplitImpulse=False,
             # splitImpulsePenetrationThreshold=1e-5,
             # contactBreakingThreshold=1e-5
+            # numSubSteps=100,
+            # maxNumCmdPer1ms=int(1e5),
+
+            # # Parameters
+            # fixedTimeStep
+            # numSolverIterations
+            # useSplitImpulse
+            # splitImpulsePenetrationThreshold
+            # numSubSteps
+            # collisionFilterMode
+            # contactBreakingThreshold
+            # maxNumCmdPer1ms
+            # enableFileCaching
+            # restitutionVelocityThreshold
+            # erp
+            # contactERP
+            # frictionERP
+            # enableConeFriction
+            # deterministicOverlappingPairs
+            # solverResidualThreshold
         )
         print("Physics parameters:\n{}".format(
             pybullet.getPhysicsEngineParameters()

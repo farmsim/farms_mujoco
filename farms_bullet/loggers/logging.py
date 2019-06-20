@@ -60,7 +60,6 @@ class PositionLogger:
         plt.legend()
 
 
-
 class SensorsLogger:
     """Sensors logger"""
 

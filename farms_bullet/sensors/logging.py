@@ -263,7 +263,7 @@ class LinksStatesLogger(SensorLogger):
         if figure is not None:
             plt.figure(figure)
         array_local = np.array([
-            global2local(array[i], self.array[i, 0, 3:7])
+            global2local(array[i], self.array[i, 0, 10:14])
             for i, _ in enumerate(times)
         ]).T
         labels = kwargs.pop("labels", ["x", "y", "z"])
@@ -297,6 +297,7 @@ class LinksStatesLogger(SensorLogger):
             self.array[:len(times), 0, 1]
         )
         plt.grid(True)
+        plt.axis("equal")
         plt.xlabel("Position x [m]")
         plt.ylabel("Position y [m]")
 
@@ -307,14 +308,14 @@ class LinksStatesLogger(SensorLogger):
         if local:
             self.plot_local_array(
                 times=times,
-                array=self.array[:, 0, 7:10],
+                array=self.array[:, 0, 14:17],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
         else:
             self.plot_array(
                 times=times,
-                array_ids=[7, 8, 9],
+                array_ids=[14, 15, 16],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
@@ -328,14 +329,14 @@ class LinksStatesLogger(SensorLogger):
         if local:
             self.plot_local_array(
                 times=times,
-                array=self.array[:, 0, 10:],
+                array=self.array[:, 0, 17:20],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
         else:
             self.plot_array(
                 times=times,
-                array_ids=[10, 11, 12],
+                array_ids=[17, 18, 19],
                 figure=figure,
                 labels=[label + "_" + element for element in ["x", "y", "z"]]
             )
@@ -400,7 +401,7 @@ class LinkStateLogger(SensorLogger):
         if figure is not None:
             plt.figure(figure)
         array_local = np.array([
-            global2local(array[i], self.array[i, 3:7])
+            global2local(array[i], self.array[i, 10:14])
             for i, _ in enumerate(times)
         ]).T
         labels = kwargs.pop("labels", ["x", "y", "z"])

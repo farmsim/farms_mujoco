@@ -7,7 +7,7 @@ cimport numpy as np
 cdef class AnimatData:
     """Network parameter"""
 
-    def __init__(self, state, network, joints, sensors):
+    def __init__(self, state=None, network=None, joints=None, sensors=None):
         super(AnimatData, self).__init__()
         self.state = state
         self.network = network
@@ -147,10 +147,10 @@ cdef class Sensors:
 
     def __init__(
             self,
-            ContactsArray contacts,
-            ProprioceptionArray proprioception,
-            GpsArray gps,
-            HydrodynamicsArray hydrodynamics
+            ContactsArray contacts=None,
+            ProprioceptionArray proprioception=None,
+            GpsArray gps=None,
+            HydrodynamicsArray hydrodynamics=None
     ):
         super(Sensors, self).__init__()
         self.contacts = contacts
@@ -161,19 +161,59 @@ cdef class Sensors:
 
 cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
-    pass
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_contacts):
+        """From parameters"""
+        return cls(np.zeros([n_iterations, n_contacts, 9]))
 
 
 cdef class ProprioceptionArray(NetworkArray3D):
     """Proprioception array"""
-    pass
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_joints):
+        """From parameters"""
+        return cls(np.zeros([n_iterations, n_joints, 9]))
 
 
 cdef class GpsArray(NetworkArray3D):
     """Gps array"""
-    pass
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_links):
+        """From parameters"""
+        return cls(np.zeros([n_iterations, n_links, 20]))
+
+    cpdef double[:] com_position(self, unsigned int iteration, unsigned int link_i):
+        """ CoM position of a link"""
+        return self.array[iteration, link_i, 0:3]
+
+    cpdef double[:] com_orientation(self, unsigned int iteration, unsigned int link_i):
+        """ CoM orientation of a link"""
+        return self.array[iteration, link_i, 3:7]
+
+    cpdef double[:] urdf_position(self, unsigned int iteration, unsigned int link_i):
+        """ URDF position of a link"""
+        return self.array[iteration, link_i, 0:3]
+
+    cpdef double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i):
+        """ URDF orientation of a link"""
+        return self.array[iteration, link_i, 3:7]
+
+    cpdef double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i):
+        """ CoM linear velocity of a link"""
+        return self.array[iteration, link_i, 14:17]
+
+    cpdef double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i):
+        """ CoM angular velocity of a link"""
+        return self.array[iteration, link_i, 17:20]
 
 
 cdef class HydrodynamicsArray(NetworkArray3D):
     """Hydrodynamics array"""
-    pass
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_links):
+        """From parameters"""
+        return cls(np.zeros([n_iterations, n_links, 6]))

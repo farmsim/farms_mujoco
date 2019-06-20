@@ -23,7 +23,8 @@ class SalamanderSimulation(Simulation):
                 animat=Salamander(
                     animat_options,
                     simulation_options.timestep,
-                    simulation_options.n_iterations
+                    simulation_options.n_iterations,
+                    simulation_options.units
                 ),
                 arena=kwargs.pop("arena", FlooredArena())
             ),
@@ -155,9 +156,9 @@ class SalamanderSimulation(Simulation):
                 self.elements.animat.options
             )
             if self.elements.animat.options.control.drives.forward > 3:
-                pybullet.setGravity(0, 0, -0.01)
+                pybullet.setGravity(0, 0, -0.01*self.options.units.gravity)
             else:
-                pybullet.setGravity(0, 0, -9.81)
+                pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
             self.interface.user_params.drive_speed.changed = False
             self.interface.user_params.drive_turn.changed = False
 
