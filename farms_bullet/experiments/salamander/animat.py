@@ -121,19 +121,22 @@ class Salamander(Animat):
             )
             for i in range(11)
         ] + [None for i in range(4) for j in range(4)]
-        leg_length = self.scale*0.03
+        leg_offset = self.scale*0.03
+        leg_length = self.scale*0.06
         leg_radius = self.scale*0.015
         for leg_i in [1, 0]:
             for side in range(2):
                 sign = 1 if side else -1
+                offset = np.zeros(3)
+                offset[1] = sign*leg_offset
                 position = np.zeros(3)
-                position[1] = sign*leg_length
+                position[1] = 0.5*sign*leg_length
                 # Shoulder1
                 links[leglink2index(leg_i, side, 0)] = AnimatLink(
                     self.units,
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.2*leg_radius,
-                    position=position,
+                    position=offset,
                     parent=5 if leg_i else 1,  # Inverse seems to change nothing
                     joint_axis=[0, 0, sign],
                     mass=0,
@@ -154,7 +157,7 @@ class Salamander(Animat):
                     self.units,
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
-                    height=0.9*2*leg_length,
+                    height=leg_length,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     parent=leglink2index(leg_i, side, 1)+1,
@@ -165,7 +168,7 @@ class Salamander(Animat):
                     self.units,
                     geometry=pybullet.GEOM_CAPSULE,
                     radius=leg_radius,
-                    height=0.9*2*leg_length,
+                    height=leg_length,
                     position=2*position,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
