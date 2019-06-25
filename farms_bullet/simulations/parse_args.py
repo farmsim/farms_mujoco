@@ -91,4 +91,6 @@ def parse_args():
         choices=["npy", "txt", "csv"],
         help="Log data to path at end of experiment for results analysis"
     )
-    return parser.parse_args()
+    # return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
