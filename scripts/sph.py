@@ -8,12 +8,13 @@ from __future__ import print_function
 import sys
 # import os
 import numpy as np
+import numpy
 
 from pysph.base.utils import (get_particle_array_wcsph,
                               get_particle_array_rigid_body)
 # PySPH base and carray imports
-# from pysph.base.kernels import CubicSpline
-from pysph.base.kernels import WendlandQuintic
+from pysph.base.kernels import CubicSpline
+# from pysph.base.kernels import WendlandQuintic
 
 from pysph.solver.solver import Solver
 from pysph.sph.integrator import EPECIntegrator
@@ -34,6 +35,13 @@ from pysph.sph.rigid_body import (
     IntegratorStep,
     AkinciRigidFluidCoupling,
 )
+from pysph.base.reduce_array import parallel_reduce_array
+
+# Rigid body physics
+import pybullet
+from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
+from farms_bullet.simulations.simulation_options import SimulationOptions
+from farms_bullet.experiments.salamander.simulation import SalamanderSimulation
 
 
 def get_3d_dam(length=10, width=15, depth=10, dx=0.1, layers=2):
@@ -132,17 +140,124 @@ def mesh_to_particles(link, filename=None, dx=2e-2, show=False):
     return points.T
 
 
-class BodyForce(Equation):
-    def __init__(self, dest, sources, gx=0.0, gy=0.0, gz=0.0):
-        self.gx = gx
-        self.gy = gy
-        self.gz = gz
-        super(BodyForce, self).__init__(dest, sources)
+class BulletPhysicsForces(Equation):
 
-    def initialize(self, d_idx, d_m, d_fx, d_fy, d_fz):
-        d_fx[d_idx] = d_m[d_idx]*self.gx
-        d_fy[d_idx] = d_m[d_idx]*self.gy
-        d_fz[d_idx] = d_m[d_idx]*self.gz
+    def __init__(self, dest, sources, simulation, link_i):
+        self.simulation = simulation
+        self.link_i = link_i
+        super(BulletPhysicsForces, self).__init__(dest, sources)
+
+    def py_initialize(self, dst, t, dt):
+        if dst.gpu:
+            dst.gpu.pull('force', 'torque')
+        iteration = self.simulation.iteration
+        hydrodynamics = self.simulation.animat.data.sensors.hydrodynamics.array
+        hydrodynamics[iteration, self.link_i, 0] = dst.force[0]
+        hydrodynamics[iteration, self.link_i, 1] = dst.force[1]
+        hydrodynamics[iteration, self.link_i, 2] = dst.force[2]
+        hydrodynamics[iteration, self.link_i, 3] = dst.torque[0]
+        hydrodynamics[iteration, self.link_i, 4] = dst.torque[1]
+        hydrodynamics[iteration, self.link_i, 5] = dst.torque[2]
+
+
+class BulletPhysicsUpdate(Equation):
+
+    def __init__(self, dest, sources, simulation):
+        self.simulation = simulation
+        super(BulletPhysicsUpdate, self).__init__(dest, sources)
+
+    def py_initialize(self, dst, t, dt):
+        self.simulation.step(self.simulation.iteration)
+
+
+class BulletPhysicsMotion(Equation):
+
+    def __init__(self, dest, sources, simulation, link_i):
+        self.simulation = simulation
+        self.link_i = link_i
+        super(BulletPhysicsMotion, self).__init__(dest, sources)
+
+    def py_initialize(self, dst, t, dt):
+        if dst.gpu:
+            dst.gpu.pull('x', 'y', 'z', 'u', 'v', 'w', 'au', 'av', 'aw')
+        # base = d_body_id[d_idx]*3
+        # wx = dst.omega[base + 0]
+        # wy = dst.omega[base + 1]
+        # wz = dst.omega[base + 2]
+        # rx = dst.x[d_idx] - dst.cm[base + 0]
+        # ry = dst.y[d_idx] - dst.cm[base + 1]
+        # rz = dst.z[d_idx] - dst.cm[base + 2]
+        # dst.u[d_idx] = dst.vc[base + 0] + wy*rz - wz*ry
+        # dst.v[d_idx] = dst.vc[base + 1] + wz*rx - wx*rz
+        # dst.w[d_idx] = dst.vc[base + 2] + wx*ry - wy*rx
+        # print("Positions for link {}:".format(self.link_i))
+        # print(dst.x)
+        # print(self.simulation.animat.particles[self.link_i][:, 0])
+        position = np.array(
+            self.simulation.animat.data.sensors.gps.urdf_position(
+                self.simulation.iteration,
+                self.link_i
+            )
+        )
+        if self.link_i == 11:
+            print("SPH position: {}".format(np.array(position)))
+        orientation = np.array(
+            self.simulation.animat.data.sensors.gps.urdf_orientation(
+                self.simulation.iteration,
+                self.link_i
+            )
+        )
+        rot_matrix = np.array(pybullet.getMatrixFromQuaternion(
+            orientation
+        )).reshape([3, 3])
+        particles = np.array([
+            np.dot(rot_matrix, np.array(particle))
+            for particle in self.simulation.animat.particles[self.link_i]
+        ])
+        dst.x, dst.y, dst.z = [
+            # Joint position
+            position[i]
+            # Particles positions
+            + particles[:, i]
+            for i in range(3)
+        ]
+        size = len(self.simulation.animat.particles[self.link_i])
+        dst.u, dst.v, dst.w, dst.au, dst.av, dst.aw = np.zeros([6, size])
+        if dst.gpu:
+            dst.gpu.push('x', 'y', 'z', 'u', 'v', 'w', 'au', 'av', 'aw')
+
+
+# class BodyForce(Equation):
+
+#     def __init__(self, dest, sources, simulation, gx=0.0, gy=0.0, gz=0.0):
+#         # self.gx = gx
+#         # self.gy = gy
+#         # self.gz = gz
+#         self.simulation = simulation
+#         super(BodyForce, self).__init__(dest, sources)
+
+#     def py_initialize(self, dst, t, dt):
+#         # Called once per destination array before initialize.
+#         # This is a pure Python function and is not translated.
+#         # print("Initializing body forces ({})".format(self.simulation.iteration))
+#         self.simulation.iteration += 1
+#         n_particles = dst.get_number_of_particles()
+#         if dst.gpu:
+#             dst.gpu.pull('fx', 'fy', 'fz')
+#         for i in range(n_particles):
+#             dst.fx[i] = 0
+#             dst.fy[i] = 0.
+#             dst.fz[i] = -9.81
+#         if dst.gpu:
+#             dst.gpu.push('fx', 'fy', 'fz')
+
+#     def initialize(self, d_idx, d_m, d_fx, d_fy, d_fz):
+#         # d_fx[d_idx] = d_m[d_idx]*self.gx
+#         # d_fy[d_idx] = d_m[d_idx]*self.gy
+#         # d_fz[d_idx] = d_m[d_idx]*self.gz
+#         d_fx[d_idx] *= d_m[d_idx]
+#         d_fy[d_idx] *= d_m[d_idx]
+#         d_fz[d_idx] *= d_m[d_idx]
 
 
 class RigidBodyMoments(Equation):
@@ -291,206 +406,257 @@ class RigidBodyMoments(Equation):
             )
 
 
-class RigidBodyCollision(Equation):
-    """Force between two spheres is implemented using DEM contact force law.
+# class RigidBodyCollision(Equation):
+#     """Force between two spheres is implemented using DEM contact force law.
 
-    Refer https://doi.org/10.1016/j.powtec.2011.09.019 for more
-    information.
+#     Refer https://doi.org/10.1016/j.powtec.2011.09.019 for more
+#     information.
 
-    Open-source MFIX-DEM software for gas–solids flows:
-    Part I—Verification studies .
+#     Open-source MFIX-DEM software for gas–solids flows:
+#     Part I—Verification studies .
 
-    """
-    def __init__(self, dest, sources, kn=1e3, mu=0.5, en=0.8):
-        """Initialise the required coefficients for force calculation.
-
-
-        Keyword arguments:
-        kn -- Normal spring stiffness (default 1e3)
-        mu -- friction coefficient (default 0.5)
-        en -- coefficient of restitution (0.8)
-
-        Given these coefficients, tangential spring stiffness, normal and
-        tangential damping coefficient are calculated by default.
-
-        """
-        self.kn = kn
-        self.kt = 2. / 7. * kn
-        m_eff = np.pi * 0.5**2 * 1e-6 * 2120
-        self.gamma_n = -(2 * np.sqrt(kn * m_eff) * np.log(en)) / (
-            np.sqrt(np.pi**2 + np.log(en)**2))
-        self.gamma_t = 0.5 * self.gamma_n
-        self.mu = mu
-        super(RigidBodyCollision, self).__init__(dest, sources)
-
-    def loop(self, d_idx, d_fx, d_fy, d_fz, d_h, d_total_mass, d_rad_s,
-             d_tang_disp_x, d_tang_disp_y, d_tang_disp_z, d_tang_velocity_x,
-             d_tang_velocity_y, d_tang_velocity_z, s_idx, s_rad_s, XIJ, RIJ,
-             R2IJ, VIJ):
-        overlap = 0
-        if RIJ > 1e-9:
-            overlap = d_rad_s[d_idx] + s_rad_s[s_idx] - RIJ
-
-        if overlap > 0:
-            # normal vector passing from particle i to j
-            nij_x = -XIJ[0] / RIJ
-            nij_y = -XIJ[1] / RIJ
-            nij_z = -XIJ[2] / RIJ
-
-            # overlap speed: a scalar
-            vijdotnij = VIJ[0] * nij_x + VIJ[1] * nij_y + VIJ[2] * nij_z
-
-            # normal velocity
-            vijn_x = vijdotnij * nij_x
-            vijn_y = vijdotnij * nij_y
-            vijn_z = vijdotnij * nij_z
-
-            # normal force with conservative and dissipation part
-            fn_x = -self.kn * overlap * nij_x - self.gamma_n * vijn_x
-            fn_y = -self.kn * overlap * nij_y - self.gamma_n * vijn_y
-            fn_z = -self.kn * overlap * nij_z - self.gamma_n * vijn_z
-
-            # ----------------------Tangential force---------------------- #
-
-            # tangential velocity
-            d_tang_velocity_x[d_idx] = VIJ[0] - vijn_x
-            d_tang_velocity_y[d_idx] = VIJ[1] - vijn_y
-            d_tang_velocity_z[d_idx] = VIJ[2] - vijn_z
-
-            dtvx = d_tang_velocity_x[d_idx]
-            dtvy = d_tang_velocity_y[d_idx]
-            dtvz = d_tang_velocity_z[d_idx]
-            _tang = sqrt(dtvx*dtvx + dtvy*dtvy + dtvz*dtvz)
-
-            # tangential unit vector
-            tij_x = 0
-            tij_y = 0
-            tij_z = 0
-            if _tang > 0:
-                tij_x = d_tang_velocity_x[d_idx] / _tang
-                tij_y = d_tang_velocity_y[d_idx] / _tang
-                tij_z = d_tang_velocity_z[d_idx] / _tang
-
-            # damping force or dissipation
-            ft_x_d = -self.gamma_t * d_tang_velocity_x[d_idx]
-            ft_y_d = -self.gamma_t * d_tang_velocity_y[d_idx]
-            ft_z_d = -self.gamma_t * d_tang_velocity_z[d_idx]
-
-            # tangential spring force
-            ft_x_s = -self.kt * d_tang_disp_x[d_idx]
-            ft_y_s = -self.kt * d_tang_disp_y[d_idx]
-            ft_z_s = -self.kt * d_tang_disp_z[d_idx]
-
-            ft_x = ft_x_d + ft_x_s
-            ft_y = ft_y_d + ft_y_s
-            ft_z = ft_z_d + ft_z_s
-
-            # coulomb law
-            ftij = sqrt((ft_x**2) + (ft_y**2) + (ft_z**2))
-            fnij = sqrt((fn_x**2) + (fn_y**2) + (fn_z**2))
-
-            _fnij = self.mu * fnij
-
-            if _fnij < ftij:
-                ft_x = -_fnij * tij_x
-                ft_y = -_fnij * tij_y
-                ft_z = -_fnij * tij_z
-
-            d_fx[d_idx] += fn_x + ft_x
-            d_fy[d_idx] += fn_y + ft_y
-            d_fz[d_idx] += fn_z + ft_z
-        else:
-            d_tang_velocity_x[d_idx] = 0
-            d_tang_velocity_y[d_idx] = 0
-            d_tang_velocity_z[d_idx] = 0
-
-            d_tang_disp_x[d_idx] = 0
-            d_tang_disp_y[d_idx] = 0
-            d_tang_disp_z[d_idx] = 0
+#     """
+#     def __init__(self, dest, sources, kn=1e3, mu=0.5, en=0.8):
+#         """Initialise the required coefficients for force calculation.
 
 
-class RigidBodyMotion(Equation):
-    def initialize(self, d_idx, d_x, d_y, d_z, d_u, d_v, d_w,
-                   d_cm, d_vc, d_ac, d_omega, d_body_id):
-        base = declare('int')
-        base = d_body_id[d_idx]*3
-        wx = d_omega[base + 0]
-        wy = d_omega[base + 1]
-        wz = d_omega[base + 2]
-        rx = d_x[d_idx] - d_cm[base + 0]
-        ry = d_y[d_idx] - d_cm[base + 1]
-        rz = d_z[d_idx] - d_cm[base + 2]
+#         Keyword arguments:
+#         kn -- Normal spring stiffness (default 1e3)
+#         mu -- friction coefficient (default 0.5)
+#         en -- coefficient of restitution (0.8)
 
-        d_u[d_idx] = d_vc[base + 0] + wy*rz - wz*ry
-        d_v[d_idx] = d_vc[base + 1] + wz*rx - wx*rz
-        d_w[d_idx] = d_vc[base + 2] + wx*ry - wy*rx
+#         Given these coefficients, tangential spring stiffness, normal and
+#         tangential damping coefficient are calculated by default.
+
+#         """
+#         self.kn = kn
+#         self.kt = 2. / 7. * kn
+#         m_eff = np.pi * 0.5**2 * 1e-6 * 2120
+#         self.gamma_n = -(2 * np.sqrt(kn * m_eff) * np.log(en)) / (
+#             np.sqrt(np.pi**2 + np.log(en)**2))
+#         self.gamma_t = 0.5 * self.gamma_n
+#         self.mu = mu
+#         super(RigidBodyCollision, self).__init__(dest, sources)
+
+#     def loop(self, d_idx, d_fx, d_fy, d_fz, d_h, d_total_mass, d_rad_s,
+#              d_tang_disp_x, d_tang_disp_y, d_tang_disp_z, d_tang_velocity_x,
+#              d_tang_velocity_y, d_tang_velocity_z, s_idx, s_rad_s, XIJ, RIJ,
+#              R2IJ, VIJ):
+#         overlap = 0
+#         if RIJ > 1e-9:
+#             overlap = d_rad_s[d_idx] + s_rad_s[s_idx] - RIJ
+
+#         if overlap > 0:
+#             # normal vector passing from particle i to j
+#             nij_x = -XIJ[0] / RIJ
+#             nij_y = -XIJ[1] / RIJ
+#             nij_z = -XIJ[2] / RIJ
+
+#             # overlap speed: a scalar
+#             vijdotnij = VIJ[0] * nij_x + VIJ[1] * nij_y + VIJ[2] * nij_z
+
+#             # normal velocity
+#             vijn_x = vijdotnij * nij_x
+#             vijn_y = vijdotnij * nij_y
+#             vijn_z = vijdotnij * nij_z
+
+#             # normal force with conservative and dissipation part
+#             fn_x = -self.kn * overlap * nij_x - self.gamma_n * vijn_x
+#             fn_y = -self.kn * overlap * nij_y - self.gamma_n * vijn_y
+#             fn_z = -self.kn * overlap * nij_z - self.gamma_n * vijn_z
+
+#             # ----------------------Tangential force---------------------- #
+
+#             # tangential velocity
+#             d_tang_velocity_x[d_idx] = VIJ[0] - vijn_x
+#             d_tang_velocity_y[d_idx] = VIJ[1] - vijn_y
+#             d_tang_velocity_z[d_idx] = VIJ[2] - vijn_z
+
+#             dtvx = d_tang_velocity_x[d_idx]
+#             dtvy = d_tang_velocity_y[d_idx]
+#             dtvz = d_tang_velocity_z[d_idx]
+#             _tang = sqrt(dtvx*dtvx + dtvy*dtvy + dtvz*dtvz)
+
+#             # tangential unit vector
+#             tij_x = 0
+#             tij_y = 0
+#             tij_z = 0
+#             if _tang > 0:
+#                 tij_x = d_tang_velocity_x[d_idx] / _tang
+#                 tij_y = d_tang_velocity_y[d_idx] / _tang
+#                 tij_z = d_tang_velocity_z[d_idx] / _tang
+
+#             # damping force or dissipation
+#             ft_x_d = -self.gamma_t * d_tang_velocity_x[d_idx]
+#             ft_y_d = -self.gamma_t * d_tang_velocity_y[d_idx]
+#             ft_z_d = -self.gamma_t * d_tang_velocity_z[d_idx]
+
+#             # tangential spring force
+#             ft_x_s = -self.kt * d_tang_disp_x[d_idx]
+#             ft_y_s = -self.kt * d_tang_disp_y[d_idx]
+#             ft_z_s = -self.kt * d_tang_disp_z[d_idx]
+
+#             ft_x = ft_x_d + ft_x_s
+#             ft_y = ft_y_d + ft_y_s
+#             ft_z = ft_z_d + ft_z_s
+
+#             # coulomb law
+#             ftij = sqrt((ft_x**2) + (ft_y**2) + (ft_z**2))
+#             fnij = sqrt((fn_x**2) + (fn_y**2) + (fn_z**2))
+
+#             _fnij = self.mu * fnij
+
+#             if _fnij < ftij:
+#                 ft_x = -_fnij * tij_x
+#                 ft_y = -_fnij * tij_y
+#                 ft_z = -_fnij * tij_z
+
+#             d_fx[d_idx] += fn_x + ft_x
+#             d_fy[d_idx] += fn_y + ft_y
+#             d_fz[d_idx] += fn_z + ft_z
+#         else:
+#             d_tang_velocity_x[d_idx] = 0
+#             d_tang_velocity_y[d_idx] = 0
+#             d_tang_velocity_z[d_idx] = 0
+
+#             d_tang_disp_x[d_idx] = 0
+#             d_tang_disp_y[d_idx] = 0
+#             d_tang_disp_z[d_idx] = 0
 
 
-class RK2StepRigidBody(IntegratorStep):
-    def initialize(self, d_idx, d_x, d_y, d_z, d_x0, d_y0, d_z0,
-                   d_omega, d_omega0, d_vc, d_vc0, d_num_body):
-        _i = declare('int')
-        _j = declare('int')
-        base = declare('int')
-        if d_idx == 0:
-            for _i in range(d_num_body[0]):
-                base = 3*_i
-                for _j in range(3):
-                    d_vc0[base + _j] = d_vc[base + _j]
-                    d_omega0[base + _j] = d_omega[base + _j]
+# class RigidBodyMotion(Equation):
+#     def initialize(self, d_idx, d_x, d_y, d_z, d_u, d_v, d_w,
+#                    d_cm, d_vc, d_ac, d_omega, d_body_id):
+#         base = declare('int')
+#         base = d_body_id[d_idx]*3
+#         wx = d_omega[base + 0]
+#         wy = d_omega[base + 1]
+#         wz = d_omega[base + 2]
+#         rx = d_x[d_idx] - d_cm[base + 0]
+#         ry = d_y[d_idx] - d_cm[base + 1]
+#         rz = d_z[d_idx] - d_cm[base + 2]
 
-        d_x0[d_idx] = d_x[d_idx]
-        d_y0[d_idx] = d_y[d_idx]
-        d_z0[d_idx] = d_z[d_idx]
+#         d_u[d_idx] = d_vc[base + 0] + wy*rz - wz*ry
+#         d_v[d_idx] = d_vc[base + 1] + wz*rx - wx*rz
+#         d_w[d_idx] = d_vc[base + 2] + wx*ry - wy*rx
 
-    def stage1(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
-               d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
-               dt=0.0):
-        dtb2 = 0.5*dt
-        _i = declare('int')
-        j = declare('int')
-        base = declare('int')
-        if d_idx == 0:
-            for _i in range(d_num_body[0]):
-                base = 3*_i
-                for j in range(3):
-                    d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dtb2
-                    d_omega[base + j] = (d_omega0[base + j] +
-                                         d_omega_dot[base + j]*dtb2)
 
-        d_x[d_idx] = d_x0[d_idx] + dtb2*d_u[d_idx]
-        d_y[d_idx] = d_y0[d_idx] + dtb2*d_v[d_idx]
-        d_z[d_idx] = d_z0[d_idx] + dtb2*d_w[d_idx]
+# class RK2StepRigidBody(IntegratorStep):
 
-    def stage2(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
-               d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
-               dt=0.0):
-        _i = declare('int')
-        j = declare('int')
-        base = declare('int')
-        if d_idx == 0:
-            for _i in range(d_num_body[0]):
-                base = 3*_i
-                for j in range(3):
-                    d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dt
-                    d_omega[base + j] = (d_omega0[base + j] +
-                                         d_omega_dot[base + j]*dt)
+#     def __init__(self, simulation):
+#         super(RK2StepRigidBody, self).__init__()
+#         self.simulation = simulation
 
-        d_x[d_idx] = d_x0[d_idx] + dt*d_u[d_idx]
-        d_y[d_idx] = d_y0[d_idx] + dt*d_v[d_idx]
-        d_z[d_idx] = d_z0[d_idx] + dt*d_w[d_idx]
+#     def py_initialize(self, dst, t, dt):
+#         # Called once per destination array before initialize.
+#         # This is a pure Python function and is not translated.
+#         # print("Running body step ({})".format(self.simulation.iteration))
+#         self.simulation.iteration += 1
+#         # n_particles = dst.get_number_of_particles()
+#         if dst.gpu:
+#             dst.gpu.pull('fx', 'fy', 'fz')
+#         # for i in range(n_particles):
+#         #     dst.fx[i] = -9.81
+#         #     dst.fy[i] = 0.
+#         #     dst.fz[i] = -9.81
+#         if dst.gpu:
+#             dst.gpu.push('fx', 'fy', 'fz')
+
+#     def initialize(self, d_idx, d_x, d_y, d_z, d_x0, d_y0, d_z0,
+#                    d_omega, d_omega0, d_vc, d_vc0, d_num_body):
+#         _i = declare('int')
+#         _j = declare('int')
+#         base = declare('int')
+#         if d_idx == 0:
+#             for _i in range(d_num_body[0]):
+#                 base = 3*_i
+#                 for _j in range(3):
+#                     d_vc0[base + _j] = d_vc[base + _j]
+#                     d_omega0[base + _j] = d_omega[base + _j]
+
+#         d_x0[d_idx] = d_x[d_idx]
+#         d_y0[d_idx] = d_y[d_idx]
+#         d_z0[d_idx] = d_z[d_idx]
+
+#     def stage1(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
+#                d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
+#                dt=0.0):
+#         dtb2 = 0.5*dt
+#         _i = declare('int')
+#         j = declare('int')
+#         base = declare('int')
+#         if d_idx == 0:
+#             for _i in range(d_num_body[0]):
+#                 base = 3*_i
+#                 for j in range(3):
+#                     d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dtb2
+#                     d_omega[base + j] = (d_omega0[base + j] +
+#                                          d_omega_dot[base + j]*dtb2)
+
+#         d_x[d_idx] = d_x0[d_idx] + dtb2*d_u[d_idx]
+#         d_y[d_idx] = d_y0[d_idx] + dtb2*d_v[d_idx]
+#         d_z[d_idx] = d_z0[d_idx] + dtb2*d_w[d_idx]
+
+#     def stage2(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
+#                d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
+#                dt=0.0):
+#         _i = declare('int')
+#         j = declare('int')
+#         base = declare('int')
+#         if d_idx == 0:
+#             for _i in range(d_num_body[0]):
+#                 base = 3*_i
+#                 for j in range(3):
+#                     d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dt
+#                     d_omega[base + j] = (d_omega0[base + j] +
+#                                          d_omega_dot[base + j]*dt)
+
+#         d_x[d_idx] = d_x0[d_idx] + dt*d_u[d_idx]
+#         d_y[d_idx] = d_y0[d_idx] + dt*d_v[d_idx]
+#         d_z[d_idx] = d_z0[d_idx] + dt*d_w[d_idx]
+
+
+def declare(*args):
+    """Dummy function"""
+    pass
 
 
 class RigidFluidCoupling(Application):
     """Rigid body to fluid coupling"""
 
     def __init__(self, density=500, n_fluid_particles=8000, output_dir=None):
+
+        ## Fluid dynamics options
         self.density = density
         self.n_fluid_particles = n_fluid_particles
         super(RigidFluidCoupling, self).__init__()
+        self.dt = 1e-3
         if output_dir:
             self.args.append("--directory")
             self.args.append(output_dir)
+
+        ## Rigid body physics
+
+        # Animat options
+        animat_options = SalamanderOptions(
+            collect_gps=False,
+            show_hydrodynamics=True,
+            scale=1
+        )
+        animat_options.control.drives.forward = 4
+        # Simulation options
+        simulation_options = SimulationOptions.with_clargs()
+        simulation_options.timestep = self.dt
+        simulation_options.headless = False
+        simulation_options.units.meters = 1
+        simulation_options.units.seconds = 1
+        simulation_options.units.kilograms = 1
+        self.simulation = SalamanderSimulation(
+            simulation_options=simulation_options,
+            animat_options=animat_options
+        )
+        # self.simulation.step(self.simulation.iteration)
+        # self.simulation.iteration += 1
 
     def initialize(self):
         self.density_cube = self.density
@@ -565,20 +731,21 @@ class RigidFluidCoupling(Application):
         #     (yc + 550) * 1e-3 + d_dx_ratio * layers * self.dx,
         #     (zc + 200) * 1e-3 + d_dx_ratio * layers * self.dx
         # )
-        link_positions = [  # From SDF
-            [0, 0, 0],
-            [0.200000003, 0, 0.0069946074],
-            [0.2700000107, 0, 0.010382493],
-            [0.3400000036, 0, 0.0106022889],
-            [0.4099999964, 0, 0.010412137],
-            [0.4799999893, 0, 0.0086611426],
-            [0.5500000119, 0, 0.0043904358],
-            [0.6200000048, 0, 0.0006898994],
-            [0.6899999976, 0, 8.0787e-06],
-            [0.7599999905, 0, -4.89001e-05],
-            [0.8299999833, 0, 0.0001386079],
-            [0.8999999762, 0, 0.0003494423]
-        ]
+        # link_positions = [  # From SDF
+        #     [0, 0, 0],
+        #     [0.200000003, 0, 0.0069946074],
+        #     [0.2700000107, 0, 0.010382493],
+        #     [0.3400000036, 0, 0.0106022889],
+        #     [0.4099999964, 0, 0.010412137],
+        #     [0.4799999893, 0, 0.0086611426],
+        #     [0.5500000119, 0, 0.0043904358],
+        #     [0.6200000048, 0, 0.0006898994],
+        #     [0.6899999976, 0, 8.0787e-06],
+        #     [0.7599999905, 0, -4.89001e-05],
+        #     [0.8299999833, 0, 0.0001386079],
+        #     [0.8999999762, 0, 0.0003494423]
+        # ]
+        link_positions = np.zeros([12, 3])
         xc = [None for _ in range(12)]
         yc = [None for _ in range(12)]
         zc = [None for _ in range(12)]
@@ -598,6 +765,13 @@ class RigidFluidCoupling(Application):
                     + d_dx_ratio * layers * self.dx
                 )
             )
+        self.simulation.animat.particles = [
+            np.array([
+                [xi, yi, zi]
+                for xi, yi, zi in zip(x, y, z)
+            ])
+            for x, y, z in zip(xc, yc, zc)
+        ]
 
         # Create particle array for fluid
         m = self.ro * self.dx * self.dx * self.dx
@@ -662,46 +836,51 @@ class RigidFluidCoupling(Application):
         return [fluid, tank] + cube
 
     def create_solver(self):
-        # kernel = CubicSpline(dim=3)
-        kernel = WendlandQuintic(dim=3)
+        kernel = CubicSpline(dim=3)
+        # kernel = WendlandQuintic(dim=3)
 
-        cubes = {
-            "cube_{}".format(i): RK2StepRigidBody()
-            for i in range(12)
-        }
+        # simulation = Simulation()
+        # cubes = {
+        #     "cube_{}".format(i): RK2StepRigidBody(simulation=simulation)
+        #     for i in range(12)
+        # }
         integrator = EPECIntegrator(
             fluid=WCSPHStep(),
             tank=WCSPHStep(),
-            **cubes
+            # **cubes
         )
 
         # dt = 0.125 * self.dx * self.hdx / (self.co * 1.1) / 2.
-        dt = 1e-3
-        print("DT: %s" % dt)
+        print("DT: %s" % self.dt)
         tf = 1.2  # 5
         solver = Solver(
             kernel=kernel,
             dim=3,
             integrator=integrator,
-            dt=dt,
+            dt=self.dt,
             tf=tf,
-            adaptive_timestep=True,  # False
+            adaptive_timestep=False,  # False because otherwise not constant
+            reorder_freq=0
         )
+        solver.set_output_fname("salamander")  # Does not work
         return solver
 
     def create_equations(self):
-        cube_gravity = [  # Replace this!!
-            Group(
-                equations=[
-                    BodyForce(
-                        dest='cube_{}'.format(i),
-                        sources=None,
-                        gz=-9.81)
-                    for i in range(12)
-                ],
-                real=False
-            )
-        ]
+        # simulation = Simulation()
+        # cube_gravity = [  # Replace this!!
+        #     Group(
+        #         equations=[
+        #             BodyForce(
+        #                 dest='cube_{}'.format(i),
+        #                 sources=None,
+        #                 simulation=self.simulation,
+        #                 gz=-9.81
+        #             )
+        #             for i in range(12)
+        #         ],
+        #         real=False
+        #     )
+        # ]
         continuity = [
             Group(
                 equations=[
@@ -763,19 +942,19 @@ class RigidFluidCoupling(Application):
                 ]
             )
         ]
-        cube_collisions = [  # Replace this!!
-            Group(
-                equations=[
-                    RigidBodyCollision(
-                        dest='cube_{}'.format(i),
-                        sources=['tank', 'cube_{}'.format(i)],
-                        kn=1e3
-                    )
-                    for i in range(12)
-                ]
-            )
-        ]
-        cube_moment = [  # Replace this!!
+        # cube_collisions = [  # Replace this!!
+        #     Group(
+        #         equations=[
+        #             RigidBodyCollision(
+        #                 dest='cube_{}'.format(i),
+        #                 sources=['tank', 'cube_{}'.format(i)],
+        #                 kn=1e3
+        #             )
+        #             for i in range(12)
+        #         ]
+        #     )
+        # ]
+        cube_moment = [
             Group(
                 equations=[
                     RigidBodyMoments(
@@ -786,25 +965,68 @@ class RigidFluidCoupling(Application):
                 ]
             )
         ]
-        cube_motion = [  # Replace this!!
+        # cube_motion = [  # Replace this!!
+        #     Group(
+        #         equations=[
+        #             RigidBodyMotion(
+        #                 dest='cube_{}'.format(i),
+        #                 sources=None
+        #             )
+        #             for i in range(12)
+        #         ]
+        #     )
+        # ]
+
+        bullet_forces = [
             Group(
                 equations=[
-                    RigidBodyMotion(
+                    BulletPhysicsForces(
                         dest='cube_{}'.format(i),
-                        sources=None
+                        sources=None,
+                        simulation=self.simulation,
+                        link_i=i
                     )
                     for i in range(12)
                 ]
             )
         ]
+        bullet_update = [
+            Group(
+                equations=[
+                    BulletPhysicsUpdate(
+                        dest='cube_0',
+                        sources=None,
+                        simulation=self.simulation
+                    )
+                ]
+            )
+        ]
+        bullet_motion = [
+            Group(
+                equations=[
+                    BulletPhysicsMotion(
+                        dest='cube_{}'.format(i),
+                        sources=None,
+                        simulation=self.simulation,
+                        link_i=i
+                    )
+                    for i in range(12)
+                ]
+            )
+        ]
+
         equations = (
-            cube_gravity
-            + continuity
+            # cube_gravity
+            continuity
             + tait
             + fluid_motion
-            + cube_collisions
             + cube_moment
-            + cube_motion
+            + bullet_forces
+            + bullet_update
+            + bullet_motion
+            # + cube_collisions
+            # + cube_moment
+            # + cube_motion
         )
         return equations
 
