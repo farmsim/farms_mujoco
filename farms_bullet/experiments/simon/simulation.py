@@ -29,7 +29,8 @@ class SimonSimulation(Simulation):
                 animat=SimonAnimat(
                     animat_options,
                     simulation_options.timestep,
-                    simulation_options.n_iterations
+                    simulation_options.n_iterations,
+                    simulation_options.units
                 ),
                 arena=FlooredArena()
             ),
@@ -86,6 +87,7 @@ class SimonSimulation(Simulation):
                 self.elements.animat.data.sensors.proprioception.array,
                 self.elements.animat.identity,
                 np.arange(n_joints),
+                units=self.options.units,
                 enable_ft=True
             )
         })
@@ -95,6 +97,7 @@ class SimonSimulation(Simulation):
                 self.elements.animat.data.sensors.gps.array,
                 self.elements.animat.identity,
                 [["base_link", 0, -1]],  # Base link
+                units=self.options.units
             )
         })
 
