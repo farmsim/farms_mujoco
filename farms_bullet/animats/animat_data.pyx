@@ -195,11 +195,11 @@ cdef class GpsArray(NetworkArray3D):
 
     cpdef double[:] urdf_position(self, unsigned int iteration, unsigned int link_i):
         """ URDF position of a link"""
-        return self.array[iteration, link_i, 0:3]
+        return self.array[iteration, link_i, 7:10]
 
     cpdef double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i):
         """ URDF orientation of a link"""
-        return self.array[iteration, link_i, 3:7]
+        return self.array[iteration, link_i, 10:14]
 
     cpdef double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i):
         """ CoM linear velocity of a link"""
