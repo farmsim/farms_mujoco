@@ -67,6 +67,11 @@ class SalamanderSimulation(Simulation):
         self.simulation_state = None
         self.save()
 
+    @property
+    def animat(self):
+        """Salamander animat"""
+        return self.elements.animat
+
     def pre_step(self, sim_step):
         """New step"""
         play = True
