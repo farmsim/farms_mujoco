@@ -10,7 +10,7 @@ from .animat_data import SimonData
 class SimonAnimat(Animat):
     """Documentation for SimonAnimat"""
 
-    def __init__(self, options, timestep, n_iterations):
+    def __init__(self, options, timestep, n_iterations, units):
         super(SimonAnimat, self).__init__(None, options)
         self.timestep = timestep
         self.n_iterations = n_iterations
@@ -20,11 +20,13 @@ class SimonAnimat(Animat):
             options=self.options,
             n_iterations=n_iterations
         )
+        self.units = units
 
     def spawn(self):
         """Spawn"""
         print("Spawning animat")
         base_link = AnimatLink(
+            units=self.units,
             size=[0.1, 0.05, 0.02],
             geometry=pybullet.GEOM_BOX,
             position=[0, 0, 0],
@@ -41,6 +43,7 @@ class SimonAnimat(Animat):
         ])
         upper_legs = [
             AnimatLink(
+                units=self.units,
                 size=[0.02, 0.02, 0.02],
                 geometry=pybullet.GEOM_BOX,
                 position=position,
@@ -59,6 +62,7 @@ class SimonAnimat(Animat):
         # Lower legs
         lower_legs = [
             AnimatLink(
+                units=self.units,
                 # size=[0.02, 0.02, 0.04],
                 geometry=pybullet.GEOM_CAPSULE,
                 radius=0.02,
