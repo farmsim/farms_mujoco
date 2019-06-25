@@ -17,9 +17,9 @@ from ..experiments.salamander.sensors import SalamanderGPS
 
 def global2local(vector_global, orientation):
     """Vector in global frame to local frame"""
-    orientation_inv = np.linalg.inv(np.array(
+    orientation_inv = np.array(
         pybullet.getMatrixFromQuaternion(orientation)
-    ).reshape([3, 3]))
+    ).reshape([3, 3]).T
     return np.dot(orientation_inv, vector_global)
 
 

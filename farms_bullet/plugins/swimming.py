@@ -26,9 +26,9 @@ def viscous_swimming(
             data_gps.com_lin_velocity(iteration, link_i),
             data_gps.com_ang_velocity(iteration, link_i)
         )
-        link_orientation_inv = np.linalg.inv(np.array(
+        link_orientation_inv = np.array(
             pybullet.getMatrixFromQuaternion(ori)
-        ).reshape([3, 3]))
+        ).reshape([3, 3]).T
         link_velocity = np.dot(link_orientation_inv, lin_velocity)
         link_angular_velocity = np.dot(link_orientation_inv, ang_velocity)
         # Data
