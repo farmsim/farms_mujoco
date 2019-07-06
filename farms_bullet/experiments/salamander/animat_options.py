@@ -15,6 +15,10 @@ class SalamanderOptions(Options):
             "morphology",
             SalamanderMorphologyOptions(kwargs)
         )
+        self.spawn = kwargs.pop(
+            "spawn",
+            SalamanderSpawnOptions(kwargs)
+        )
         self.control = kwargs.pop(
             "control",
             SalamanderControlOptions(**kwargs)
@@ -60,6 +64,17 @@ class SalamanderMorphologyOptions(Options):
     def n_links(self):
         """Number of links"""
         return self.n_links_body() + self.n_joints_legs()
+
+
+class SalamanderSpawnOptions(Options):
+    """Salamander spawn options"""
+
+    def __init__(self, options):
+        super(SalamanderSpawnOptions, self).__init__()
+        # Position in [m]
+        self.position = options.pop("spawn_position", [0, 0, 0.1])
+        # Orientation (Euler angles in [rad])
+        self.orientation = options.pop("spawn_orientation", [0, 0, 0])
 
 
 class SalamanderControlOptions(Options):

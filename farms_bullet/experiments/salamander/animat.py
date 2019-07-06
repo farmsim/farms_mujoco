@@ -183,8 +183,12 @@ class Salamander(Animat):
             baseMass=base_link.mass*self.units.kilograms,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=np.array([0, 0, 0])*self.units.meters,
-            baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
+            basePosition=(
+                np.array(self.options.spawn.position)*self.units.meters
+            ),
+            baseOrientation=pybullet.getQuaternionFromEuler(
+                self.options.spawn.orientation
+            ),
             baseInertialFramePosition=np.array(
                 base_link.inertial_position
             )*self.units.meters,
