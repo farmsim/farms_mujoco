@@ -44,7 +44,7 @@ from farms_bullet.simulations.simulation_options import SimulationOptions
 from farms_bullet.experiments.salamander.simulation import SalamanderSimulation
 
 
-def get_3d_dam(length=10, width=15, depth=10, dx=0.1, layers=2):
+def get_3d_dam(position, length=10, width=15, depth=10, dx=0.1, layers=2):
     _x = np.arange(0, length, dx)
     _y = np.arange(0, width, dx)
     _z = np.arange(0, depth, dx)
@@ -62,24 +62,32 @@ def get_3d_dam(length=10, width=15, depth=10, dx=0.1, layers=2):
     # exclude inside particles
     x, y, z = x[~cond], y[~cond], z[~cond]
 
+    # Offset position
+    x += position[0]
+    y += position[1]
+    z += position[2]
+
     return x, y, z
 
 
-def get_3d_block(length=10, width=15, depth=10, dx=0.1):
-    x = np.arange(0, length, dx)
-    y = np.arange(0, width, dx)
-    z = np.arange(0, depth, dx)
+def get_3d_block(position, length=10, width=15, depth=10, dx=0.1):
+    x = position[0] + np.arange(0, length, dx)
+    y = position[1] + np.arange(0, width, dx)
+    z = position[2] + np.arange(0, depth, dx)
 
     x, y, z = np.meshgrid(x, y, z)
     x, y, z = x.ravel(), y.ravel(), z.ravel()
     return x, y, z
 
 
-def get_fluid_and_dam_geometry_3d(d_l, d_h, d_d, f_l, f_h, f_d, d_layers, d_dx,
-                                  f_dx, fluid_left_extreme=None,
-                                  tank_outside=False):
-    xd, yd, zd = get_3d_dam(d_l, d_h, d_d, d_dx, d_layers)
-    xf, yf, zf = get_3d_block(f_l, f_h, f_d, f_dx)
+def get_fluid_and_dam_geometry_3d(
+        position,
+        d_l, d_h, d_d, f_l, f_h, f_d, d_layers, d_dx,
+        f_dx, fluid_left_extreme=None,
+        tank_outside=False
+):
+    xd, yd, zd = get_3d_dam(position, d_l, d_h, d_d, d_dx, d_layers)
+    xf, yf, zf = get_3d_block(position, f_l, f_h, f_d, f_dx)
 
     if fluid_left_extreme:
         x_trans, y_trans, z_trans = fluid_left_extreme
@@ -199,8 +207,18 @@ class BulletPhysicsMotion(Equation):
                 self.link_i
             )
         )
-        if self.link_i == 11:
-            print("SPH position: {}".format(np.array(position)))
+        velocity = np.array(
+            self.simulation.animat.data.sensors.gps.com_lin_velocity(
+                self.simulation.iteration,
+                self.link_i
+            )
+        )
+        angular_velocity = np.array(
+            self.simulation.animat.data.sensors.gps.com_ang_velocity(
+                self.simulation.iteration,
+                self.link_i
+            )
+        )
         orientation = np.array(
             self.simulation.animat.data.sensors.gps.urdf_orientation(
                 self.simulation.iteration,
@@ -210,19 +228,32 @@ class BulletPhysicsMotion(Equation):
         rot_matrix = np.array(pybullet.getMatrixFromQuaternion(
             orientation
         )).reshape([3, 3])
-        particles = np.array([
-            np.dot(rot_matrix, np.array(particle))
+        # Position offset
+        particles_p_local = np.array([
+            np.dot(rot_matrix, particle)
             for particle in self.simulation.animat.particles[self.link_i]
         ])
         dst.x, dst.y, dst.z = [
             # Joint position
             position[i]
             # Particles positions
-            + particles[:, i]
+            + particles_p_local[:, i]
             for i in range(3)
         ]
+        # Particles velocities
+        particle_v = np.array([
+            velocity
+            + np.cross(
+                angular_velocity,
+                np.dot(rot_matrix, particle)
+            )
+            for particle in self.simulation.animat.particles[self.link_i]
+        ])
+        dst.u, dst.v, dst.w = particle_v.T
         size = len(self.simulation.animat.particles[self.link_i])
-        dst.u, dst.v, dst.w, dst.au, dst.av, dst.aw = np.zeros([6, size])
+        dst.au = np.full(size, angular_velocity[0])
+        dst.au = np.full(size, angular_velocity[1])
+        dst.aw = np.full(size, angular_velocity[2])
         if dst.gpu:
             dst.gpu.push('x', 'y', 'z', 'u', 'v', 'w', 'au', 'av', 'aw')
 
@@ -643,6 +674,7 @@ class RigidFluidCoupling(Application):
             show_hydrodynamics=True,
             scale=1
         )
+        animat_options.spawn.position = [0, 0, 0.2]
         animat_options.control.drives.forward = 4
         # Simulation options
         simulation_options = SimulationOptions.with_clargs()
@@ -660,7 +692,7 @@ class RigidFluidCoupling(Application):
 
     def initialize(self):
         self.density_cube = self.density
-        self.tank_size = [1.2, 0.3, 0.2]  # [m]
+        self.tank_size = [3, 0.5, 0.1]  # [m]
         self.tank_volume = self.tank_size[0]*self.tank_size[1]*self.tank_size[2]
         # self._spacing = 1e3*(self.tank_volume/self.n_fluid_particles)**(1/3)
         # print("Spacing: {} [mm]".format(self._spacing))
@@ -703,7 +735,13 @@ class RigidFluidCoupling(Application):
         tank_wid = flu_wid + d_dx_ratio * 2 * layers * 1e3*self.dx
         tank_dep = flu_dep + d_dx_ratio * 2 * layers * 1e3*self.dx
 
+        position = np.array([
+            -0.5*tank_len,
+            -0.5*tank_wid,
+            0
+        ])
         xt, yt, zt, xf, yf, zf = get_fluid_and_dam_geometry_3d(
+            position=position,
             d_l=tank_len,
             d_h=tank_wid,
             d_d=tank_dep,
@@ -751,27 +789,13 @@ class RigidFluidCoupling(Application):
         zc = [None for _ in range(12)]
         for i in range(12):
             xc[i], yc[i], zc[i] = mesh_to_particles(i, dx=self.dx/2)
-            xc[i], yc[i], zc[i] = (
-                (
-                    (xc[i] + self.tank_size[0] - 1.1 + link_positions[i][0])
-                    + d_dx_ratio * layers * self.dx
-                ),
-                (
-                    (yc[i] + self.tank_size[1]/2)
-                    + d_dx_ratio * layers * self.dx
-                ),
-                (
-                    (zc[i] +  + self.tank_size[2] + 0.03 + link_positions[i][2])
-                    + d_dx_ratio * layers * self.dx
-                )
-            )
-        self.simulation.animat.particles = [
-            np.array([
+        self.simulation.animat.particles = np.array([
+            [
                 [xi, yi, zi]
                 for xi, yi, zi in zip(x, y, z)
-            ])
+            ]
             for x, y, z in zip(xc, yc, zc)
-        ]
+        ])
 
         # Create particle array for fluid
         m = self.ro * self.dx * self.dx * self.dx
@@ -1067,5 +1091,11 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # print(mesh_to_particles())
+    # particles = mesh_to_particles(9, dx=1e-2, show=True)
+    # for i, ori in enumerate(["x", "y", "z"]):
+    #     print("{0}Min: {1} {0}Max: {2}".format(
+    #         ori,
+    #         min(particles[i, :]),
+    #         max(particles[i, :])
+    #     ))
     # print(get_3d_block())
