@@ -105,9 +105,17 @@ class SalamanderSimulation(Simulation):
         self.elements.animat.sensors.update(sim_step)
         if sim_step < self.options.n_iterations-1:
             # Plugins
-            if self.elements.animat.options.control.drives.forward > 3:
+            if (
+                    self.elements.animat.options.physics.viscous
+                    and self.elements.animat.options.control.drives.forward > 3
+            ):
                 # Swimming
-                self.elements.animat.animat_swimming_physics(sim_step)
+                self.elements.animat.viscous_swimming_forces(sim_step)
+            if (
+                    self.elements.animat.options.physics.viscous
+                    or self.elements.animat.options.physics.sph
+            ):
+                self.elements.animat.apply_swimming_forces(sim_step)
             if self.elements.animat.options.show_hydrodynamics:
                 self.elements.animat.draw_hydrodynamics(sim_step)
             # Control animat

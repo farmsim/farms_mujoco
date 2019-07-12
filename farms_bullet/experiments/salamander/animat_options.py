@@ -19,6 +19,10 @@ class SalamanderOptions(Options):
             "spawn",
             SalamanderSpawnOptions(kwargs)
         )
+        self.physics = kwargs.pop(
+            "physics",
+            SalamanderPhysicsOptions(kwargs)
+        )
         self.control = kwargs.pop(
             "control",
             SalamanderControlOptions(**kwargs)
@@ -75,6 +79,15 @@ class SalamanderSpawnOptions(Options):
         self.position = options.pop("spawn_position", [0, 0, 0.1])
         # Orientation (Euler angles in [rad])
         self.orientation = options.pop("spawn_orientation", [0, 0, 0])
+
+
+class SalamanderPhysicsOptions(Options):
+    """Salamander physics options"""
+
+    def __init__(self, options):
+        super(SalamanderPhysicsOptions, self).__init__()
+        self.viscous = options.pop("viscous", True)
+        self.sph = options.pop("sph", False)
 
 
 class SalamanderControlOptions(Options):

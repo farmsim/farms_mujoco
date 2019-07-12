@@ -1,8 +1,8 @@
-"""3D benchmark with rigid boy physics coupling
+"""
+Salamander swimming with SPH
 
-A cube with a specified density falls into a pool of water. This is based on the
-three_cubes_in_vessel_3d.py example provided by PySPH.
-
+The salamander model is spawned above water and attempts to move with a swimming
+gait in the simulated water.
 """
 from __future__ import print_function
 import sys
@@ -166,6 +166,13 @@ class BulletPhysicsForces(Equation):
         hydrodynamics[iteration, self.link_i, 3] = dst.torque[0]
         hydrodynamics[iteration, self.link_i, 4] = dst.torque[1]
         hydrodynamics[iteration, self.link_i, 5] = dst.torque[2]
+        # if iteration > 0:
+        #     hydrodynamics[iteration, self.link_i, 0] -= hydrodynamics[iteration-1, self.link_i, 0]
+        #     hydrodynamics[iteration, self.link_i, 1] -= hydrodynamics[iteration-1, self.link_i, 1]
+        #     hydrodynamics[iteration, self.link_i, 2] -= hydrodynamics[iteration-1, self.link_i, 2]
+        #     hydrodynamics[iteration, self.link_i, 3] -= hydrodynamics[iteration-1, self.link_i, 3]
+        #     hydrodynamics[iteration, self.link_i, 4] -= hydrodynamics[iteration-1, self.link_i, 4]
+        #     hydrodynamics[iteration, self.link_i, 5] -= hydrodynamics[iteration-1, self.link_i, 5]
 
 
 class BulletPhysicsUpdate(Equation):
@@ -292,6 +299,12 @@ class BulletPhysicsMotion(Equation):
 
 
 class RigidBodyMoments(Equation):
+
+    def __init__(self, dest, sources, simulation, link_i):
+        self.simulation = simulation
+        self.link_i = link_i
+        super(RigidBodyMoments, self).__init__(dest, sources)
+
     def reduce(self, dst, t, dt):
         # FIXME: this will be slow in opencl
         nbody = declare('int')
@@ -300,7 +313,11 @@ class RigidBodyMoments(Equation):
         base = declare('int')
         nbody = dst.num_body[0]
         if dst.gpu:
-            dst.gpu.pull('omega', 'x', 'y', 'z', 'fx', 'fy', 'fz')
+            dst.gpu.pull(
+                # 'omega',
+                'x', 'y', 'z',
+                'fx', 'fy', 'fz'
+            )
 
         d_mi = declare('object')
         m = declare('object')
@@ -315,23 +332,23 @@ class RigidBodyMoments(Equation):
         for i in range(nbody):
             cond = dst.body_id == i
             base = i*16
-            m = dst.m[cond]
+            # m = dst.m[cond]
             x = dst.x[cond]
             y = dst.y[cond]
             z = dst.z[cond]
-            # Find the total_mass, center of mass and second moments.
-            d_mi[base + 0] = numpy.sum(m)
-            d_mi[base + 1] = numpy.sum(m*x)
-            d_mi[base + 2] = numpy.sum(m*y)
-            d_mi[base + 3] = numpy.sum(m*z)
-            # Only do the lower triangle of values moments of inertia.
-            d_mi[base + 4] = numpy.sum(m*(y*y + z*z))
-            d_mi[base + 5] = numpy.sum(m*(x*x + z*z))
-            d_mi[base + 6] = numpy.sum(m*(x*x + y*y))
+            # # Find the total_mass, center of mass and second moments.
+            # d_mi[base + 0] = numpy.sum(m)
+            # d_mi[base + 1] = numpy.sum(m*x)
+            # d_mi[base + 2] = numpy.sum(m*y)
+            # d_mi[base + 3] = numpy.sum(m*z)
+            # # Only do the lower triangle of values moments of inertia.
+            # d_mi[base + 4] = numpy.sum(m*(y*y + z*z))
+            # d_mi[base + 5] = numpy.sum(m*(x*x + z*z))
+            # d_mi[base + 6] = numpy.sum(m*(x*x + y*y))
 
-            d_mi[base + 7] = -numpy.sum(m*x*y)
-            d_mi[base + 8] = -numpy.sum(m*x*z)
-            d_mi[base + 9] = -numpy.sum(m*y*z)
+            # d_mi[base + 7] = -numpy.sum(m*x*y)
+            # d_mi[base + 8] = -numpy.sum(m*x*z)
+            # d_mi[base + 9] = -numpy.sum(m*y*z)
 
             # the total force and torque
             fx = dst.fx[cond]
@@ -347,39 +364,43 @@ class RigidBodyMoments(Equation):
             d_mi[base + 15] = numpy.sum(x*fy - y*fx)
 
         # Reduce the temporary mi values in parallel across processors.
-        d_mi[:] = parallel_reduce_array(dst.mi)
+        d_mi[:] = parallel_reduce_array(dst.mi, op="sum")
 
         # Set the reduced values.
         for i in range(nbody):
             base_mi = i*16
             base = i*3
-            m = d_mi[base_mi + 0]
-            dst.total_mass[i] = m
-            cx = d_mi[base_mi + 1]/m
-            cy = d_mi[base_mi + 2]/m
-            cz = d_mi[base_mi + 3]/m
+            # m = d_mi[base_mi + 0]
+            # dst.total_mass[i] = m
+            # cx = d_mi[base_mi + 1]/m
+            # cy = d_mi[base_mi + 2]/m
+            # cz = d_mi[base_mi + 3]/m
+            cx, cy, cz = self.simulation.animat.data.sensors.gps.com_position(
+                self.simulation.iteration,
+                self.link_i
+            )
             dst.cm[base + 0] = cx
             dst.cm[base + 1] = cy
             dst.cm[base + 2] = cz
 
-            # The actual moment of inertia about center of mass from parallel
-            # axes theorem.
-            ixx = d_mi[base_mi + 4] - (cy*cy + cz*cz)*m
-            iyy = d_mi[base_mi + 5] - (cx*cx + cz*cz)*m
-            izz = d_mi[base_mi + 6] - (cx*cx + cy*cy)*m
-            ixy = d_mi[base_mi + 7] + cx*cy*m
-            ixz = d_mi[base_mi + 8] + cx*cz*m
-            iyz = d_mi[base_mi + 9] + cy*cz*m
+            # # The actual moment of inertia about center of mass from parallel
+            # # axes theorem.
+            # ixx = d_mi[base_mi + 4] - (cy*cy + cz*cz)*m
+            # iyy = d_mi[base_mi + 5] - (cx*cx + cz*cz)*m
+            # izz = d_mi[base_mi + 6] - (cx*cx + cy*cy)*m
+            # ixy = d_mi[base_mi + 7] + cx*cy*m
+            # ixz = d_mi[base_mi + 8] + cx*cz*m
+            # iyz = d_mi[base_mi + 9] + cy*cz*m
 
-            d_mi[base_mi + 0] = ixx
-            d_mi[base_mi + 1] = ixy
-            d_mi[base_mi + 2] = ixz
-            d_mi[base_mi + 3] = ixy
-            d_mi[base_mi + 4] = iyy
-            d_mi[base_mi + 5] = iyz
-            d_mi[base_mi + 6] = ixz
-            d_mi[base_mi + 7] = iyz
-            d_mi[base_mi + 8] = izz
+            # d_mi[base_mi + 0] = ixx
+            # d_mi[base_mi + 1] = ixy
+            # d_mi[base_mi + 2] = ixz
+            # d_mi[base_mi + 3] = ixy
+            # d_mi[base_mi + 4] = iyy
+            # d_mi[base_mi + 5] = iyz
+            # d_mi[base_mi + 6] = ixz
+            # d_mi[base_mi + 7] = iyz
+            # d_mi[base_mi + 8] = izz
 
             fx = d_mi[base_mi + 10]
             fy = d_mi[base_mi + 11]
@@ -388,10 +409,10 @@ class RigidBodyMoments(Equation):
             dst.force[base + 1] = fy
             dst.force[base + 2] = fz
 
-            # Acceleration of CM.
-            dst.ac[base + 0] = fx/m
-            dst.ac[base + 1] = fy/m
-            dst.ac[base + 2] = fz/m
+            # # Acceleration of CM.
+            # dst.ac[base + 0] = fx/m
+            # dst.ac[base + 1] = fy/m
+            # dst.ac[base + 2] = fz/m
 
             # Find torque about the Center of Mass and not origin.
             tx = d_mi[base_mi + 13]
@@ -404,36 +425,50 @@ class RigidBodyMoments(Equation):
             dst.torque[base + 1] = ty
             dst.torque[base + 2] = tz
 
-            wx = dst.omega[base + 0]
-            wy = dst.omega[base + 1]
-            wz = dst.omega[base + 2]
-            # Find omega_dot from: omega_dot = inv(I) (\tau - w x (Iw))
-            # This was done using the sympy code above.
-            tmp0 = iyz**2
-            tmp1 = ixy**2
-            tmp2 = ixz**2
-            tmp3 = ixx*iyy
-            tmp4 = ixy*ixz
-            tmp5 = 1./(ixx*tmp0 + iyy*tmp2 - 2*iyz*tmp4 + izz*tmp1 - izz*tmp3)
-            tmp6 = ixy*izz - ixz*iyz
-            tmp7 = ixz*wx + iyz*wy + izz*wz
-            tmp8 = ixx*wx + ixy*wy + ixz*wz
-            tmp9 = tmp7*wx - tmp8*wz + ty
-            tmp10 = ixy*iyz - ixz*iyy
-            tmp11 = ixy*wx + iyy*wy + iyz*wz
-            tmp12 = -tmp11*wx + tmp8*wy + tz
-            tmp13 = tmp11*wz - tmp7*wy + tx
-            tmp14 = ixx*iyz - tmp4
-            dst.omega_dot[base + 0] = tmp5*(-tmp10*tmp12 -
-                                            tmp13*(iyy*izz - tmp0) + tmp6*tmp9)
-            dst.omega_dot[base + 1] = tmp5*(tmp12*tmp14 +
-                                            tmp13*tmp6 - tmp9*(ixx*izz - tmp2))
-            dst.omega_dot[base + 2] = tmp5*(-tmp10*tmp13 -
-                                            tmp12*(-tmp1 + tmp3) + tmp14*tmp9)
+            # wx = dst.omega[base + 0]
+            # wy = dst.omega[base + 1]
+            # wz = dst.omega[base + 2]
+            # # Find omega_dot from: omega_dot = inv(I) (\tau - w x (Iw))
+            # # This was done using the sympy code above.
+            # tmp0 = iyz**2
+            # tmp1 = ixy**2
+            # tmp2 = ixz**2
+            # tmp3 = ixx*iyy
+            # tmp4 = ixy*ixz
+            # tmp5 = 1./(ixx*tmp0 + iyy*tmp2 - 2*iyz*tmp4 + izz*tmp1 - izz*tmp3)
+            # tmp6 = ixy*izz - ixz*iyz
+            # tmp7 = ixz*wx + iyz*wy + izz*wz
+            # tmp8 = ixx*wx + ixy*wy + ixz*wz
+            # tmp9 = tmp7*wx - tmp8*wz + ty
+            # tmp10 = ixy*iyz - ixz*iyy
+            # tmp11 = ixy*wx + iyy*wy + iyz*wz
+            # tmp12 = -tmp11*wx + tmp8*wy + tz
+            # tmp13 = tmp11*wz - tmp7*wy + tx
+            # tmp14 = ixx*iyz - tmp4
+            # dst.omega_dot[base + 0] = tmp5*(-tmp10*tmp12 -
+            #                                 tmp13*(iyy*izz - tmp0) + tmp6*tmp9)
+            # dst.omega_dot[base + 1] = tmp5*(tmp12*tmp14 +
+            #                                 tmp13*tmp6 - tmp9*(ixx*izz - tmp2))
+            # dst.omega_dot[base + 2] = tmp5*(-tmp10*tmp13 -
+            #                                 tmp12*(-tmp1 + tmp3) + tmp14*tmp9)
+
+        # print("CoM computed: {} [m] (expected {} [m])".format(
+        #     [cx, cy, cz],
+        #     list(self.simulation.animat.data.sensors.gps.com_position(
+        #         self.simulation.iteration,
+        #         self.link_i
+        #     ))
+        # ))
+
         if dst.gpu:
             dst.gpu.push(
-                'total_mass', 'mi', 'cm', 'force', 'ac', 'torque',
-                'omega_dot'
+                'total_mass',
+                'mi',
+                'cm',
+                'force',
+                # 'ac',
+                'torque',
+                # 'omega_dot'
             )
 
 
@@ -572,79 +607,84 @@ class RigidBodyMoments(Equation):
 #         d_w[d_idx] = d_vc[base + 2] + wx*ry - wy*rx
 
 
-# class RK2StepRigidBody(IntegratorStep):
+class RK2StepRigidBody(IntegratorStep):
 
-#     def __init__(self, simulation):
-#         super(RK2StepRigidBody, self).__init__()
-#         self.simulation = simulation
+    def __init__(self, simulation):
+        super(RK2StepRigidBody, self).__init__()
+        self.simulation = simulation
 
-#     def py_initialize(self, dst, t, dt):
-#         # Called once per destination array before initialize.
-#         # This is a pure Python function and is not translated.
-#         # print("Running body step ({})".format(self.simulation.iteration))
-#         self.simulation.iteration += 1
-#         # n_particles = dst.get_number_of_particles()
-#         if dst.gpu:
-#             dst.gpu.pull('fx', 'fy', 'fz')
-#         # for i in range(n_particles):
-#         #     dst.fx[i] = -9.81
-#         #     dst.fy[i] = 0.
-#         #     dst.fz[i] = -9.81
-#         if dst.gpu:
-#             dst.gpu.push('fx', 'fy', 'fz')
+    # def py_initialize(self, dst, t, dt):
+    #     # Called once per destination array before initialize.
+    #     # This is a pure Python function and is not translated.
+    #     # print("Running body step ({})".format(self.simulation.iteration))
+    #     self.simulation.iteration += 1
+    #     # n_particles = dst.get_number_of_particles()
+    #     if dst.gpu:
+    #         dst.gpu.pull('fx', 'fy', 'fz')
+    #     # for i in range(n_particles):
+    #     #     dst.fx[i] = -9.81
+    #     #     dst.fy[i] = 0.
+    #     #     dst.fz[i] = -9.81
+    #     if dst.gpu:
+    #         dst.gpu.push('fx', 'fy', 'fz')
 
-#     def initialize(self, d_idx, d_x, d_y, d_z, d_x0, d_y0, d_z0,
-#                    d_omega, d_omega0, d_vc, d_vc0, d_num_body):
-#         _i = declare('int')
-#         _j = declare('int')
-#         base = declare('int')
-#         if d_idx == 0:
-#             for _i in range(d_num_body[0]):
-#                 base = 3*_i
-#                 for _j in range(3):
-#                     d_vc0[base + _j] = d_vc[base + _j]
-#                     d_omega0[base + _j] = d_omega[base + _j]
+    # def initialize(self, d_idx, d_x, d_y, d_z, d_x0, d_y0, d_z0,
+    #                d_omega, d_omega0, d_vc, d_vc0, d_num_body):
+    #     _i = declare('int')
+    #     _j = declare('int')
+    #     base = declare('int')
+    #     if d_idx == 0:
+    #         for _i in range(d_num_body[0]):
+    #             base = 3*_i
+    #             for _j in range(3):
+    #                 d_vc0[base + _j] = d_vc[base + _j]
+    #                 d_omega0[base + _j] = d_omega[base + _j]
 
-#         d_x0[d_idx] = d_x[d_idx]
-#         d_y0[d_idx] = d_y[d_idx]
-#         d_z0[d_idx] = d_z[d_idx]
+    #     d_x0[d_idx] = d_x[d_idx]
+    #     d_y0[d_idx] = d_y[d_idx]
+    #     d_z0[d_idx] = d_z[d_idx]
 
-#     def stage1(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
-#                d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
-#                dt=0.0):
-#         dtb2 = 0.5*dt
-#         _i = declare('int')
-#         j = declare('int')
-#         base = declare('int')
-#         if d_idx == 0:
-#             for _i in range(d_num_body[0]):
-#                 base = 3*_i
-#                 for j in range(3):
-#                     d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dtb2
-#                     d_omega[base + j] = (d_omega0[base + j] +
-#                                          d_omega_dot[base + j]*dtb2)
+    # def stage1(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
+    #            d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
+    #            dt=0.0):
+    #     dtb2 = 0.5*dt
+    #     _i = declare('int')
+    #     j = declare('int')
+    #     base = declare('int')
+    #     if d_idx == 0:
+    #         for _i in range(d_num_body[0]):
+    #             base = 3*_i
+    #             for j in range(3):
+    #                 d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dtb2
+    #                 d_omega[base + j] = (d_omega0[base + j] +
+    #                                      d_omega_dot[base + j]*dtb2)
 
-#         d_x[d_idx] = d_x0[d_idx] + dtb2*d_u[d_idx]
-#         d_y[d_idx] = d_y0[d_idx] + dtb2*d_v[d_idx]
-#         d_z[d_idx] = d_z0[d_idx] + dtb2*d_w[d_idx]
+    #     d_x[d_idx] = d_x0[d_idx] + dtb2*d_u[d_idx]
+    #     d_y[d_idx] = d_y0[d_idx] + dtb2*d_v[d_idx]
+    #     d_z[d_idx] = d_z0[d_idx] + dtb2*d_w[d_idx]
 
-#     def stage2(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
-#                d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
-#                dt=0.0):
-#         _i = declare('int')
-#         j = declare('int')
-#         base = declare('int')
-#         if d_idx == 0:
-#             for _i in range(d_num_body[0]):
-#                 base = 3*_i
-#                 for j in range(3):
-#                     d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dt
-#                     d_omega[base + j] = (d_omega0[base + j] +
-#                                          d_omega_dot[base + j]*dt)
+    def stage1(self, d_idx, d_fx, d_fy, d_fz):
+        d_fx[d_idx] = 0
+        d_fy[d_idx] = 0
+        d_fz[d_idx] = 0
 
-#         d_x[d_idx] = d_x0[d_idx] + dt*d_u[d_idx]
-#         d_y[d_idx] = d_y0[d_idx] + dt*d_v[d_idx]
-#         d_z[d_idx] = d_z0[d_idx] + dt*d_w[d_idx]
+    # def stage2(self, d_idx, d_u, d_v, d_w, d_x, d_y, d_z, d_x0, d_y0, d_z0,
+    #            d_omega, d_omega_dot, d_vc, d_ac, d_omega0, d_vc0, d_num_body,
+    #            dt=0.0):
+    #     _i = declare('int')
+    #     j = declare('int')
+    #     base = declare('int')
+    #     if d_idx == 0:
+    #         for _i in range(d_num_body[0]):
+    #             base = 3*_i
+    #             for j in range(3):
+    #                 d_vc[base + j] = d_vc0[base + j] + d_ac[base + j]*dt
+    #                 d_omega[base + j] = (d_omega0[base + j] +
+    #                                      d_omega_dot[base + j]*dt)
+
+    #     d_x[d_idx] = d_x0[d_idx] + dt*d_u[d_idx]
+    #     d_y[d_idx] = d_y0[d_idx] + dt*d_v[d_idx]
+    #     d_z[d_idx] = d_z0[d_idx] + dt*d_w[d_idx]
 
 
 def declare(*args):
@@ -660,11 +700,10 @@ class RigidFluidCoupling(Application):
         ## Fluid dynamics options
         self.density = density
         self.n_fluid_particles = n_fluid_particles
-        super(RigidFluidCoupling, self).__init__()
         self.dt = 1e-3
-        if output_dir:
-            self.args.append("--directory")
-            self.args.append(output_dir)
+
+        # Pool
+        self.tank_size = [4, 2, 0.1]  # [m]
 
         ## Rigid body physics
 
@@ -674,8 +713,10 @@ class RigidFluidCoupling(Application):
             show_hydrodynamics=True,
             scale=1
         )
-        animat_options.spawn.position = [0, 0, 0.2]
+        animat_options.spawn.position = [0, 0, self.tank_size[2]+0.05]
         animat_options.control.drives.forward = 4
+        animat_options.physics.viscous = False
+        animat_options.physics.sph = True
         # Simulation options
         simulation_options = SimulationOptions.with_clargs()
         simulation_options.timestep = self.dt
@@ -690,9 +731,13 @@ class RigidFluidCoupling(Application):
         # self.simulation.step(self.simulation.iteration)
         # self.simulation.iteration += 1
 
+        super(RigidFluidCoupling, self).__init__()
+        if output_dir:
+            self.args.append("--directory")
+            self.args.append(output_dir)
+
     def initialize(self):
         self.density_cube = self.density
-        self.tank_size = [3, 0.5, 0.1]  # [m]
         self.tank_volume = self.tank_size[0]*self.tank_size[1]*self.tank_size[2]
         # self._spacing = 1e3*(self.tank_volume/self.n_fluid_particles)**(1/3)
         # print("Spacing: {} [mm]".format(self._spacing))
@@ -736,9 +781,9 @@ class RigidFluidCoupling(Application):
         tank_dep = flu_dep + d_dx_ratio * 2 * layers * 1e3*self.dx
 
         position = np.array([
-            -0.5*tank_len,
+            -tank_len + 1e3*1.1,
             -0.5*tank_wid,
-            0
+            -d_dx_ratio * layers * 1e3*self.dx
         ])
         xt, yt, zt, xf, yf, zf = get_fluid_and_dam_geometry_3d(
             position=position,
@@ -864,14 +909,14 @@ class RigidFluidCoupling(Application):
         # kernel = WendlandQuintic(dim=3)
 
         # simulation = Simulation()
-        # cubes = {
-        #     "cube_{}".format(i): RK2StepRigidBody(simulation=simulation)
-        #     for i in range(12)
-        # }
+        cubes = {
+            "cube_{}".format(i): RK2StepRigidBody(simulation=self.simulation)
+            for i in range(12)
+        }
         integrator = EPECIntegrator(
             fluid=WCSPHStep(),
             tank=WCSPHStep(),
-            # **cubes
+            **cubes
         )
 
         # dt = 0.125 * self.dx * self.hdx / (self.co * 1.1) / 2.
@@ -983,7 +1028,9 @@ class RigidFluidCoupling(Application):
                 equations=[
                     RigidBodyMoments(
                         dest='cube_{}'.format(i),
-                        sources=None
+                        sources=None,
+                        simulation=self.simulation,
+                        link_i=i
                     )
                     for i in range(12)
                 ]
