@@ -2,6 +2,7 @@
 
 import os
 import argparse
+import cv2
 import h5py
 
 
@@ -15,12 +16,19 @@ def parse_arguments():
         default="",
         help='Directory with results'
     )
+    parser.add_argument(
+        '-m', '--movie',
+        dest='movie',
+        action='store',
+        default="movie",
+        help='Movie filename'
+    )
     return parser.parse_args()
 
 
-def get_hdf5_files(directory):
+def get_files_from_extension(directory, extension):
     """Get hdf5 files"""
-    extension = ".hdf5"
+    print("Loading files from {}".format(directory))
     files = [
         filename
         for filename in os.listdir(directory)
@@ -41,11 +49,9 @@ def open_hdf5_file(filename):
     return h5py.File(filename, 'r')
 
 
-def main():
-    """Main"""
-    clargs = parse_arguments()
-    directory = clargs.directory
-    files = get_hdf5_files(directory)
+def view_sph(directory):
+    """Load"""
+    files = get_files_from_extension(directory, extension=".hdf5")
     for filename in [files[-1]]:
         data = open_hdf5_file("{}/{}".format(directory, filename))
         print("Data keys: {}".format(data.keys()))
@@ -67,6 +73,32 @@ def main():
         cube_fx = cube_arrays["fx"]
         print("Cube fx: {}".format(cube_fx))
         print("Cube fx[0]: {}".format(cube_fx[0]))
+
+
+def view_video(directory, video_name='video'):
+    """View video"""
+    images = get_files_from_extension(directory, extension=".png")
+    frame = cv2.imread(os.path.join(directory, images[0]))
+    height, width, layers = frame.shape
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    video = cv2.VideoWriter(
+        filename=video_name+".mp4",
+        fourcc=fourcc,
+        fps=100/3,
+        frameSize=(width,height)
+    )
+    for image in images:
+        video.write(cv2.imread(os.path.join(directory, image)))
+    cv2.destroyAllWindows()
+    video.release()
+
+
+def main():
+    """Main"""
+    clargs = parse_arguments()
+    directory = clargs.directory
+    # view_sph(directory)
+    view_video(directory, video_name=clargs.movie)
 
 
 if __name__ == "__main__":
