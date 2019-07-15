@@ -5,6 +5,9 @@ import argparse
 import cv2
 import h5py
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 def parse_arguments():
     """Parse aguments"""
@@ -52,7 +55,10 @@ def open_hdf5_file(filename):
 def view_sph(directory):
     """Load"""
     files = get_files_from_extension(directory, extension=".hdf5")
-    for filename in [files[-1]]:
+    n_body = 12
+    n_files = len(files)
+    forces = [None for _ in range(n_body)]
+    for file_i, filename in enumerate(files):
         data = open_hdf5_file("{}/{}".format(directory, filename))
         print("Data keys: {}".format(data.keys()))
         particles = data["particles"]
@@ -65,14 +71,36 @@ def view_sph(directory):
         fluid_x = fluid_arrays["x"]
         print("Fluid x: {}".format(fluid_x))
         print("Fluid x[0]: {}".format(fluid_x[0]))
-        # Cube
-        cube = particles["cube_0"]
-        print("Cube keys: {}".format(cube.keys()))
-        cube_arrays = cube["arrays"]
-        print("Cube keys: {}".format(cube_arrays.keys()))
-        cube_fx = cube_arrays["fx"]
-        print("Cube fx: {}".format(cube_fx))
-        print("Cube fx[0]: {}".format(cube_fx[0]))
+        for body in range(n_body):
+            # Cube
+            cube = particles["cube_{}".format(body)]
+            print("Cube keys: {}".format(cube.keys()))
+            cube_arrays = cube["arrays"]
+            print("Cube keys: {}".format(cube_arrays.keys()))
+            cube_fx = cube_arrays["fx"]
+            print("Cube fx: {}".format(cube_fx))
+            if not file_i:
+                forces[body] = np.zeros(
+                    [n_files, 3]
+                    +list(np.shape(cube_arrays["fx"]))
+                )
+            forces[body][file_i, 0] = cube_arrays["fx"]
+            forces[body][file_i, 1] = cube_arrays["fy"]
+            forces[body][file_i, 2] = cube_arrays["fz"]
+    # forces = [np.array(_forces) for _forces in forces]
+    # print("Type forces: {}".format(forces.dtype))
+    # print("Shape forces: {}".format(np.shape(forces)))
+    # plt.plot(np.sum(np.linalg.norm(forces, axis=-1), axis=-1))
+    for dim in range(3):
+        plt.figure("Forces along {} axis".format(["X", "Y", "Z"][dim]))
+        forces_total = np.zeros(n_files)
+        for i, _forces in enumerate(forces):
+            body_force = np.sum(_forces[:, dim, :], axis=-1)
+            plt.plot(body_force, label="Body{}".format(i))
+            forces_total += body_force
+        plt.plot(forces_total, label="Total", linewidth=3)
+        plt.legend()
+    plt.show()
 
 
 def view_video(directory, video_name='video'):
@@ -97,8 +125,8 @@ def main():
     """Main"""
     clargs = parse_arguments()
     directory = clargs.directory
-    # view_sph(directory)
-    view_video(directory, video_name=clargs.movie)
+    view_sph(directory)
+    # view_video(directory, video_name=clargs.movie)
 
 
 if __name__ == "__main__":
