@@ -370,7 +370,7 @@ class Salamander(Animat):
             ]
         )
 
-    def apply_swimming_forces(self, iteration, debug=False):
+    def apply_swimming_forces(self, iteration, link_frame=True, debug=False):
         """Animat swimming physics"""
         swimming_motion(
             iteration,
@@ -380,6 +380,7 @@ class Salamander(Animat):
                 [i, self.links["link_body_{}".format(i)]]
                 for i in range(12)
             ],
+            link_frame=link_frame,
             units=self.units
         )
         if debug:

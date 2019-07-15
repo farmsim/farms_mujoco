@@ -14,16 +14,19 @@ def viscous_forces(
         **kwargs
 ):
     """Viscous swimming forces"""
+    # Coefficients
     force_coefficients, torque_coefficients = kwargs.pop(
         "coefficients",
         [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
     )
     for link_i, _ in links:
+        # Get velocity in global frame
         ori, lin_velocity, ang_velocity = (
             data_gps.urdf_orientation(iteration, link_i),
             data_gps.com_lin_velocity(iteration, link_i),
             data_gps.com_ang_velocity(iteration, link_i)
         )
+        # Compute velocity in local frame
         link_orientation_inv = np.array(
             pybullet.getMatrixFromQuaternion(ori)
         ).reshape([3, 3]).T
@@ -43,6 +46,7 @@ def swimming_motion(
         data_hydrodynamics,
         model,
         links,
+        link_frame=True,
         **kwargs
 ):
     """Swimming motion"""
@@ -56,7 +60,7 @@ def swimming_motion(
                 *units.newtons
             ),
             posObj=[0, 0, 0],
-            flags=pybullet.LINK_FRAME
+            flags=pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
         )
         pybullet.applyExternalTorque(
             model,
@@ -65,7 +69,7 @@ def swimming_motion(
                 np.array(data_hydrodynamics[iteration, link_i, 3:6])
                 *units.torques
             ),
-            flags=pybullet.LINK_FRAME
+            flags=pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
         )
 
 
