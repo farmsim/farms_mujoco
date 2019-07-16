@@ -351,7 +351,8 @@ class Salamander(Animat):
         self.controller = SalamanderController.from_data(
             self.identity,
             animat_data=self.data,
-            timestep=self.timestep
+            timestep=self.timestep,
+            units=self.units
         )
 
     def viscous_swimming_forces(self, iteration):

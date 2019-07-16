@@ -6,13 +6,14 @@ import pybullet
 class AnimatController:
     """AnimatController"""
 
-    def __init__(self, model, network):
+    def __init__(self, model, network, units):
         super(AnimatController, self).__init__()
         self.model = model
         self.network = network
         self.positions = None
         self.velocities = None
         self.torques = None
+        self.iseconds = 1./units.seconds
 
     def update(self):
         """Step"""
@@ -28,7 +29,7 @@ class AnimatController:
             range(11+4*4),
             pybullet.POSITION_CONTROL,
             targetPositions=self.positions,
-            targetVelocities=self.velocities,
+            targetVelocities=self.velocities*self.iseconds,
             # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
             # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
             # forces=[ctrl["pdf"]["f"] for ctrl in controls]
