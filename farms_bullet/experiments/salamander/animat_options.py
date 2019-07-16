@@ -49,6 +49,7 @@ class SalamanderMorphologyOptions(Options):
     def __init__(self, options):
         super(SalamanderMorphologyOptions, self).__init__()
         self.scale = options.pop("scale", 1.0)
+        self.density = options.pop("density", 1000.0)
         self.n_joints_body = options.pop("n_joints_body", 11)
         self.n_dof_legs = options.pop("n_dof_legs", 4)
         self.n_legs = options.pop("n_legs", 4)

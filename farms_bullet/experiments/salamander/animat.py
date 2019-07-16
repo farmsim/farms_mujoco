@@ -103,6 +103,7 @@ class Salamander(Animat):
             position=body_link_positions[0],
             joint_axis=[0, 0, 1],
             color=body_color,
+            density=self.options.morphology.density,
             scale=[self.scale, self.scale, self.scale]
         )
         links = [
@@ -117,6 +118,7 @@ class Salamander(Animat):
                 parent=i,
                 joint_axis=[0, 0, 1],
                 color=body_color,
+                density=self.options.morphology.density,
                 scale=[self.scale, self.scale, self.scale]
             )
             for i in range(11)
@@ -161,7 +163,8 @@ class Salamander(Animat):
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     parent=leglink2index(leg_i, side, 1)+1,
-                    joint_axis=[0, 1, 0]
+                    joint_axis=[0, 1, 0],
+                    density=self.options.morphology.density
                 )
                 # Lower leg
                 links[leglink2index(leg_i, side, 3)] = AnimatLink(
@@ -178,6 +181,7 @@ class Salamander(Animat):
                     #     [[1, 0, 0, 1], [0, 1, 0, 1]],
                     #     [[0, 0, 1, 1], [0, 0, 0, 1]]
                     # ][leg_i][side]
+                    density=self.options.morphology.density
                 )
         self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass*self.units.kilograms,
