@@ -339,9 +339,9 @@ def particles_as_dupliverts():
         bpy.context.scene.collection.children.link(collection)
 
     n_particles = len(verts)
-    n_sets = 10
+    n_sets = 64
     indices = np.random.permutation(n_particles)
-    materials = [None for _ in range(10)]
+    materials = [None for _ in range(n_sets)]
     for particle_set in range(n_sets):
 
         # Create mesh
@@ -353,8 +353,8 @@ def particles_as_dupliverts():
         mesh = obj.data
         bm = bmesh.new()
         for v in verts[indices][
-                (particle_set*n_particles)//10
-                :((particle_set+1)*n_particles)//10
+                (particle_set*n_particles)//n_sets
+                :((particle_set+1)*n_particles)//n_sets
         ]:
             bm.verts.new(v)  # add a new vert
         # make the bmesh the object's mesh
