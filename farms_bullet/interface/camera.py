@@ -59,6 +59,16 @@ class UserCamera(CameraTarget):
         super(UserCamera, self).__init__(target_identity, **kwargs)
         self.update(use_camera=False)
 
+    def set_zoom(self, value):
+        """Set zoom"""
+        self.distance = value
+        pybullet.resetDebugVisualizerCamera(
+            cameraDistance=self.distance,
+            cameraYaw=self.yaw,
+            cameraPitch=self.pitch,
+            cameraTargetPosition=self.target_pos
+        )
+
     def update(self, use_camera=True):
         """Camera view"""
         if use_camera:

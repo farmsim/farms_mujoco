@@ -22,12 +22,13 @@ class Sensor:
 cdef class ContactsSensors(NetworkArray3D):
     """Model sensors"""
 
-    def __init__(self, array, animat_ids, animat_links):
+    def __init__(self, array, animat_ids, animat_links, newtons=1):
         super(ContactsSensors, self).__init__(array)
         self.animat_ids = np.array(animat_ids, dtype=np.uintc)
         self.animat_links = np.array(animat_links, dtype=np.intc)
         self.n_sensors = len(animat_links)
         self._contacts = [None for _ in range(self.n_sensors)]
+        self.inewtons = 1./newtons
 
     def update(self, iteration):
         """Update sensors"""
@@ -45,17 +46,17 @@ cdef class ContactsSensors(NetworkArray3D):
                         [
                             [
                                 # Collision normal reaction
-                                contact[9]*contact[7][0],
-                                contact[9]*contact[7][1],
-                                contact[9]*contact[7][2],
+                                contact[9]*contact[7][0]*self.inewtons,
+                                contact[9]*contact[7][1]*self.inewtons,
+                                contact[9]*contact[7][2]*self.inewtons,
                                 # Lateral friction dir 1
                                 # + Lateral friction dir 2
-                                contact[10]*contact[11][0]
-                                + contact[12]*contact[13][0],
-                                contact[10]*contact[11][1]
-                                + contact[12]*contact[13][1],
-                                contact[10]*contact[11][2]
-                                + contact[12]*contact[13][2]
+                                contact[10]*contact[11][0]*self.inewtons
+                                + contact[12]*contact[13][0]*self.inewtons,
+                                contact[10]*contact[11][1]*self.inewtons
+                                + contact[12]*contact[13][1]*self.inewtons,
+                                contact[10]*contact[11][2]*self.inewtons
+                                + contact[12]*contact[13][2]*self.inewtons
                             ]
                             for contact in self._contacts[sensor]
                         ],
@@ -151,11 +152,12 @@ class ContactSensor(Sensor):
 class JointsStatesSensor(NetworkArray3D):
     """Joint state sensor"""
 
-    def __init__(self, array, model_id, joints, enable_ft=False):
+    def __init__(self, array, model_id, joints, units, enable_ft=False):
         super(JointsStatesSensor, self).__init__(array)
         self._model_id = model_id
         self._joints = joints
         self._enable_ft = enable_ft
+        self.units = units
         if self._enable_ft:
             for joint in self._joints:
                 pybullet.enableJointForceTorqueSensor(
@@ -165,8 +167,26 @@ class JointsStatesSensor(NetworkArray3D):
 
     def update(self, iteration):
         """Update sensor"""
+        seconds = self.units.seconds
+        inewtons = self.units.newtons
+        itorques = self.units.torques
         self.array[iteration] = np.array([
-            (state[0], state[1]) + state[2] + (state[3],)
+            (
+                # Position
+                state[0],
+                # Velocity
+                state[1]*seconds,
+                # Forces
+                state[2][0]*inewtons,
+                state[2][1]*inewtons,
+                state[2][2]*inewtons,
+                # Torques
+                state[2][3]*itorques,
+                state[2][4]*itorques,
+                state[2][5]*itorques,
+                # Motor torque
+                state[3]*itorques
+            )
             for joint_i, state in enumerate(
                 pybullet.getJointStates(self._model_id, self._joints)
             )
@@ -184,10 +204,11 @@ class LinksStatesSensor(NetworkArray3D):
     ]
     """
 
-    def __init__(self, array, animat_id, links):
+    def __init__(self, array, animat_id, links, units):
         super(LinksStatesSensor, self).__init__(array)
         self.animat = animat_id
         self.links = links
+        self.units = units
 
     def update(self, iteration):
         """Update sensor"""
@@ -195,13 +216,27 @@ class LinksStatesSensor(NetworkArray3D):
 
     def collect(self, iteration, links):
         """Collect gps data"""
+        imeters = 1./self.units.meters
+        ivelocity = 1./self.units.velocity
+        seconds = self.units.seconds
         for _, link_i, link_id in links:
             # Collect data
             if link_id == -1:
                 # Base link
-                pos, ori = pybullet.getBasePositionAndOrientation(
+                pos_com, ori_com = pybullet.getBasePositionAndOrientation(
                     self.animat
                 )
+                # pos_urdf, ori_urdf = pos_com, ori_com
+                local_pos = np.array(
+                    pybullet.getDynamicsInfo(self.animat, link_id)[3]
+                )
+                pos_urdf = np.array(pos_com) + np.dot(
+                    np.array(
+                        pybullet.getMatrixFromQuaternion(ori_com)
+                    ).reshape([3, 3]),
+                    -local_pos
+                )
+                ori_urdf = ori_com
                 lin_velocity, ang_velocity = pybullet.getBaseVelocity(
                     self.animat
                 )
@@ -213,25 +248,47 @@ class LinksStatesSensor(NetworkArray3D):
                     computeLinkVelocity=1,
                     computeForwardKinematics=1
                 )
-                pos, ori, lin_velocity, ang_velocity = (
-                    link_state[0],
-                    link_state[5],
-                    link_state[6],
-                    link_state[7]
+                (
+                    pos_com,
+                    ori_com,
+                    pos_urdf,
+                    ori_urdf,
+                    lin_velocity,
+                    ang_velocity
+                )= (
+                    link_state[0],  # Position of CoM
+                    link_state[1],  # Orientation of CoM
+                    link_state[4],  # Position of URDF frame
+                    link_state[5],  # Orientation of URDF frame
+                    link_state[6],  # Velocity of CoM
+                    link_state[7]   # Angular velocity of CoM
                 )
-            self.array[iteration, link_i, 0] = pos[0]
-            self.array[iteration, link_i, 1] = pos[1]
-            self.array[iteration, link_i, 2] = pos[2]
-            self.array[iteration, link_i, 3] = ori[0]
-            self.array[iteration, link_i, 4] = ori[1]
-            self.array[iteration, link_i, 5] = ori[2]
-            self.array[iteration, link_i, 6] = ori[3]
-            self.array[iteration, link_i, 7] = lin_velocity[0]
-            self.array[iteration, link_i, 8] = lin_velocity[1]
-            self.array[iteration, link_i, 9] = lin_velocity[2]
-            self.array[iteration, link_i, 10] = ang_velocity[0]
-            self.array[iteration, link_i, 11] = ang_velocity[1]
-            self.array[iteration, link_i, 12] = ang_velocity[2]
+            # Position of CoM
+            self.array[iteration, link_i, 0] = pos_com[0]*imeters
+            self.array[iteration, link_i, 1] = pos_com[1]*imeters
+            self.array[iteration, link_i, 2] = pos_com[2]*imeters
+            # Orientation of CoM
+            self.array[iteration, link_i, 3] = ori_com[0]
+            self.array[iteration, link_i, 4] = ori_com[1]
+            self.array[iteration, link_i, 5] = ori_com[2]
+            self.array[iteration, link_i, 6] = ori_com[3]
+            # Position of URDF frame
+            self.array[iteration, link_i, 7] = pos_urdf[0]*imeters
+            self.array[iteration, link_i, 8] = pos_urdf[1]*imeters
+            self.array[iteration, link_i, 9] = pos_urdf[2]*imeters
+            # Orientation of URDF frame
+            self.array[iteration, link_i, 10] = ori_urdf[0]
+            self.array[iteration, link_i, 11] = ori_urdf[1]
+            self.array[iteration, link_i, 12] = ori_urdf[2]
+            self.array[iteration, link_i, 13] = ori_urdf[3]
+            # Velocity of CoM
+            self.array[iteration, link_i, 14] = lin_velocity[0]*ivelocity
+            self.array[iteration, link_i, 15] = lin_velocity[1]*ivelocity
+            self.array[iteration, link_i, 16] = lin_velocity[2]*ivelocity
+            # Angular velocity of CoM
+            self.array[iteration, link_i, 17] = ang_velocity[0]*seconds
+            self.array[iteration, link_i, 18] = ang_velocity[1]*seconds
+            self.array[iteration, link_i, 19] = ang_velocity[2]*seconds
 
 
 class LinkStateSensor(Sensor):

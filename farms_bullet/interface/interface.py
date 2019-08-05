@@ -3,7 +3,7 @@
 import numpy as np
 import pybullet
 from .camera import UserCamera, CameraRecord
-from .debug import test_debug_info
+# from .debug import test_debug_info
 
 
 class Interfaces:
@@ -172,6 +172,7 @@ class UserParameters(dict):
         lim = np.pi/8
         self["play"] = ParameterPlay()
         self["rtl"] = DebugParameter("Real-time limiter", 1, 1e-3, 3)
+        self["zoom"] = DebugParameter("Zoom", 1, 0, 1)
         # self["gait"] = ParameterGait(gait)
         # self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
         self["body_offset"] = DebugParameter("Body offset", 0, -lim, lim)
@@ -205,6 +206,11 @@ class UserParameters(dict):
     def rtl(self):
         """Real-time limiter"""
         return self["rtl"]
+
+    @property
+    def zoom(self):
+        """Camera zoom"""
+        return self["zoom"]
 
     # @property
     # def gait(self):

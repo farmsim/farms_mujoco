@@ -757,7 +757,7 @@ class SalamanderGpsArray(GpsArray):
     def from_options(cls, options, n_iterations):
         """Default"""
         n_links = options.morphology.n_links()
-        gps = np.zeros([n_iterations, n_links, 13])
+        gps = np.zeros([n_iterations, n_links, 20])
         return cls(gps)
 
 

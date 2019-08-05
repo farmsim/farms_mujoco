@@ -10,16 +10,24 @@ from farms_bullet.experiments.salamander.animat_data import SalamanderOscillator
 
 def main():
     """Main"""
+    # Animat options
     animat_options = SalamanderOptions(
-        collect_gps=False,
-        show_hydrodynamics=False,
-        scale=1.0
+        # collect_gps=True,
+        # show_hydrodynamics=True,
+        scale=1
     )
+    # animat_options.control.drives.forward = 4
+    # Simulation options
     simulation_options = SimulationOptions.with_clargs()
+    simulation_options.units.meters = 1
+    simulation_options.units.seconds = 1
+    simulation_options.units.kilograms = 1
+    # Run simulation
     run_sim(
         simulation_options=simulation_options,
         animat_options=animat_options
     )
+    # Show results
     plt.show()
 
 
