@@ -354,9 +354,9 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
                     for side_leg in range(2): # Muscle facing front/back
                         for lateral in range(2):
                             walk_phase = (
-                                np.pi
+                                0
                                 if i in [0, 1, 7, 8, 9, 10]
-                                else 0
+                                else np.pi
                             )
                             # Forelimbs
                             connectivity.append([
