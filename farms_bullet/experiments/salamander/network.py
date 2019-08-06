@@ -18,23 +18,22 @@ class SalamanderNetworkODE:
         n_body = 11
         n_legs_dofs = 4
         self.groups = [None, None]
-        self.groups[0] = [
-            bodyosc2index(joint_i=i, side=0)
-            for i in range(11)
-        ] + [
-            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=0)
-            for leg_i in range(2)
-            for side_i in range(2)
-            for joint_i in range(n_legs_dofs)
-        ]
-        self.groups[1] = [
-            bodyosc2index(joint_i=i, side=1)
-            for i in range(n_body)
-        ] + [
-            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=1)
-            for leg_i in range(2)
-            for side_i in range(2)
-            for joint_i in range(n_legs_dofs)
+        self.groups = [
+            [
+                bodyosc2index(joint_i=i, side=side)
+                for i in range(n_body)
+            ] + [
+                legosc2index(
+                    leg_i=leg_i,
+                    side_i=side_i,
+                    joint_i=joint_i,
+                    side=side
+                )
+                for leg_i in range(2)
+                for side_i in range(2)
+                for joint_i in range(n_legs_dofs)
+            ]
+            for side in range(2)
         ]
 
         # Adaptive timestep parameters

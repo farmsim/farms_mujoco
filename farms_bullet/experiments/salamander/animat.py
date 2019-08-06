@@ -35,11 +35,11 @@ class Salamander(Animat):
         self.timestep = timestep
         self.n_iterations = iterations
         self.feet_names = [
-            "link_leg_0_L_3",
-            "link_leg_0_R_3",
-            "link_leg_1_L_3",
-            "link_leg_1_R_3"
+            leglink2name(leg_i=leg_i, side_i=side_i, joint_i=3)
+            for leg_i in range(2)
+            for side_i in range(2)
         ]
+        self.joints_order = None
         self.data = SalamanderData.from_options(
             SalamanderOscillatorNetworkState.default_state(iterations),
             options,
@@ -105,26 +105,32 @@ class Salamander(Animat):
             color=body_color,
             scale=[self.scale, self.scale, self.scale]
         )
-        links = [
-            AnimatLink(
+        links = [None for _ in range(11+4*4)]
+        print("Creating salamander body")
+        for link_i in range(11):
+            links[link_i] = AnimatLink(
                 self.units,
                 geometry=pybullet.GEOM_MESH,
                 filename="{}/salamander_body_{}.obj".format(
                     meshes_directory,
-                    i+1
+                    link_i+1
                 ),
-                position=body_link_positions[i+1],
-                parent=i,
+                position=body_link_positions[link_i+1],
+                parent=(
+                    links[link_i-1].collision
+                    if link_i > 0
+                    else 0
+                ),
                 joint_axis=[0, 0, 1],
                 color=body_color,
                 scale=[self.scale, self.scale, self.scale]
             )
-            for i in range(11)
-        ] + [None for i in range(4) for j in range(4)]
         leg_offset = self.scale*0.03
         leg_length = self.scale*0.06
         leg_radius = self.scale*0.015
-        for leg_i in [1, 0]:
+        index = 10
+        print("Creating salamander legs")
+        for leg_i in range(2):
             for side in range(2):
                 sign = 1 if side else -1
                 offset = np.zeros(3)
@@ -137,7 +143,7 @@ class Salamander(Animat):
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.2*leg_radius,
                     position=offset,
-                    parent=5 if leg_i else 1,  # Inverse seems to change nothing
+                    parent=links[4].collision if leg_i else links[0].collision,  # Inverse seems to change nothing
                     joint_axis=[0, 0, sign],
                     mass=0,
                     color=[0.9, 0.0, 0.0, 0.3]
@@ -147,7 +153,7 @@ class Salamander(Animat):
                     self.units,
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.5*leg_radius,
-                    parent=leglink2index(leg_i, side, 0)+1,
+                    parent=links[leglink2index(leg_i, side, 0)].collision,
                     joint_axis=[-sign, 0, 0],
                     mass=0,
                     color=[0.9, 0.9, 0.9, 0.3]
@@ -160,7 +166,7 @@ class Salamander(Animat):
                     height=leg_length,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=leglink2index(leg_i, side, 1)+1,
+                    parent=links[leglink2index(leg_i, side, 1)].collision,
                     joint_axis=[0, 1, 0]
                 )
                 # Lower leg
@@ -172,13 +178,21 @@ class Salamander(Animat):
                     position=2*position,
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
-                    parent=leglink2index(leg_i, side, 2)+1,
+                    parent=links[leglink2index(leg_i, side, 2)].collision,
                     joint_axis=[-sign, 0, 0],
-                    # color=[
-                    #     [[1, 0, 0, 1], [0, 1, 0, 1]],
-                    #     [[0, 0, 1, 1], [0, 0, 0, 1]]
-                    # ][leg_i][side]
+                    color=[
+                        [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
+                        [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
+                    ][leg_i][side]
                 )
+        for link_i, link in enumerate(links):
+            print(" {} (parent={}): {} (visual={}, collision={})".format(
+                link_i+1,
+                link.parent,
+                link.position,
+                link.visual,
+                link.collision
+            ))
         self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass*self.units.kilograms,
             baseCollisionShapeIndex=base_link.collision,
@@ -208,26 +222,70 @@ class Salamander(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
+        # Verify positions
+        for leg_i in range(2):
+            for side_i in range(2):
+                for part_i in range(4):
+                    state = pybullet.getLinkState(
+                        self.identity,
+                        leglink2index(leg_i, side_i, part_i)
+                    )
+                    print("Leg {} {} {} position: {} (link {})".format(
+                        leg_i,
+                        side_i,
+                        part_i,
+                        state[0],
+                        leglink2index(leg_i, side_i, part_i)
+                    ))
+        # Joint order
+        joints_names = [None for _ in range(11+4*4)]
+        joints_order = [None for _ in range(11+4*4)]
+        joint_index = 0
+        for joint_i in range(11):
+            joint_info = pybullet.getJointInfo(
+                self.identity,
+                joint_i
+            )
+            print("{}: {}".format(index, joint_info))
+            joints_names[joint_index] = joint_info[1].decode("UTF-8")
+            joint_index += 1
+        for leg_i in range(2):
+            for side_i in range(2):
+                for part_i in range(4):
+                    index = leglink2index(leg_i, side_i, part_i)
+                    joint_info = pybullet.getJointInfo(
+                        self.identity,
+                        index
+                    )
+                    print("{}: {}".format(index, joint_info))
+                    joints_names[joint_index] = joint_info[1].decode("UTF-8")
+                    joint_index += 1
+        self.joints_order = np.argsort([
+            int(name.replace("joint", ""))
+            for name in joints_names
+        ])
         # Set names
         self.links['link_body_{}'.format(0)] = -1
         for i in range(11):
-            self.links['link_body_{}'.format(i+1)] = i
-            self.joints['joint_link_body_{}'.format(i)] = i
+            self.links['link_body_{}'.format(i+1)] = self.joints_order[i]
+            self.joints['joint_link_body_{}'.format(i)] = self.joints_order[i]
         for leg_i in range(2):
             for side_i in range(2):
                 for part_i in range(self.options.morphology.n_dof_legs):
                     self.links[
                         # TODO: Find out why legs indices are reversed
-                        leglink2name((leg_i + 1)%2, side_i, part_i)
-                    ] = (
+                        # leglink2name((leg_i + 1)%2, side_i, part_i)
+                        leglink2name(leg_i, side_i, part_i)
+                    ] = self.joints_order[
                         leglink2index(leg_i, side_i, part_i)
-                    )
+                    ]
                     self.joints[
                         # TODO: Find out why legs indices are reversed
-                        legjoint2name((leg_i + 1)%2, side_i, part_i)
-                    ] = (
+                        # legjoint2name((leg_i + 1)%2, side_i, part_i)
+                        legjoint2name(leg_i, side_i, part_i)
+                    ] = self.joints_order[
                         legjoint2index(leg_i, side_i, part_i)
-                    )
+                    ]
         self.print_information()
 
     # @classmethod
@@ -262,7 +320,7 @@ class Salamander(Animat):
             "joints": JointsStatesSensor(
                 self.data.sensors.proprioception.array,
                 self._identity,
-                np.arange(self.n_joints()),
+                self.joints_order,
                 self.units,
                 enable_ft=True
             )
@@ -278,7 +336,8 @@ class Salamander(Animat):
         ] + [
             [
                 "link_leg_{}_{}_{}".format(leg_i, side, joint_i),
-                12 + leg_i*2*4 + side_i*4 + joint_i,
+                # 12 + leg_i*2*4 + side_i*4 + joint_i,
+                leglink2index(leg_i, side_i, joint_i)+1,
                 self.links["link_leg_{}_{}_{}".format(
                     leg_i,
                     side,
@@ -347,7 +406,8 @@ class Salamander(Animat):
         self.controller = SalamanderController.from_data(
             self.identity,
             animat_data=self.data,
-            timestep=self.timestep
+            timestep=self.timestep,
+            joints_order=self.joints_order
         )
 
     def animat_swimming_physics(self, iteration):
