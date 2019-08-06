@@ -169,6 +169,18 @@ cdef class ContactsArray(NetworkArray3D):
         """From parameters"""
         return cls(np.zeros([n_iterations, n_contacts, 9]))
 
+    cpdef double[:] reaction(self, unsigned int iteration, unsigned int sensor_i):
+        """Reaction force"""
+        return self.array[iteration, sensor_i, 0:3]
+
+    cpdef double[:] friction(self, unsigned int iteration, unsigned int sensor_i):
+        """Friction force"""
+        return self.array[iteration, sensor_i, 3:6]
+
+    cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i):
+        """Total force"""
+        return self.array[iteration, sensor_i, 6:9]
+
 
 cdef class ProprioceptionArray(NetworkArray3D):
     """Proprioception array"""

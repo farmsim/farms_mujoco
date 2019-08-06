@@ -51,7 +51,10 @@ cdef class Sensors:
 
 cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
-    pass
+
+    cpdef double[:] reaction(self, unsigned int iteration, unsigned int sensor_i)
+    cpdef double[:] friction(self, unsigned int iteration, unsigned int sensor_i)
+    cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i)
 
 
 cdef class ProprioceptionArray(NetworkArray3D):
