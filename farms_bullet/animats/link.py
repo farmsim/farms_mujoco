@@ -120,7 +120,6 @@ class AnimatLink(dict):
                 **visual_options
             )
         )
-        print(self.visual)
 
         # Joint
         self.joint_type = kwargs.pop("joint_type", pybullet.JOINT_REVOLUTE)

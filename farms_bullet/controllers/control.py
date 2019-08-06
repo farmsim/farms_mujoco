@@ -1,31 +1,32 @@
 """Control"""
 
 import pybullet
-
+import numpy as np
 
 class AnimatController:
     """AnimatController"""
 
-    def __init__(self, model, network):
+    def __init__(self, model, network, joints_order):
         super(AnimatController, self).__init__()
         self.model = model
         self.network = network
         self.positions = None
         self.velocities = None
         self.torques = None
+        self.joint_list = joints_order
 
     def update(self):
         """Step"""
         self.network.control_step()
         self.positions = self.network.get_position_output()
-        self.velocities = self.network.get_velocity_output()
+        self.velocities = np.zeros_like(self.positions)  # self.network.get_velocity_output()
 
     def control(self):
         """Control"""
         self.update()
         pybullet.setJointMotorControlArray(
             self.model,
-            range(11+4*4),
+            self.joint_list,
             pybullet.POSITION_CONTROL,
             targetPositions=self.positions,
             targetVelocities=self.velocities,
