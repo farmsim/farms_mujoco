@@ -17,6 +17,7 @@ cdef class NetworkParameters:
     cdef public OscillatorArray oscillators
     cdef public ConnectivityArray connectivity
     cdef public ConnectivityArray contacts_connectivity
+    cdef public ConnectivityArray hydro_connectivity
 
 
 cdef class OscillatorNetworkState(NetworkArray3D):

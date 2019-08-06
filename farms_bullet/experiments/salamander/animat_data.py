@@ -70,10 +70,14 @@ class SalamanderData(AnimatData):
         contacts_connectivity = SalamanderContactsConnectivityArray.from_options(
             options
         )
+        hydro_connectivity = SalamanderHydroConnectivityArray.from_options(
+            options
+        )
         network = NetworkParameters(
             oscillators,
             connectivity,
-            contacts_connectivity
+            contacts_connectivity,
+            hydro_connectivity
         )
         joints = SalamanderJointsArray.from_options(options)
         contacts = SalamanderContactsArray.from_options(options, n_iterations)
@@ -482,7 +486,27 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
                             contactleglink2index(leg_i=leg_i, side_i=side_i),
                             options_conn.weight_sens_contact
                         ])
-        print("Connectivity:\n{}".format(np.array(connectivity)))
+        print("Contacts connectivity:\n{}".format(np.array(connectivity)))
+        return cls(np.array(connectivity, dtype=np.float64))
+
+
+class SalamanderHydroConnectivityArray(ConnectivityArray):
+    """Salamander hydro connectivity array"""
+
+    @classmethod
+    def from_options(cls, options):
+        """Default"""
+        connectivity = []
+        options_conn = options.control.network.connectivity
+        # options.morphology.n_legs
+        for joint_i in range(11):
+            for side_osc in range(2):
+                connectivity.append([
+                    bodyosc2index(joint_i=joint_i, side=side_osc),
+                    joint_i+1,
+                    options_conn.weight_sens_hydro
+                ])
+        print("Hydro connectivity:\n{}".format(np.array(connectivity)))
         return cls(np.array(connectivity, dtype=np.float64))
 
 

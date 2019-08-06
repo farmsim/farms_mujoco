@@ -23,12 +23,14 @@ cdef class NetworkParameters:
             self,
             oscillators,
             connectivity,
-            contacts_connectivity
+            contacts_connectivity,
+            hydro_connectivity
     ):
         super(NetworkParameters, self).__init__()
         self.oscillators = oscillators
         self.connectivity = connectivity
         self.contacts_connectivity = contacts_connectivity
+        self.hydro_connectivity = hydro_connectivity
 
 
 cdef class OscillatorNetworkState(NetworkArray3D):
