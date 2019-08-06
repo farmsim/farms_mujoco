@@ -47,6 +47,8 @@ class Salamander(Animat):
         )
         # Hydrodynamic forces
         self.hydrodynamics = None
+        # Sensors
+        self.sensors = Sensors()
         # Physics
         self.units = units
         self.scale = options.morphology.scale
@@ -54,9 +56,13 @@ class Salamander(Animat):
     def spawn(self):
         """Spawn salamander"""
         self.spawn_body()
+        # Controller
         self.setup_controller()
+        # Sensors
         self.add_sensors()
+        # Body properties
         self.set_body_properties()
+        # Debug
         self.hydrodynamics = [
             pybullet.addUserDebugLine(
                 lineFromXYZ=[0, 0, 0],
@@ -304,8 +310,6 @@ class Salamander(Animat):
 
     def add_sensors(self):
         """Add sensors"""
-        # Sensors
-        self.sensors = Sensors()
         # Contacts
         self.sensors.add({
             "contacts": ContactsSensors(

@@ -178,6 +178,26 @@ cdef class ProprioceptionArray(NetworkArray3D):
         """From parameters"""
         return cls(np.zeros([n_iterations, n_joints, 9]))
 
+    cpdef double position(self, unsigned int iteration, unsigned int joint_i):
+        """Joint position"""
+        return self.array[iteration, joint_i, 0]
+
+    cpdef double velocity(self, unsigned int iteration, unsigned int joint_i):
+        """Joint velocity"""
+        return self.array[iteration, joint_i, 1]
+
+    cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i):
+        """Joint force"""
+        return self.array[iteration, joint_i, 2:5]
+
+    cpdef double[:] torque(self, unsigned int iteration, unsigned int joint_i):
+        """Joint torque"""
+        return self.array[iteration, joint_i, 5:8]
+
+    cpdef double motor_torque(self, unsigned int iteration, unsigned int joint_i):
+        """Joint velocity"""
+        return self.array[iteration, joint_i, 8]
+
 
 cdef class GpsArray(NetworkArray3D):
     """Gps array"""
@@ -188,27 +208,27 @@ cdef class GpsArray(NetworkArray3D):
         return cls(np.zeros([n_iterations, n_links, 20]))
 
     cpdef double[:] com_position(self, unsigned int iteration, unsigned int link_i):
-        """ CoM position of a link"""
+        """CoM position of a link"""
         return self.array[iteration, link_i, 0:3]
 
     cpdef double[:] com_orientation(self, unsigned int iteration, unsigned int link_i):
-        """ CoM orientation of a link"""
+        """CoM orientation of a link"""
         return self.array[iteration, link_i, 3:7]
 
     cpdef double[:] urdf_position(self, unsigned int iteration, unsigned int link_i):
-        """ URDF position of a link"""
+        """URDF position of a link"""
         return self.array[iteration, link_i, 7:10]
 
     cpdef double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i):
-        """ URDF orientation of a link"""
+        """URDF orientation of a link"""
         return self.array[iteration, link_i, 10:14]
 
     cpdef double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i):
-        """ CoM linear velocity of a link"""
+        """CoM linear velocity of a link"""
         return self.array[iteration, link_i, 14:17]
 
     cpdef double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i):
-        """ CoM angular velocity of a link"""
+        """CoM angular velocity of a link"""
         return self.array[iteration, link_i, 17:20]
 
 
