@@ -149,6 +149,33 @@ class SalamanderNetworkODE:
         outputs = self.get_doutputs_all()
         return 0.5*(outputs[:, self.groups[0]] - outputs[:, self.groups[1]])
 
+    def get_torque_output(self):
+        """Torque output"""
+        iteration = self.animat_data.iteration-1
+        proprioception = self.animat_data.sensors.proprioception
+        positions = np.array(proprioception.positions(iteration))
+        velocities = np.array(proprioception.velocities(iteration))
+        predicted_positions = (positions+3*self._timestep*velocities)
+        cmd_positions = self.get_position_output()
+        cmd_velocities = self.get_velocity_output()
+        positions_rest = np.array(self.offsets[self.animat_data.iteration])
+        cmd_kp = 1e1  # Nm/rad
+        cmd_kd = 1e-2  # Nm*s/rad
+        spring = 1e0  # Nm/rad
+        damping = 1e-2  # Nm*s/rad
+        max_torque = 1  # Nm
+        torques = np.clip(
+            (
+                + cmd_kp*(cmd_positions-predicted_positions)
+                + cmd_kd*(cmd_velocities-velocities)
+                + spring*(positions_rest-predicted_positions)
+                - damping*velocities
+            ),
+            -max_torque,
+            +max_torque
+        )
+        return torques
+
     def update(self, options):
         """Update drives"""
         self.animat_data.network.oscillators.update(options)

@@ -385,24 +385,25 @@ class Salamander(Animat):
             for side in ["L", "R"]
             for joint_i in range(4)
         ]
+        small = 0
         self.set_links_dynamics(
             links_no_damping,
-            linearDamping=0,
-            angularDamping=0,
-            jointDamping=0
+            linearDamping=small,
+            angularDamping=small,
+            jointDamping=small
         )
         # Friction
         self.set_links_dynamics(
             self.links,
-            lateralFriction=0,
-            spinningFriction=0,
-            rollingFriction=0,
+            lateralFriction=1e-1,
+            spinningFriction=small,
+            rollingFriction=small,
         )
         self.set_links_dynamics(
             self.feet_names,
-            lateralFriction=1,
-            spinningFriction=0,
-            rollingFriction=0,
+            lateralFriction=0.5,
+            spinningFriction=small,
+            rollingFriction=small,
         )
 
     def setup_controller(self):
