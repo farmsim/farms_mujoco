@@ -6,7 +6,7 @@ import numpy as np
 class AnimatController:
     """AnimatController"""
 
-    def __init__(self, model, network, joints_order):
+    def __init__(self, model, network, joints_order, units):
         super(AnimatController, self).__init__()
         self.model = model
         self.network = network
@@ -14,6 +14,7 @@ class AnimatController:
         self.velocities = None
         self.joint_list = joints_order
         self.torques = np.zeros_like(self.joint_list)
+        self.units = units
         pybullet.setJointMotorControlArray(
             self.model,
             self.joint_list,
@@ -52,7 +53,7 @@ class AnimatController:
             self.joint_list,
             pybullet.POSITION_CONTROL,
             targetPositions=self.positions,
-            targetVelocities=self.velocities,
+            targetVelocities=self.velocities*self.units.seconds,
             # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
             # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
             # forces=[ctrl["pdf"]["f"] for ctrl in controls]

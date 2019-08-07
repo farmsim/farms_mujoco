@@ -412,7 +412,8 @@ class Salamander(Animat):
             self.identity,
             animat_data=self.data,
             timestep=self.timestep,
-            joints_order=self.joints_order
+            joints_order=self.joints_order,
+            units=self.units
         )
 
     def animat_swimming_physics(self, iteration):
