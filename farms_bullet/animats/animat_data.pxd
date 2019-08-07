@@ -17,6 +17,7 @@ cdef class NetworkParameters:
     cdef public OscillatorArray oscillators
     cdef public ConnectivityArray connectivity
     cdef public ConnectivityArray contacts_connectivity
+    cdef public ConnectivityArray hydro_connectivity
 
 
 cdef class OscillatorNetworkState(NetworkArray3D):
@@ -50,12 +51,22 @@ cdef class Sensors:
 
 cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
-    pass
+
+    cpdef double[:] reaction(self, unsigned int iteration, unsigned int sensor_i)
+    cpdef double[:] friction(self, unsigned int iteration, unsigned int sensor_i)
+    cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i)
 
 
 cdef class ProprioceptionArray(NetworkArray3D):
     """Proprioception array"""
-    pass
+
+    cpdef double position(self, unsigned int iteration, unsigned int joint_i)
+    cpdef double[:] positions(self, unsigned int iteration)
+    cpdef double velocity(self, unsigned int iteration, unsigned int joint_i)
+    cpdef double[:] velocities(self, unsigned int iteration)
+    cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i)
+    cpdef double[:] torque(self, unsigned int iteration, unsigned int joint_i)
+    cpdef double motor_torque(self, unsigned int iteration, unsigned int joint_i)
 
 
 cdef class GpsArray(NetworkArray3D):

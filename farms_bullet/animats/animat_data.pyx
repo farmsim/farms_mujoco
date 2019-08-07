@@ -23,12 +23,14 @@ cdef class NetworkParameters:
             self,
             oscillators,
             connectivity,
-            contacts_connectivity
+            contacts_connectivity,
+            hydro_connectivity
     ):
         super(NetworkParameters, self).__init__()
         self.oscillators = oscillators
         self.connectivity = connectivity
         self.contacts_connectivity = contacts_connectivity
+        self.hydro_connectivity = hydro_connectivity
 
 
 cdef class OscillatorNetworkState(NetworkArray3D):
@@ -167,6 +169,18 @@ cdef class ContactsArray(NetworkArray3D):
         """From parameters"""
         return cls(np.zeros([n_iterations, n_contacts, 9]))
 
+    cpdef double[:] reaction(self, unsigned int iteration, unsigned int sensor_i):
+        """Reaction force"""
+        return self.array[iteration, sensor_i, 0:3]
+
+    cpdef double[:] friction(self, unsigned int iteration, unsigned int sensor_i):
+        """Friction force"""
+        return self.array[iteration, sensor_i, 3:6]
+
+    cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i):
+        """Total force"""
+        return self.array[iteration, sensor_i, 6:9]
+
 
 cdef class ProprioceptionArray(NetworkArray3D):
     """Proprioception array"""
@@ -175,6 +189,34 @@ cdef class ProprioceptionArray(NetworkArray3D):
     def from_parameters(cls, n_iterations, n_joints):
         """From parameters"""
         return cls(np.zeros([n_iterations, n_joints, 9]))
+
+    cpdef double position(self, unsigned int iteration, unsigned int joint_i):
+        """Joint position"""
+        return self.array[iteration, joint_i, 0]
+
+    cpdef double[:] positions(self, unsigned int iteration):
+        """Joint position"""
+        return self.array[iteration, :, 0]
+
+    cpdef double velocity(self, unsigned int iteration, unsigned int joint_i):
+        """Joint velocity"""
+        return self.array[iteration, joint_i, 1]
+
+    cpdef double[:] velocities(self, unsigned int iteration):
+        """Joint velocity"""
+        return self.array[iteration, :, 1]
+
+    cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i):
+        """Joint force"""
+        return self.array[iteration, joint_i, 2:5]
+
+    cpdef double[:] torque(self, unsigned int iteration, unsigned int joint_i):
+        """Joint torque"""
+        return self.array[iteration, joint_i, 5:8]
+
+    cpdef double motor_torque(self, unsigned int iteration, unsigned int joint_i):
+        """Joint velocity"""
+        return self.array[iteration, joint_i, 8]
 
 
 cdef class GpsArray(NetworkArray3D):
@@ -186,27 +228,27 @@ cdef class GpsArray(NetworkArray3D):
         return cls(np.zeros([n_iterations, n_links, 20]))
 
     cpdef double[:] com_position(self, unsigned int iteration, unsigned int link_i):
-        """ CoM position of a link"""
+        """CoM position of a link"""
         return self.array[iteration, link_i, 0:3]
 
     cpdef double[:] com_orientation(self, unsigned int iteration, unsigned int link_i):
-        """ CoM orientation of a link"""
+        """CoM orientation of a link"""
         return self.array[iteration, link_i, 3:7]
 
     cpdef double[:] urdf_position(self, unsigned int iteration, unsigned int link_i):
-        """ URDF position of a link"""
+        """URDF position of a link"""
         return self.array[iteration, link_i, 7:10]
 
     cpdef double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i):
-        """ URDF orientation of a link"""
+        """URDF orientation of a link"""
         return self.array[iteration, link_i, 10:14]
 
     cpdef double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i):
-        """ CoM linear velocity of a link"""
+        """CoM linear velocity of a link"""
         return self.array[iteration, link_i, 14:17]
 
     cpdef double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i):
-        """ CoM angular velocity of a link"""
+        """CoM angular velocity of a link"""
         return self.array[iteration, link_i, 17:20]
 
 
