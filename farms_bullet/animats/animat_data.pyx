@@ -194,9 +194,17 @@ cdef class ProprioceptionArray(NetworkArray3D):
         """Joint position"""
         return self.array[iteration, joint_i, 0]
 
+    cpdef double[:] positions(self, unsigned int iteration):
+        """Joint position"""
+        return self.array[iteration, :, 0]
+
     cpdef double velocity(self, unsigned int iteration, unsigned int joint_i):
         """Joint velocity"""
         return self.array[iteration, joint_i, 1]
+
+    cpdef double[:] velocities(self, unsigned int iteration):
+        """Joint velocity"""
+        return self.array[iteration, :, 1]
 
     cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i):
         """Joint force"""
