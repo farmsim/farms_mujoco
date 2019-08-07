@@ -342,12 +342,12 @@ class SalamanderConnectivityOptions(Options):
     def __init__(self, **kwargs):
         super(SalamanderConnectivityOptions, self).__init__()
         self.body_phase_bias = kwargs.pop("body_phase_bias", 2*np.pi/11)
-        self.weight_osc_body = 1e2
-        self.weight_osc_legs_internal = 1e2
+        self.weight_osc_body = 1e3
+        self.weight_osc_legs_internal = 1e3
         self.weight_osc_legs_opposite = 1e0
         self.weight_osc_legs_following = 1e0
         self.weight_osc_legs2body = 1e3
-        self.weight_sens_contact = -3e-1
+        self.weight_sens_contact = -3e0
         self.weight_sens_hydro = -1
 
 
