@@ -143,6 +143,10 @@ cdef class JointsArray(NetworkArray2D):
         """Body offset"""
         self.array[0, :n_body_joints] = value
 
+    def set_legs_offset(self, value, n_body_joints=11):
+        """Legs offset"""
+        self.array[0, n_body_joints:] = value
+
 
 cdef class Sensors:
     """Sensors"""

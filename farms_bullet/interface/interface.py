@@ -183,8 +183,8 @@ class UserParameters(dict):
         )
         self["drive_turn"] = DebugParameter(
             "Drive turn",
-            options.control.drives.left,
-            0, 6
+            options.control.drives.turning,
+            -0.2, 0.2
         )
 
     def update(self):

@@ -133,6 +133,7 @@ class SalamanderDrives(Options):
     def __init__(self, **kwargs):
         super(SalamanderDrives, self).__init__()
         self.forward = kwargs.pop("drive_forward", 2)
+        self.turning = kwargs.pop("drive_turn", 0)
         self.left = kwargs.pop("drive_left", 0)
         self.right = kwargs.pop("drive_right", 0)
 
