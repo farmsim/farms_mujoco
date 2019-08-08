@@ -1,0 +1,1 @@
+python3 sph_viewer.py -d SwimmingMovies/benchmark_swimming_density1000_drive4p999_v -m SwimmingMovies/benchmark_swimming_density1000_drive4p999_v
