@@ -133,6 +133,7 @@ class SalamanderDrives(Options):
     def __init__(self, **kwargs):
         super(SalamanderDrives, self).__init__()
         self.forward = kwargs.pop("drive_forward", 2)
+        self.turning = kwargs.pop("drive_turn", 0)
         self.left = kwargs.pop("drive_left", 0)
         self.right = kwargs.pop("drive_right", 0)
 
@@ -342,6 +343,13 @@ class SalamanderConnectivityOptions(Options):
     def __init__(self, **kwargs):
         super(SalamanderConnectivityOptions, self).__init__()
         self.body_phase_bias = kwargs.pop("body_phase_bias", 2*np.pi/11)
+        self.weight_osc_body = 1e3
+        self.weight_osc_legs_internal = 1e3
+        self.weight_osc_legs_opposite = 1e0
+        self.weight_osc_legs_following = 1e0
+        self.weight_osc_legs2body = 1e3
+        self.weight_sens_contact = -3e0
+        self.weight_sens_hydro = -1
 
 
 class SalamanderJointsOptions(Options):
