@@ -112,7 +112,7 @@ def view_video(directory, video_name='video'):
     video = cv2.VideoWriter(
         filename=video_name+".mp4",
         fourcc=fourcc,
-        fps=100/3,
+        fps=100/2,
         frameSize=(width,height)
     )
     for image in images:
@@ -125,8 +125,8 @@ def main():
     """Main"""
     clargs = parse_arguments()
     directory = clargs.directory
-    view_sph(directory)
-    # view_video(directory, video_name=clargs.movie)
+    # view_sph(directory)
+    view_video(directory, video_name=clargs.movie)
 
 
 if __name__ == "__main__":

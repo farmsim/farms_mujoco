@@ -428,7 +428,7 @@ class RigidFluidCoupling(Application):
             density=self.density_solid,
             scale=1
         )
-        animat_options.morphology.density = [0, 0, self.tank_size[2]+0.05]
+        animat_options.morphology.density = self.density_solid
         animat_options.spawn.position = [0, 0, self.tank_size[2]+0.05]
         animat_options.control.drives.forward = kwargs.pop("drive", 4)
         animat_options.physics.viscous = False
@@ -442,7 +442,7 @@ class RigidFluidCoupling(Application):
             log_path=output_dir+"/rigid"
         )
         simulation_options.units.meters = 1
-        simulation_options.units.seconds = 1000
+        simulation_options.units.seconds = 1
         simulation_options.units.kilograms = 1
         self.simulation = SalamanderSimulation(
             simulation_options=simulation_options,
@@ -830,9 +830,11 @@ def main():
     # for density in [500, 800, 900, 1000, 1100, 1200, 2000]:
     # for density in [1000]:
     #     for drive in [4]:
-    for density in [1000]:  # 300, 500, 700, 1000
-        # for drive in [3.001, 3.5, 4, 4.5, 4.999]:
+    for density in [1000]:
+    # These should be put in the external shell script (similar to jobs)
+    # for density in [1000, 300, 500, 700, 1500]:  # 300, 500, 700, 1000
         for drive in [4]:
+        # for drive in [4, 3.001, 3.5, 4.5, 4.999]:
             try:
                 print("Density: {}".format(density))
                 app = RigidFluidCoupling(
