@@ -70,12 +70,12 @@ class SalamanderSimulation(Simulation):
     def pre_step(self, sim_step):
         """New step"""
         play = True
-        if not(sim_step % 10000) and sim_step > 0:
-            pybullet.restoreState(self.simulation_state)
-            state = self.elements.animat.data.state
-            state.array[self.elements.animat.data.iteration] = (
-                state.default_initial_state()
-            )
+        # if not(sim_step % 10000) and sim_step > 0:
+        #     pybullet.restoreState(self.simulation_state)
+        #     state = self.elements.animat.data.state
+        #     state.array[self.elements.animat.data.iteration] = (
+        #         state.default_initial_state()
+        #     )
         if not self.options.headless:
             play = self.interface.user_params.play.value
             if not sim_step % 100:
@@ -149,7 +149,7 @@ class SalamanderSimulation(Simulation):
             self.elements.animat.options.control.drives.forward = (
                 self.interface.user_params.drive_speed.value
             )
-            self.elements.animat.options.control.drives.left = (
+            self.elements.animat.options.control.drives.turning = (
                 self.interface.user_params.drive_turn.value
             )
             self.elements.animat.controller.network.update(

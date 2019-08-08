@@ -424,12 +424,23 @@ class SalamanderJointsArray(JointsArray):
         n_legs = options.morphology.n_legs
         n_joints = n_body + n_legs*n_dof_legs
         offsets = np.zeros(n_joints)
+        # Body offset
+        offsets[:n_body] = options.control.drives.turning
+        # Legs walking/swimming
         for leg_i in range(n_legs):
             for i in range(n_dof_legs):
                 offsets[n_body + leg_i*n_dof_legs + i] = (
                     j_options.legs_joints_offsets[i].value(
                         options.control.drives
                     )
+                )
+        # Turning
+        for leg_i in range(n_legs//2):
+            for side in range(2):
+                offsets[n_body + 2*leg_i*n_dof_legs + side*n_dof_legs + 0] += (
+                    options.control.drives.turning
+                    *(1 if leg_i else -1)
+                    *(1 if side else -1)
                 )
         rates = 5*np.ones(n_joints)
         return offsets, rates
