@@ -126,6 +126,23 @@ def main():
     plt.show()
 
 
+def main2():
+    """Main2"""
+    n_evaluations = 1000
+    problem = SalamanderEvolution(n_evaluations)
+    with pla.MultiprocessingEvaluator() as evaluator:
+        algorithm = pla.NSGAIII(
+            problem=problem,
+            evaluator=evaluator,
+            divisions_outer=20
+        )
+        print("Running")
+        algorithm.run(n_evaluations)
+        print("Done")
+    problem.logger.plot_non_dominated_front(algorithm.result)
+    plt.show()
+
+
 def profile():
     """Profile with cProfile"""
     import cProfile
@@ -137,5 +154,6 @@ def profile():
 
 
 if __name__ == "__main__":
+    # main2()
     # main()
     profile()
