@@ -8,32 +8,44 @@ import pygmo as pg
 import matplotlib.pyplot as plt
 
 
+PARALLEL = False  # False
+
+
 class SphereFunction:
     """Sphere function"""
 
-    def __init__(self, dim):
+    def __init__(self, dim, n_evaluations):
         super(SphereFunction, self).__init__()
         self.dim = dim
-        self.evaluations = []
+        self.evaluations_x = np.zeros([n_evaluations, self.dim])
+        self.evaluations_f = np.zeros([n_evaluations, self.get_nobj()])
+        self.evaluations_x[:], self.evaluations_f[:] = np.nan, np.nan
+        self.iteration = 0
 
     @staticmethod
     def get_nobj():
         """Get number of objectives"""
         return 2
 
-    def log_fitness(fitness_function):
-        """Log fitness decorator"""
-        def inner(self, variables):
-            fitness = fitness_function(self, variables)
-            print("Saving evaluation (n={})".format(len(self.evaluations)))
-            self.evaluations.append([variables, fitness])
-            return fitness
-        return inner
+    # def log_fitness(fitness_function):
+    #     """Log fitness decorator"""
+    #     def inner(self, variables):
+    #         fitness = fitness_function(self, variables)
+    #         print("Saving evaluation (n={})".format(len(self.evaluations)))
+    #         self.evaluations.append([variables, fitness])
+    #         return fitness
+    #     return inner
 
-    @log_fitness
+    # @log_fitness
     def fitness(self, variables):
         """Fitness"""
-        return self.compute_fitness(variables)
+        # time.sleep(1e-2)
+        fitness = self.compute_fitness(variables)
+        print("Saving evaluation (n={})".format(len(self.evaluations_x)))
+        self.evaluations_x[self.iteration] = variables
+        self.evaluations_f[self.iteration] = fitness
+        self.iteration += 1
+        return fitness
 
     @staticmethod
     def compute_fitness(variables):
@@ -64,6 +76,7 @@ class SphereFunction:
             )
         )
         print("Batch complete ({} fitnesses)".format(np.shape(batch)))
+        pool.close()
         return batch
 
     def get_bounds(self):
@@ -132,24 +145,32 @@ def plot_non_dominated_fronts(points, marker='o', comp=[0, 1], **kwargs):
 def main():
     """Main"""
     dim = 2
-    n_pop = 12
+    n_pop = 20
     n_gen = 100
-    prob = SphereFunction(dim=dim)
+    n_inter = 1
+    prob = SphereFunction(dim=dim, n_evaluations=n_pop*n_inter*(n_gen+1))
     # prob = pg.problem(_prob)
+    print("Setting population")
+    if PARALLEL:
+        bfe = pg.bfe()
     pop = pg.population(
         prob=prob,
         size=n_pop,
-        # b=pg.default_bfe()
+        b=bfe if PARALLEL else None
     )
-    algo = pg.algorithm(
-        pg.moead(
-            gen=1,
-            neighbours=dim  # len(pop)-1
-        )
+    print("Setting algorithm")
+    _algo = pg.nsga2(  # pg.moead(  # pg.nsga2(
+        gen=n_inter,
+        # neighbours=dim  # len(pop)-1
     )
+    if PARALLEL:
+        _algo.set_bfe(bfe)
+    algo = pg.algorithm(_algo)
     hypervolume = np.zeros(n_gen)
     refpoint = [1e3, 1e3]
+    print("Running optimisation")
     for generation in range(n_gen):
+        print("Generation: {}/{}".format(generation+1, n_gen))
         pop = algo.evolve(pop)
         hypervolume[generation] = pg.hypervolume(pop).compute(refpoint)
     print("Population:\n{}".format(pop))
@@ -157,15 +178,17 @@ def main():
     # from IPython import embed; embed()
     prob = pop.problem.extract(SphereFunction)
     evaluations_d = np.array([
-        evaluation[0]
-        for evaluation in prob.evaluations
+        evaluation
+        for evaluation
+        in prob.evaluations_x
     ])
     evaluations_f = np.array([
-        evaluation[1]
-        for evaluation in prob.evaluations
+        evaluation
+        for evaluation
+        in prob.evaluations_f
     ])
 
-    print("Evaluations: {}".format(len(prob.evaluations)))
+    print("Evaluations: {}".format(prob.iteration))
 
     # Optimal
     plt.figure("Decisions")
@@ -175,7 +198,8 @@ def main():
     # Plot decisions
     decisions = pop.get_x()
     plt.figure("Decisions")
-    plt.plot(evaluations_d[:, 0], evaluations_d[:, 1], "bo")
+    if not PARALLEL:
+        plt.plot(evaluations_d[:, 0], evaluations_d[:, 1], "bo")
     plt.plot(decisions[:, 0], decisions[:, 1], "ro")
     plt.grid(True)
     plt.xlim([-10, 10])
@@ -183,7 +207,8 @@ def main():
     # Plot fitnesses
     # fitnesses = pop.get_f()
     plt.figure("Fitnesses")
-    plt.plot(evaluations_f[:, 0], evaluations_f[:, 1], "bo")
+    if not PARALLEL:
+        plt.plot(evaluations_f[:, 0], evaluations_f[:, 1], "bo")
     plot_non_dominated_fronts(pop.get_f(), comp=[0, 1])
     plt.grid(True)
     # Hypervolume
