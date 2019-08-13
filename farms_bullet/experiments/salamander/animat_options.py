@@ -241,7 +241,7 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
     @classmethod
     def body_nominal_amplitudes(cls, joint_i, **kwargs):
         """Body nominal amplitudes"""
-        body_stand_amplitude = 0.2
+        body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
         n_body = 11
         body_stand_shift = np.pi/4
         amplitude = body_stand_amplitude*np.sin(
@@ -317,23 +317,39 @@ class SalamanderOscillatorOptions(Options):
         self.body_tail_amplitude = kwargs.pop("body_tail_amplitude", 0)
         self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
         self.body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
+        self.body_nominal_amplitudes = None
+        self.set_body_nominal_amplitudes()
 
         # Frequencies
         self.body_freqs = SalamanderOscillatorFrequenciesOptions.body_freqs()
         self.legs_freqs = SalamanderOscillatorFrequenciesOptions.legs_freqs()
 
         # Nominal amplitudes
-        self.body_nominal_amplitudes = [
-            SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes(
-                joint_i
-            )
-            for joint_i in range(11)
-        ]
         self.legs_nominal_amplitudes = [
             SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
                 joint_i
             )
             for joint_i in range(4)
+        ]
+
+    def set_body_stand_amplitude(self, value):
+        """Body stand amplitude"""
+        self.body_stand_amplitude = value
+        self.set_body_nominal_amplitudes()
+
+    def set_body_stand_shift(self, value):
+        """Body stand shift"""
+        self.body_stand_shift = value
+        self.set_body_nominal_amplitudes()
+
+    def set_body_nominal_amplitudes(self):
+        """Set body nominal amplitudes"""
+        self.body_nominal_amplitudes = [
+            SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes(
+                joint_i,
+                body_stand_amplitude=self.body_stand_amplitude
+            )
+            for joint_i in range(11)
         ]
 
 

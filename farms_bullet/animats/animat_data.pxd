@@ -67,6 +67,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
     cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i)
     cpdef double[:] torque(self, unsigned int iteration, unsigned int joint_i)
     cpdef double motor_torque(self, unsigned int iteration, unsigned int joint_i)
+    cpdef double[:, :] motor_torques(self)
 
 
 cdef class GpsArray(NetworkArray3D):

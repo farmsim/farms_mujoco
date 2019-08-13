@@ -222,6 +222,10 @@ cdef class ProprioceptionArray(NetworkArray3D):
         """Joint velocity"""
         return self.array[iteration, joint_i, 8]
 
+    cpdef double[:, :] motor_torques(self):
+        """Joint velocity"""
+        return self.array[:, :, 8]
+
 
 cdef class GpsArray(NetworkArray3D):
     """Gps array"""

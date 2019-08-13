@@ -19,5 +19,7 @@ class SalamanderGPS(LinksStatesSensor):
         """Update sensor"""
         if self.options.collect_gps:
             self.collect(iteration, self.links)
-        if self.options.control.drives.forward > 3:
+        elif self.options.control.drives.forward > 3:
             self.collect(iteration, self.links[:12])
+        else:
+            self.collect(iteration, [self.links[0]])
