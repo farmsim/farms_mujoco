@@ -137,20 +137,17 @@ class SalamanderSimulation(Simulation):
             )
         # Body offset
         if self.interface.user_params.body_offset.changed:
-            self.elements.animat.data.joints.set_body_offset(
+            self.elements.animat.options.control.network.joints.body_offsets = (
                 self.interface.user_params.body_offset.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
             )
             self.interface.user_params.body_offset.changed = False
         # Drives
-        if (
-                self.interface.user_params.drive_speed.changed
-                or self.interface.user_params.drive_turn.changed
-        ):
+        if self.interface.user_params.drive_speed.changed:
             self.elements.animat.options.control.drives.forward = (
                 self.interface.user_params.drive_speed.value
-            )
-            self.elements.animat.options.control.drives.turning = (
-                self.interface.user_params.drive_turn.value
             )
             self.elements.animat.controller.network.update(
                 self.elements.animat.options
@@ -160,6 +157,14 @@ class SalamanderSimulation(Simulation):
             else:
                 pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
             self.interface.user_params.drive_speed.changed = False
+        # Turning
+        if self.interface.user_params.drive_turn.changed:
+            self.elements.animat.options.control.drives.turning = (
+                self.interface.user_params.drive_turn.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
+            )
             self.interface.user_params.drive_turn.changed = False
 
 

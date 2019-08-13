@@ -359,13 +359,14 @@ class SalamanderJointsOptions(Options):
         super(SalamanderJointsOptions, self).__init__()
 
         # Joints offsets
-        self.legs_joints_offsets = [
+        self.legs_offsets = [
             SalamanderOscillatorJointsOptions.legs_joints_offsets(
                 joint_i,
                 **kwargs
             )
             for joint_i in range(4)
         ]
-        self.body_joints_offsets = (
+        self.body_offsets = (
             SalamanderOscillatorJointsOptions.body_joints_offsets()
         )
+        self.body_offsets = 0
