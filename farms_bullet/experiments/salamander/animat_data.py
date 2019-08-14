@@ -172,14 +172,14 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
         legs_amplitude_following = conn_options.weight_osc_legs_following
         legs2body_amplitude = conn_options.weight_osc_legs2body
 
-        # Amplitudes
-        amplitudes = [
-            osc_options.body_stand_amplitude*np.sin(
-                2*np.pi*i/n_body_joints
-                - osc_options.body_stand_shift
-            )
-            for i in range(n_body_joints)
-        ]
+        # # Amplitudes
+        # amplitudes = [
+        #     osc_options.body_stand_amplitude*np.sin(
+        #         2*np.pi*i/n_body_joints
+        #         - osc_options.body_stand_shift
+        #     )
+        #     for i in range(n_body_joints)
+        # ]
 
         # Body
         for i in range(n_body_joints):

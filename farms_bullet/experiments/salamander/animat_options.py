@@ -315,31 +315,29 @@ class SalamanderOscillatorOptions(Options):
 
         self.body_head_amplitude = kwargs.pop("body_head_amplitude", 0)
         self.body_tail_amplitude = kwargs.pop("body_tail_amplitude", 0)
-        self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
-        self.body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
+        self._body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
+        self._legs_amplitudes = kwargs.pop(
+            "legs_amplitude",
+            [0.8, np.pi/32, np.pi/4, np.pi/8]
+        )
+        self._body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
         self.body_nominal_amplitudes = None
         self.set_body_nominal_amplitudes()
+        self.legs_nominal_amplitudes = None
+        self.set_legs_nominal_amplitudes()
 
         # Frequencies
         self.body_freqs = SalamanderOscillatorFrequenciesOptions.body_freqs()
         self.legs_freqs = SalamanderOscillatorFrequenciesOptions.legs_freqs()
 
-        # Nominal amplitudes
-        self.legs_nominal_amplitudes = [
-            SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
-                joint_i
-            )
-            for joint_i in range(4)
-        ]
-
     def set_body_stand_amplitude(self, value):
         """Body stand amplitude"""
-        self.body_stand_amplitude = value
+        self._body_stand_amplitude = value
         self.set_body_nominal_amplitudes()
 
     def set_body_stand_shift(self, value):
         """Body stand shift"""
-        self.body_stand_shift = value
+        self._body_stand_shift = value
         self.set_body_nominal_amplitudes()
 
     def set_body_nominal_amplitudes(self):
@@ -347,9 +345,28 @@ class SalamanderOscillatorOptions(Options):
         self.body_nominal_amplitudes = [
             SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes(
                 joint_i,
-                body_stand_amplitude=self.body_stand_amplitude
+                body_stand_amplitude=self._body_stand_amplitude
             )
             for joint_i in range(11)
+        ]
+
+    def set_legs_amplitudes(self, values):
+        """Body stand amplitude"""
+        self._legs_amplitudes = values
+        self.set_legs_nominal_amplitudes()
+
+    def set_legs_nominal_amplitudes(self):
+        """Set legs nominal amplitudes"""
+        self.legs_nominal_amplitudes = [
+            SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
+                joint_i,
+                **{
+                    "leg_{}_amplitude".format(joint_i): (
+                        self._legs_amplitudes[joint_i]
+                    )
+                }
+            )
+            for joint_i in range(4)
         ]
 
 

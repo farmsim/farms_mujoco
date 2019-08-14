@@ -1,6 +1,7 @@
 """Farms multiobjective optimisation for salamander"""
 
 import numpy as np
+
 from jmetal.core.problem import FloatProblem
 # from jmetal.algorithm.multiobjective.moead import MOEAD
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
@@ -30,8 +31,8 @@ class SalamanderEvolution(FloatProblem):
 
     def __init__(self):
         super(SalamanderEvolution, self).__init__()
+        self.number_of_variables = 5
         self.number_of_objectives = 2
-        self.number_of_variables = 2
         self.number_of_constraints = 0
 
         self.obj_directions = [self.MINIMIZE, self.MINIMIZE]
@@ -42,6 +43,11 @@ class SalamanderEvolution(FloatProblem):
 
         # Body stand amplitude
         self.lower_bound[0], self.upper_bound[0] = 0, 2*np.pi/11
+        # Legs amplitudes
+        self.lower_bound[1], self.upper_bound[1] = 0, np.pi/2
+        self.lower_bound[2], self.upper_bound[2] = 0, np.pi/4
+        self.lower_bound[3], self.upper_bound[3] = 0, np.pi
+        self.lower_bound[4], self.upper_bound[4] = 0, np.pi/4
 
     @staticmethod
     def get_name():
@@ -49,7 +55,7 @@ class SalamanderEvolution(FloatProblem):
         return "Salamander evolution"
 
     @staticmethod
-    def evaluate(solution):
+    def evaluate(solution, evolution=True):
         """Evaluate"""
         # Animat options
         animat_options = SalamanderOptions(
@@ -61,12 +67,18 @@ class SalamanderEvolution(FloatProblem):
         animat_options.control.network.oscillators.set_body_stand_amplitude(
             solution.variables[0]
         )
+        animat_options.control.network.oscillators.set_legs_amplitudes([
+            solution.variables[1],
+            solution.variables[2],
+            solution.variables[3],
+            solution.variables[4]
+        ])
         animat_options.control.network.oscillators.body_stand_shift = np.pi/4
         # animat_options.control.drives.forward = 4
         # Simulation options
         simulation_options = SimulationOptions.with_clargs()
-        simulation_options.headless = True
-        simulation_options.fast = True
+        simulation_options.headless = evolution
+        simulation_options.fast = evolution
         simulation_options.timestep = 1e-2
         simulation_options.duration = 10
         simulation_options.units.meters = 1
