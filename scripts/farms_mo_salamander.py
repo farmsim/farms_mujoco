@@ -44,15 +44,15 @@ class SalamanderEvolution(FloatProblem):
         # Body stand amplitude
         self.lower_bound[0], self.upper_bound[0] = 0, 2*np.pi/11
         # Legs amplitudes
-        self.lower_bound[1], self.upper_bound[1] = 0, np.pi/2
-        self.lower_bound[2], self.upper_bound[2] = 0, np.pi/4
-        self.lower_bound[3], self.upper_bound[3] = 0, np.pi
-        self.lower_bound[4], self.upper_bound[4] = 0, np.pi/4
+        self.lower_bound[1], self.upper_bound[1] = 0, +np.pi/2
+        self.lower_bound[2], self.upper_bound[2] = 0, +np.pi/4
+        self.lower_bound[3], self.upper_bound[3] = 0, +np.pi
+        self.lower_bound[4], self.upper_bound[4] = 0, +np.pi/4
         # Legs offsets
-        self.lower_bound[5], self.upper_bound[5] = -np.pi/2, +np.pi/2
-        self.lower_bound[6], self.upper_bound[6] = -np.pi/4, np.pi/4
-        self.lower_bound[7], self.upper_bound[7] = -np.pi/4, np.pi/4
-        self.lower_bound[8], self.upper_bound[8] = 0, np.pi/2
+        self.lower_bound[5], self.upper_bound[5] = -np.pi/4, +np.pi/4
+        self.lower_bound[6], self.upper_bound[6] = 0, +np.pi/4
+        self.lower_bound[7], self.upper_bound[7] = -np.pi/4, +np.pi/4
+        self.lower_bound[8], self.upper_bound[8] = 0, +np.pi/2
 
     @staticmethod
     def get_name():
