@@ -28,7 +28,8 @@ class SalamanderOscillatorNetworkState(OscillatorNetworkState):
         n_dof_legs = 4
         n_joints = 11+4*n_dof_legs
         return 1e-3*np.arange(5*n_joints) + np.concatenate([
-            np.linspace(2*np.pi, 0, n_joints),
+            # 0*np.linspace(2*np.pi, 0, n_joints),
+            np.zeros(n_joints),
             np.zeros(n_joints),
             np.zeros(2*n_joints),
             np.zeros(n_joints)

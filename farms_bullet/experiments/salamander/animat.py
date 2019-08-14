@@ -401,7 +401,7 @@ class Salamander(Animat):
         )
         self.set_links_dynamics(
             self.feet_names,
-            lateralFriction=0.3,
+            lateralFriction=0.7,
             spinningFriction=small,
             rollingFriction=small,
         )

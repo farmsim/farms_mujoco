@@ -142,7 +142,10 @@ class SalamanderNetworkODE:
     def get_velocity_output(self):
         """Position output"""
         outputs = self.get_doutputs()
-        return 0.5*(outputs[self.groups[0]] - outputs[self.groups[1]])
+        return (
+            0.5*(outputs[self.groups[0]] - outputs[self.groups[1]])
+            + self.doffsets[self.animat_data.iteration]
+        )
 
     def get_velocity_output_all(self):
         """Position output"""

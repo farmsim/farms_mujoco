@@ -6,7 +6,7 @@ import time
 cimport cython
 cimport numpy as np
 
-from libc.math cimport sin, cos, fabs
+from libc.math cimport sin, fabs  # cos,
 # from libc.stdlib cimport malloc, free
 # from cython.parallel import prange
 
@@ -45,14 +45,17 @@ cpdef double[:] ode_oscillators_sparse(
             data.network.contacts_connectivity.array[i][1] + 0.5
         )
         # contact_weight*contact_force
-        contact = (
-            data.sensors.contacts.array[data.iteration][i1][0]**2
-            + data.sensors.contacts.array[data.iteration][i1][1]**2
-            + data.sensors.contacts.array[data.iteration][i1][2]**2
-        )**0.5
+        # contact = (
+        #     data.sensors.contacts.array[data.iteration][i1][0]**2
+        #     + data.sensors.contacts.array[data.iteration][i1][1]**2
+        #     + data.sensors.contacts.array[data.iteration][i1][2]**2
+        # )**0.5
+        contact = fabs(data.sensors.contacts.array[data.iteration][i1][2])
         dstate[i0] += (
             data.network.contacts_connectivity.array[i][2]
-            *(10*contact/(1+10*contact))
+            *(10*contact/(1+10*contact))  # Saturation
+            # *cos(state[i0])
+            # *sin(state[i0])  # For Tegotae
         )
     for i in range(data.network.hydro_connectivity.size[0]):
         i0 = <unsigned int> (
