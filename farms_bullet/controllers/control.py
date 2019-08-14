@@ -15,6 +15,10 @@ class AnimatController:
         self.joint_list = joints_order
         self.torques = np.zeros_like(self.joint_list)
         self.units = units
+        self.gain_position = 1e-1*np.ones_like(joints_order)/self.units.torques
+        self.gain_velocity = 1e0*np.ones_like(joints_order)/(
+            self.units.torques*self.units.seconds
+        )
         pybullet.setJointMotorControlArray(
             self.model,
             self.joint_list,
@@ -59,8 +63,8 @@ class AnimatController:
             # targetVelocities=np.zeros_like(self.positions),
             # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
             # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
-            positionGains=1e-3*np.ones_like(self.positions),
-            velocityGains=1e-1*np.ones_like(self.positions),
+            positionGains=self.gain_position,
+            velocityGains=self.gain_velocity,
             # forces=[ctrl["pdf"]["f"] for ctrl in controls],
             # maxVelocities=2*np.pi*0.1*np.ones_like(self.positions)
         )
