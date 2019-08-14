@@ -75,8 +75,8 @@ class SphereFunction(FloatProblem):
 
 def main():
     """Main"""
-    n_pop = 20
-    n_gen = 3
+    n_pop = 100
+    n_gen = 5
     problem = SphereFunction()
 
     max_evaluations = n_pop*n_gen
@@ -188,18 +188,21 @@ def main():
     plt.plot([1, 0], [0, 1])
     plt.figure("Fitnesses")
     plt.plot([np.sqrt(2), 0], [0, np.sqrt(2)])
-    # Plot decisions
-    decisions = np.array([solution.variables for solution in front])
-    fitness = np.array([solution.objectives for solution in front])
-    plt.figure("Decisions")
-    plt.plot(decisions[:, 0], decisions[:, 1], "ro")
-    plt.grid(True)
-    plt.xlim([-10, 10])
-    plt.ylim([-10, 10])
-    # Plot fitnesses
-    plt.figure("Fitnesses")
-    plt.plot(fitness[:, 0], fitness[:, 1], "ro")
-    plt.grid(True)
+    for i, front in enumerate(pareto_fronts):
+        # Plot decisions
+        plt.figure("Decisions")
+        decisions = np.array([solution.variables for solution in front])
+        fitness = np.array([solution.objectives for solution in front])
+        plt.plot(decisions[:, 0], decisions[:, 1], "o", label=i)
+        plt.grid(True)
+        plt.xlim([-10, 10])
+        plt.ylim([-10, 10])
+        plt.legend()
+        # Plot fitnesses
+        plt.figure("Fitnesses")
+        plt.plot(fitness[:, 0], fitness[:, 1], "o", label=i)
+        plt.grid(True)
+        plt.legend()
     # Show
     plt.show()
 
