@@ -31,7 +31,7 @@ class SalamanderEvolution(FloatProblem):
 
     def __init__(self):
         super(SalamanderEvolution, self).__init__()
-        self.number_of_variables = 5
+        self.number_of_variables = 9
         self.number_of_objectives = 2
         self.number_of_constraints = 0
 
@@ -48,6 +48,11 @@ class SalamanderEvolution(FloatProblem):
         self.lower_bound[2], self.upper_bound[2] = 0, np.pi/4
         self.lower_bound[3], self.upper_bound[3] = 0, np.pi
         self.lower_bound[4], self.upper_bound[4] = 0, np.pi/4
+        # Legs offsets
+        self.lower_bound[5], self.upper_bound[5] = -np.pi/2, +np.pi/2
+        self.lower_bound[6], self.upper_bound[6] = -np.pi/4, np.pi/4
+        self.lower_bound[7], self.upper_bound[7] = -np.pi/4, np.pi/4
+        self.lower_bound[8], self.upper_bound[8] = 0, np.pi/2
 
     @staticmethod
     def get_name():
@@ -72,6 +77,12 @@ class SalamanderEvolution(FloatProblem):
             solution.variables[2],
             solution.variables[3],
             solution.variables[4]
+        ])
+        animat_options.control.network.joints.set_legs_offsets([
+            solution.variables[5],
+            solution.variables[6],
+            solution.variables[7],
+            solution.variables[8]
         ])
         animat_options.control.network.oscillators.body_stand_shift = np.pi/4
         # animat_options.control.drives.forward = 4

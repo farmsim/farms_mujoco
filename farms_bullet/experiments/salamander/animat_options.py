@@ -282,7 +282,7 @@ class SalamanderOscillatorJointsOptions(DriveDependentProperty):
             [0, np.pi/32, 0, np.pi/8]
         )
         offsets_swimming = kwargs.pop(
-            "legs_offsets_walking",
+            "legs_offsets_swimming",
             [-2*np.pi/5, 0, 0, 0]
         )
         return cls([
@@ -390,15 +390,33 @@ class SalamanderJointsOptions(Options):
 
     def __init__(self, **kwargs):
         super(SalamanderJointsOptions, self).__init__()
-
+        self._legs_offsets = kwargs.pop(
+            "legs_offsets_walking",
+            [0, np.pi/32, 0, np.pi/8]
+        )
+        self._legs_offsets_swimming = kwargs.pop(
+            "legs_offsets_swimming",
+            [-2*np.pi/5, 0, 0, 0]
+        )
         # Joints offsets
-        self.legs_joints_offsets = [
-            SalamanderOscillatorJointsOptions.legs_joints_offsets(
-                joint_i,
-                **kwargs
-            )
-            for joint_i in range(4)
-        ]
+        self.legs_joints_offsets = None
+        self.set_legs_joints_offsets()
         self.body_joints_offsets = (
             SalamanderOscillatorJointsOptions.body_joints_offsets()
         )
+
+    def set_legs_offsets(self, values):
+        """Set legs offsets"""
+        self._legs_offsets = values
+        self.set_legs_joints_offsets()
+
+    def set_legs_joints_offsets(self):
+        """Set legs joints offsets"""
+        self.legs_joints_offsets = [
+            SalamanderOscillatorJointsOptions.legs_joints_offsets(
+                joint_i,
+                legs_offsets_walking=self._legs_offsets,
+                legs_offsets_swimming=self._legs_offsets_swimming
+            )
+            for joint_i in range(4)
+        ]
