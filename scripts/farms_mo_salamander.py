@@ -19,6 +19,7 @@ from jmetal.util.solutions import (
     print_function_values_to_file,
     print_variables_to_file
 )
+from jmetal.util.ranking import FastNonDominatedRanking
 from jmetal.lab.visualization import Plot, InteractivePlot
 
 from farms_bullet.simulations.simulation_options import SimulationOptions
@@ -181,6 +182,8 @@ def main():
 
     # Get results
     front = algorithm.get_result()
+    ranking = FastNonDominatedRanking()
+    pareto_fronts = ranking.compute_ranking(front)
 
     # Plot front
     plot_front = Plot(
@@ -215,8 +218,11 @@ def main():
     print('Problem: ' + problem.get_name())
     print('Computing time: ' + str(algorithm.total_computing_time))
 
-    # Visualise results
-    for solution in front:
+    # Visualise top results
+    print("Found {} interesting solutions in pareto_front".format(
+        len(pareto_fronts[0])
+    ))
+    for solution in pareto_fronts[0]:
         objectives = solution.objectives
         solution2 = problem.evaluate(solution, evolution=False)
         same_objectives = all([

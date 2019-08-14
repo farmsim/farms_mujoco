@@ -12,7 +12,11 @@ from jmetal.operator import (
     PolynomialMutation,
     DifferentialEvolutionCrossover
 )
-from jmetal.util.observer import ProgressBarObserver, VisualizerObserver
+from jmetal.util.observer import (
+    ProgressBarObserver,
+    VisualizerObserver,
+    # BasicObserver
+)
 from jmetal.util.solutions.evaluator import MultiprocessEvaluator
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from jmetal.util.aggregative_function import Tschebycheff
@@ -21,6 +25,7 @@ from jmetal.util.solutions import (
     print_function_values_to_file,
     print_variables_to_file
 )
+from jmetal.util.ranking import FastNonDominatedRanking
 from jmetal.lab.visualization import Plot, InteractivePlot
 
 import matplotlib.pyplot as plt
@@ -41,8 +46,8 @@ class SphereFunction(FloatProblem):
         self.lower_bound = [-5.0 for _ in range(self.number_of_variables)]
         self.upper_bound = [5.0 for _ in range(self.number_of_variables)]
 
-        FloatSolution.lower_bound = self.lower_bound
-        FloatSolution.upper_bound = self.upper_bound
+        # FloatSolution.lower_bound = self.lower_bound
+        # FloatSolution.upper_bound = self.upper_bound
 
     @staticmethod
     def get_name():
@@ -52,7 +57,7 @@ class SphereFunction(FloatProblem):
     @staticmethod
     def evaluate(solution):
         """Evaluate"""
-        np.sum(np.arange(int(1e6)))
+        np.sum(np.arange(int(1e5)))
         # solution.objectives[0] = 0
         # solution.objectives[1] = 0
         solution.objectives = (
@@ -71,46 +76,46 @@ class SphereFunction(FloatProblem):
 def main():
     """Main"""
     n_pop = 20
-    n_gen = 100
+    n_gen = 3
     problem = SphereFunction()
 
     max_evaluations = n_pop*n_gen
 
 
-    # # NSGAII
-    # algorithm = NSGAII(
-    #     problem=problem,
-    #     population_size=n_pop,
-    #     offspring_population_size=n_pop//2,
-    #     mutation=PolynomialMutation(
-    #         probability=1.0 / problem.number_of_variables,
-    #         distribution_index=20
-    #     ),
-    #     crossover=SBXCrossover(probability=1.0, distribution_index=20),
-    #     termination_criterion=StoppingByEvaluations(max=max_evaluations),
-    #     population_evaluator=MultiprocessEvaluator(8)
-    # )
-
-
-    # MOEAD
-    algorithm = MOEAD(
+    # NSGAII
+    algorithm = NSGAII(
         problem=problem,
         population_size=n_pop,
-        crossover=DifferentialEvolutionCrossover(CR=1.0, F=0.5, K=0.5),
+        offspring_population_size=n_pop//10,
         mutation=PolynomialMutation(
             probability=1.0 / problem.number_of_variables,
             distribution_index=20
         ),
-        aggregative_function=Tschebycheff(
-            dimension=problem.number_of_objectives
-        ),
-        neighbor_size=n_pop//5,
-        neighbourhood_selection_probability=0.9,
-        max_number_of_replaced_solutions=2,
-        weight_files_path='../../resources/MOEAD_weights',
+        crossover=SBXCrossover(probability=1.0, distribution_index=20),
         termination_criterion=StoppingByEvaluations(max=max_evaluations),
         population_evaluator=MultiprocessEvaluator(8)
     )
+
+
+    # # MOEAD
+    # algorithm = MOEAD(
+    #     problem=problem,
+    #     population_size=n_pop,
+    #     crossover=DifferentialEvolutionCrossover(CR=1.0, F=0.5, K=0.5),
+    #     mutation=PolynomialMutation(
+    #         probability=1.0 / problem.number_of_variables,
+    #         distribution_index=20
+    #     ),
+    #     aggregative_function=Tschebycheff(
+    #         dimension=problem.number_of_objectives
+    #     ),
+    #     neighbor_size=n_pop//5,
+    #     neighbourhood_selection_probability=0.9,
+    #     max_number_of_replaced_solutions=2,
+    #     weight_files_path='../../resources/MOEAD_weights',
+    #     termination_criterion=StoppingByEvaluations(max=max_evaluations),
+    #     population_evaluator=MultiprocessEvaluator(8)
+    # )
 
 
     # # GDE3
@@ -133,12 +138,17 @@ def main():
             display_frequency=100
         )
     )
+    # algorithm.observable.register(
+    #     observer=BasicObserver(frequency=1.0)
+    # )
 
     # Run optimisation
     algorithm.run()
 
     # Get results
     front = algorithm.get_result()
+    ranking = FastNonDominatedRanking()
+    pareto_fronts = ranking.compute_ranking(front)
 
     # Plot front
     plot_front = Plot(
@@ -147,14 +157,14 @@ def main():
         axis_labels=problem.obj_labels
     )
     plot_front.plot(
-        front,
+        pareto_fronts[0],
         label=algorithm.label,
         filename=algorithm.get_name()
     )
 
     # Plot interactive front
     plot_front = InteractivePlot(
-        plot_title='Pareto front approximation',
+        plot_title='Pareto front approximation interactive',
         reference_front=problem.reference_front,
         axis_labels=problem.obj_labels
     )
