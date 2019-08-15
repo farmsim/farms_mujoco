@@ -64,11 +64,15 @@ cpdef double[:] ode_oscillators_sparse(
         i1 = <unsigned int> (
             data.network.hydro_connectivity.array[i][1] + 0.5
         )
-        # hydro_weight*hydro_force
         hydro_force = fabs(
             data.sensors.hydrodynamics.array[data.iteration][i1][1]
         )
+        # dfrequency += hydro_weight*hydro_force
         dstate[i0] += data.network.hydro_connectivity.array[i][2]*hydro_force
+        # damplitude += hydro_weight*hydro_force
+        dstate[o_dim+i0] += (
+            data.network.hydro_connectivity.array[i][3]*hydro_force
+        )
     for i in range(data.joints.size[1]):
         # rate*(joints_offset_desired - joints_offset)
         dstate[2*o_dim+i] = data.joints.array[1][i]*(

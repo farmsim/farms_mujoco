@@ -518,7 +518,8 @@ class SalamanderHydroConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     bodyosc2index(joint_i=joint_i, side=side_osc),
                     joint_i+1,
-                    options_conn.weight_sens_hydro
+                    options_conn.weight_sens_hydro_freq,
+                    options_conn.weight_sens_hydro_amp
                 ])
         print("Hydro connectivity:\n{}".format(np.array(connectivity)))
         return cls(np.array(connectivity, dtype=np.float64))
