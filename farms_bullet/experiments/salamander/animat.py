@@ -404,6 +404,8 @@ class Salamander(Animat):
             lateralFriction=0.7,
             spinningFriction=small,
             rollingFriction=small,
+            # contactStiffness=1e3,
+            # contactDamping=1e6
         )
 
     def setup_controller(self):
