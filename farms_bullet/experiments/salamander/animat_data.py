@@ -487,19 +487,32 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
         options_conn = options.control.network.connectivity
         # options.morphology.n_legs
         for leg_i in range(2):
-            for joint_i in range(4):
-                for side_i in range(2):
+            for side_i in range(2):
+                for joint_i in range(4):
                     for side_o in range(2):
-                        connectivity.append([
-                            legosc2index(
-                                leg_i=leg_i,
-                                side_i=side_i,
-                                joint_i=joint_i,
-                                side=side_o
-                            ),
-                            contactleglink2index(leg_i=leg_i, side_i=side_i),
-                            options_conn.weight_sens_contact
-                        ])
+                        for sensor_leg_i in range(2):
+                            for sensor_side_i in range(2):
+                                weight = (
+                                    options_conn.weight_sens_contact_e
+                                    if (
+                                        (leg_i == sensor_leg_i)
+                                        != (side_i == sensor_side_i)
+                                    )
+                                    else options_conn.weight_sens_contact_i
+                                )
+                                connectivity.append([
+                                    legosc2index(
+                                        leg_i=leg_i,
+                                        side_i=side_i,
+                                        joint_i=joint_i,
+                                        side=side_o
+                                    ),
+                                    contactleglink2index(
+                                        leg_i=sensor_leg_i,
+                                        side_i=sensor_side_i
+                                    ),
+                                    weight
+                                ])
         print("Contacts connectivity:\n{}".format(np.array(connectivity)))
         return cls(np.array(connectivity, dtype=np.float64))
 
