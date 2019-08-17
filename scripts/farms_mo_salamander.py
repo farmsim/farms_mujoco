@@ -155,9 +155,13 @@ class SalamanderEvolution(FloatProblem):
                 link_i=0
             )
         )
-        if -2 > position[0] > -10:
-            position[0] += 1e3 + position[0]**2
-        solution.objectives[0] = position[0]  # Distance along x axis
+        distance = np.linalg.norm(position[:2])
+        # Penalty
+        if not(1 < -position[0] < 10):
+            distance -= 1e3
+            total_torque += 1e3
+        # Objectives
+        solution.objectives[0] = -distance  # Distance along x axis
         solution.objectives[1] = total_torque  # Energy
 
         # Terminate simulation
