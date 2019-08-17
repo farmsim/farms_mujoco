@@ -218,7 +218,7 @@ def main():
     print('Problem: ' + problem.get_name())
     print('Computing time: ' + str(algorithm.total_computing_time))
 
-    # Visualise top results
+    # Visualise best results (Pareto front)
     print("Found {} interesting solutions in pareto_front".format(
         len(pareto_fronts[0])
     ))

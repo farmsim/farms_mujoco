@@ -46,6 +46,11 @@ class SphereFunction(FloatProblem):
         self.lower_bound = [-5.0 for _ in range(self.number_of_variables)]
         self.upper_bound = [5.0 for _ in range(self.number_of_variables)]
 
+        self.initial_solutions = [
+            [1, 0],
+            [0, 1]
+        ]
+
         # FloatSolution.lower_bound = self.lower_bound
         # FloatSolution.upper_bound = self.upper_bound
 
@@ -53,6 +58,22 @@ class SphereFunction(FloatProblem):
     def get_name():
         """Name"""
         return "Benchmark problem"
+
+    def create_solution(self):
+        new_solution = FloatSolution(
+            self.lower_bound,
+            self.upper_bound,
+            self.number_of_objectives,
+            self.number_of_constraints
+        )
+        new_solution.variables = [
+            np.random.uniform(
+                self.lower_bound[i],
+                self.upper_bound[i]
+            )
+            for i in range(self.number_of_variables)
+        ] if not self.initial_solutions else self.initial_solutions.pop()
+        return new_solution
 
     @staticmethod
     def evaluate(solution):
