@@ -330,6 +330,10 @@ class SalamanderOscillatorOptions(Options):
         self.body_freqs = SalamanderOscillatorFrequenciesOptions.body_freqs()
         self.legs_freqs = SalamanderOscillatorFrequenciesOptions.legs_freqs()
 
+    def get_body_stand_amplitude(self):
+        """Body stand amplitude"""
+        return self._body_stand_amplitude
+
     def set_body_stand_amplitude(self, value):
         """Body stand amplitude"""
         self._body_stand_amplitude = value
@@ -350,8 +354,12 @@ class SalamanderOscillatorOptions(Options):
             for joint_i in range(11)
         ]
 
+    def get_legs_amplitudes(self):
+        """Body legs amplitude"""
+        return self._legs_amplitudes
+
     def set_legs_amplitudes(self, values):
-        """Body stand amplitude"""
+        """Body legs amplitude"""
         self._legs_amplitudes = values
         self.set_legs_nominal_amplitudes()
 
@@ -406,6 +414,10 @@ class SalamanderJointsOptions(Options):
         self._body_offset = 0
         self.body_offsets = None
         self.update_body_offsets()
+
+    def get_legs_offsets(self):
+        """Get legs offsets"""
+        return self._legs_offsets
 
     def set_legs_offsets(self, values):
         """Set legs offsets"""

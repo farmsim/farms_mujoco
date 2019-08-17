@@ -66,13 +66,11 @@ class SphereFunction(FloatProblem):
             self.number_of_objectives,
             self.number_of_constraints
         )
-        new_solution.variables = [
-            np.random.uniform(
-                self.lower_bound[i],
-                self.upper_bound[i]
-            )
-            for i in range(self.number_of_variables)
-        ] if not self.initial_solutions else self.initial_solutions.pop()
+        new_solution.variables = np.random.uniform(
+            self.lower_bound,
+            self.upper_bound,
+            self.number_of_variables
+        ) if not self.initial_solutions else self.initial_solutions.pop()
         return new_solution
 
     @staticmethod

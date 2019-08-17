@@ -3,6 +3,7 @@
 import numpy as np
 
 from jmetal.core.problem import FloatProblem
+from jmetal.core.solution import FloatSolution
 # from jmetal.algorithm.multiobjective.moead import MOEAD
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
 from jmetal.operator import (
@@ -55,10 +56,46 @@ class SalamanderEvolution(FloatProblem):
         self.lower_bound[7], self.upper_bound[7] = -np.pi/4, +np.pi/4
         self.lower_bound[8], self.upper_bound[8] = 0, +np.pi/2
 
+        # Initial solutions
+        animat_options = SalamanderOptions(
+            # collect_gps=True,
+            scale=1
+        )
+        network = animat_options.control.network
+        legs_amplitudes = network.oscillators.get_legs_amplitudes()
+        legs_offsets = network.joints.get_legs_offsets()
+        self.initial_solutions = [
+            [
+                network.oscillators.get_body_stand_amplitude(),
+                legs_amplitudes[0],
+                legs_amplitudes[1],
+                legs_amplitudes[2],
+                legs_amplitudes[3],
+                legs_offsets[0],
+                legs_offsets[1],
+                legs_offsets[2],
+                legs_offsets[3]
+            ]
+        ]
+
     @staticmethod
     def get_name():
         """Name"""
         return "Salamander evolution"
+
+    def create_solution(self):
+        new_solution = FloatSolution(
+            self.lower_bound,
+            self.upper_bound,
+            self.number_of_objectives,
+            self.number_of_constraints
+        )
+        new_solution.variables = np.random.uniform(
+            self.lower_bound,
+            self.upper_bound,
+            self.number_of_variables
+        ) if not self.initial_solutions else self.initial_solutions.pop()
+        return new_solution
 
     @staticmethod
     def evaluate(solution, evolution=True):
