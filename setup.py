@@ -31,6 +31,7 @@ setup(
     #     "farms_bullet/config/*"
     # ]},
     include_package_data=True,
+    include_dirs=[np.get_include()],
     ext_modules=cythonize(
         [
             Extension(

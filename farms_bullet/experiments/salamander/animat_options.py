@@ -162,6 +162,7 @@ class SalamanderDrives(Options):
     def __init__(self, **kwargs):
         super(SalamanderDrives, self).__init__()
         self.forward = kwargs.pop("drive_forward", 2)
+        self.turning = kwargs.pop("drive_turn", 0)
         self.left = kwargs.pop("drive_left", 0)
         self.right = kwargs.pop("drive_right", 0)
 
@@ -371,6 +372,15 @@ class SalamanderConnectivityOptions(Options):
     def __init__(self, **kwargs):
         super(SalamanderConnectivityOptions, self).__init__()
         self.body_phase_bias = kwargs.pop("body_phase_bias", 2*np.pi/11)
+        self.weight_osc_body = 1e3
+        self.weight_osc_legs_internal = 1e3
+        self.weight_osc_legs_opposite = 1e0
+        self.weight_osc_legs_following = 1e0
+        self.weight_osc_legs2body = 3e1
+        self.weight_sens_contact_i = -2e0
+        self.weight_sens_contact_e = 2e0  # +3e-1
+        self.weight_sens_hydro_freq = 1
+        self.weight_sens_hydro_amp = 1
 
 
 class SalamanderJointsOptions(Options):
@@ -380,13 +390,14 @@ class SalamanderJointsOptions(Options):
         super(SalamanderJointsOptions, self).__init__()
 
         # Joints offsets
-        self.legs_joints_offsets = [
+        self.legs_offsets = [
             SalamanderOscillatorJointsOptions.legs_joints_offsets(
                 joint_i,
                 **kwargs
             )
             for joint_i in range(4)
         ]
-        self.body_joints_offsets = (
+        self.body_offsets = (
             SalamanderOscillatorJointsOptions.body_joints_offsets()
         )
+        self.body_offsets = 0

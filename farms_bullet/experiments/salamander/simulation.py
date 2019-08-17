@@ -75,12 +75,12 @@ class SalamanderSimulation(Simulation):
     def pre_step(self, sim_step):
         """New step"""
         play = True
-        if not(sim_step % 10000) and sim_step > 0:
-            pybullet.restoreState(self.simulation_state)
-            state = self.elements.animat.data.state
-            state.array[self.elements.animat.data.iteration] = (
-                state.default_initial_state()
-            )
+        # if not(sim_step % 10000) and sim_step > 0:
+        #     pybullet.restoreState(self.simulation_state)
+        #     state = self.elements.animat.data.state
+        #     state.array[self.elements.animat.data.iteration] = (
+        #         state.default_initial_state()
+        #     )
         if not self.options.headless:
             play = self.interface.user_params.play.value
             if not sim_step % 100:
@@ -150,20 +150,17 @@ class SalamanderSimulation(Simulation):
             )
         # Body offset
         if self.interface.user_params.body_offset.changed:
-            self.elements.animat.data.joints.set_body_offset(
+            self.elements.animat.options.control.network.joints.body_offsets = (
                 self.interface.user_params.body_offset.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
             )
             self.interface.user_params.body_offset.changed = False
         # Drives
-        if (
-                self.interface.user_params.drive_speed.changed
-                or self.interface.user_params.drive_turn.changed
-        ):
+        if self.interface.user_params.drive_speed.changed:
             self.elements.animat.options.control.drives.forward = (
                 self.interface.user_params.drive_speed.value
-            )
-            self.elements.animat.options.control.drives.left = (
-                self.interface.user_params.drive_turn.value
             )
             self.elements.animat.controller.network.update(
                 self.elements.animat.options
@@ -174,6 +171,14 @@ class SalamanderSimulation(Simulation):
             #     pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
             pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
             self.interface.user_params.drive_speed.changed = False
+        # Turning
+        if self.interface.user_params.drive_turn.changed:
+            self.elements.animat.options.control.drives.turning = (
+                self.interface.user_params.drive_turn.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
+            )
             self.interface.user_params.drive_turn.changed = False
 
 

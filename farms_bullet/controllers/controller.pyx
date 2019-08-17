@@ -6,7 +6,7 @@ import time
 cimport cython
 cimport numpy as np
 
-from libc.math cimport sin, cos
+from libc.math cimport sin, fabs  # cos,
 # from libc.stdlib cimport malloc, free
 # from cython.parallel import prange
 
@@ -20,6 +20,7 @@ cpdef double[:] ode_oscillators_sparse(
     cdef unsigned int i, i0, i1
     cdef unsigned int o_dim = data.network.oscillators.size[1]
     cdef double contact
+    cdef double hydro_force
     cdef double[:] dstate = data.state.array[data.iteration+1][1]
     for i in range(o_dim):  # , nogil=True):
         # Intrinsic frequency
@@ -31,12 +32,10 @@ cpdef double[:] ode_oscillators_sparse(
     for i in range(data.network.connectivity.size[0]):
         i0 = <unsigned int> (data.network.connectivity.array[i][0] + 0.5)
         i1 = <unsigned int> (data.network.connectivity.array[i][1] + 0.5)
-        # amplitude*weight*sin(phase_j - phase_i - phase_bias)
-        dstate[i0] += state[o_dim+i1]*(
-            data.network.connectivity.array[i][2]*sin(
-                state[i1] - state[i0]
-                - data.network.connectivity.array[i][3]
-            )
+        # amplitude_j*weight*sin(phase_j - phase_i - phase_bias)
+        dstate[i0] += state[o_dim+i1]*data.network.connectivity.array[i][2]*sin(
+            state[i1] - state[i0]
+            - data.network.connectivity.array[i][3]
         )
     for i in range(data.network.contacts_connectivity.size[0]):
         i0 = <unsigned int> (
@@ -46,12 +45,34 @@ cpdef double[:] ode_oscillators_sparse(
             data.network.contacts_connectivity.array[i][1] + 0.5
         )
         # contact_weight*contact_force
-        contact = (
-            data.sensors.contacts.array[data.iteration][i1][0]**2
-            + data.sensors.contacts.array[data.iteration][i1][1]**2
-            + data.sensors.contacts.array[data.iteration][i1][2]**2
-        )**0.5
-        dstate[i0] += data.network.contacts_connectivity.array[i][2]*contact
+        # contact = (
+        #     data.sensors.contacts.array[data.iteration][i1][0]**2
+        #     + data.sensors.contacts.array[data.iteration][i1][1]**2
+        #     + data.sensors.contacts.array[data.iteration][i1][2]**2
+        # )**0.5
+        contact = fabs(data.sensors.contacts.array[data.iteration][i1][2])
+        dstate[i0] += (
+            data.network.contacts_connectivity.array[i][2]
+            *(10*contact/(1+10*contact))  # Saturation
+            # *cos(state[i0])
+            # *sin(state[i0])  # For Tegotae
+        )
+    for i in range(data.network.hydro_connectivity.size[0]):
+        i0 = <unsigned int> (
+            data.network.hydro_connectivity.array[i][0] + 0.5
+        )
+        i1 = <unsigned int> (
+            data.network.hydro_connectivity.array[i][1] + 0.5
+        )
+        hydro_force = fabs(
+            data.sensors.hydrodynamics.array[data.iteration][i1][1]
+        )
+        # dfrequency += hydro_weight*hydro_force
+        dstate[i0] += data.network.hydro_connectivity.array[i][2]*hydro_force
+        # damplitude += hydro_weight*hydro_force
+        dstate[o_dim+i0] += (
+            data.network.hydro_connectivity.array[i][3]*hydro_force
+        )
     for i in range(data.joints.size[1]):
         # rate*(joints_offset_desired - joints_offset)
         dstate[2*o_dim+i] = data.joints.array[1][i]*(

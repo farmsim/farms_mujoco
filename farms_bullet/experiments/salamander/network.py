@@ -18,23 +18,22 @@ class SalamanderNetworkODE:
         n_body = 11
         n_legs_dofs = 4
         self.groups = [None, None]
-        self.groups[0] = [
-            bodyosc2index(joint_i=i, side=0)
-            for i in range(11)
-        ] + [
-            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=0)
-            for leg_i in range(2)
-            for side_i in range(2)
-            for joint_i in range(n_legs_dofs)
-        ]
-        self.groups[1] = [
-            bodyosc2index(joint_i=i, side=1)
-            for i in range(n_body)
-        ] + [
-            legosc2index(leg_i=leg_i, side_i=side_i, joint_i=joint_i, side=1)
-            for leg_i in range(2)
-            for side_i in range(2)
-            for joint_i in range(n_legs_dofs)
+        self.groups = [
+            [
+                bodyosc2index(joint_i=i, side=side)
+                for i in range(n_body)
+            ] + [
+                legosc2index(
+                    leg_i=leg_i,
+                    side_i=side_i,
+                    joint_i=joint_i,
+                    side=side
+                )
+                for leg_i in range(2)
+                for side_i in range(2)
+                for joint_i in range(n_legs_dofs)
+            ]
+            for side in range(2)
         ]
 
         # Adaptive timestep parameters
@@ -143,12 +142,42 @@ class SalamanderNetworkODE:
     def get_velocity_output(self):
         """Position output"""
         outputs = self.get_doutputs()
-        return 0.5*(outputs[self.groups[0]] - outputs[self.groups[1]])
+        return (
+            0.5*(outputs[self.groups[0]] - outputs[self.groups[1]])
+            + self.doffsets[self.animat_data.iteration]
+        )
 
     def get_velocity_output_all(self):
         """Position output"""
         outputs = self.get_doutputs_all()
         return 0.5*(outputs[:, self.groups[0]] - outputs[:, self.groups[1]])
+
+    def get_torque_output(self):
+        """Torque output"""
+        iteration = self.animat_data.iteration-1
+        proprioception = self.animat_data.sensors.proprioception
+        positions = np.array(proprioception.positions(iteration))
+        velocities = np.array(proprioception.velocities(iteration))
+        predicted_positions = (positions+3*self._timestep*velocities)
+        cmd_positions = self.get_position_output()
+        cmd_velocities = self.get_velocity_output()
+        positions_rest = np.array(self.offsets[self.animat_data.iteration])
+        cmd_kp = 1e1  # Nm/rad
+        cmd_kd = 1e-2  # Nm*s/rad
+        spring = 1e0  # Nm/rad
+        damping = 1e-2  # Nm*s/rad
+        max_torque = 1  # Nm
+        torques = np.clip(
+            (
+                + cmd_kp*(cmd_positions-predicted_positions)
+                + cmd_kd*(cmd_velocities-velocities)
+                + spring*(positions_rest-predicted_positions)
+                - damping*velocities
+            ),
+            -max_torque,
+            +max_torque
+        )
+        return torques
 
     def update(self, options):
         """Update drives"""
