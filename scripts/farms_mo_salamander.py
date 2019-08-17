@@ -77,6 +77,7 @@ class SalamanderEvolution(FloatProblem):
                 legs_offsets[3]
             ]
         ]
+        self._initial_solutions = self.initial_solutions.copy()
 
     @staticmethod
     def get_name():
@@ -94,7 +95,7 @@ class SalamanderEvolution(FloatProblem):
             self.lower_bound,
             self.upper_bound,
             self.number_of_variables
-        ) if not self.initial_solutions else self.initial_solutions.pop()
+        ) if not self._initial_solutions else self._initial_solutions.pop()
         return new_solution
 
     @staticmethod
@@ -254,23 +255,6 @@ def main():
     print('Algorithm (continuous problem): ' + algorithm.get_name())
     print('Problem: ' + problem.get_name())
     print('Computing time: ' + str(algorithm.total_computing_time))
-
-    # Visualise best results (Pareto front)
-    print("Found {} interesting solutions in pareto_front".format(
-        len(pareto_fronts[0])
-    ))
-    for solution in pareto_fronts[0]:
-        objectives = solution.objectives
-        solution2 = problem.evaluate(solution, evolution=False)
-        same_objectives = all([
-            obj1 == obj2
-            for obj1, obj2
-            in zip(objectives, solution2.objectives)
-        ])
-        print("Verifying objectives:")
-        print("  Previous objective: {}".format(objectives))
-        print("  New objective: {}".format(solution2.objectives))
-        print("  Same objectives: {}".format(same_objectives))
 
 
 if __name__ == '__main__':
