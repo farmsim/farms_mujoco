@@ -149,10 +149,14 @@ class SalamanderEvolution(FloatProblem):
         total_torque = np.sum(np.abs(
             sim.elements.animat.data.sensors.proprioception.motor_torques()
         ))*simulation_options.timestep/simulation_options.duration
-        position = sim.elements.animat.data.sensors.gps.urdf_position(
-            iteration=sim.iteration-1,
-            link_i=0
+        position = np.array(
+            sim.elements.animat.data.sensors.gps.urdf_position(
+                iteration=sim.iteration-1,
+                link_i=0
+            )
         )
+        if -2 > position[0] > -10:
+            position[0] += 1e3 + position[0]**2
         solution.objectives[0] = position[0]  # Distance along x axis
         solution.objectives[1] = total_torque  # Energy
 
