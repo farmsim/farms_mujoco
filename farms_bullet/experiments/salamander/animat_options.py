@@ -380,9 +380,11 @@ class SalamanderConnectivityOptions(Options):
         self.weight_osc_legs_internal = 1e3
         self.weight_osc_legs_opposite = 1e0
         self.weight_osc_legs_following = 1e0
-        self.weight_osc_legs2body = 1e3
-        self.weight_sens_contact = -3e0
-        self.weight_sens_hydro = -1
+        self.weight_osc_legs2body = 3e1
+        self.weight_sens_contact_i = -2e0
+        self.weight_sens_contact_e = 2e0  # +3e-1
+        self.weight_sens_hydro_freq = 1
+        self.weight_sens_hydro_amp = 1
 
 
 class SalamanderJointsOptions(Options):

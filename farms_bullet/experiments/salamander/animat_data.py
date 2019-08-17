@@ -28,7 +28,8 @@ class SalamanderOscillatorNetworkState(OscillatorNetworkState):
         n_dof_legs = 4
         n_joints = 11+4*n_dof_legs
         return 1e-3*np.arange(5*n_joints) + np.concatenate([
-            np.linspace(2*np.pi, 0, n_joints),
+            # 0*np.linspace(2*np.pi, 0, n_joints),
+            np.zeros(n_joints),
             np.zeros(n_joints),
             np.zeros(2*n_joints),
             np.zeros(n_joints)
@@ -489,19 +490,32 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
         options_conn = options.control.network.connectivity
         # options.morphology.n_legs
         for leg_i in range(2):
-            for joint_i in range(4):
-                for side_i in range(2):
+            for side_i in range(2):
+                for joint_i in range(4):
                     for side_o in range(2):
-                        connectivity.append([
-                            legosc2index(
-                                leg_i=leg_i,
-                                side_i=side_i,
-                                joint_i=joint_i,
-                                side=side_o
-                            ),
-                            contactleglink2index(leg_i=leg_i, side_i=side_i),
-                            options_conn.weight_sens_contact
-                        ])
+                        for sensor_leg_i in range(2):
+                            for sensor_side_i in range(2):
+                                weight = (
+                                    options_conn.weight_sens_contact_e
+                                    if (
+                                        (leg_i == sensor_leg_i)
+                                        != (side_i == sensor_side_i)
+                                    )
+                                    else options_conn.weight_sens_contact_i
+                                )
+                                connectivity.append([
+                                    legosc2index(
+                                        leg_i=leg_i,
+                                        side_i=side_i,
+                                        joint_i=joint_i,
+                                        side=side_o
+                                    ),
+                                    contactleglink2index(
+                                        leg_i=sensor_leg_i,
+                                        side_i=sensor_side_i
+                                    ),
+                                    weight
+                                ])
         print("Contacts connectivity:\n{}".format(np.array(connectivity)))
         return cls(np.array(connectivity, dtype=np.float64))
 
@@ -520,7 +534,8 @@ class SalamanderHydroConnectivityArray(ConnectivityArray):
                 connectivity.append([
                     bodyosc2index(joint_i=joint_i, side=side_osc),
                     joint_i+1,
-                    options_conn.weight_sens_hydro
+                    options_conn.weight_sens_hydro_freq,
+                    options_conn.weight_sens_hydro_amp
                 ])
         print("Hydro connectivity:\n{}".format(np.array(connectivity)))
         return cls(np.array(connectivity, dtype=np.float64))

@@ -203,7 +203,7 @@ class Salamander(Animat):
             baseMass=base_link.mass*self.units.kilograms,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=np.array([0, 0, 0])*self.units.meters,
+            basePosition=np.array([0, 0, 0.1])*self.units.meters,
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
             baseInertialFramePosition=np.array(
                 base_link.inertial_position
@@ -404,6 +404,8 @@ class Salamander(Animat):
             lateralFriction=0.7,
             spinningFriction=small,
             rollingFriction=small,
+            # contactStiffness=1e3,
+            # contactDamping=1e6
         )
 
     def setup_controller(self):
