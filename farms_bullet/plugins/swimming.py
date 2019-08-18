@@ -34,10 +34,10 @@ def viscous_forces(
         link_angular_velocity = np.dot(link_orientation_inv, ang_velocity)
         # Data
         data_hydrodynamics[iteration, link_i, :3] = (
-            force_coefficients*link_velocity
+            np.sign(link_velocity)*force_coefficients*link_velocity**2
         )
         data_hydrodynamics[iteration, link_i, 3:6] = (
-            torque_coefficients*link_angular_velocity
+            np.sign(link_angular_velocity)*torque_coefficients*link_angular_velocity**2
         )
 
 
