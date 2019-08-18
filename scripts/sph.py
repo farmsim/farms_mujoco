@@ -17,7 +17,7 @@ from pysph.base.utils import (
     # get_particle_array_rigid_body
 )
 # PySPH base and carray imports
-# from pysph.base.kernels import CubicSpline
+from pysph.base.kernels import CubicSpline
 from pysph.base.kernels import QuinticSpline
 # from pysph.base.kernels import WendlandQuintic
 
@@ -433,6 +433,8 @@ class RigidFluidCoupling(Application):
         animat_options.control.drives.forward = kwargs.pop("drive", 4)
         animat_options.physics.viscous = False
         animat_options.physics.sph = True
+        animat_options.control.network.connectivity.weight_sens_hydro_freq = kwargs.pop("hydro_freq", -1)
+        animat_options.control.network.connectivity.weight_sens_hydro_amp = kwargs.pop("hydro_amp", -1)
         # Simulation options
         simulation_options = SimulationOptions.with_clargs(
             duration=self.duration,
@@ -485,8 +487,8 @@ class RigidFluidCoupling(Application):
         # self.beta = 0.0  # 0.5
         # self.gamma = 7.0
 
-        self.alpha = 1.0  # 0.5  # Had to change it to avoid crashing
-        self.beta = 1.0  # 0.5
+        self.alpha = 0.1  # 0.5  # Had to change it to avoid crashing
+        self.beta = 0.0  # 0.5
         self.gamma = 7.0
 
     def create_particles(self):
@@ -627,8 +629,8 @@ class RigidFluidCoupling(Application):
         return [fluid, tank] + cube
 
     def create_solver(self):
-        # kernel = CubicSpline(dim=3)
-        kernel = QuinticSpline(dim=3)
+        kernel = CubicSpline(dim=3)
+        # kernel = QuinticSpline(dim=3)
         # kernel = WendlandQuintic(dim=3)
 
         # simulation = Simulation()
@@ -830,32 +832,40 @@ def main():
     # for density in [500, 800, 900, 1000, 1100, 1200, 2000]:
     # for density in [1000]:
     #     for drive in [4]:
-    for density in [1000]:
-    # These should be put in the external shell script (similar to jobs)
-    # for density in [1000, 300, 500, 700, 1500]:  # 300, 500, 700, 1000
-        for drive in [4]:
-        # for drive in [4, 3.001, 3.5, 4.5, 4.999]:
-            try:
-                print("Density: {}".format(density))
-                app = RigidFluidCoupling(
-                    density=density,
-                    drive=drive,
-                    output_dir="benchmark_swimming_density{}_drive{}".format(
-                        density,
-                        drive
-                    ).replace(".", "p")
-                )
-                app.run()
-                app.simulation.postprocess(
-                    iteration=app.simulation.iteration,
-                    log_path=app.simulation.options.log_path,
-                    log_extension=app.simulation.options.log_extension
-                )
-                app.simulation.end()
-            except Exception as err:
-                print("WATCH OUT THERE WAS AN ERROR!!!")
-                traceback.print_exc(file=sys.stdout)
-                print(str(err))
+    # for density in [1000]:
+    # # These should be put in the external shell script (similar to jobs)
+    # # for density in [1000, 300, 500, 700, 1500]:  # 300, 500, 700, 1000
+    #     for drive in [4]:
+    #     # for drive in [4, 3.001, 3.5, 4.5, 4.999]:
+    density = 1000
+    drive = 4
+    freq_feedback = -1
+    amp_feedback = 1
+    # for freq_feedback in np.linspace(-1, 1, 5):
+    #     for amp_feedback in np.linspace(-1, 1, 5):
+    try:
+        print("Density: {}".format(density))
+        app = RigidFluidCoupling(
+            density=density,
+            drive=drive,
+            output_dir="benchmark_swimming_f{}_a{}".format(
+                freq_feedback,
+                amp_feedback
+            ).replace(".", "d").replace("-", "m"),
+            hydro_freq=freq_feedback,
+            hydro_amp=amp_feedback
+        )
+        app.run()
+        app.simulation.postprocess(
+            iteration=app.simulation.iteration,
+            log_path=app.simulation.options.log_path,
+            log_extension=app.simulation.options.log_extension
+        )
+        app.simulation.end()
+    except Exception as err:
+        print("WATCH OUT THERE WAS AN ERROR!!!")
+        traceback.print_exc(file=sys.stdout)
+        print(str(err))
 
 
 def profile():
