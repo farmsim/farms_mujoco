@@ -210,6 +210,10 @@ cdef class ProprioceptionArray(NetworkArray3D):
         """Joint velocity"""
         return self.array[iteration, :, 1]
 
+    cpdef double[:, :] velocities_all(self):
+        """Joint velocity"""
+        return self.array[:, :, 1]
+
     cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i):
         """Joint force"""
         return self.array[iteration, joint_i, 2:5]
