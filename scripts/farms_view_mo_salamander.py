@@ -60,6 +60,8 @@ def main():
     front = read_solutions(
         "VAR.NSGAII.Salamander evolution",
         "FUN.NSGAII.Salamander evolution"
+        # "VAR.GDE3.Salamander evolution",
+        # "FUN.GDE3.Salamander evolution"
     )
     ranking = FastNonDominatedRanking()
     pareto_fronts = ranking.compute_ranking(front)

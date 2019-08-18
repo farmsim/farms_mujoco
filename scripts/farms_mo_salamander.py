@@ -6,6 +6,7 @@ from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 # from jmetal.algorithm.multiobjective.moead import MOEAD
 from jmetal.algorithm.multiobjective.nsgaii import NSGAII
+from jmetal.algorithm.multiobjective.gde3 import GDE3
 from jmetal.operator import (
     SBXCrossover,
     PolynomialMutation,
@@ -33,7 +34,7 @@ class SalamanderEvolution(FloatProblem):
 
     def __init__(self):
         super(SalamanderEvolution, self).__init__()
-        self.number_of_variables = 9
+        self.number_of_variables = 18
         self.number_of_objectives = 2
         self.number_of_constraints = 0
 
@@ -55,6 +56,16 @@ class SalamanderEvolution(FloatProblem):
         self.lower_bound[6], self.upper_bound[6] = 0, +np.pi/4
         self.lower_bound[7], self.upper_bound[7] = -np.pi/4, +np.pi/4
         self.lower_bound[8], self.upper_bound[8] = 0, +np.pi/2
+        # Connectivity
+        self.lower_bound[9], self.upper_bound[9] = 0, 1e3
+        self.lower_bound[10], self.upper_bound[10] = 0, 1e3
+        self.lower_bound[11], self.upper_bound[11] = 0, 1e3
+        self.lower_bound[12], self.upper_bound[12] = 0, 1e3
+        self.lower_bound[13], self.upper_bound[13] = 0, 1e3
+        self.lower_bound[14], self.upper_bound[14] = -1e3, 0
+        self.lower_bound[15], self.upper_bound[15] = 0, 1e3
+        self.lower_bound[16], self.upper_bound[16] = 0, 1e3
+        self.lower_bound[17], self.upper_bound[17] = 0, 1e3
 
         # Initial solutions
         animat_options = SalamanderOptions(
@@ -74,7 +85,16 @@ class SalamanderEvolution(FloatProblem):
                 legs_offsets[0],
                 legs_offsets[1],
                 legs_offsets[2],
-                legs_offsets[3]
+                legs_offsets[3],
+                network.connectivity.weight_osc_body,
+                network.connectivity.weight_osc_legs_internal,
+                network.connectivity.weight_osc_legs_opposite,
+                network.connectivity.weight_osc_legs_following,
+                network.connectivity.weight_osc_legs2body,
+                network.connectivity.weight_sens_contact_i,
+                network.connectivity.weight_sens_contact_e,
+                network.connectivity.weight_sens_hydro_freq,
+                network.connectivity.weight_sens_hydro_amp
             ]
         ]
         self._initial_solutions = self.initial_solutions.copy()
@@ -106,30 +126,42 @@ class SalamanderEvolution(FloatProblem):
             # collect_gps=True,
             scale=1
         )
-        animat_options.control.network.oscillators.body_head_amplitude = 0
-        animat_options.control.network.oscillators.body_tail_amplitude = 0
-        animat_options.control.network.oscillators.set_body_stand_amplitude(
+        network = animat_options.control.network
+        network.oscillators.body_head_amplitude = 0
+        network.oscillators.body_tail_amplitude = 0
+        network.oscillators.set_body_stand_amplitude(
             solution.variables[0]
         )
-        animat_options.control.network.oscillators.set_legs_amplitudes([
+        network.oscillators.set_legs_amplitudes([
             solution.variables[1],
             solution.variables[2],
             solution.variables[3],
             solution.variables[4]
         ])
-        animat_options.control.network.joints.set_legs_offsets([
+        network.joints.set_legs_offsets([
             solution.variables[5],
             solution.variables[6],
             solution.variables[7],
             solution.variables[8]
         ])
-        animat_options.control.network.oscillators.body_stand_shift = np.pi/4
+        # Connectivity
+        network.connectivity.weight_osc_body = solution.variables[9]
+        network.connectivity.weight_osc_legs_internal = solution.variables[10]
+        network.connectivity.weight_osc_legs_opposite = solution.variables[11]
+        network.connectivity.weight_osc_legs_following = solution.variables[12]
+        network.connectivity.weight_osc_legs2body = solution.variables[13]
+        network.connectivity.weight_sens_contact_i = solution.variables[14]
+        network.connectivity.weight_sens_contact_e = solution.variables[15]
+        network.connectivity.weight_sens_hydro_freq = solution.variables[16]
+        network.connectivity.weight_sens_hydro_amp = solution.variables[17]
+        # network.oscillators.body_stand_shift = np.pi/4
         # animat_options.control.drives.forward = 4
+
         # Simulation options
         simulation_options = SimulationOptions.with_clargs()
         simulation_options.headless = evolution
         simulation_options.fast = evolution
-        simulation_options.timestep = 1e-2
+        simulation_options.timestep = 5e-3
         simulation_options.duration = 10
         simulation_options.units.meters = 1
         simulation_options.units.seconds = 1
@@ -146,9 +178,13 @@ class SalamanderEvolution(FloatProblem):
         sim.run()
 
         # Extract fitness
-        total_torque = np.sum(np.abs(
-            sim.elements.animat.data.sensors.proprioception.motor_torques()
-        ))*simulation_options.timestep/simulation_options.duration
+        power = np.sum(
+            np.asarray(
+                sim.elements.animat.data.sensors.proprioception.motor_torques()
+            )*np.asarray(
+                sim.elements.animat.data.sensors.proprioception.velocities_all()
+            )
+        )*simulation_options.timestep/simulation_options.duration
         position = np.array(
             sim.elements.animat.data.sensors.gps.urdf_position(
                 iteration=sim.iteration-1,
@@ -157,12 +193,12 @@ class SalamanderEvolution(FloatProblem):
         )
         distance = np.linalg.norm(position[:2])
         # Penalty
-        if not(1 < -position[0] < 10):
+        if (not 1 < -position[0] < 5) or (not -3 < position[1] < 3):
             distance -= 1e3
-            total_torque += 1e3
+            power += 1e3
         # Objectives
         solution.objectives[0] = -distance  # Distance along x axis
-        solution.objectives[1] = total_torque  # Energy
+        solution.objectives[1] = power  # Energy
 
         # Terminate simulation
         sim.end()
@@ -172,8 +208,8 @@ class SalamanderEvolution(FloatProblem):
 
 def main():
     """Main"""
-    n_pop = 20
-    n_gen = 3
+    n_pop = 40
+    n_gen = 5
     problem = SalamanderEvolution()
 
     max_evaluations = n_pop*n_gen
@@ -185,7 +221,7 @@ def main():
         offspring_population_size=n_pop//2,
         mutation=PolynomialMutation(
             probability=1.0 / problem.number_of_variables,
-            distribution_index=20
+            distribution_index=0.20  # 20
         ),
         crossover=SBXCrossover(probability=1.0, distribution_index=20),
         termination_criterion=StoppingByEvaluations(max=max_evaluations),
@@ -207,9 +243,19 @@ def main():
     #     neighbor_size=n_pop//5,
     #     neighbourhood_selection_probability=0.9,
     #     max_number_of_replaced_solutions=2,
-    #     weight_files_path='../../resources/MOEAD_weights',
+    #     weight_files_path="MOEAD_weights",  # '../../resources/MOEAD_weights',
     #     termination_criterion=StoppingByEvaluations(max=max_evaluations),
     #     population_evaluator=MultiprocessEvaluator(8)
+    # )
+
+    # # GDE3
+    # algorithm = GDE3(
+    #     problem=problem,
+    #     population_size=n_pop,
+    #     cr=0.7,
+    #     f=0.3,
+    #     termination_criterion=StoppingByEvaluations(max=max_evaluations),
+    #     population_evaluator=MultiprocessEvaluator(8),
     # )
 
     # Visualisers
