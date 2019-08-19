@@ -211,6 +211,12 @@ def main(simulation_options=None, animat_options=None):
         log_extension=simulation_options.log_extension,
         record=sim.options.record and not sim.options.headless
     )
+    if simulation_options.log_path:
+        np.save(
+            simulation_options.log_path+"/hydrodynamics.npy",
+            sim.elements.animat.data.sensors.hydrodynamics.array
+        )
+
     sim.end()
 
 
