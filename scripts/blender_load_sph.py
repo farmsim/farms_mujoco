@@ -1,9 +1,38 @@
+"""View SPH results in Blender"""
+
+import os
 import time
 
 import bpy
 import bmesh
 
 import numpy as np
+import h5py
+
+import farms_bullet
+
+
+def get_files_from_extension(directory, extension):
+    """Get hdf5 files"""
+    print("Loading files from {}".format(directory))
+    files = [
+        filename
+        for filename in os.listdir(directory)
+        if extension in filename
+    ]
+    indices = [
+        int("".join(filter(str.isdigit, filename.replace(extension, ""))))
+        for filename in files
+    ]
+    files = [filename for _, filename in sorted(zip(indices, files))]
+    print("Found files:\n{}".format(files))
+    return files
+
+
+def open_hdf5_file(filename):
+    """Open hdf5 file"""
+    print("Opening file {}".format(filename))
+    return h5py.File(filename, 'r')
 
 
 def particles_as_objects():
@@ -189,20 +218,80 @@ def particles_as_objects():
     print("Total time for {} particles: {} [s]".format(len(verts), toc-tic))
 
 
+class FluidPlotter(object):
+    """Fluid plotter"""
+
+    def __init__(self, data, domain, degp):
+        super(FluidPlotter, self).__init__()
+        self.data = data
+        self.domain = domain
+        self.degp = degp
+
+    def set_particles(self, _self):
+        """Set particles"""
+        particle_systems = self.domain.evaluated_get(self.degp).particle_systems
+        particles = particle_systems[0].particles
+        totalParticles = len(particles)
+        print("N_particles = {}".format(totalParticles))
+
+        scene = bpy.context.scene
+        cFrame = scene.frame_current
+        sFrame = scene.frame_start
+
+        #at start-frame, clear the particle cache
+        if cFrame == sFrame:
+            psSeed = self.domain.particle_systems[0].seed
+            self.domain.particle_systems[0].seed = psSeed
+
+        # additionally set the location of all particle locations to flatList
+        print(np.shape(self.data))
+        frame = np.clip(cFrame, 0, len(self.data)-1)
+        particles.foreach_set("location", self.data[frame].flatten())
+
+        # # sin function as location of particles
+        # data = 5.0*np.sin(cFrame/20.0)
+        # flatList = [data]*(3*totalParticles)
+
+        # # additionally set the location of all particle locations to flatList
+        # particles.foreach_set("location", flatList)
+        # print(np.shape(flatList))
+
+
+FLUID_PLOTTER = None
+
+
 def particles_as_particles():
     """Main"""
 
     tic = time.time()
 
-    dist = 10
-    n_parts = 10
-    scale = 3
-    verts = [
-        (i, j, k)
-        for i in np.linspace(-scale*dist, scale*dist, scale*n_parts)
-        for j in np.linspace(-scale*dist, scale*dist, scale*n_parts)
-        for k in np.linspace(-dist, dist, n_parts)
-    ]
+    # Load data
+    directory = (
+        os.path.dirname(farms_bullet.__file__)
+        + "/../scripts/benchmark_swimming_f0d0_a0d0"
+    )
+    files = get_files_from_extension(directory, extension=".hdf5")
+    n_body = 12
+    verts = [None for _ in files]
+    for i, filename in enumerate(files):
+        data = open_hdf5_file("{}/{}".format(directory, filename))
+        particles = data["particles"]
+        fluid = particles["fluid"]
+        fluid_arrays = fluid["arrays"]
+        fluid_x = fluid_arrays["x"]
+        fluid_y = fluid_arrays["y"]
+        fluid_z = fluid_arrays["z"]
+        verts[i] = np.column_stack((fluid_x, fluid_y, fluid_z))
+
+    # dist = 10
+    # n_parts = 10
+    # scale = 3
+    # verts = [
+    #     (i, j, k)
+    #     for i in np.linspace(-scale*dist, scale*dist, scale*n_parts)
+    #     for j in np.linspace(-scale*dist, scale*dist, scale*n_parts)
+    #     for k in np.linspace(-dist, dist, n_parts)
+    # ]
 
     # Create collection
     collection_name = "Particles"
@@ -257,8 +346,8 @@ def particles_as_particles():
     )
     # particles_sys = particles_mod.particle_system
     particles_sys = bpy.data.particles["ParticleSystem"]
-    particles_sys.count = len(verts)
-    particles_sys.particle_size = 1
+    particles_sys.count = len(verts[0])
+    particles_sys.particle_size = 0.01
     particles_sys.frame_start = 1
     particles_sys.frame_end = 1
     particles_sys.lifetime = 1000
@@ -268,46 +357,77 @@ def particles_as_particles():
     particles_sys.instance_object = sphere
     # particles = particles_sys.particles
 
-
     # Dependancy graph
     degp = bpy.context.evaluated_depsgraph_get()
 
-    # Evaluate the depsgraph (Important step)
-    particle_systems = domain.evaluated_get(degp).particle_systems
+    global FLUID_PLOTTER
+    FLUID_PLOTTER = FluidPlotter(np.array(verts), domain, degp)
 
-    # All particles of first particle-system which has index "0"
-    particles = particle_systems[0].particles
+    # def particleSetter(self):
+    #     particle_systems = domain.evaluated_get(degp).particle_systems
+    #     particles = particle_systems[0].particles
+    #     totalParticles = len(particles)
 
-    # Total Particles
-    totalParticles = len(particles)
+    #     scene = bpy.context.scene
+    #     cFrame = scene.frame_current
+    #     sFrame = scene.frame_start
 
-    particles.foreach_set("location", np.array(verts).reshape([3*len(verts)]))
+    #     #at start-frame, clear the particle cache
+    #     if cFrame == sFrame:
+    #         psSeed = domain.particle_systems[0].seed
+    #         domain.particle_systems[0].seed = psSeed
 
-    # length of 1D array or list = 3*totalParticles, "3" due to XYZ in vector/location.
-    # If the length is wrong then it will give you an error "internal error setting the array"
-    flatList = [0]*(3*totalParticles)
+    #     # sin function as location of particles
+    #     data = 5.0*np.sin(cFrame/20.0)
+    #     flatList = [data]*(3*totalParticles)
 
-    # To get the loaction of all particles
-    particles.foreach_get("location", flatList)
+    #     # additionally set the location of all particle locations to flatList
+    #     frame = cFrame % len(verts)
+    #     particles.foreach_set("location", verts[frame])
 
-    print(flatList)
+    #clear the post frame handler
+    bpy.app.handlers.frame_change_post.clear()
 
-    # ps = bpy.context.object.particle_systems[0]
-    # particles = ps.particles
+    #run the function on each frame
+    # bpy.app.handlers.frame_change_post.append(particleSetter)
+    bpy.app.handlers.frame_change_post.append(FLUID_PLOTTER.set_particles)
 
-    # # Set positions
-    # for i, vert in enumerate(verts):
-    #     spheres[i].location[0] = vert[0]
-    #     spheres[i].location[1] = vert[1]
-    #     spheres[i].location[2] = vert[2]
+    # # Evaluate the depsgraph (Important step)
+    # particle_systems = domain.evaluated_get(degp).particle_systems
 
-    # # Set materials
-    # for i, vert in enumerate(verts):
-    #     print("Setting material {}".format(i))
-    #     material = materials[np.random.randint(low=0, high=9)]
-    #     for _material in spheres[i].material_slots:
-    #         _material.link = 'OBJECT'
-    #     spheres[i].active_material = material
+    # # All particles of first particle-system which has index "0"
+    # particles = particle_systems[0].particles
+
+    # # Total Particles
+    # totalParticles = len(particles)
+
+    # particles.foreach_set("location", np.array(verts).reshape([3*len(verts)]))
+
+    # # length of 1D array or list = 3*totalParticles, "3" due to XYZ in vector/location.
+    # # If the length is wrong then it will give you an error "internal error setting the array"
+    # flatList = [0]*(3*totalParticles)
+
+    # # To get the loaction of all particles
+    # particles.foreach_get("location", flatList)
+
+    # print(flatList)
+
+    # # ps = bpy.context.object.particle_systems[0]
+    # # particles = ps.particles
+
+    # # # Set positions
+    # # for i, vert in enumerate(verts):
+    # #     spheres[i].location[0] = vert[0]
+    # #     spheres[i].location[1] = vert[1]
+    # #     spheres[i].location[2] = vert[2]
+
+    # # # Set materials
+    # # for i, vert in enumerate(verts):
+    # #     print("Setting material {}".format(i))
+    # #     material = materials[np.random.randint(low=0, high=9)]
+    # #     for _material in spheres[i].material_slots:
+    # #         _material.link = 'OBJECT'
+    # #     spheres[i].active_material = material
 
     toc = time.time()
 
@@ -403,4 +523,6 @@ def profile():
 
 
 if __name__ == '__main__':
-    particles_as_dupliverts()
+    # particles_as_dupliverts()
+    # particles_as_objects()
+    particles_as_particles()
