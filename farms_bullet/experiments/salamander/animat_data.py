@@ -23,10 +23,10 @@ class SalamanderOscillatorNetworkState(OscillatorNetworkState):
     """Network state"""
 
     @staticmethod
-    def default_initial_state():
+    def default_initial_state(options):
         """Default state"""
-        n_dof_legs = 4
-        n_joints = 11+4*n_dof_legs
+        n_dof_legs = options.morphology.n_dof_legs
+        n_joints = options.morphology.n_joints()
         return 1e-3*np.arange(5*n_joints) + np.concatenate([
             # 0*np.linspace(2*np.pi, 0, n_joints),
             np.zeros(n_joints),
@@ -36,14 +36,14 @@ class SalamanderOscillatorNetworkState(OscillatorNetworkState):
         ])
 
     @staticmethod
-    def default_state(n_iterations):
+    def default_state(n_iterations, options):
         """Default state"""
-        n_dof_legs = 4
-        n_joints = 11+4*n_dof_legs
+        n_dof_legs = options.morphology.n_dof_legs
+        n_joints = options.morphology.n_joints()
         n_oscillators = 2*n_joints
         return SalamanderOscillatorNetworkState.from_initial_state(
             initial_state=(
-                SalamanderOscillatorNetworkState.default_initial_state()
+                SalamanderOscillatorNetworkState.default_initial_state(options)
             ),
             n_iterations=n_iterations,
             n_oscillators=n_oscillators
@@ -109,7 +109,7 @@ class SalamanderOscillatorArray(OscillatorArray):
         n_body = options.morphology.n_joints_body
         n_dof_legs = options.morphology.n_dof_legs
         n_legs = options.morphology.n_legs
-        n_oscillators = 2*(options.morphology.n_joints_body)
+        # n_oscillators = 2*(options.morphology.n_joints_body)
         n_oscillators = 2*(options.morphology.n_joints())
         freqs_body = 2*np.pi*np.ones(2*options.morphology.n_joints_body)*(
             osc_options.body_freqs.value(drives)
@@ -162,10 +162,9 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
     @staticmethod
     def set_options(options):
         """Walking parameters"""
-        osc_options = options.control.network.oscillators
+        # osc_options = options.control.network.oscillators
         conn_options = options.control.network.connectivity
-
-        n_body_joints = 11
+        n_body_joints = options.morphology.n_joints_body
         connectivity = []
         body_amplitude = conn_options.weight_osc_body
         legs_amplitude_internal = conn_options.weight_osc_legs_internal
@@ -186,187 +185,208 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
         for i in range(n_body_joints):
             # i - i
             connectivity.append([
-                bodyosc2index(joint_i=i, side=1),
-                bodyosc2index(joint_i=i, side=0),
+                bodyosc2index(joint_i=i, side=1, n_body_joints=n_body_joints),
+                bodyosc2index(joint_i=i, side=0, n_body_joints=n_body_joints),
                 body_amplitude, np.pi
             ])
             connectivity.append([
-                bodyosc2index(joint_i=i, side=0),
-                bodyosc2index(joint_i=i, side=1),
+                bodyosc2index(joint_i=i, side=0, n_body_joints=n_body_joints),
+                bodyosc2index(joint_i=i, side=1, n_body_joints=n_body_joints),
                 body_amplitude, np.pi
             ])
         for i in range(n_body_joints-1):
             # i - i+1
             phase_diff = (
-                2*np.pi/11
+                2*np.pi/n_body_joints
                 # if np.sign(amplitudes[i]) == np.sign(amplitudes[i+1])
                 # else np.pi/11+np.pi
             )
             # phase_diff = np.pi/11
             for side in range(2):
                 connectivity.append([
-                    bodyosc2index(joint_i=i+1, side=side),
-                    bodyosc2index(joint_i=i, side=side),
+                    bodyosc2index(joint_i=i+1, side=side, n_body_joints=n_body_joints),
+                    bodyosc2index(joint_i=i, side=side, n_body_joints=n_body_joints),
                     body_amplitude, phase_diff
                 ])
                 connectivity.append([
-                    bodyosc2index(joint_i=i, side=side),
-                    bodyosc2index(joint_i=i+1, side=side),
+                    bodyosc2index(joint_i=i, side=side, n_body_joints=n_body_joints),
+                    bodyosc2index(joint_i=i+1, side=side, n_body_joints=n_body_joints),
                     body_amplitude, -phase_diff
                 ])
 
         # Legs (internal)
-        for leg_i in range(2):
+        for leg_i in range(options.morphology.n_legs//2):
             for side_i in range(2):
                 # 0 - 0
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
                 # 0 - 1
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0.5*np.pi
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, -0.5*np.pi
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0.5*np.pi
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, -0.5*np.pi
                 ])
                 # 1 - 1
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
                 # 0 - 2
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=0, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 # 2 - 2
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=2, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
                 # 1 - 3
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=1, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, 0
                 ])
                 # 3 - 3
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
                 connectivity.append([
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0),
-                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=0, n_body_joints=n_body_joints),
+                    legosc2index(leg_i=leg_i, side_i=side_i, joint_i=3, side=1, n_body_joints=n_body_joints),
                     legs_amplitude_internal, np.pi
                 ])
 
         # Opposite leg interaction
-        for leg_i in range(2):
+        for leg_i in range(options.morphology.n_legs//2):
             for joint_i in range(4):
                 for side in range(2):
                     connectivity.append([
                         legosc2index(
-                            leg_i=leg_i, side_i=0, joint_i=joint_i, side=side
+                            leg_i=leg_i, side_i=0, joint_i=joint_i, side=side, n_body_joints=n_body_joints
                         ),
                         legosc2index(
-                            leg_i=leg_i, side_i=1, joint_i=joint_i, side=side
+                            leg_i=leg_i, side_i=1, joint_i=joint_i, side=side, n_body_joints=n_body_joints
                         ),
                         legs_amplitude_opposite, np.pi
                     ])
                     connectivity.append([
                         legosc2index(
-                            leg_i=leg_i, side_i=1, joint_i=joint_i, side=side
+                            leg_i=leg_i, side_i=1, joint_i=joint_i, side=side, n_body_joints=n_body_joints
                         ),
                         legosc2index(
-                            leg_i=leg_i, side_i=0, joint_i=joint_i, side=side
+                            leg_i=leg_i, side_i=0, joint_i=joint_i, side=side, n_body_joints=n_body_joints
                         ),
                         legs_amplitude_opposite, np.pi
                     ])
 
         # Following leg interaction
-        for side_i in range(2):
-            for side in range(2):
-                connectivity.append([
-                    legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
-                    legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
-                    legs_amplitude_following, np.pi
-                ])
-                connectivity.append([
-                    legosc2index(leg_i=1, side_i=side_i, joint_i=0, side=side),
-                    legosc2index(leg_i=0, side_i=side_i, joint_i=0, side=side),
-                    legs_amplitude_following, np.pi
-                ])
+        for leg_pre in range(options.morphology.n_legs//2-1):
+            for side_i in range(2):
+                for side in range(2):
+                    connectivity.append([
+                        legosc2index(
+                            leg_i=leg_pre,
+                            side_i=side_i,
+                            joint_i=0,
+                            side=side
+                        ),
+                        legosc2index(
+                            leg_i=leg_pre+1,
+                            side_i=side_i,
+                            joint_i=0,
+                            side=side
+                        ),
+                        legs_amplitude_following, np.pi
+                    ])
+                    connectivity.append([
+                        legosc2index(
+                            leg_i=leg_pre+1,
+                            side_i=side_i,
+                            joint_i=0,
+                            side=side
+                        ),
+                        legosc2index(
+                            leg_i=leg_pre,
+                            side_i=side_i,
+                            joint_i=0,
+                            side=side
+                        ),
+                        legs_amplitude_following, np.pi
+                    ])
 
         # Body-legs interaction
-        for leg_i in range(2):
+        for leg_i in range(options.morphology.n_legs//2):
             for side_i in range(2):
-                for i in range(11):  # [0, 1, 7, 8, 9, 10]
+                for i in range(n_body_joints):  # [0, 1, 7, 8, 9, 10]
                     for side_leg in range(2): # Muscle facing front/back
                         for lateral in range(2):
                             walk_phase = (
@@ -489,7 +509,7 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
         connectivity = []
         options_conn = options.control.network.connectivity
         # options.morphology.n_legs
-        for leg_i in range(2):
+        for leg_i in range(options.morphology.n_legs//2):
             for side_i in range(2):
                 for joint_i in range(4):
                     for side_o in range(2):
@@ -517,6 +537,8 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
                                     weight
                                 ])
         print("Contacts connectivity:\n{}".format(np.array(connectivity)))
+        if not connectivity:
+            connectivity = [[]]
         return cls(np.array(connectivity, dtype=np.float64))
 
 
@@ -529,10 +551,14 @@ class SalamanderHydroConnectivityArray(ConnectivityArray):
         connectivity = []
         options_conn = options.control.network.connectivity
         # options.morphology.n_legs
-        for joint_i in range(11):
+        for joint_i in range(options.morphology.n_joints_body):
             for side_osc in range(2):
                 connectivity.append([
-                    bodyosc2index(joint_i=joint_i, side=side_osc),
+                    bodyosc2index(
+                        joint_i=joint_i,
+                        side=side_osc,
+                        n_body_joints=options.morphology.n_joints_body
+                    ),
                     joint_i+1,
                     options_conn.weight_sens_hydro_freq,
                     options_conn.weight_sens_hydro_amp
