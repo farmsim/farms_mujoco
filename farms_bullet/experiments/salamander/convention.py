@@ -2,7 +2,10 @@
 
 def bodyosc2index(joint_i, side=0, n_body_joints=11):
     """body2index"""
-    assert 0 <= joint_i < 11, "Joint must be < 11, got {}".format(joint_i)
+    assert 0 <= joint_i < n_body_joints, "Joint must be < {}, got {}".format(
+        n_body_joints,
+        joint_i
+    )
     return joint_i + side*n_body_joints
 
 

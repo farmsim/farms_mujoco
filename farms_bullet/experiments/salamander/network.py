@@ -9,18 +9,19 @@ from ...controllers.controller import ode_oscillators_sparse
 class SalamanderNetworkODE:
     """Salamander network"""
 
-    def __init__(self, animat_data, timestep):
+    def __init__(self, animat_options, animat_data, timestep):
         super(SalamanderNetworkODE, self).__init__()
         self.ode = ode_oscillators_sparse
+        self.animat_options = animat_options
         self.animat_data = animat_data
         self._timestep = timestep
         self._n_oscillators = animat_data.state.n_oscillators
-        n_body = 11
-        n_legs_dofs = 4
+        n_body = self.animat_options.morphology.n_joints_body
+        n_legs_dofs = self.animat_options.morphology.n_dof_legs
         self.groups = [None, None]
         self.groups = [
             [
-                bodyosc2index(joint_i=i, side=side)
+                bodyosc2index(joint_i=i, side=side, n_body_joints=animat_options.morphology.n_joints_body)
                 for i in range(n_body)
             ] + [
                 legosc2index(
@@ -29,7 +30,7 @@ class SalamanderNetworkODE:
                     joint_i=joint_i,
                     side=side
                 )
-                for leg_i in range(2)
+                for leg_i in range(self.animat_options.morphology.n_legs//2)
                 for side_i in range(2)
                 for joint_i in range(n_legs_dofs)
             ]
