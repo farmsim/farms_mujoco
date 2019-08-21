@@ -455,7 +455,7 @@ class SalamanderJointsArray(JointsArray):
                         options.control.drives
                     )
                 )
-        # Turning
+        # Turning legs
         for leg_i in range(n_legs//2):
             for side in range(2):
                 offsets[n_body + 2*leg_i*n_dof_legs + side*n_dof_legs + 0] += (
@@ -463,8 +463,11 @@ class SalamanderJointsArray(JointsArray):
                     *(1 if leg_i else -1)
                     *(1 if side else -1)
                 )
-        print(j_options.body_offsets)
-        offsets[:n_body] += j_options.body_offsets
+        # Turning body
+        for i in range(n_body):
+            offsets[i] += j_options.body_offsets[i].value(
+                options.control.drives
+            )
         rates = 5*np.ones(n_joints)
         return offsets, rates
 
