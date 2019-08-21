@@ -17,7 +17,7 @@ from ..salamander.animat_data import (
     SalamanderOscillatorNetworkState,
     SalamanderData
 )
-# from ..salamander.control import SalamanderController
+from ..salamander.control import SalamanderController
 from ..salamander.sensors import SalamanderGPS
 
 
@@ -30,7 +30,7 @@ class Snake(Animat):
         self.n_iterations = iterations
         self.joints_order = None
         self.data = SalamanderData.from_options(
-            SalamanderOscillatorNetworkState.default_state(iterations),
+            SalamanderOscillatorNetworkState.default_state(iterations, options),
             options,
             iterations
         )
@@ -46,7 +46,7 @@ class Snake(Animat):
         """Spawn snake"""
         self.spawn_body()
         # Controller
-        # self.setup_controller()
+        self.setup_controller()
         # Sensors
         self.add_sensors()
         # Body properties
@@ -62,7 +62,7 @@ class Snake(Animat):
                 parentObjectUniqueId=self.identity,
                 parentLinkIndex=i
             )
-            for i in range(12)
+            for i in range(self.options.morphology.n_links_body())
         ]
 
     def spawn_body(self):
@@ -91,7 +91,7 @@ class Snake(Animat):
         #     prepend=0
         # )
         # body_color = [0, 0.3, 0, 1]
-        body_link_positions = np.zeros([12, 3])
+        body_link_positions = np.zeros([self.options.morphology.n_links_body(), 3])
         body_link_positions[1:, 0] = 0.06
         body_shape = {
             "geometry": pybullet.GEOM_BOX,
@@ -129,7 +129,7 @@ class Snake(Animat):
                 scale=[self.scale, self.scale, self.scale],
                 units=self.units
             )
-            for i in range(11)
+            for i in range(self.options.morphology.n_links_body()-1)
         ]
         # links = [None for _ in range(11)]
         # print("Creating snake body")
@@ -190,10 +190,10 @@ class Snake(Animat):
             linkJointAxis=[link.joint_axis for link in links]
         )
         # Joint order
-        joints_names = [None for _ in range(11)]
-        joints_order = [None for _ in range(11)]
+        joints_names = [None for _ in range(self.options.morphology.n_joints_body)]
+        joints_order = [None for _ in range(self.options.morphology.n_joints_body)]
         joint_index = 0
-        for joint_i in range(11):
+        for joint_i in range(self.options.morphology.n_joints_body):
             joint_info = pybullet.getJointInfo(
                 self.identity,
                 joint_i
@@ -207,7 +207,7 @@ class Snake(Animat):
         ])
         # Set names
         self.links['link_body_{}'.format(0)] = -1
-        for i in range(11):
+        for i in range(self.options.morphology.n_links_body()-1):
             self.links['link_body_{}'.format(i+1)] = self.joints_order[i]
             self.joints['joint_link_body_{}'.format(i)] = self.joints_order[i]
         self.print_information()
@@ -254,7 +254,7 @@ class Snake(Animat):
                 i,
                 self.links["link_body_{}".format(i)]
             ]
-            for i in range(12)
+            for i in range(self.options.morphology.n_links_body())
         ]
         self.sensors.add({
             "links": SalamanderGPS(
@@ -277,7 +277,7 @@ class Snake(Animat):
         # Deactivate damping
         links_no_damping = [
             "link_body_{}".format(body_i)
-            for body_i in range(12)
+            for body_i in range(self.options.morphology.n_links_body())
         ]
         small = 0
         self.set_links_dynamics(
@@ -306,6 +306,7 @@ class Snake(Animat):
         """Setup controller"""
         self.controller = SalamanderController.from_data(
             self.identity,
+            animat_options=self.options,
             animat_data=self.data,
             timestep=self.timestep,
             joints_order=self.joints_order,
@@ -321,11 +322,11 @@ class Snake(Animat):
             self.identity,
             [
                 [i, self.links["link_body_{}".format(i)]]
-                for i in range(12)
+                for i in range(self.options.morphology.n_links_body())
             ],
             coefficients=[
                 self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
-                self.options.morphology.scale**6*np.array([-1e-2, -1e-2, -1e-2])
+                self.options.morphology.scale**6*np.array([-1e-3, -1e-3, -1e-3])
             ],
             units=self.units
         )

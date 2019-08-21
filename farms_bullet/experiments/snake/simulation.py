@@ -11,7 +11,7 @@ from ...simulations.simulator import real_time_handing
 from ...sensors.logging import SensorsLogger
 
 from .animat import Snake
-from .animat_options import SnakeOptions
+from ..salamander.animat_options import SalamanderOptions
 
 
 class SnakeSimulation(Simulation):
@@ -106,7 +106,7 @@ class SnakeSimulation(Simulation):
             if self.elements.animat.options.show_hydrodynamics:
                 self.elements.animat.draw_hydrodynamics(sim_step)
             # Control animat
-            # self.elements.animat.controller.control()
+            self.elements.animat.controller.control()
             # Physics step
             pybullet.stepSimulation()
             sim_step += 1
@@ -175,7 +175,10 @@ def main(simulation_options=None, animat_options=None):
     if not simulation_options:
         simulation_options = SimulationOptions.with_clargs()
     if not animat_options:
-        animat_options = SnakeOptions()
+        animat_options = SalamanderOptions()
+        animat_options.morphology.n_joints_body = 12
+        animat_options.morphology.n_dof_legs = 0
+        animat_options.morphology.n_legs = 0
 
     # Setup simulation
     print("Creating simulation")
