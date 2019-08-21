@@ -239,9 +239,9 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
         ])
 
     @classmethod
-    def body_nominal_amplitudes(cls, morphology, joint_i):
+    def body_nominal_amplitudes(cls, morphology, joint_i, **kwargs):
         """Body nominal amplitudes"""
-        body_stand_amplitude = 0.2
+        body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
         n_body = morphology.n_joints_body
         body_stand_shift = np.pi/4
         amplitude = body_stand_amplitude*np.sin(
@@ -282,7 +282,7 @@ class SalamanderOscillatorJointsOptions(DriveDependentProperty):
             [0, np.pi/32, 0, np.pi/8]
         )
         offsets_swimming = kwargs.pop(
-            "legs_offsets_walking",
+            "legs_offsets_swimming",
             [-2*np.pi/5, 0, 0, 0]
         )
         return cls([
@@ -295,11 +295,11 @@ class SalamanderOscillatorJointsOptions(DriveDependentProperty):
         ])
 
     @classmethod
-    def body_joints_offsets(cls):
+    def body_joints_offsets(cls, joint_i, offset=0):
         """Body joints offsets"""
         return cls([
-            [0, 0],
-            [6, 0]
+            [0, offset],
+            [6, offset]
         ])
 
 
@@ -313,28 +313,70 @@ class SalamanderOscillatorOptions(Options):
     def __init__(self, morphology, **kwargs):
         super(SalamanderOscillatorOptions, self).__init__()
 
+        self.morphology = morphology
         self.body_head_amplitude = kwargs.pop("body_head_amplitude", 0)
         self.body_tail_amplitude = kwargs.pop("body_tail_amplitude", 0)
-        self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
-        self.body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
+        self._body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
+        self._legs_amplitudes = kwargs.pop(
+            "legs_amplitude",
+            [0.8, np.pi/32, np.pi/4, np.pi/8]
+        )
+        self._body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
+        self.body_nominal_amplitudes = None
+        self.set_body_nominal_amplitudes()
+        self.legs_nominal_amplitudes = None
+        self.set_legs_nominal_amplitudes()
 
         # Frequencies
         self.body_freqs = SalamanderOscillatorFrequenciesOptions.body_freqs()
         self.legs_freqs = SalamanderOscillatorFrequenciesOptions.legs_freqs()
 
-        # Nominal amplitudes
+    def get_body_stand_amplitude(self):
+        """Body stand amplitude"""
+        return self._body_stand_amplitude
+
+    def set_body_stand_amplitude(self, value):
+        """Body stand amplitude"""
+        self._body_stand_amplitude = value
+        self.set_body_nominal_amplitudes()
+
+    def set_body_stand_shift(self, value):
+        """Body stand shift"""
+        self._body_stand_shift = value
+        self.set_body_nominal_amplitudes()
+
+    def set_body_nominal_amplitudes(self):
+        """Set body nominal amplitudes"""
         self.body_nominal_amplitudes = [
             SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes(
-                morphology,
-                joint_i
+                self.morphology,
+                joint_i,
+                body_stand_amplitude=self._body_stand_amplitude
             )
-            for joint_i in range(morphology.n_joints_body)
+            for joint_i in range(self.morphology.n_joints_body)
         ]
+
+    def get_legs_amplitudes(self):
+        """Body legs amplitude"""
+        return self._legs_amplitudes
+
+    def set_legs_amplitudes(self, values):
+        """Body legs amplitude"""
+        self._legs_amplitudes = values
+        self.set_legs_nominal_amplitudes()
+
+    def set_legs_nominal_amplitudes(self):
+        """Set legs nominal amplitudes"""
         self.legs_nominal_amplitudes = [
             SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
-                joint_i
+                joint_i,
+                **{
+                    "leg_{}_amplitude".format(joint_i): (
+                        self._legs_amplitudes[joint_i]
+                    )
+                }
             )
-            for joint_i in range(morphology.n_dof_legs)
+            for joint_i in range(self.morphology.n_dof_legs)
         ]
 
 
@@ -363,16 +405,52 @@ class SalamanderJointsOptions(Options):
 
     def __init__(self, **kwargs):
         super(SalamanderJointsOptions, self).__init__()
-
+        self._legs_offsets = kwargs.pop(
+            "legs_offsets_walking",
+            [0, np.pi/32, 0, np.pi/8]
+        )
+        self._legs_offsets_swimming = kwargs.pop(
+            "legs_offsets_swimming",
+            [-2*np.pi/5, 0, 0, 0]
+        )
         # Joints offsets
+        self.legs_offsets = None
+        self.update_legs_offsets()
+        self._body_offset = 0
+        self.body_offsets = None
+        self.update_body_offsets()
+
+    def get_legs_offsets(self):
+        """Get legs offsets"""
+        return self._legs_offsets
+
+    def set_legs_offsets(self, values):
+        """Set legs offsets"""
+        self._legs_offsets = values
+        self.update_legs_offsets()
+
+    def update_legs_offsets(self):
+        """Set legs joints offsets"""
         self.legs_offsets = [
             SalamanderOscillatorJointsOptions.legs_joints_offsets(
                 joint_i,
-                **kwargs
+                legs_offsets_walking=self._legs_offsets,
+                legs_offsets_swimming=self._legs_offsets_swimming
             )
             for joint_i in range(4)
         ]
-        self.body_offsets = (
-            SalamanderOscillatorJointsOptions.body_joints_offsets()
-        )
-        self.body_offsets = 0
+
+    def set_body_offsets(self, value):
+        """Set body offsets"""
+        self._body_offset = value
+        self.update_body_offsets()
+
+    def update_body_offsets(self):
+        """Set body joints offsets"""
+        self.body_offsets = [
+            SalamanderOscillatorJointsOptions.body_joints_offsets(
+                joint_i,
+                offset=self._body_offset
+            )
+            for joint_i in range(11)
+        ]
