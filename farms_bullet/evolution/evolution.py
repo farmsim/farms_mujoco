@@ -1,213 +1,123 @@
 """Farms multi-objective optimisation"""
 
-from multiprocessing import Pool
+# from jmetal.algorithm.multiobjective.moead import MOEAD
+from jmetal.algorithm.multiobjective.nsgaii import NSGAII
+from jmetal.algorithm.multiobjective.gde3 import GDE3
+from jmetal.operator import (
+    SBXCrossover,
+    PolynomialMutation,
+    DifferentialEvolutionCrossover
+)
+from jmetal.util.observer import ProgressBarObserver, VisualizerObserver
+from jmetal.util.solutions.evaluator import MultiprocessEvaluator
+from jmetal.util.termination_criterion import StoppingByEvaluations
+# from jmetal.util.aggregative_function import Tschebycheff
+from jmetal.util.solutions import (
+    # read_solutions,
+    print_function_values_to_file,
+    print_variables_to_file
+)
+from jmetal.util.ranking import FastNonDominatedRanking
+from jmetal.lab.visualization import Plot, InteractivePlot
 
-import numpy as np
-import platypus as pla
-import matplotlib.pyplot as plt
 
+def run_evolution(problem, n_pop, n_gen):
+    """Main"""
 
-class ProblemLogger:
-    """Problem population logger"""
+    max_evaluations = n_pop*n_gen
 
-    def __init__(self, n_evaluations, n_vars, n_objs):
-        super(ProblemLogger, self).__init__()
-        self.n_evaluations = n_evaluations
-        self.variables = np.zeros([n_evaluations, n_vars])
-        self.objectives = np.zeros([n_evaluations, n_objs])
-        self.iteration = 0
+    # NSGAII
+    algorithm = NSGAII(
+        problem=problem,
+        population_size=n_pop,
+        offspring_population_size=n_pop//2,
+        mutation=PolynomialMutation(
+            probability=1.0 / problem.number_of_variables,
+            distribution_index=0.20  # 20
+        ),
+        crossover=SBXCrossover(probability=1.0, distribution_index=20),
+        termination_criterion=StoppingByEvaluations(max=max_evaluations),
+        population_evaluator=MultiprocessEvaluator(8)
+    )
 
-    def log(self, variables, objectives):
-        """Log individual"""
-        if self.iteration < self.n_evaluations:
-            self.variables[self.iteration] = variables
-            self.objectives[self.iteration] = objectives
-        self.iteration += 1
+    # # MOEAD
+    # algorithm = MOEAD(
+    #     problem=problem,
+    #     population_size=n_pop,
+    #     crossover=DifferentialEvolutionCrossover(CR=1.0, F=0.5, K=0.5),
+    #     mutation=PolynomialMutation(
+    #         probability=1.0 / problem.number_of_variables,
+    #         distribution_index=20
+    #     ),
+    #     aggregative_function=Tschebycheff(
+    #         dimension=problem.number_of_objectives
+    #     ),
+    #     neighbor_size=n_pop//5,
+    #     neighbourhood_selection_probability=0.9,
+    #     max_number_of_replaced_solutions=2,
+    #     weight_files_path="MOEAD_weights",  # '../../resources/MOEAD_weights',
+    #     termination_criterion=StoppingByEvaluations(max=max_evaluations),
+    #     population_evaluator=MultiprocessEvaluator(8)
+    # )
 
-    def plot_non_dominated_front(self, result):
-        """Plot variables"""
-        nondominated = pla.nondominated(result)
-        Evolution.plot_non_dominated_fronts(nondominated)
-        print("Pareto front size: {}/{}".format(
-            len(nondominated),
-            self.iteration
-        ))
+    # # GDE3
+    # algorithm = GDE3(
+    #     problem=problem,
+    #     population_size=n_pop,
+    #     cr=0.7,
+    #     f=0.3,
+    #     termination_criterion=StoppingByEvaluations(max=max_evaluations),
+    #     population_evaluator=MultiprocessEvaluator(8),
+    # )
 
-    def plot_evaluations(self):
-        """Plot variables"""
-
-        # Variables
-        plt.figure("Variable space")
-        plt.plot(
-            self.variables[:, 0],
-            self.variables[:, 1],
-            "bo"
+    # Visualisers
+    algorithm.observable.register(
+        observer=ProgressBarObserver(max=max_evaluations)
+    )
+    algorithm.observable.register(
+        observer=VisualizerObserver(
+            reference_front=problem.reference_front,
+            display_frequency=1
         )
+    )
 
-        # Fitness
-        plt.figure("Fitness space")
-        plt.plot(
-            self.objectives[:, 0],
-            self.objectives[:, 1],
-            "bo"
-        )
+    # Run optimisation
+    algorithm.run()
 
+    # Get results
+    front = algorithm.get_result()
+    ranking = FastNonDominatedRanking()
+    pareto_fronts = ranking.compute_ranking(front)
 
-class Evolution:
-    """Evolution"""
+    # Plot front
+    plot_front = Plot(
+        plot_title='Pareto front approximation',
+        reference_front=problem.reference_front,
+        axis_labels=problem.obj_labels
+    )
+    plot_front.plot(
+        front,
+        label=algorithm.label,
+        filename=algorithm.get_name()
+    )
 
-    def __init__(self, problem, algorithms, **kwargs):
-        super(Evolution, self).__init__()
-        self.problem = problem
-        self.algorithms = algorithms
-        self.n_population = kwargs.pop("n_population", None)
-        self.n_generations = kwargs.pop("n_generations", None)
-        self.n_runs = kwargs.pop("n_runs", None)
-        self.options = kwargs.pop("options", {})
-        self.nfe = 0
-        self.archive = pla.Archive()
-        self.pool = Pool()
-        self.evaluations = []
+    # Plot interactive front
+    plot_front = InteractivePlot(
+        plot_title='Pareto front approximation interactive',
+        reference_front=problem.reference_front,
+        axis_labels=problem.obj_labels
+    )
+    plot_front.plot(
+        front,
+        label=algorithm.label,
+        filename=algorithm.get_name()
+    )
 
-    def run_evolution(self):
-        """Run evolution"""
-        for generation in range(self.n_runs):
-            print("Generation {}".format(generation))
-            results = self.pool.starmap(
-                self.island,
-                [
-                    (
-                        algorithm,
-                        self.problem,
-                        self.n_population,
-                        self.n_generations,
-                        self.archive,
-                        self.options
-                    )
-                    for algorithm in self.algorithms
-                ]
-            )
-            for algorithm, problem, _archive, nfe in results:
-                self.nfe += nfe
-                print("Computing nondominated front")
-                # nondominated = pla.nondominated(algorithm.result)
-                print("Updating archive (n={})".format(len(_archive)))
-                self.update_archive(self.archive, _archive)
-                # self.update_archive(self.archive, nondominated)
-                print("Archive size: {}".format(len(self.archive)))
-                self.evaluations.append(problem)
+    # Save results to file
+    print_function_values_to_file(front, 'FUN.' + algorithm.label)
+    print_variables_to_file(front, 'VAR.' + algorithm.label)
 
-    @staticmethod
-    def island(algorithm, problem, n_population, n_generations, archive, options):
-        """Island"""
-        problem = problem(n_generations*n_population)
-        nfe = 0
-        for _ in range(n_generations):
-            options["generator"] = pla.InjectedPopulation(archive)
-            _algorithm = algorithm(
-                problem,
-                population_size=n_population,
-                # divisions_inner=0,
-                # divisions_outer=10,  # n_evaluations//10,
-                # epsilons=0.05,
-                archive=archive,
-                **options
-            )
-            _algorithm.run(n_population)
-            Evolution.update_archive(
-                archive,
-                pla.nondominated(_algorithm.result)
-            )
-            nfe += _algorithm.nfe
-            # options["generator"] = pla.InjectedPopulation(_algorithm.result)
-        return _algorithm, problem, archive, nfe
-
-    @staticmethod
-    def plot_non_dominated_fronts(result):
-        """Plot nondominated front"""
-        nondominated_solutions = pla.nondominated(result)
-        Evolution.plot_result(nondominated_solutions)
-        print("Pareto front size: {}".format(len(nondominated_solutions)))
-
-    @staticmethod
-    def plot_result(result):
-        """Plot result"""
-
-        # Fitness
-        plt.figure("Fitness space")
-        plt.plot(
-            [s.objectives[0] for s in result],
-            [s.objectives[1] for s in result],
-            "ro"
-        )
-        plt.grid(True)
-
-        # Variables
-        plt.figure("Variable space")
-        plt.plot(
-            [s.variables[0] for s in result],
-            [s.variables[1] for s in result],
-            "ro"
-        )
-        plt.grid(True)
-
-    @staticmethod
-    def update_archive(archive, solutions, rtol=1e-8, atol=1e-8):
-        """Update archive"""
-        for solution in solutions:
-            in_archive = False
-            for _archive in archive:
-                if np.allclose(
-                        solution.variables,
-                        _archive.variables,
-                        rtol=rtol,
-                        atol=atol
-                ):
-                    in_archive = True
-                    break
-            if not in_archive:
-                archive += solution
-
-
-class ExampleProblem(pla.Problem):
-    """ Example problem"""
-
-    def __init__(self, n_evaluations):
-        n_vars, n_objs = 2, 2
-        super(ExampleProblem, self).__init__(nvars=n_vars, nobjs=n_objs)
-        self.types[0] = pla.Real(-10, 10)
-        self.types[1] = pla.Real(-10, 10)
-        self.logger = ProblemLogger(n_evaluations, n_vars, n_objs)
-
-    def evaluate(self, solution):
-        # print("Evaluating {}".format(self.logger.iteration))
-        # solution.objectives[0] = (
-        #     + (solution.variables[0]-4)**2
-        #     + (solution.variables[0]-2)**3
-        #     + (solution.variables[1]-7)**4
-        # )
-        # solution.objectives[1] = (
-        #     + (solution.variables[0]-7)**2
-        #     + (solution.variables[1]-0)**2
-        # )
-
-        solution.objectives[0] = (
-            + (solution.variables[0]-0)**2
-            + (solution.variables[1]-1)**2
-        )
-        solution.objectives[1] = (
-            + (solution.variables[0]-1)**2
-            + (solution.variables[1]-0)**2
-        )
-
-        # solution.objectives[0] = (
-        #     (solution.variables[0] - solution.variables[1])**2
-        # )
-        # solution.objectives[1] = (
-        #     (solution.variables[0])**2
-        # )
-        # solution.objectives[2] = (
-        #     (solution.variables[1])**2
-        # )
-
-        self.logger.log(solution.variables, solution.objectives)
+    # Print information
+    print('Algorithm (continuous problem): ' + algorithm.get_name())
+    print('Problem: ' + problem.get_name())
+    print('Computing time: ' + str(algorithm.total_computing_time))
