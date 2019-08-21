@@ -73,7 +73,7 @@ class Salamander(Animat):
                 parentObjectUniqueId=self.identity,
                 parentLinkIndex=i
             )
-            for i in range(12)
+            for i in range(self.options.morphology.n_links_body())
         ]
 
     def spawn_body(self):
@@ -344,7 +344,7 @@ class Salamander(Animat):
                 i,
                 self.links["link_body_{}".format(i)]
             ]
-            for i in range(12)
+            for i in range(self.options.morphology.n_links_body())
         ] + [
             [
                 "link_leg_{}_{}_{}".format(leg_i, side, joint_i),
@@ -386,7 +386,7 @@ class Salamander(Animat):
         # Deactivate damping
         links_no_damping = [
             "link_body_{}".format(body_i)
-            for body_i in range(12)
+            for body_i in range(self.options.morphology.n_links_body())
         ] + [
             "link_leg_{}_{}_{}".format(leg_i, side, joint_i)
             for leg_i in range(2)
@@ -435,11 +435,11 @@ class Salamander(Animat):
             self.data.sensors.hydrodynamics.array,
             [
                 [i, self.links["link_body_{}".format(i)]]
-                for i in range(12)
+                for i in range(self.options.morphology.n_links_body())
             ],
             coefficients=[
                 self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
-                self.options.morphology.scale**6*np.array([-1e-2, -1e-2, -1e-2])
+                self.options.morphology.scale**6*np.array([-1e-3, -1e-3, -1e-3])
             ]
         )
 
@@ -451,7 +451,7 @@ class Salamander(Animat):
             self.identity,
             [
                 [i, self.links["link_body_{}".format(i)]]
-                for i in range(12)
+                for i in range(self.options.morphology.n_links_body())
             ],
             link_frame=link_frame,
             units=self.units
@@ -462,7 +462,7 @@ class Salamander(Animat):
                 self.data.sensors.gps,
                 [
                     [i, self.links["link_body_{}".format(i)]]
-                    for i in range(12)
+                    for i in range(self.options.morphology.n_links_body())
                 ]
             )
 

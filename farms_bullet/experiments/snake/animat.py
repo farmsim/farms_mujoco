@@ -7,11 +7,17 @@ import pybullet
 
 from ...animats.animat import Animat
 from ...animats.link import AnimatLink
-from ...plugins.swimming import viscous_swimming
+from ...plugins.swimming import viscous_forces, swimming_motion, swimming_debug
 from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
     ContactsSensors
+)
+from ..salamander.convention import (
+    leglink2index,
+    leglink2name,
+    legjoint2index,
+    legjoint2name
 )
 from ..salamander.animat_data import (
     SalamanderOscillatorNetworkState,
@@ -313,13 +319,12 @@ class Snake(Animat):
             units=self.units
         )
 
-    def animat_swimming_physics(self, iteration):
+    def viscous_swimming_forces(self, iteration):
         """Animat swimming physics"""
-        viscous_swimming(
+        viscous_forces(
             iteration,
             self.data.sensors.gps,
             self.data.sensors.hydrodynamics.array,
-            self.identity,
             [
                 [i, self.links["link_body_{}".format(i)]]
                 for i in range(self.options.morphology.n_links_body())
@@ -327,9 +332,31 @@ class Snake(Animat):
             coefficients=[
                 self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
                 self.options.morphology.scale**6*np.array([-1e-3, -1e-3, -1e-3])
+            ]
+        )
+
+    def apply_swimming_forces(self, iteration, link_frame=True, debug=False):
+        """Animat swimming physics"""
+        swimming_motion(
+            iteration,
+            self.data.sensors.hydrodynamics.array,
+            self.identity,
+            [
+                [i, self.links["link_body_{}".format(i)]]
+                for i in range(self.options.morphology.n_links_body())
             ],
+            link_frame=link_frame,
             units=self.units
         )
+        if debug:
+            swimming_debug(
+                iteration,
+                self.data.sensors.gps,
+                [
+                    [i, self.links["link_body_{}".format(i)]]
+                    for i in range(self.options.morphology.n_links_body())
+                ]
+            )
 
     def draw_hydrodynamics(self, iteration):
         """Draw hydrodynamics forces"""

@@ -67,6 +67,11 @@ class SnakeSimulation(Simulation):
         self.simulation_state = None
         self.save()
 
+    @property
+    def animat(self):
+        """Snake animat"""
+        return self.elements.animat
+
     def pre_step(self, sim_step):
         """New step"""
         play = True
@@ -100,9 +105,17 @@ class SnakeSimulation(Simulation):
         self.elements.animat.sensors.update(sim_step)
         if sim_step < self.options.n_iterations-1:
             # Plugins
-            if self.elements.animat.options.control.drives.forward > 3:
+            if (
+                    self.elements.animat.options.physics.viscous
+                    and self.elements.animat.options.control.drives.forward > 3
+            ):
                 # Swimming
-                self.elements.animat.animat_swimming_physics(sim_step)
+                self.elements.animat.viscous_swimming_forces(sim_step)
+            if (
+                    self.elements.animat.options.physics.viscous
+                    or self.elements.animat.options.physics.sph
+            ):
+                self.elements.animat.apply_swimming_forces(sim_step)
             if self.elements.animat.options.show_hydrodynamics:
                 self.elements.animat.draw_hydrodynamics(sim_step)
             # Control animat
@@ -152,8 +165,11 @@ class SnakeSimulation(Simulation):
             self.elements.animat.controller.network.update(
                 self.elements.animat.options
             )
-            if self.elements.animat.options.control.drives.forward > 3:
-                pybullet.setGravity(0, 0, -0.01*self.options.units.gravity)
+            if self.elements.animat.options.physics.viscous:
+                if self.elements.animat.options.control.drives.forward > 3:
+                    pybullet.setGravity(0, 0, -0.01*self.options.units.gravity)
+                else:
+                    pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
             else:
                 pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
             self.interface.user_params.drive_speed.changed = False
@@ -200,6 +216,12 @@ def main(simulation_options=None, animat_options=None):
         log_extension=simulation_options.log_extension,
         record=sim.options.record and not sim.options.headless
     )
+    if simulation_options.log_path:
+        np.save(
+            simulation_options.log_path+"/hydrodynamics.npy",
+            sim.elements.animat.data.sensors.hydrodynamics.array
+        )
+
     sim.end()
 
 
