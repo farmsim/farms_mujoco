@@ -41,7 +41,7 @@ class Salamander(Animat):
         ]
         self.joints_order = None
         self.data = SalamanderData.from_options(
-            SalamanderOscillatorNetworkState.default_state(iterations),
+            SalamanderOscillatorNetworkState.default_state(iterations, options),
             options,
             iterations
         )
@@ -420,6 +420,7 @@ class Salamander(Animat):
         """Setup controller"""
         self.controller = SalamanderController.from_data(
             self.identity,
+            animat_options=self.options,
             animat_data=self.data,
             timestep=self.timestep,
             joints_order=self.joints_order,

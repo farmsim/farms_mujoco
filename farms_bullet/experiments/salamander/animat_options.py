@@ -25,7 +25,7 @@ class SalamanderOptions(Options):
         )
         self.control = kwargs.pop(
             "control",
-            SalamanderControlOptions(**kwargs)
+            SalamanderControlOptions(self.morphology, **kwargs)
         )
         self.collect_gps = kwargs.pop(
             "collect_gps",
@@ -94,7 +94,7 @@ class SalamanderPhysicsOptions(Options):
 class SalamanderControlOptions(Options):
     """Salamander control options"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, morphology, **kwargs):
         super(SalamanderControlOptions, self).__init__()
         self.drives = kwargs.pop(
             "drives",
@@ -106,7 +106,7 @@ class SalamanderControlOptions(Options):
         )
         self.network = kwargs.pop(
             "network",
-            SalamanderNetworkOptions(**kwargs)
+            SalamanderNetworkOptions(morphology, **kwargs)
         )
 
     def to_vector(self):
@@ -183,15 +183,15 @@ class SalamanderJointsControllers(Options):
 class SalamanderNetworkOptions(Options):
     """Salamander network options"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, morphology, **kwargs):
         super(SalamanderNetworkOptions, self).__init__()
         self.oscillators = kwargs.pop(
             "oscillators",
-            SalamanderOscillatorOptions(**kwargs)
+            SalamanderOscillatorOptions(morphology, **kwargs)
         )
         self.connectivity = kwargs.pop(
             "connectivity",
-            SalamanderConnectivityOptions(**kwargs)
+            SalamanderConnectivityOptions(morphology, **kwargs)
         )
         self.joints = kwargs.pop(
             "joints",
@@ -268,10 +268,10 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
         ])
 
     @classmethod
-    def body_nominal_amplitudes(cls, joint_i, **kwargs):
+    def body_nominal_amplitudes(cls, morphology, joint_i):
         """Body nominal amplitudes"""
         body_stand_amplitude = 0.2
-        n_body = 11
+        n_body = morphology.n_joints_body
         body_stand_shift = np.pi/4
         amplitude = body_stand_amplitude*np.sin(
             2*np.pi*joint_i/n_body - body_stand_shift
@@ -339,7 +339,7 @@ class SalamanderOscillatorOptions(Options):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, morphology, **kwargs):
         super(SalamanderOscillatorOptions, self).__init__()
 
         self.body_head_amplitude = kwargs.pop("body_head_amplitude", 0)
@@ -354,24 +354,28 @@ class SalamanderOscillatorOptions(Options):
         # Nominal amplitudes
         self.body_nominal_amplitudes = [
             SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes(
+                morphology,
                 joint_i
             )
-            for joint_i in range(11)
+            for joint_i in range(morphology.n_joints_body)
         ]
         self.legs_nominal_amplitudes = [
             SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
                 joint_i
             )
-            for joint_i in range(4)
+            for joint_i in range(morphology.n_dof_legs)
         ]
 
 
 class SalamanderConnectivityOptions(Options):
     """Salamander connectivity options"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, morphology, **kwargs):
         super(SalamanderConnectivityOptions, self).__init__()
-        self.body_phase_bias = kwargs.pop("body_phase_bias", 2*np.pi/11)
+        self.body_phase_bias = kwargs.pop(
+            "body_phase_bias",
+            2*np.pi/morphology.n_joints_body
+        )
         self.weight_osc_body = 1e3
         self.weight_osc_legs_internal = 1e3
         self.weight_osc_legs_opposite = 1e0

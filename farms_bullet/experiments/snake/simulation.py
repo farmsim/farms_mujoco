@@ -11,21 +11,22 @@ from ...simulations.simulator import real_time_handing
 from ...sensors.logging import SensorsLogger
 
 from .animat import Snake
-from .animat_options import SnakeOptions
+from ..salamander.animat_options import SalamanderOptions
 
 
 class SnakeSimulation(Simulation):
     """Snake simulation"""
 
-    def __init__(self, simulation_options, animat_options):
+    def __init__(self, simulation_options, animat_options, **kwargs):
         super(SnakeSimulation, self).__init__(
             elements=SimulationElements(
                 animat=Snake(
                     animat_options,
                     simulation_options.timestep,
-                    simulation_options.n_iterations
+                    simulation_options.n_iterations,
+                    simulation_options.units
                 ),
-                arena=FlooredArena()
+                arena=kwargs.pop("arena", FlooredArena())
             ),
             options=simulation_options
         )
@@ -35,17 +36,28 @@ class SnakeSimulation(Simulation):
         self.interface = Interfaces(int(10*1e-3/simulation_options.timestep))
         if not self.options.headless:
             self.interface.init_camera(
-                target_identity=self.elements.animat.identity,
+                target_identity=(
+                    self.elements.animat.identity
+                    if not self.options.free_camera
+                    else None
+                ),
                 timestep=self.options.timestep,
                 rotating_camera=self.options.rotating_camera,
                 top_camera=self.options.top_camera
             )
             self.interface.init_debug(animat_options=self.elements.animat.options)
+
         if self.options.record and not self.options.headless:
+            skips = int(2e-2/simulation_options.timestep)  # 50 fps
             self.interface.init_video(
                 target_identity=self.elements.animat.identity,
-                timestep=self.options.timestep*25,
-                size=self.options.n_iterations//25,
+                simulation_options=simulation_options,
+                fps=1./(skips*simulation_options.timestep),
+                pitch=-45,
+                yaw=0,
+                skips=skips,
+                motion_filter=2*skips*simulation_options.timestep,
+                distance=1,
                 rotating_camera=self.options.rotating_camera,
                 top_camera=self.options.top_camera
             )
@@ -58,12 +70,12 @@ class SnakeSimulation(Simulation):
     def pre_step(self, sim_step):
         """New step"""
         play = True
-        if not(sim_step % 10000) and sim_step > 0:
-            pybullet.restoreState(self.simulation_state)
-            # network = self.elements.animat.controller.network
-            # network.state.array[network.iteration] = (
-            #     network.state.default_initial_state()
-            # )
+        # if not(sim_step % 10000) and sim_step > 0:
+        #     pybullet.restoreState(self.simulation_state)
+        #     state = self.elements.animat.data.state
+        #     state.array[self.elements.animat.data.iteration] = (
+        #         state.default_initial_state()
+        #     )
         if not self.options.headless:
             play = self.interface.user_params.play.value
             if not sim_step % 100:
@@ -76,34 +88,39 @@ class SnakeSimulation(Simulation):
     def step(self, sim_step):
         """Simulation step"""
         self.tic_rt[0] = time.time()
+        # Interface
+        if not self.options.headless:
+            if self.elements.animat.options.transition:
+                self.interface.user_params.drive_speed.value = (
+                    1+4*sim_step/self.options.n_iterations
+                )
+                self.interface.user_params.drive_speed.changed = True
+            self.animat_interface()
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
         if sim_step < self.options.n_iterations-1:
-            # Interface
-            if not self.options.headless:
-                self.animat_interface()
             # Plugins
-            self.elements.animat.animat_physics()
-            # # Control animat
-            # self.elements.animat.controller.control()
+            if self.elements.animat.options.control.drives.forward > 3:
+                # Swimming
+                self.elements.animat.animat_swimming_physics(sim_step)
+            if self.elements.animat.options.show_hydrodynamics:
+                self.elements.animat.draw_hydrodynamics(sim_step)
+            # Control animat
+            self.elements.animat.controller.control()
             # Physics step
             pybullet.stepSimulation()
             sim_step += 1
             # Camera
             if not self.options.headless:
-                if self.options.record and not sim_step % 25:
-                    self.elements.camera_record.record(sim_step//25-1)
+                if self.options.record:
+                    self.interface.video.record(sim_step)
                 # User camera
-                if (
-                        not sim_step % self.interface.camera_skips
-                        and not self.options.free_camera
-                ):
-                    self.interface.camera.update()
+                self.interface.camera.update()
             # Real-time
             self.tic_rt[1] = time.time()
             if (
                     not self.options.fast
-                    and self.interface.user_params.rtl.value < 3
+                    and self.interface.user_params.rtl.value < 2.99
             ):
                 real_time_handing(
                     self.options.timestep,
@@ -113,43 +130,42 @@ class SnakeSimulation(Simulation):
 
     def animat_interface(self):
         """Animat interface"""
-        # # Control
-        # if self.interface.user_params.gait.changed:
-        #     self.elements.animat.options.gait = (
-        #         self.interface.user_params.gait.value
-        #     )
-        #     self.elements.animat.controller.update_gait(
-        #         self.elements.animat.options.gait,
-        #         self.elements.animat.joints,
-        #         self.options.timestep
-        #     )
-        #     if self.elements.animat.options.gait == "swimming":
-        #         pybullet.setGravity(0, 0, -0.01)
-        #     else:
-        #         pybullet.setGravity(0, 0, -9.81)
-        #     self.interface.user_params.gait.changed = False
-        # if self.interface.user_params.frequency.changed:
-        #     network = self.elements.animat.controller.network
-        #     network.parameters.oscillators.freqs = (
-        #         self.interface.user_params.frequency.value
-        #     )
-        #     self.interface.user_params.frequency.changed = False
-        # if self.interface.user_params.body_offset.changed:
-        #     network = self.elements.animat.controller.network
-        #     network.parameters.joints.set_body_offset(
-        #         self.interface.user_params.body_offset.value
-        #     )
-        #     self.interface.user_params.body_offset.changed = False
-        # if (
-        #         self.interface.user_params.drive_speed.changed
-        #         or self.interface.user_params.drive_turn.changed
-        # ):
-        #     self.elements.animat.controller.network.update_drive(
-        #         self.interface.user_params.drive_speed.value,
-        #         self.interface.user_params.drive_turn.value
-        #     )
-        #     self.interface.user_params.drive_speed.changed = False
-        #     self.interface.user_params.drive_turn.changed = False
+        # Camera zoom
+        if self.interface.user_params.zoom.changed:
+            self.interface.camera.set_zoom(
+                self.interface.user_params.zoom.value
+            )
+        # Body offset
+        if self.interface.user_params.body_offset.changed:
+            self.elements.animat.options.control.network.joints.body_offsets = (
+                self.interface.user_params.body_offset.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
+            )
+            self.interface.user_params.body_offset.changed = False
+        # Drives
+        if self.interface.user_params.drive_speed.changed:
+            self.elements.animat.options.control.drives.forward = (
+                self.interface.user_params.drive_speed.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
+            )
+            if self.elements.animat.options.control.drives.forward > 3:
+                pybullet.setGravity(0, 0, -0.01*self.options.units.gravity)
+            else:
+                pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
+            self.interface.user_params.drive_speed.changed = False
+        # Turning
+        if self.interface.user_params.drive_turn.changed:
+            self.elements.animat.options.control.drives.turning = (
+                self.interface.user_params.drive_turn.value
+            )
+            self.elements.animat.controller.network.update(
+                self.elements.animat.options
+            )
+            self.interface.user_params.drive_turn.changed = False
 
 
 def main(simulation_options=None, animat_options=None):
@@ -159,7 +175,10 @@ def main(simulation_options=None, animat_options=None):
     if not simulation_options:
         simulation_options = SimulationOptions.with_clargs()
     if not animat_options:
-        animat_options = SnakeOptions()
+        animat_options = SalamanderOptions()
+        animat_options.morphology.n_joints_body = 12
+        animat_options.morphology.n_dof_legs = 0
+        animat_options.morphology.n_legs = 0
 
     # Setup simulation
     print("Creating simulation")

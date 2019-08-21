@@ -3,13 +3,18 @@
 
 import matplotlib.pyplot as plt
 from farms_bullet.experiments.snake.simulation import main as run_sim
-from farms_bullet.experiments.snake.animat_options import SnakeOptions
+from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
 
 def main():
     """Main"""
-    animat_options = SnakeOptions()
+    animat_options = SalamanderOptions(
+        show_hydrodynamics=True,
+        n_joints_body=10,
+        n_dof_legs=0,
+        n_legs=0
+    )
     # animat_options = SnakeOptions(
     #     frequency=1.7,
     #     body_stand_amplitude=0.42
