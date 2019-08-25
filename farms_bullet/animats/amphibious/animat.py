@@ -114,13 +114,13 @@ class Amphibious(Animat):
             }
         else:
             body_link_positions = np.zeros([self.options.morphology.n_links_body(), 3])
-            body_link_positions[0, 0] = 0.03
-            body_link_positions[1:, 0] = 0.06
+            body_link_positions[0, 0] = self.scale*0.03
+            body_link_positions[1:, 0] = self.scale*0.06
             body_shape = {
                 "geometry": pybullet.GEOM_BOX,
-                "size": [0.03, 0.02, 0.02],
+                "size": self.scale*np.array([0.03, 0.02, 0.02]),
                 "scale": [self.scale, self.scale, self.scale],
-                "frame_position": [0.03, 0, 0]
+                "frame_position": self.scale*np.array([0.03, 0, 0])
             }
             # body_shape = {
             #     "geometry": pybullet.GEOM_CAPSULE,
