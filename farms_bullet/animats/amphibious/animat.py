@@ -395,7 +395,16 @@ class Amphibious(Animat):
                             n_legs=self.options.morphology.n_legs,
                             n_legs_dof=self.options.morphology.n_dof_legs
                         )
-                    ] = self.joints_order[i]
+                    ] = self.joints_order[
+                        legjoint2index(
+                            leg_i=leg_i,
+                            side_i=side,
+                            joint_i=joint_i,
+                            n_legs=self.options.morphology.n_legs,
+                            n_body_joints=self.options.morphology.n_joints_body,
+                            n_legs_dof=self.options.morphology.n_dof_legs
+                        )
+                    ]
                     self.joints[
                         legjoint2name(
                             leg_i=leg_i,
@@ -404,7 +413,16 @@ class Amphibious(Animat):
                             n_legs=self.options.morphology.n_legs,
                             n_legs_dof=self.options.morphology.n_dof_legs
                         )
-                    ] = self.joints_order[i]
+                    ] = self.joints_order[
+                        legjoint2index(
+                            leg_i=leg_i,
+                            side_i=side,
+                            joint_i=joint_i,
+                            n_legs=self.options.morphology.n_legs,
+                            n_body_joints=self.options.morphology.n_joints_body,
+                            n_legs_dof=self.options.morphology.n_dof_legs
+                        )
+                    ]
         self.print_information()
 
     # @classmethod
