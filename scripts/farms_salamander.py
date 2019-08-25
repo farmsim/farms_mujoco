@@ -4,14 +4,14 @@
 import time
 import matplotlib.pyplot as plt
 from farms_bullet.experiments.salamander.simulation import main as run_sim
-from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
+from farms_bullet.experiments.salamander.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
 
 def main():
     """Main"""
     # Animat options
-    animat_options = SalamanderOptions(
+    animat_options = AmphibiousOptions(
         # collect_gps=True,
         # show_hydrodynamics=True,
         scale=1

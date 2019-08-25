@@ -1,13 +1,13 @@
-"""GPS for salamander animat"""
+"""GPS for amphibious animat"""
 
 from ...sensors.sensors import LinksStatesSensor
 
 
-class SalamanderGPS(LinksStatesSensor):
-    """Salamander GPS"""
+class AmphibiousGPS(LinksStatesSensor):
+    """Amphibious GPS"""
 
     def __init__(self, array, animat_id, links, options, units):
-        super(SalamanderGPS, self).__init__(
+        super(AmphibiousGPS, self).__init__(
             array=array,
             animat_id=animat_id,
             links=links,

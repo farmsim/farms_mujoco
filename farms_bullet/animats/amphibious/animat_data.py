@@ -19,7 +19,7 @@ from ...animats.animat_data import (
 )
 
 
-class SalamanderOscillatorNetworkState(OscillatorNetworkState):
+class AmphibiousOscillatorNetworkState(OscillatorNetworkState):
     """Network state"""
 
     @staticmethod
@@ -41,9 +41,9 @@ class SalamanderOscillatorNetworkState(OscillatorNetworkState):
         n_dof_legs = options.morphology.n_dof_legs
         n_joints = options.morphology.n_joints()
         n_oscillators = 2*n_joints
-        return SalamanderOscillatorNetworkState.from_initial_state(
+        return AmphibiousOscillatorNetworkState.from_initial_state(
             initial_state=(
-                SalamanderOscillatorNetworkState.default_initial_state(options)
+                AmphibiousOscillatorNetworkState.default_initial_state(options)
             ),
             n_iterations=n_iterations,
             n_oscillators=n_oscillators
@@ -60,18 +60,18 @@ class SalamanderOscillatorNetworkState(OscillatorNetworkState):
         return cls(state, n_oscillators)
 
 
-class SalamanderData(AnimatData):
-    """Salamander network parameter"""
+class AmphibiousData(AnimatData):
+    """Amphibious network parameter"""
 
     @classmethod
     def from_options(cls, state, options, n_iterations):
-        """Default salamander newtwork parameters"""
-        oscillators = SalamanderOscillatorArray.from_options(options)
-        connectivity = SalamanderOscillatorConnectivityArray.from_options(options)
-        contacts_connectivity = SalamanderContactsConnectivityArray.from_options(
+        """Default amphibious newtwork parameters"""
+        oscillators = AmphibiousOscillatorArray.from_options(options)
+        connectivity = AmphibiousOscillatorConnectivityArray.from_options(options)
+        contacts_connectivity = AmphibiousContactsConnectivityArray.from_options(
             options
         )
-        hydro_connectivity = SalamanderHydroConnectivityArray.from_options(
+        hydro_connectivity = AmphibiousHydroConnectivityArray.from_options(
             options
         )
         network = NetworkParameters(
@@ -80,17 +80,17 @@ class SalamanderData(AnimatData):
             contacts_connectivity,
             hydro_connectivity
         )
-        joints = SalamanderJointsArray.from_options(options)
-        contacts = SalamanderContactsArray.from_options(options, n_iterations)
-        proprioception = SalamanderProprioceptionArray.from_options(
+        joints = AmphibiousJointsArray.from_options(options)
+        contacts = AmphibiousContactsArray.from_options(options, n_iterations)
+        proprioception = AmphibiousProprioceptionArray.from_options(
             options,
             n_iterations
         )
-        gps = SalamanderGpsArray.from_options(
+        gps = AmphibiousGpsArray.from_options(
             options,
             n_iterations
         )
-        hydrodynamics = SalamanderHydrodynamicsArray.from_options(
+        hydrodynamics = AmphibiousHydrodynamicsArray.from_options(
             options,
             n_iterations
         )
@@ -98,7 +98,7 @@ class SalamanderData(AnimatData):
         return cls(state, network, joints, sensors)
 
 
-class SalamanderOscillatorArray(OscillatorArray):
+class AmphibiousOscillatorArray(OscillatorArray):
     """Oscillator array"""
 
     @staticmethod
@@ -156,7 +156,7 @@ class SalamanderOscillatorArray(OscillatorArray):
         self.amplitudes_desired[:] = amplitudes
 
 
-class SalamanderOscillatorConnectivityArray(ConnectivityArray):
+class AmphibiousOscillatorConnectivityArray(ConnectivityArray):
     """Connectivity array"""
 
     @staticmethod
@@ -433,7 +433,7 @@ class SalamanderOscillatorConnectivityArray(ConnectivityArray):
         """
 
 
-class SalamanderJointsArray(JointsArray):
+class AmphibiousJointsArray(JointsArray):
     """Oscillator array"""
 
     @staticmethod
@@ -487,8 +487,8 @@ class SalamanderJointsArray(JointsArray):
         self.offsets[:] = offsets
 
 
-class SalamanderContactsArray(ContactsArray):
-    """Salamander contacts sensors array"""
+class AmphibiousContactsArray(ContactsArray):
+    """Amphibious contacts sensors array"""
 
     @classmethod
     def from_options(cls, options, n_iterations):
@@ -500,8 +500,8 @@ class SalamanderContactsArray(ContactsArray):
         return cls(contacts)
 
 
-class SalamanderContactsConnectivityArray(ConnectivityArray):
-    """Salamander contacts connectivity array"""
+class AmphibiousContactsConnectivityArray(ConnectivityArray):
+    """Amphibious contacts connectivity array"""
 
     @classmethod
     def from_options(cls, options):
@@ -542,8 +542,8 @@ class SalamanderContactsConnectivityArray(ConnectivityArray):
         return cls(np.array(connectivity, dtype=np.float64))
 
 
-class SalamanderHydroConnectivityArray(ConnectivityArray):
-    """Salamander hydro connectivity array"""
+class AmphibiousHydroConnectivityArray(ConnectivityArray):
+    """Amphibious hydro connectivity array"""
 
     @classmethod
     def from_options(cls, options):
@@ -567,8 +567,8 @@ class SalamanderHydroConnectivityArray(ConnectivityArray):
         return cls(np.array(connectivity, dtype=np.float64))
 
 
-class SalamanderProprioceptionArray(ProprioceptionArray):
-    """Salamander proprioception sensors array"""
+class AmphibiousProprioceptionArray(ProprioceptionArray):
+    """Amphibious proprioception sensors array"""
 
     @classmethod
     def from_options(cls, options, n_iterations):
@@ -578,8 +578,8 @@ class SalamanderProprioceptionArray(ProprioceptionArray):
         return cls(proprioception)
 
 
-class SalamanderGpsArray(GpsArray):
-    """Salamander gps sensors array"""
+class AmphibiousGpsArray(GpsArray):
+    """Amphibious gps sensors array"""
 
     @classmethod
     def from_options(cls, options, n_iterations):
@@ -589,8 +589,8 @@ class SalamanderGpsArray(GpsArray):
         return cls(gps)
 
 
-class SalamanderHydrodynamicsArray(HydrodynamicsArray):
-    """Salamander hydrodynamics sensors array"""
+class AmphibiousHydrodynamicsArray(HydrodynamicsArray):
+    """Amphibious hydrodynamics sensors array"""
 
     @classmethod
     def from_options(cls, options, n_iterations):

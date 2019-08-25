@@ -1,8 +1,9 @@
-"""Salamander simulation"""
+"""Amphibious simulation"""
 
 import time
 import numpy as np
 import pybullet
+
 from ...simulations.simulation import Simulation, SimulationElements
 from ...simulations.simulation_options import SimulationOptions
 from ...arenas.arena import FlooredArena
@@ -10,22 +11,17 @@ from ...interface.interface import Interfaces
 from ...simulations.simulator import real_time_handing
 from ...sensors.logging import SensorsLogger
 
-from .animat import Salamander
-from .animat_options import SalamanderOptions
+from .animat import Amphibious
+from .animat_options import AmphibiousOptions
 
 
-class SalamanderSimulation(Simulation):
-    """Salamander simulation"""
+class AmphibiousSimulation(Simulation):
+    """Amphibious simulation"""
 
-    def __init__(self, simulation_options, animat_options, **kwargs):
-        super(SalamanderSimulation, self).__init__(
+    def __init__(self, simulation_options, animat, **kwargs):
+        super(AmphibiousSimulation, self).__init__(
             elements=SimulationElements(
-                animat=Salamander(
-                    animat_options,
-                    simulation_options.timestep,
-                    simulation_options.n_iterations,
-                    simulation_options.units
-                ),
+                animat=animat,
                 arena=kwargs.pop("arena", FlooredArena())
             ),
             options=simulation_options
@@ -166,55 +162,3 @@ class SalamanderSimulation(Simulation):
                 self.elements.animat.options
             )
             self.interface.user_params.drive_turn.changed = False
-
-
-def main(simulation_options=None, animat_options=None):
-    """Main"""
-
-    # Parse command line arguments
-    if not simulation_options:
-        simulation_options = SimulationOptions.with_clargs()
-    if not animat_options:
-        animat_options = SalamanderOptions()
-
-    # Setup simulation
-    print("Creating simulation")
-    sim = SalamanderSimulation(
-        simulation_options=simulation_options,
-        animat_options=animat_options
-    )
-
-    # Run simulation
-    print("Running simulation")
-    sim.run()
-
-    # Analyse results
-    print("Analysing simulation")
-    sim.postprocess(
-        iteration=sim.iteration,
-        plot=simulation_options.plot,
-        log_path=simulation_options.log_path,
-        log_extension=simulation_options.log_extension,
-        record=sim.options.record and not sim.options.headless
-    )
-    sim.end()
-
-
-def main_parallel():
-    """Simulation with multiprocessing"""
-    from multiprocessing import Pool
-
-    # Parse command line arguments
-    sim_options = SimulationOptions.with_clargs()
-
-    # Create Pool
-    pool = Pool(2)
-
-    # Run simulation
-    pool.map(main, [sim_options, sim_options])
-    print("Done")
-
-
-if __name__ == '__main__':
-    # main_parallel()
-    main()
