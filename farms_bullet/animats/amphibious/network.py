@@ -36,7 +36,6 @@ class AmphibiousNetworkODE:
                     n_legs=animat_options.morphology.n_legs,
                     n_body_joints=animat_options.morphology.n_joints_body,
                     n_legs_dof=animat_options.morphology.n_dof_legs
-
                 )
                 for leg_i in range(self.animat_options.morphology.n_legs//2)
                 for side_i in range(2)

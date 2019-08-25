@@ -33,10 +33,10 @@ def leglink2index(leg_i, side_i, joint_i, **kwargs):
     n_legs = kwargs.pop("n_legs", 4)
     n_body_links = kwargs.pop("n_body_links", 12)
     n_legs_dof = kwargs.pop("n_legs_dof", 4)
+    assert not kwargs, kwargs
     assert 0 <= leg_i < n_legs, "Leg must be < {}, got {}".format(n_legs//2, leg_i)
     assert 0 <= side_i < 2, "Body side must be < 2, got {}".format(side_i)
     assert 0 <= joint_i < n_legs_dof, "Joint must be < {}, got {}".format(n_legs_dof, joint_i)
-    assert not kwargs, kwargs
     return (
         n_body_links - 1
         + leg_i*2*n_legs_dof
@@ -49,10 +49,10 @@ def leglink2name(leg_i, side_i, joint_i, **kwargs):
     """leglink2index"""
     n_legs = kwargs.pop("n_legs", 4)
     n_legs_dof = kwargs.pop("n_legs_dof", 4)
+    assert not kwargs, kwargs
     assert 0 <= leg_i < n_legs, "Leg must be < {}, got {}".format(n_legs//2, leg_i)
     assert 0 <= side_i < 2, "Body side must be < 2, got {}".format(side_i)
     assert 0 <= joint_i < n_legs_dof, "Joint must be < {}, got {}".format(n_legs_dof, joint_i)
-    assert not kwargs, kwargs
     return "link_leg_{}_{}_{}".format(leg_i, "R" if side_i else "L", joint_i)
 
 
@@ -61,10 +61,10 @@ def legjoint2index(leg_i, side_i, joint_i, **kwargs):
     n_legs = kwargs.pop("n_legs", 4)
     n_body_joints = kwargs.pop("n_body_joints", 11)
     n_legs_dof = kwargs.pop("n_legs_dof", 4)
+    assert not kwargs, kwargs
     assert 0 <= leg_i < n_legs, "Leg must be < {}, got {}".format(n_legs//2, leg_i)
     assert 0 <= side_i < 2, "Body side must be < 2, got {}".format(side_i)
     assert 0 <= joint_i < n_legs_dof, "Joint must be < {}, got {}".format(n_legs_dof, joint_i)
-    assert not kwargs, kwargs
     return (
         n_body_joints
         + leg_i*2*n_legs_dof
@@ -77,17 +77,25 @@ def legjoint2name(leg_i, side_i, joint_i, **kwargs):
     """legjoint2index"""
     n_legs = kwargs.pop("n_legs", 4)
     n_legs_dof = kwargs.pop("n_legs_dof", 4)
+    assert not kwargs, kwargs
     assert 0 <= leg_i < n_legs, "Leg must be < {}, got {}".format(n_legs//2, leg_i)
     assert 0 <= side_i < 2, "Body side must be < 2, got {}".format(side_i)
     assert 0 <= joint_i < n_legs_dof, "Joint must be < {}, got {}".format(n_legs_dof, joint_i)
-    assert not kwargs, kwargs
-    return "joint_{}".format(leglink2name(leg_i, side_i, joint_i))
+    return "joint_{}".format(
+        leglink2name(
+            leg_i,
+            side_i,
+            joint_i,
+            n_legs=n_legs,
+            n_legs_dof=n_legs_dof
+        )
+    )
 
 
 def contactleglink2index(leg_i, side_i, **kwargs):
     """Contact leg link 2 index"""
     n_legs = kwargs.pop("n_legs", 4)
+    assert not kwargs, kwargs
     assert 0 <= leg_i < n_legs, "Leg must be < {}, got {}".format(n_legs//2, leg_i)
     assert 0 <= side_i < 2, "Body side must be < 2, got {}".format(side_i)
-    assert not kwargs, kwargs
     return 2*leg_i + side_i

@@ -107,17 +107,20 @@ class Amphibious(Animat):
             body_color = [0, 0.3, 0, 1]
             body_shape = {
                 "geometry": pybullet.GEOM_MESH,
-                "size": [0.03, 0.02, 0.02],
+                "size": [0, 0, 0],
                 "color": body_color,
-                "scale": [self.scale, self.scale, self.scale]
+                "scale": [self.scale, self.scale, self.scale],
+                "frame_position": [0, 0, 0]
             }
         else:
             body_link_positions = np.zeros([self.options.morphology.n_links_body(), 3])
+            body_link_positions[0, 0] = 0.03
             body_link_positions[1:, 0] = 0.06
             body_shape = {
                 "geometry": pybullet.GEOM_BOX,
                 "size": [0.03, 0.02, 0.02],
-                "scale": [self.scale, self.scale, self.scale]
+                "scale": [self.scale, self.scale, self.scale],
+                "frame_position": [0.03, 0, 0]
             }
             # body_shape = {
             #     "geometry": pybullet.GEOM_CAPSULE,
@@ -187,13 +190,14 @@ class Amphibious(Animat):
         #     )
         if self.options.morphology.n_legs:
             print("Creating animat legs")
-        leg_offset = self.scale*0.03
-        leg_length = self.scale*0.06
-        leg_radius = self.scale*0.015
+        leg_offset = self.scale*self.options.morphology.leg_offset
+        leg_length = self.scale*self.options.morphology.leg_length
+        leg_radius = self.scale*self.options.morphology.leg_radius
         for leg_i in range(self.options.morphology.n_legs//2):
             for side in range(2):
                 sign = 1 if side else -1
                 offset = np.zeros(3)
+                offset[0] = body_shape["size"][0]
                 offset[1] = sign*leg_offset
                 position = np.zeros(3)
                 position[1] = 0.5*sign*leg_length
@@ -212,7 +216,11 @@ class Amphibious(Animat):
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.2*leg_radius,
                     position=offset,
-                    parent=links[4].collision if leg_i else links[0].collision,  # Inverse seems to change nothing
+                    parent=(
+                        links[
+                            self.options.morphology.legs_parents[leg_i]
+                        ].collision
+                    ),  # Different orders seem to change nothing
                     joint_axis=[0, 0, sign],
                     mass=0,
                     color=[0.9, 0.0, 0.0, 0.3]
@@ -303,10 +311,16 @@ class Amphibious(Animat):
                         )
                     ].collision,
                     joint_axis=[-sign, 0, 0],
-                    color=[
-                        [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
-                        [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
-                    ][leg_i][side]
+                    **(
+                        {
+                            "color": [
+                                [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
+                                [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
+                            ][leg_i][side]
+                        }
+                        if self.options.morphology.n_legs < 3
+                        else {}
+                    )
                 )
         for link_i, link in enumerate(links):
             assert link is not None, "link {} is None".format(link_i)
@@ -396,15 +410,16 @@ class Amphibious(Animat):
                             n_legs_dof=self.options.morphology.n_dof_legs
                         )
                     ] = self.joints_order[
-                        legjoint2index(
+                        leglink2index(
                             leg_i=leg_i,
                             side_i=side,
                             joint_i=joint_i,
                             n_legs=self.options.morphology.n_legs,
-                            n_body_joints=self.options.morphology.n_joints_body,
+                            n_body_links=self.options.morphology.n_links_body(),
                             n_legs_dof=self.options.morphology.n_dof_legs
                         )
                     ]
+                    print(self.options.morphology.n_legs)
                     self.joints[
                         legjoint2name(
                             leg_i=leg_i,
