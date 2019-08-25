@@ -7,7 +7,7 @@ from jmetal.core.solution import FloatSolution
 
 from farms_bullet.simulations.simulation_options import SimulationOptions
 from farms_bullet.experiments.salamander.simulation import SalamanderSimulation
-from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
+from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.evolution.evolution import run_evolution
 
 
@@ -50,7 +50,7 @@ class SalamanderEvolution(FloatProblem):
         self.lower_bound[17], self.upper_bound[17] = 0, 1e3
 
         # Initial solutions
-        animat_options = SalamanderOptions(
+        animat_options = AmphibiousOptions(
             # collect_gps=True,
             scale=1
         )
@@ -104,7 +104,7 @@ class SalamanderEvolution(FloatProblem):
     def evaluate(solution, evolution=True):
         """Evaluate"""
         # Animat options
-        animat_options = SalamanderOptions(
+        animat_options = AmphibiousOptions(
             # collect_gps=True,
             scale=1
         )
