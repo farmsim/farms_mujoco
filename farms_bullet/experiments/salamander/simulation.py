@@ -72,8 +72,3 @@ def main_parallel():
 if __name__ == '__main__':
     # main_parallel()
     main()
-
-
-if __name__ == '__main__':
-    # main_parallel()
-    main()
