@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Run salamander simulation with bullet"""
+"""Run polypterus simulation with bullet"""
 
 import time
 import matplotlib.pyplot as plt
-from farms_bullet.experiments.salamander.simulation import main as run_sim
+from farms_bullet.experiments.polypterus.simulation import main as run_sim
 from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 

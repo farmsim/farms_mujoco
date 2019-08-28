@@ -6,11 +6,11 @@ from .convention import bodyosc2index, legosc2index  # legjoint2index
 from ...controllers.controller import ode_oscillators_sparse
 
 
-class SalamanderNetworkODE:
-    """Salamander network"""
+class AmphibiousNetworkODE:
+    """Amphibious network"""
 
     def __init__(self, animat_options, animat_data, timestep):
-        super(SalamanderNetworkODE, self).__init__()
+        super(AmphibiousNetworkODE, self).__init__()
         self.ode = ode_oscillators_sparse
         self.animat_options = animat_options
         self.animat_data = animat_data
@@ -21,14 +21,21 @@ class SalamanderNetworkODE:
         self.groups = [None, None]
         self.groups = [
             [
-                bodyosc2index(joint_i=i, side=side, n_body_joints=animat_options.morphology.n_joints_body)
+                bodyosc2index(
+                    joint_i=i,
+                    side=side,
+                    n_body_joints=animat_options.morphology.n_joints_body
+                )
                 for i in range(n_body)
             ] + [
                 legosc2index(
                     leg_i=leg_i,
                     side_i=side_i,
                     joint_i=joint_i,
-                    side=side
+                    side=side,
+                    n_legs=animat_options.morphology.n_legs,
+                    n_body_joints=animat_options.morphology.n_joints_body,
+                    n_legs_dof=animat_options.morphology.n_dof_legs
                 )
                 for leg_i in range(self.animat_options.morphology.n_legs//2)
                 for side_i in range(2)
