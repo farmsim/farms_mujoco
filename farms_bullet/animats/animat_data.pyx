@@ -249,17 +249,41 @@ cdef class ContactsArray(NetworkArray3D):
         """Reaction force"""
         return self.array[iteration, sensor_i, 0:3]
 
+    cpdef double[:, :] reaction_all(self, unsigned int sensor_i):
+        """Reaction force"""
+        return self.array[:, sensor_i, 0:3]
+
     cpdef double[:] friction(self, unsigned int iteration, unsigned int sensor_i):
         """Friction force"""
         return self.array[iteration, sensor_i, 3:6]
+
+    cpdef double[:, :] friction_all(self, unsigned int sensor_i):
+        """Friction force"""
+        return self.array[:, sensor_i, 3:6]
 
     cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i):
         """Total force"""
         return self.array[iteration, sensor_i, 6:9]
 
+    cpdef double[:, :] total_all(self, unsigned int sensor_i):
+        """Total force"""
+        return self.array[:, sensor_i, 6:9]
+
     def plot(self, times):
         """Plot"""
-        pass
+        self.plot_ground_reaction_forces(times)
+        # self.plot_lateral_forces(times)
+        # self.plot_contacts_forces(times)
+
+    def plot_ground_reaction_forces(self, times):
+        """Plot ground reaction forces"""
+        plt.figure("Ground reaction forces")
+        for sensor_i in range(self.size[1]):
+            data = np.asarray(self.reaction_all(sensor_i))
+            plt.plot(times, np.linalg.norm(data, axis=-1)[:len(times)])
+        plt.xlabel("Times [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid(True)
 
 
 cdef class ProprioceptionArray(NetworkArray3D):
