@@ -287,6 +287,7 @@ cdef class ContactsArray(NetworkArray3D):
                 np.linalg.norm(data, axis=-1)[:len(times)],
                 label="Leg_{}".format(sensor_i)
             )
+        plt.legend()
         plt.xlabel("Times [s]")
         plt.ylabel("Forces [N]")
         plt.grid(True)
@@ -346,6 +347,7 @@ cdef class ContactsArray(NetworkArray3D):
                 np.linalg.norm(data, axis=-1)[:len(times)],
                 label="Leg_{}".format(sensor_i)
             )
+        plt.legend()
         plt.xlabel("Times [s]")
         plt.ylabel("Forces [N]")
         plt.grid(True)
@@ -364,19 +366,23 @@ cdef class ProprioceptionArray(NetworkArray3D):
         return self.array[iteration, joint_i, 0]
 
     cpdef double[:] positions(self, unsigned int iteration):
-        """Joint position"""
+        """Joints positions"""
         return self.array[iteration, :, 0]
+
+    cpdef double[:, :] positions_all(self):
+        """Joints positions"""
+        return self.array[:, :, 0]
 
     cpdef double velocity(self, unsigned int iteration, unsigned int joint_i):
         """Joint velocity"""
         return self.array[iteration, joint_i, 1]
 
     cpdef double[:] velocities(self, unsigned int iteration):
-        """Joint velocity"""
+        """Joints velocities"""
         return self.array[iteration, :, 1]
 
     cpdef double[:, :] velocities_all(self):
-        """Joint velocity"""
+        """Joints velocities"""
         return self.array[:, :, 1]
 
     cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i):
@@ -397,7 +403,25 @@ cdef class ProprioceptionArray(NetworkArray3D):
 
     def plot(self, times):
         """Plot"""
-        pass
+        self.plot_positions(times)
+        # self.plot_velocities(times)
+        # self.plot_forces(times)
+        # self.plot_torques(times)
+        # self.plot_motor_torques(times)
+
+    def plot_positions(self, times):
+        """Plot ground reaction forces"""
+        plt.figure("Joints positions")
+        for joint_i in range(self.size[1]):
+            plt.plot(
+                times,
+                np.asarray(self.positions_all())[:len(times), joint_i],
+                label="Leg_{}".format(joint_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Position [rad]")
+        plt.grid(True)
 
 
 cdef class GpsArray(NetworkArray3D):
