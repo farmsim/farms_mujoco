@@ -64,7 +64,6 @@ class Simulation:
         # Simulation
         self.iteration = 0
         self.simulation_state = None
-        self.logger = NotImplemented
 
         # Interface
         self.interface = None
@@ -141,19 +140,9 @@ class Simulation:
             self.options.timestep
         )[:iteration]
 
-        plot = kwargs.pop("plot", None)
-        if plot:
-            # self.logger.plot_all(times)
-            self.elements.animat.data.plot(times)
-
         log_path = kwargs.pop("log_path", None)
         if log_path:
             log_extension = kwargs.pop("log_extension", None)
-            # self.logger.log_all(
-            #     times,
-            #     folder=log_path,
-            #     extension=log_extension
-            # )
             self.elements.animat.data.log(
                 times,
                 folder=log_path,
@@ -170,6 +159,10 @@ class Simulation:
             with open(log_path+"/animat_options.pickle", "rb") as options:
                 test = pickle.load(options)
                 print("Wrote animat options:\n{}".format(test))
+
+        plot = kwargs.pop("plot", None)
+        if plot:
+            self.elements.animat.data.plot(times)
 
         # Record video
         record = kwargs.pop("record", None)

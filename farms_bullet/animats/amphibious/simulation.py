@@ -9,7 +9,6 @@ from ...simulations.simulation_options import SimulationOptions
 from ...arenas.arena import FlooredArena
 from ...interface.interface import Interfaces
 from ...simulations.simulator import real_time_handing
-from ...sensors.logging import SensorsLogger
 
 from .animat import Amphibious
 from .animat_options import AmphibiousOptions
@@ -26,8 +25,6 @@ class AmphibiousSimulation(Simulation):
             ),
             options=simulation_options
         )
-        # Logging
-        self.logger = SensorsLogger(self.elements.animat.sensors)
         # Interface
         self.interface = Interfaces(int(10*1e-3/simulation_options.timestep))
         if not self.options.headless:

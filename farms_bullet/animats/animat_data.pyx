@@ -27,7 +27,6 @@ cdef class AnimatData:
         """Plot"""
         self.state.plot(times)
         self.sensors.plot(times)
-        plt.show()
 
 
 cdef class NetworkParameters:
