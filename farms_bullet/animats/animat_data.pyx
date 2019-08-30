@@ -522,6 +522,10 @@ cdef class GpsArray(NetworkArray3D):
         """CoM linear velocity of a link"""
         return self.array[iteration, link_i, 14:17]
 
+    cpdef double[:, :, :] com_lin_velocities(self):
+        """CoM linear velocities"""
+        return self.array[:, :, 14:17]
+
     cpdef double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i):
         """CoM angular velocity of a link"""
         return self.array[iteration, link_i, 17:20]
@@ -529,14 +533,19 @@ cdef class GpsArray(NetworkArray3D):
     def plot(self, times):
         """Plot"""
         self.plot_base_position(times, xaxis=0, yaxis=1)
-        # self.plot_base_velocity(times)
+        self.plot_base_velocity(times)
 
     def plot_base_position(self, times, xaxis=0, yaxis=1):
         """Plot"""
-        plt.figure("Base position")
+        plt.figure("GPS position")
         for link_i in range(self.size[1]):
             data = np.asarray(self.urdf_positions())[:len(times), link_i]
-            plt.plot(data[:, xaxis], data[:, yaxis])
+            plt.plot(
+                data[:, xaxis],
+                data[:, yaxis],
+                label="Link_{}".format(link_i)
+            )
+        plt.legend()
         plt.xlabel("Position [m]")
         plt.ylabel("Position [m]")
         plt.axis("equal")
@@ -544,7 +553,13 @@ cdef class GpsArray(NetworkArray3D):
 
     def plot_base_velocity(self, times, xaxis=0, yaxis=1):
         """Plot"""
-        pass
+        plt.figure("GPS velocities")
+        for link_i in range(self.size[1]):
+            data = np.asarray(self.com_lin_velocities())[:len(times), link_i]
+            plt.plot(times, np.linalg.norm(data, axis=-1))
+        plt.xlabel("Time [s]")
+        plt.ylabel("Velocity [m/s]")
+        plt.grid(True)
 
 
 cdef class HydrodynamicsArray(NetworkArray3D):

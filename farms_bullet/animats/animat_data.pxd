@@ -86,6 +86,7 @@ cdef class GpsArray(NetworkArray3D):
     cpdef public double[:, :, :] urdf_positions(self)
     cpdef public double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i)
     cpdef public double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:, :, :] com_lin_velocities(self)
     cpdef public double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i)
 
 
