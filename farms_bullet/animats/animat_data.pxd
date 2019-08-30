@@ -92,4 +92,6 @@ cdef class GpsArray(NetworkArray3D):
 
 cdef class HydrodynamicsArray(NetworkArray3D):
     """Hydrodynamics array"""
-    pass
+
+    cpdef public double[:, :, :] forces(self)
+    cpdef public double[:, :, :] torques(self)
