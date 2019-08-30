@@ -389,9 +389,17 @@ cdef class ProprioceptionArray(NetworkArray3D):
         """Joint force"""
         return self.array[iteration, joint_i, 2:5]
 
+    cpdef double[:, :, :] forces_all(self):
+        """Joints forces"""
+        return self.array[:, :, 2:5]
+
     cpdef double[:] torque(self, unsigned int iteration, unsigned int joint_i):
         """Joint torque"""
         return self.array[iteration, joint_i, 5:8]
+
+    cpdef double[:, :, :] torques_all(self):
+        """Joints torques"""
+        return self.array[:, :, 5:8]
 
     cpdef double motor_torque(self, unsigned int iteration, unsigned int joint_i):
         """Joint velocity"""
@@ -405,8 +413,8 @@ cdef class ProprioceptionArray(NetworkArray3D):
         """Plot"""
         self.plot_positions(times)
         self.plot_velocities(times)
-        # self.plot_forces(times)
-        # self.plot_torques(times)
+        self.plot_forces(times)
+        self.plot_torques(times)
         # self.plot_motor_torques(times)
 
     def plot_positions(self, times):
@@ -435,6 +443,36 @@ cdef class ProprioceptionArray(NetworkArray3D):
         plt.legend()
         plt.xlabel("Times [s]")
         plt.ylabel("Joint velocity [rad/s]")
+        plt.grid(True)
+
+    def plot_forces(self, times):
+        """Plot ground reaction forces"""
+        plt.figure("Joints forces")
+        for joint_i in range(self.size[1]):
+            data = np.linalg.norm(np.asarray(self.forces_all()), axis=-1)
+            plt.plot(
+                times,
+                data[:len(times), joint_i],
+                label="Leg_{}".format(joint_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Joint force [N]")
+        plt.grid(True)
+
+    def plot_torques(self, times):
+        """Plot ground reaction torques"""
+        plt.figure("Joints torques")
+        for joint_i in range(self.size[1]):
+            data = np.linalg.norm(np.asarray(self.torques_all()), axis=-1)
+            plt.plot(
+                times,
+                data[:len(times), joint_i],
+                label="Leg_{}".format(joint_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Joint torque [Nm]")
         plt.grid(True)
 
 
