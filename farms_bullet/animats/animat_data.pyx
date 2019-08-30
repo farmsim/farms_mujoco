@@ -2,6 +2,7 @@
 
 import numpy as np
 cimport numpy as np
+import matplotlib.pyplot as plt
 
 
 cdef class AnimatData:
@@ -21,6 +22,11 @@ cdef class AnimatData:
         self.network.log(times, folder, extension)
         self.joints.log(times, folder, "joints", extension)
         self.sensors.log(times, folder, extension)
+
+    def plot(self, times):
+        """Plot"""
+        self.state.plot(times)
+        plt.show()
 
 
 cdef class NetworkParameters:
@@ -67,6 +73,10 @@ cdef class OscillatorNetworkState(NetworkArray3D):
         """Phases"""
         return self.array[iteration, 0, :self.n_oscillators]
 
+    def phases_all(self):
+        """Phases"""
+        return self.array[:, 0, :self.n_oscillators]
+
     def amplitudes(self, unsigned int iteration):
         """Amplitudes"""
         return self.array[iteration, 0, self.n_oscillators:]
@@ -78,6 +88,15 @@ cdef class OscillatorNetworkState(NetworkArray3D):
     def damplitudes(self, unsigned int iteration):
         """Amplitudes derivative"""
         return self.array[iteration, 1, self.n_oscillators:]
+
+    def plot(self, times):
+        """Plot"""
+        plt.figure("Network state phases")
+        for data in np.transpose(self.phases_all()):
+            plt.plot(times, data[:len(times)])
+        plt.xlabel("Times [s]")
+        plt.ylabel("Phases [rad]")
+        plt.grid(True)
 
 
 cdef class OscillatorArray(NetworkArray2D):

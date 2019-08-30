@@ -143,7 +143,8 @@ class Simulation:
 
         plot = kwargs.pop("plot", None)
         if plot:
-            self.logger.plot_all(times)
+            # self.logger.plot_all(times)
+            self.elements.animat.data.plot(times)
 
         log_path = kwargs.pop("log_path", None)
         if log_path:
