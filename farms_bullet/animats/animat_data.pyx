@@ -415,7 +415,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
         self.plot_velocities(times)
         self.plot_forces(times)
         self.plot_torques(times)
-        # self.plot_motor_torques(times)
+        self.plot_motor_torques(times)
 
     def plot_positions(self, times):
         """Plot ground reaction forces"""
@@ -424,7 +424,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
             plt.plot(
                 times,
                 np.asarray(self.positions_all())[:len(times), joint_i],
-                label="Leg_{}".format(joint_i)
+                label="Joint_{}".format(joint_i)
             )
         plt.legend()
         plt.xlabel("Times [s]")
@@ -438,7 +438,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
             plt.plot(
                 times,
                 np.asarray(self.velocities_all())[:len(times), joint_i],
-                label="Leg_{}".format(joint_i)
+                label="Joint_{}".format(joint_i)
             )
         plt.legend()
         plt.xlabel("Times [s]")
@@ -453,7 +453,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
             plt.plot(
                 times,
                 data[:len(times), joint_i],
-                label="Leg_{}".format(joint_i)
+                label="Joint_{}".format(joint_i)
             )
         plt.legend()
         plt.xlabel("Times [s]")
@@ -468,11 +468,25 @@ cdef class ProprioceptionArray(NetworkArray3D):
             plt.plot(
                 times,
                 data[:len(times), joint_i],
-                label="Leg_{}".format(joint_i)
+                label="Joint_{}".format(joint_i)
             )
         plt.legend()
         plt.xlabel("Times [s]")
         plt.ylabel("Joint torque [Nm]")
+        plt.grid(True)
+
+    def plot_motor_torques(self, times):
+        """Plot ground reaction forces"""
+        plt.figure("Joints motor torques")
+        for joint_i in range(self.size[1]):
+            plt.plot(
+                times,
+                np.asarray(self.motor_torques())[:len(times), joint_i],
+                label="Joint_{}".format(joint_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Joint torque [rad]")
         plt.grid(True)
 
 
