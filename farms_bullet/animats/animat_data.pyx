@@ -272,17 +272,82 @@ cdef class ContactsArray(NetworkArray3D):
     def plot(self, times):
         """Plot"""
         self.plot_ground_reaction_forces(times)
-        # self.plot_lateral_forces(times)
-        # self.plot_contacts_forces(times)
+        self.plot_friction_forces(times)
+        for ori in range(3):
+            self.plot_friction_forces_ori(times, ori=ori)
+        self.plot_total_forces(times)
 
     def plot_ground_reaction_forces(self, times):
         """Plot ground reaction forces"""
         plt.figure("Ground reaction forces")
         for sensor_i in range(self.size[1]):
             data = np.asarray(self.reaction_all(sensor_i))
-            plt.plot(times, np.linalg.norm(data, axis=-1)[:len(times)])
+            plt.plot(
+                times,
+                np.linalg.norm(data, axis=-1)[:len(times)],
+                label="Leg_{}".format(sensor_i)
+            )
         plt.xlabel("Times [s]")
-        plt.ylabel("Phases [rad]")
+        plt.ylabel("Forces [N]")
+        plt.grid(True)
+
+    def plot_friction_forces(self, times):
+        """Plot friction forces"""
+        plt.figure("Friction forces")
+        for sensor_i in range(self.size[1]):
+            data = np.asarray(self.friction_all(sensor_i))
+            plt.plot(
+                times,
+                np.linalg.norm(data, axis=-1)[:len(times)],
+                label="Leg_{}".format(sensor_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Forces [N]")
+        plt.grid(True)
+
+    def plot_friction_forces(self, times):
+        """Plot friction forces"""
+        plt.figure("Friction forces")
+        for sensor_i in range(self.size[1]):
+            data = np.asarray(self.friction_all(sensor_i))
+            plt.plot(
+                times,
+                np.linalg.norm(data, axis=-1)[:len(times)],
+                label="Leg_{}".format(sensor_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Forces [N]")
+        plt.grid(True)
+
+    def plot_friction_forces_ori(self, times, ori):
+        """Plot friction forces"""
+        plt.figure("Friction forces (ori={})".format(ori))
+        for sensor_i in range(self.size[1]):
+            data = np.asarray(self.friction_all(sensor_i))
+            plt.plot(
+                times,
+                data[:len(times), ori],
+                label="Leg_{}".format(sensor_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Forces [N]")
+        plt.grid(True)
+
+    def plot_total_forces(self, times):
+        """Plot contact forces"""
+        plt.figure("Contact total forces")
+        for sensor_i in range(self.size[1]):
+            data = np.asarray(self.total_all(sensor_i))
+            plt.plot(
+                times,
+                np.linalg.norm(data, axis=-1)[:len(times)],
+                label="Leg_{}".format(sensor_i)
+            )
+        plt.xlabel("Times [s]")
+        plt.ylabel("Forces [N]")
         plt.grid(True)
 
 
