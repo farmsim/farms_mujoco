@@ -1,5 +1,6 @@
 """Simulation"""
 
+import os
 import pickle
 
 import numpy as np
@@ -140,9 +141,20 @@ class Simulation:
             self.options.timestep
         )[:iteration]
 
+        # Log
         log_path = kwargs.pop("log_path", None)
         if log_path:
             log_extension = kwargs.pop("log_extension", None)
+            os.makedirs(log_path, exist_ok=True)
+            if log_extension == "npy":
+                save_function = np.save
+            elif log_extension in ("txt", "csv"):
+                save_function = np.savetxt
+            else:
+                raise Exception(
+                    "Format {} is not valid for logging array".format(log_extension)
+                )
+            save_function(log_path+"/times."+log_extension, times)
             self.elements.animat.data.log(
                 times,
                 folder=log_path,
@@ -160,6 +172,7 @@ class Simulation:
                 test = pickle.load(options)
                 print("Wrote animat options:\n{}".format(test))
 
+        # Plot
         plot = kwargs.pop("plot", None)
         if plot:
             self.elements.animat.data.plot(times)
