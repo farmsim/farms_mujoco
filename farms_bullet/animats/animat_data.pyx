@@ -486,7 +486,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
             )
         plt.legend()
         plt.xlabel("Times [s]")
-        plt.ylabel("Joint torque [rad]")
+        plt.ylabel("Joint torque [Nm]")
         plt.grid(True)
 
 
@@ -510,6 +510,10 @@ cdef class GpsArray(NetworkArray3D):
         """URDF position of a link"""
         return self.array[iteration, link_i, 7:10]
 
+    cpdef double[:, :, :] urdf_positions(self):
+        """URDF position of a link"""
+        return self.array[:, :, 7:10]
+
     cpdef double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i):
         """URDF orientation of a link"""
         return self.array[iteration, link_i, 10:14]
@@ -523,6 +527,22 @@ cdef class GpsArray(NetworkArray3D):
         return self.array[iteration, link_i, 17:20]
 
     def plot(self, times):
+        """Plot"""
+        self.plot_base_position(times, xaxis=0, yaxis=1)
+        # self.plot_base_velocity(times)
+
+    def plot_base_position(self, times, xaxis=0, yaxis=1):
+        """Plot"""
+        plt.figure("Base position")
+        for link_i in range(self.size[1]):
+            data = np.asarray(self.urdf_positions())[:len(times), link_i]
+            plt.plot(data[:, xaxis], data[:, yaxis])
+        plt.xlabel("Position [m]")
+        plt.ylabel("Position [m]")
+        plt.axis("equal")
+        plt.grid(True)
+
+    def plot_base_velocity(self, times, xaxis=0, yaxis=1):
         """Plot"""
         pass
 
