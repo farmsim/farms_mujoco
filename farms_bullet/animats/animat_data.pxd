@@ -53,8 +53,11 @@ cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
 
     cpdef double[:] reaction(self, unsigned int iteration, unsigned int sensor_i)
+    cpdef double[:, :] reaction_all(self, unsigned int sensor_i)
     cpdef double[:] friction(self, unsigned int iteration, unsigned int sensor_i)
+    cpdef double[:, :] friction_all(self, unsigned int sensor_i)
     cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i)
+    cpdef double[:, :] total_all(self, unsigned int sensor_i)
 
 
 cdef class ProprioceptionArray(NetworkArray3D):
@@ -62,11 +65,14 @@ cdef class ProprioceptionArray(NetworkArray3D):
 
     cpdef double position(self, unsigned int iteration, unsigned int joint_i)
     cpdef double[:] positions(self, unsigned int iteration)
+    cpdef double[:, :] positions_all(self)
     cpdef double velocity(self, unsigned int iteration, unsigned int joint_i)
     cpdef double[:] velocities(self, unsigned int iteration)
     cpdef double[:, :] velocities_all(self)
     cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i)
+    cpdef double[:, :, :] forces_all(self)
     cpdef double[:] torque(self, unsigned int iteration, unsigned int joint_i)
+    cpdef double[:, :, :] torques_all(self)
     cpdef double motor_torque(self, unsigned int iteration, unsigned int joint_i)
     cpdef double[:, :] motor_torques(self)
 
@@ -77,11 +83,15 @@ cdef class GpsArray(NetworkArray3D):
     cpdef public double[:] com_position(self, unsigned int iteration, unsigned int link_i)
     cpdef public double[:] com_orientation(self, unsigned int iteration, unsigned int link_i)
     cpdef public double[:] urdf_position(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:, :, :] urdf_positions(self)
     cpdef public double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i)
     cpdef public double[:] com_lin_velocity(self, unsigned int iteration, unsigned int link_i)
+    cpdef public double[:, :, :] com_lin_velocities(self)
     cpdef public double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i)
 
 
 cdef class HydrodynamicsArray(NetworkArray3D):
     """Hydrodynamics array"""
-    pass
+
+    cpdef public double[:, :, :] forces(self)
+    cpdef public double[:, :, :] torques(self)
