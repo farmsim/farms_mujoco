@@ -26,6 +26,7 @@ cdef class AnimatData:
     def plot(self, times):
         """Plot"""
         self.state.plot(times)
+        self.sensors.plot(times)
         plt.show()
 
 
@@ -81,6 +82,10 @@ cdef class OscillatorNetworkState(NetworkArray3D):
         """Amplitudes"""
         return self.array[iteration, 0, self.n_oscillators:]
 
+    def amplitudes_all(self):
+        """Phases"""
+        return self.array[:, 0, self.n_oscillators:]
+
     def dphases(self, unsigned int iteration):
         """Phases derivative"""
         return self.array[iteration, 1, :self.n_oscillators]
@@ -91,11 +96,25 @@ cdef class OscillatorNetworkState(NetworkArray3D):
 
     def plot(self, times):
         """Plot"""
+        self.plot_phases(times)
+        self.plot_amplitudes(times)
+
+    def plot_phases(self, times):
+        """Plot phases"""
         plt.figure("Network state phases")
         for data in np.transpose(self.phases_all()):
             plt.plot(times, data[:len(times)])
         plt.xlabel("Times [s]")
         plt.ylabel("Phases [rad]")
+        plt.grid(True)
+
+    def plot_amplitudes(self, times):
+        """Plot amplitudes"""
+        plt.figure("Network state amplitudes")
+        for data in np.transpose(self.amplitudes_all()):
+            plt.plot(times, data[:len(times)])
+        plt.xlabel("Times [s]")
+        plt.ylabel("Amplitudes [rad]")
         plt.grid(True)
 
 
@@ -210,6 +229,13 @@ cdef class Sensors:
         ]:
             data.log(times, folder, name, extension)
 
+    def plot(self, times):
+        """Plot"""
+        self.contacts.plot(times)
+        self.proprioception.plot(times)
+        self.gps.plot(times)
+        self.hydrodynamics.plot(times)
+
 
 cdef class ContactsArray(NetworkArray3D):
     """Sensor array"""
@@ -230,6 +256,10 @@ cdef class ContactsArray(NetworkArray3D):
     cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i):
         """Total force"""
         return self.array[iteration, sensor_i, 6:9]
+
+    def plot(self, times):
+        """Plot"""
+        pass
 
 
 cdef class ProprioceptionArray(NetworkArray3D):
@@ -276,6 +306,10 @@ cdef class ProprioceptionArray(NetworkArray3D):
         """Joint velocity"""
         return self.array[:, :, 8]
 
+    def plot(self, times):
+        """Plot"""
+        pass
+
 
 cdef class GpsArray(NetworkArray3D):
     """Gps array"""
@@ -309,6 +343,10 @@ cdef class GpsArray(NetworkArray3D):
         """CoM angular velocity of a link"""
         return self.array[iteration, link_i, 17:20]
 
+    def plot(self, times):
+        """Plot"""
+        pass
+
 
 cdef class HydrodynamicsArray(NetworkArray3D):
     """Hydrodynamics array"""
@@ -317,3 +355,7 @@ cdef class HydrodynamicsArray(NetworkArray3D):
     def from_parameters(cls, n_iterations, n_links):
         """From parameters"""
         return cls(np.zeros([n_iterations, n_links, 6]))
+
+    def plot(self, times):
+        """Plot"""
+        pass
