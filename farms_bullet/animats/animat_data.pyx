@@ -404,7 +404,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
     def plot(self, times):
         """Plot"""
         self.plot_positions(times)
-        # self.plot_velocities(times)
+        self.plot_velocities(times)
         # self.plot_forces(times)
         # self.plot_torques(times)
         # self.plot_motor_torques(times)
@@ -420,7 +420,21 @@ cdef class ProprioceptionArray(NetworkArray3D):
             )
         plt.legend()
         plt.xlabel("Times [s]")
-        plt.ylabel("Position [rad]")
+        plt.ylabel("Joint position [rad]")
+        plt.grid(True)
+
+    def plot_velocities(self, times):
+        """Plot ground reaction forces"""
+        plt.figure("Joints velocities")
+        for joint_i in range(self.size[1]):
+            plt.plot(
+                times,
+                np.asarray(self.velocities_all())[:len(times), joint_i],
+                label="Leg_{}".format(joint_i)
+            )
+        plt.legend()
+        plt.xlabel("Times [s]")
+        plt.ylabel("Joint velocity [rad/s]")
         plt.grid(True)
 
 
