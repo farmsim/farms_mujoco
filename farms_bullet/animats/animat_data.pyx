@@ -586,6 +586,7 @@ cdef class HydrodynamicsArray(NetworkArray3D):
     def plot(self, times):
         """Plot"""
         self.plot_forces(times)
+        self.plot_torques(times)
 
     def plot_forces(self, times):
         """Plot"""
@@ -599,4 +600,18 @@ cdef class HydrodynamicsArray(NetworkArray3D):
             )
         plt.xlabel("Time [s]")
         plt.ylabel("Forces [N]")
+        plt.grid(True)
+
+    def plot_torques(self, times):
+        """Plot"""
+        plt.figure("Hydrodynamic torques")
+        for link_i in range(self.size[1]):
+            data = np.asarray(self.torques())[:len(times), link_i]
+            plt.plot(
+                times,
+                np.linalg.norm(data, axis=-1),
+                label="Link_{}".format(link_i)
+            )
+        plt.xlabel("Time [s]")
+        plt.ylabel("Torques [Nm]")
         plt.grid(True)
