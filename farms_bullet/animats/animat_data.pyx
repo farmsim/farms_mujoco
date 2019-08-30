@@ -15,6 +15,13 @@ cdef class AnimatData:
         self.sensors = sensors
         self.iteration = 0
 
+    def log(self, times, folder, extension):
+        """Log"""
+        self.state.log(times, folder, "network_state", extension)
+        self.network.log(times, folder, extension)
+        self.joints.log(times, folder, "joints", extension)
+        self.sensors.log(times, folder, extension)
+
 
 cdef class NetworkParameters:
     """Network parameter"""
@@ -31,6 +38,16 @@ cdef class NetworkParameters:
         self.connectivity = connectivity
         self.contacts_connectivity = contacts_connectivity
         self.hydro_connectivity = hydro_connectivity
+
+    def log(self, times, folder, extension):
+        """Log"""
+        for data, name in [
+                [self.oscillators, "oscillators"],
+                [self.connectivity, "connectivity"],
+                [self.contacts_connectivity, "contacts_connectivity"],
+                [self.hydro_connectivity, "hydro_connectivity"]
+        ]:
+            data.log(times, folder, name, extension)
 
 
 cdef class OscillatorNetworkState(NetworkArray3D):
@@ -163,6 +180,16 @@ cdef class Sensors:
         self.proprioception = proprioception
         self.gps = gps
         self.hydrodynamics = hydrodynamics
+
+    def log(self, times, folder, extension):
+        """Log"""
+        for data, name in [
+                [self.contacts, "contacts"],
+                [self.proprioception, "proprioception"],
+                [self.gps, "gps"],
+                [self.hydrodynamics, "hydrodynamics"]
+        ]:
+            data.log(times, folder, name, extension)
 
 
 cdef class ContactsArray(NetworkArray3D):

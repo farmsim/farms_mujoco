@@ -148,7 +148,12 @@ class Simulation:
         log_path = kwargs.pop("log_path", None)
         if log_path:
             log_extension = kwargs.pop("log_extension", None)
-            self.logger.log_all(
+            # self.logger.log_all(
+            #     times,
+            #     folder=log_path,
+            #     extension=log_extension
+            # )
+            self.elements.animat.data.log(
                 times,
                 folder=log_path,
                 extension=log_extension
