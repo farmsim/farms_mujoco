@@ -42,6 +42,15 @@ cdef class OscillatorNetworkStateCy(NetworkArray3D):
         self._iteration = iteration
 
     @classmethod
+    def from_options(cls, state, animat_options, iteration=0):
+        """From options"""
+        return cls(
+            state=state,
+            n_oscillators=2*animat_options.morphology.n_joints(),
+            iteration=iteration
+        )
+
+    @classmethod
     def from_solver(cls, solver, n_oscillators):
         """From solver"""
         return cls(solver.state, n_oscillators, solver.iteration)
