@@ -8,7 +8,7 @@ cdef class AnimatDataCy:
     cdef public OscillatorNetworkStateCy state
     cdef public NetworkParametersCy network
     cdef public JointsArrayCy joints
-    cdef public SensorsCy sensors
+    cdef public SensorsDataCy sensors
     cdef public unsigned int iteration
 
 
@@ -41,8 +41,8 @@ cdef class JointsArrayCy(NetworkArray2D):
     pass
 
 
-cdef class SensorsCy:
-    """Sensors"""
+cdef class SensorsDataCy:
+    """SensorsData"""
     cdef public ContactsArrayCy contacts
     cdef public ProprioceptionArrayCy proprioception
     cdef public GpsArrayCy gps

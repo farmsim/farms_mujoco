@@ -156,8 +156,8 @@ cdef class JointsArrayCy(NetworkArray2D):
         self.array[0, n_body_joints:] = value
 
 
-cdef class SensorsCy:
-    """Sensors"""
+cdef class SensorsDataCy:
+    """SensorsData"""
 
     def __init__(
             self,
@@ -166,7 +166,7 @@ cdef class SensorsCy:
             GpsArrayCy gps=None,
             HydrodynamicsArrayCy hydrodynamics=None
     ):
-        super(SensorsCy, self).__init__()
+        super(SensorsDataCy, self).__init__()
         self.contacts = contacts
         self.proprioception = proprioception
         self.gps = gps

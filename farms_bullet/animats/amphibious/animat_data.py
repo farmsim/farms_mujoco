@@ -11,7 +11,7 @@ from ..animat_data import (
     OscillatorArray,
     ConnectivityArray,
     JointsArray,
-    Sensors,
+    SensorsData,
     ContactsArray,
     ProprioceptionArray,
     GpsArray,
@@ -94,7 +94,7 @@ class AmphibiousData(AnimatData):
             options,
             n_iterations
         )
-        sensors = Sensors(contacts, proprioception, gps, hydrodynamics)
+        sensors = SensorsData(contacts, proprioception, gps, hydrodynamics)
         return cls(state, network, joints, sensors)
 
 

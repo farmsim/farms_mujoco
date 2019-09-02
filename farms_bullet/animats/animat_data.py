@@ -9,7 +9,7 @@ from .animat_data_cy import (
     OscillatorArrayCy,
     ConnectivityArrayCy,
     JointsArrayCy,
-    SensorsCy,
+    SensorsDataCy,
     ContactsArrayCy,
     ProprioceptionArrayCy,
     GpsArrayCy,
@@ -86,8 +86,8 @@ class JointsArray(JointsArrayCy):
     """Oscillator array"""
 
 
-class Sensors(SensorsCy):
-    """Sensors"""
+class SensorsData(SensorsDataCy):
+    """SensorsData"""
 
     def log(self, times, folder, extension):
         """Log"""
