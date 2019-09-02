@@ -25,7 +25,6 @@ class AmphibiousOscillatorNetworkState(OscillatorNetworkState):
     @staticmethod
     def default_initial_state(options):
         """Default state"""
-        n_dof_legs = options.morphology.n_dof_legs
         n_joints = options.morphology.n_joints()
         return 1e-3*np.arange(5*n_joints) + np.concatenate([
             # 0*np.linspace(2*np.pi, 0, n_joints),
@@ -38,7 +37,6 @@ class AmphibiousOscillatorNetworkState(OscillatorNetworkState):
     @staticmethod
     def default_state(n_iterations, options):
         """Default state"""
-        n_dof_legs = options.morphology.n_dof_legs
         n_joints = options.morphology.n_joints()
         n_oscillators = 2*n_joints
         return AmphibiousOscillatorNetworkState.from_initial_state(
@@ -165,8 +163,6 @@ class AmphibiousOscillatorConnectivityArray(ConnectivityArray):
         # osc_options = options.control.network.oscillators
         conn_options = options.control.network.connectivity
         n_body_joints = options.morphology.n_joints_body
-        n_legs = options.morphology.n_legs
-        n_legs_dof = options.morphology.n_dof_legs
         connectivity = []
         body_amplitude = conn_options.weight_osc_body
         legs_amplitude_internal = conn_options.weight_osc_legs_internal
