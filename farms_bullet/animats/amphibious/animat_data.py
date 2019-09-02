@@ -4,14 +4,14 @@ import sys
 import numpy as np
 
 from .convention import bodyosc2index, legosc2index, contactleglink2index
-from ...animats.animat_data import (
+from ..animat_data import (
     OscillatorNetworkState,
     AnimatData,
     NetworkParameters,
     OscillatorArray,
     ConnectivityArray,
     JointsArray,
-    Sensors,
+    SensorsData,
     ContactsArray,
     ProprioceptionArray,
     GpsArray,
@@ -94,7 +94,7 @@ class AmphibiousData(AnimatData):
             options,
             n_iterations
         )
-        sensors = Sensors(contacts, proprioception, gps, hydrodynamics)
+        sensors = SensorsData(contacts, proprioception, gps, hydrodynamics)
         return cls(state, network, joints, sensors)
 
 
