@@ -1,7 +1,5 @@
 """Animat link"""
 
-import os
-
 import numpy as np
 import trimesh as tri
 import pybullet
@@ -74,7 +72,7 @@ class AnimatLink(dict):
             self.inertial_position = (
                 self.frame_position + (
                     self.scale*tri.load_mesh(
-                        os.path.abspath(self.filename)
+                        self.filename
                     ).center_mass
                 )
                 if self.geometry is pybullet.GEOM_MESH
