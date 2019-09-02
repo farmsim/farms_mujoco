@@ -158,7 +158,7 @@ class AmphibiousOscillatorConnectivityArray(ConnectivityArray):
     """Connectivity array"""
 
     @staticmethod
-    def set_options(options):
+    def set_options(options, verbose=False):
         """Walking parameters"""
         # osc_options = options.control.network.oscillators
         conn_options = options.control.network.connectivity
@@ -419,8 +419,9 @@ class AmphibiousOscillatorConnectivityArray(ConnectivityArray):
                                     + leg_i*np.pi
                                 )
                             ])
-        with np.printoptions(suppress=True, precision=3, threshold=sys.maxsize):
-            print("Oscillator connectivity:\n{}".format(np.array(connectivity)))
+        if verbose:
+            with np.printoptions(suppress=True, precision=3, threshold=sys.maxsize):
+                print("Oscillator connectivity:\n{}".format(np.array(connectivity)))
         return connectivity
 
     @classmethod
@@ -508,7 +509,7 @@ class AmphibiousContactsConnectivityArray(ConnectivityArray):
     """Amphibious contacts connectivity array"""
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, verbose=False):
         """Default"""
         connectivity = []
         options_conn = options.control.network.connectivity
@@ -541,7 +542,8 @@ class AmphibiousContactsConnectivityArray(ConnectivityArray):
                                     ),
                                     weight
                                 ])
-        print("Contacts connectivity:\n{}".format(np.array(connectivity)))
+        if verbose:
+            print("Contacts connectivity:\n{}".format(np.array(connectivity)))
         if not connectivity:
             connectivity = [[]]
         return cls(np.array(connectivity, dtype=np.float64))
@@ -551,7 +553,7 @@ class AmphibiousHydroConnectivityArray(ConnectivityArray):
     """Amphibious hydro connectivity array"""
 
     @classmethod
-    def from_options(cls, options):
+    def from_options(cls, options, verbose=False):
         """Default"""
         connectivity = []
         options_conn = options.control.network.connectivity
@@ -568,7 +570,8 @@ class AmphibiousHydroConnectivityArray(ConnectivityArray):
                     options_conn.weight_sens_hydro_freq,
                     options_conn.weight_sens_hydro_amp
                 ])
-        print("Hydro connectivity:\n{}".format(np.array(connectivity)))
+        if verbose:
+            print("Hydro connectivity:\n{}".format(np.array(connectivity)))
         return cls(np.array(connectivity, dtype=np.float64))
 
 

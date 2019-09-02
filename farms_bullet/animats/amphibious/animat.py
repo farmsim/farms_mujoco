@@ -356,7 +356,6 @@ class Amphibious(Animat):
                             joint_i=joint_i
                         )
                     ]
-                    print(self.options.morphology.n_legs)
                     self.joints[
                         self.convention.legjoint2name(
                             leg_i=leg_i,
