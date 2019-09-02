@@ -3,53 +3,53 @@
 from .array cimport NetworkArray2D, NetworkArray3D
 
 
-cdef class AnimatData:
+cdef class AnimatDataCy:
     """Network parameter"""
-    cdef public OscillatorNetworkState state
-    cdef public NetworkParameters network
-    cdef public JointsArray joints
-    cdef public Sensors sensors
+    cdef public OscillatorNetworkStateCy state
+    cdef public NetworkParametersCy network
+    cdef public JointsArrayCy joints
+    cdef public SensorsCy sensors
     cdef public unsigned int iteration
 
 
-cdef class NetworkParameters:
+cdef class NetworkParametersCy:
     """Network parameter"""
-    cdef public OscillatorArray oscillators
-    cdef public ConnectivityArray connectivity
-    cdef public ConnectivityArray contacts_connectivity
-    cdef public ConnectivityArray hydro_connectivity
+    cdef public OscillatorArrayCy oscillators
+    cdef public ConnectivityArrayCy connectivity
+    cdef public ConnectivityArrayCy contacts_connectivity
+    cdef public ConnectivityArrayCy hydro_connectivity
 
 
-cdef class OscillatorNetworkState(NetworkArray3D):
+cdef class OscillatorNetworkStateCy(NetworkArray3D):
     """Network state"""
     cdef public unsigned int n_oscillators
     cdef public unsigned int _iterations
 
 
-cdef class OscillatorArray(NetworkArray2D):
+cdef class OscillatorArrayCy(NetworkArray2D):
     """Oscillator array"""
     pass
 
 
-cdef class ConnectivityArray(NetworkArray2D):
+cdef class ConnectivityArrayCy(NetworkArray2D):
     """Connectivity array"""
     pass
 
 
-cdef class JointsArray(NetworkArray2D):
+cdef class JointsArrayCy(NetworkArray2D):
     """Oscillator array"""
     pass
 
 
-cdef class Sensors:
+cdef class SensorsCy:
     """Sensors"""
-    cdef public ContactsArray contacts
-    cdef public ProprioceptionArray proprioception
-    cdef public GpsArray gps
-    cdef public HydrodynamicsArray hydrodynamics
+    cdef public ContactsArrayCy contacts
+    cdef public ProprioceptionArrayCy proprioception
+    cdef public GpsArrayCy gps
+    cdef public HydrodynamicsArrayCy hydrodynamics
 
 
-cdef class ContactsArray(NetworkArray3D):
+cdef class ContactsArrayCy(NetworkArray3D):
     """Sensor array"""
 
     cpdef double[:] reaction(self, unsigned int iteration, unsigned int sensor_i)
@@ -60,7 +60,7 @@ cdef class ContactsArray(NetworkArray3D):
     cpdef double[:, :] total_all(self, unsigned int sensor_i)
 
 
-cdef class ProprioceptionArray(NetworkArray3D):
+cdef class ProprioceptionArrayCy(NetworkArray3D):
     """Proprioception array"""
 
     cpdef double position(self, unsigned int iteration, unsigned int joint_i)
@@ -77,7 +77,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
     cpdef double[:, :] motor_torques(self)
 
 
-cdef class GpsArray(NetworkArray3D):
+cdef class GpsArrayCy(NetworkArray3D):
     """Gps array"""
 
     cpdef public double[:] com_position(self, unsigned int iteration, unsigned int link_i)
@@ -90,7 +90,7 @@ cdef class GpsArray(NetworkArray3D):
     cpdef public double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i)
 
 
-cdef class HydrodynamicsArray(NetworkArray3D):
+cdef class HydrodynamicsArrayCy(NetworkArray3D):
     """Hydrodynamics array"""
 
     cpdef public double[:, :, :] forces(self)

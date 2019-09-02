@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from .convention import bodyosc2index, legosc2index, contactleglink2index
-from ..animat_data_cy import (
+from ..animat_data import (
     OscillatorNetworkState,
     AnimatData,
     NetworkParameters,
