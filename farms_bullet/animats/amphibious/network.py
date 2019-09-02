@@ -2,7 +2,7 @@
 
 import numpy as np
 from scipy import integrate
-from .convention import bodyosc2index, legosc2index  # legjoint2index
+from .convention import AmphibiousConvention
 from ...controllers.controller import ode_oscillators_sparse
 
 
@@ -19,23 +19,20 @@ class AmphibiousNetworkODE:
         n_body = self.animat_options.morphology.n_joints_body
         n_legs_dofs = self.animat_options.morphology.n_dof_legs
         self.groups = [None, None]
+        convention = AmphibiousConvention(animat_options)
         self.groups = [
             [
-                bodyosc2index(
+                convention.bodyosc2index(
                     joint_i=i,
-                    side=side,
-                    n_body_joints=animat_options.morphology.n_joints_body
+                    side=side
                 )
                 for i in range(n_body)
             ] + [
-                legosc2index(
+                convention.legosc2index(
                     leg_i=leg_i,
                     side_i=side_i,
                     joint_i=joint_i,
-                    side=side,
-                    n_legs=animat_options.morphology.n_legs,
-                    n_body_joints=animat_options.morphology.n_joints_body,
-                    n_legs_dof=animat_options.morphology.n_dof_legs
+                    side=side
                 )
                 for leg_i in range(self.animat_options.morphology.n_legs//2)
                 for side_i in range(2)

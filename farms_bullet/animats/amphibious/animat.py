@@ -13,12 +13,7 @@ from ...sensors.sensors import (
     JointsStatesSensor,
     ContactsSensors
 )
-from .convention import (
-    leglink2index,
-    leglink2name,
-    legjoint2index,
-    legjoint2name
-)
+from .convention import AmphibiousConvention
 
 from .animat_data import (
     AmphibiousOscillatorNetworkState,
@@ -35,13 +30,12 @@ class Amphibious(Animat):
         super(Amphibious, self).__init__(options=options)
         self.timestep = timestep
         self.n_iterations = iterations
+        self.convention = AmphibiousConvention(self.options)
         self.feet_names = [
-            leglink2name(
+            self.convention.leglink2name(
                 leg_i=leg_i,
                 side_i=side_i,
-                joint_i=3,
-                n_legs=self.options.morphology.n_legs,
-                n_legs_dof=self.options.morphology.n_dof_legs
+                joint_i=3
             )
             for leg_i in range(options.morphology.n_legs//2)
             for side_i in range(2)
@@ -203,14 +197,7 @@ class Amphibious(Animat):
                 position[1] = 0.5*sign*leg_length
                 # Shoulder1
                 links[
-                    leglink2index(
-                        leg_i,
-                        side,
-                        0,
-                        n_legs=self.options.morphology.n_legs,
-                        n_body_links=self.options.morphology.n_links_body(),
-                        n_legs_dof=self.options.morphology.n_dof_legs
-                    )
+                    self.convention.leglink2index(leg_i, side, 0)
                 ] = AnimatLink(
                     self.units,
                     geometry=pybullet.GEOM_SPHERE,
@@ -227,27 +214,13 @@ class Amphibious(Animat):
                 )
                 # Shoulder2
                 links[
-                    leglink2index(
-                        leg_i,
-                        side,
-                        1,
-                        n_legs=self.options.morphology.n_legs,
-                        n_body_links=self.options.morphology.n_links_body(),
-                        n_legs_dof=self.options.morphology.n_dof_legs
-                    )
+                    self.convention.leglink2index(leg_i, side, 1)
                 ] = AnimatLink(
                     self.units,
                     geometry=pybullet.GEOM_SPHERE,
                     radius=1.5*leg_radius,
                     parent=links[
-                        leglink2index(
-                            leg_i,
-                            side,
-                            0,
-                            n_legs=self.options.morphology.n_legs,
-                            n_body_links=self.options.morphology.n_links_body(),
-                            n_legs_dof=self.options.morphology.n_dof_legs
-                        )
+                        self.convention.leglink2index(leg_i, side, 0)
                     ].collision,
                     joint_axis=[-sign, 0, 0],
                     mass=0,
@@ -255,14 +228,7 @@ class Amphibious(Animat):
                 )
                 # Upper leg
                 links[
-                    leglink2index(
-                        leg_i,
-                        side,
-                        2,
-                        n_legs=self.options.morphology.n_legs,
-                        n_body_links=self.options.morphology.n_links_body(),
-                        n_legs_dof=self.options.morphology.n_dof_legs
-                    )
+                    self.convention.leglink2index(leg_i, side, 2)
                 ] = AnimatLink(
                     self.units,
                     geometry=pybullet.GEOM_CAPSULE,
@@ -271,27 +237,13 @@ class Amphibious(Animat):
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     parent=links[
-                        leglink2index(
-                            leg_i,
-                            side,
-                            1,
-                            n_legs=self.options.morphology.n_legs,
-                            n_body_links=self.options.morphology.n_links_body(),
-                            n_legs_dof=self.options.morphology.n_dof_legs
-                        )
+                        self.convention.leglink2index(leg_i, side, 1)
                     ].collision,
                     joint_axis=[0, 1, 0]
                 )
                 # Lower leg
                 links[
-                    leglink2index(
-                        leg_i,
-                        side,
-                        3,
-                        n_legs=self.options.morphology.n_legs,
-                        n_body_links=self.options.morphology.n_links_body(),
-                        n_legs_dof=self.options.morphology.n_dof_legs
-                    )
+                    self.convention.leglink2index(leg_i, side, 3)
                 ] = AnimatLink(
                     self.units,
                     geometry=pybullet.GEOM_CAPSULE,
@@ -301,14 +253,7 @@ class Amphibious(Animat):
                     frame_position=position,
                     frame_orientation=[np.pi/2, 0, 0],
                     parent=links[
-                        leglink2index(
-                            leg_i,
-                            side,
-                            2,
-                            n_legs=self.options.morphology.n_legs,
-                            n_body_links=self.options.morphology.n_links_body(),
-                            n_legs_dof=self.options.morphology.n_dof_legs
-                        )
+                        self.convention.leglink2index(leg_i, side, 2)
                     ].collision,
                     joint_axis=[-sign, 0, 0],
                     **(
@@ -375,13 +320,10 @@ class Amphibious(Animat):
         for leg_i in range(self.options.morphology.n_legs//2):
             for side_i in range(2):
                 for part_i in range(self.options.morphology.n_dof_legs):
-                    index = leglink2index(
+                    index = self.convention.leglink2index(
                         leg_i,
                         side_i,
-                        part_i,
-                        n_legs=self.options.morphology.n_legs,
-                        n_body_links=self.options.morphology.n_links_body(),
-                        n_legs_dof=self.options.morphology.n_dof_legs
+                        part_i
                     )
                     joint_info = pybullet.getJointInfo(
                         self.identity,
@@ -402,40 +344,30 @@ class Amphibious(Animat):
             for side in range(2):
                 for joint_i in range(self.options.morphology.n_dof_legs):
                     self.links[
-                        leglink2name(
+                        self.convention.leglink2name(
                             leg_i=leg_i,
                             side_i=side,
-                            joint_i=joint_i,
-                            n_legs=self.options.morphology.n_legs,
-                            n_legs_dof=self.options.morphology.n_dof_legs
+                            joint_i=joint_i
                         )
                     ] = self.joints_order[
-                        leglink2index(
+                        self.convention.leglink2index(
                             leg_i=leg_i,
                             side_i=side,
-                            joint_i=joint_i,
-                            n_legs=self.options.morphology.n_legs,
-                            n_body_links=self.options.morphology.n_links_body(),
-                            n_legs_dof=self.options.morphology.n_dof_legs
+                            joint_i=joint_i
                         )
                     ]
                     print(self.options.morphology.n_legs)
                     self.joints[
-                        legjoint2name(
+                        self.convention.legjoint2name(
                             leg_i=leg_i,
                             side_i=side,
-                            joint_i=joint_i,
-                            n_legs=self.options.morphology.n_legs,
-                            n_legs_dof=self.options.morphology.n_dof_legs
+                            joint_i=joint_i
                         )
                     ] = self.joints_order[
-                        legjoint2index(
+                        self.convention.legjoint2index(
                             leg_i=leg_i,
                             side_i=side,
-                            joint_i=joint_i,
-                            n_legs=self.options.morphology.n_legs,
-                            n_body_joints=self.options.morphology.n_joints_body,
-                            n_legs_dof=self.options.morphology.n_dof_legs
+                            joint_i=joint_i
                         )
                     ]
         self.print_information()
@@ -487,13 +419,10 @@ class Amphibious(Animat):
             [
                 "link_leg_{}_{}_{}".format(leg_i, side, joint_i),
                 # 12 + leg_i*2*4 + side_i*4 + joint_i,
-                leglink2index(
+                self.convention.leglink2index(
                     leg_i,
                     side_i,
-                    joint_i,
-                    n_legs=self.options.morphology.n_legs,
-                    n_body_links=self.options.morphology.n_links_body(),
-                    n_legs_dof=self.options.morphology.n_dof_legs
+                    joint_i
                 )+1,
                 self.links["link_leg_{}_{}_{}".format(
                     leg_i,
