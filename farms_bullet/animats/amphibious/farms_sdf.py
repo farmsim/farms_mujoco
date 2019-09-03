@@ -3,8 +3,10 @@
 import xml.etree.cElementTree as ET
 import xml.dom.minidom
 
+from ...simulations.simulation_options import Options
 
-class ModelSDF:
+
+class ModelSDF(Options):
     """Farms SDF"""
 
     def __init__(self, name="animat"):
@@ -49,7 +51,7 @@ class ModelSDF:
         # tree.write("filename.sdf")
 
 
-class Link:
+class Link(Options):
     """Link"""
 
     def __init__(self, name="base_link"):
@@ -67,7 +69,7 @@ class Link:
         self.visual.xml(link)
 
 
-class Inertial:
+class Inertial(Options):
     """Inertial"""
 
     def __init__(self, mass=1, inertias=None):
@@ -91,7 +93,7 @@ class Inertial:
             inertia.text = self.inertias[i]
 
 
-class Collision:
+class Collision(Options):
     """Collision"""
 
     def __init__(self, name="base_link"):
@@ -112,7 +114,7 @@ class Collision:
         self.geometry.xml(collision)
 
 
-class Visual:
+class Visual(Options):
     """Visual"""
 
     def __init__(self, name="base_link"):
@@ -133,7 +135,7 @@ class Visual:
         self.geometry.xml(visual)
 
 
-class Box:
+class Box(Options):
     """Box"""
 
     def __init__(self):
@@ -148,7 +150,7 @@ class Box:
         size.text = self.size
 
 
-class Joint:
+class Joint(Options):
     """Joint"""
 
     def __init__(self, name, joint_type, parent, child):
@@ -172,7 +174,7 @@ class Joint:
         self.axis.xml(joint)
 
 
-class Axis:
+class Axis(Options):
     """Axis"""
 
     def __init__(self):
