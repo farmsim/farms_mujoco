@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Run salamander simulation with bullet"""
+"""Run centipede simulation with bullet"""
 
 import time
 import matplotlib.pyplot as plt
-from farms_bullet.experiments.salamander.simulation import main as run_sim
+from farms_bullet.experiments.centipede.simulation import main as run_sim
 from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
-from farms_bullet.experiments.salamander.animat_data import SalamanderOscillatorConnectivityArray
+
 
 def main():
     """Main"""
@@ -20,7 +20,7 @@ def main():
     # Simulation options
     simulation_options = SimulationOptions.with_clargs()
     simulation_options.units.meters = 1
-    simulation_options.units.seconds = 1
+    simulation_options.units.seconds = 1000
     simulation_options.units.kilograms = 1
     # Run simulation
     run_sim(
@@ -55,5 +55,3 @@ if __name__ == '__main__':
     profile()
     # pycall()
     print("Total simulation time: {} [s]".format(time.time() - TIC))
-    SalamanderOscillatorConnectivityArray.show_connectivity()
-

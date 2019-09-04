@@ -1,13 +1,13 @@
-"""GPS for salamander animat"""
+"""GPS for amphibious animat"""
 
 from ...sensors.sensors import LinksStatesSensor
 
 
-class SalamanderGPS(LinksStatesSensor):
-    """Salamander GPS"""
+class AmphibiousGPS(LinksStatesSensor):
+    """Amphibious GPS"""
 
     def __init__(self, array, animat_id, links, options, units):
-        super(SalamanderGPS, self).__init__(
+        super(AmphibiousGPS, self).__init__(
             array=array,
             animat_id=animat_id,
             links=links,
@@ -19,5 +19,7 @@ class SalamanderGPS(LinksStatesSensor):
         """Update sensor"""
         if self.options.collect_gps:
             self.collect(iteration, self.links)
-        if self.options.control.drives.forward > 3:
+        elif self.options.control.drives.forward > 3:
             self.collect(iteration, self.links[:12])
+        else:
+            self.collect(iteration, [self.links[0]])

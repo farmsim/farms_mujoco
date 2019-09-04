@@ -71,7 +71,9 @@ class AnimatLink(dict):
         if self.inertial_position is None:
             self.inertial_position = (
                 self.frame_position + (
-                    self.scale*tri.load_mesh(self.filename).center_mass
+                    self.scale*tri.load_mesh(
+                        self.filename
+                    ).center_mass
                 )
                 if self.geometry is pybullet.GEOM_MESH
                 else self.frame_position
@@ -120,7 +122,6 @@ class AnimatLink(dict):
                 **visual_options
             )
         )
-        print(self.visual)
 
         # Joint
         self.joint_type = kwargs.pop("joint_type", pybullet.JOINT_REVOLUTE)

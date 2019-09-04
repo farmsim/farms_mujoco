@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Run salamander simulation with bullet"""
+"""Run polypterus simulation with bullet"""
 
 import time
 import matplotlib.pyplot as plt
-from farms_bullet.experiments.salamander.simulation import main as run_sim
+from farms_bullet.experiments.polypterus.simulation import main as run_sim
 from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
-from farms_bullet.experiments.salamander.animat_data import SalamanderOscillatorConnectivityArray
+
 
 def main():
     """Main"""
@@ -55,5 +55,3 @@ if __name__ == '__main__':
     profile()
     # pycall()
     print("Total simulation time: {} [s]".format(time.time() - TIC))
-    SalamanderOscillatorConnectivityArray.show_connectivity()
-

@@ -91,7 +91,7 @@ class FlooredArena(Arena):
 
     def __init__(self, position=None):
         super(FlooredArena, self).__init__(
-            [FloorURDF(position if position is not None else [0, 0, -0.1])]
+            [FloorURDF(position if position is not None else [0, 0, 0])]
         )
 
     @property

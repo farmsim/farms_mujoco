@@ -12,7 +12,7 @@ from .sensors import (
     LinksStatesSensor,
     LinkStateSensor
 )
-from ..experiments.salamander.sensors import SalamanderGPS
+from ..animats.amphibious.sensors import AmphibiousGPS
 
 
 def global2local(vector_global, orientation):
@@ -488,7 +488,7 @@ class SensorsLogger(dict):
         JointsStatesSensor: JointsStatesLogger,
         ContactsSensors: ContactsLogger,
         ContactSensor: ContactLogger,
-        SalamanderGPS: LinksStatesLogger,
+        AmphibiousGPS: LinksStatesLogger,
         LinksStatesSensor: LinksStatesLogger,
         LinkStateSensor: LinkStateLogger
     }

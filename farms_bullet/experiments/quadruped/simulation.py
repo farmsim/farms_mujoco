@@ -1,20 +1,20 @@
-"""Snake simulation"""
+"""Quadruped simulation"""
 
 from ...animats.amphibious.simulation import AmphibiousSimulation
-from .animat import Snake
+from .animat import Quadruped
 
 
-class SnakeSimulation(AmphibiousSimulation):
-    """Salamander simulation"""
+class QuadrupedSimulation(AmphibiousSimulation):
+    """Quadruped simulation"""
 
     def __init__(self, simulation_options, animat_options, *args, **kwargs):
-        animat = Snake(
+        animat = Quadruped(
             animat_options,
             simulation_options.timestep,
             simulation_options.n_iterations,
             simulation_options.units
         )
-        super(SnakeSimulation, self).__init__(
+        super(QuadrupedSimulation, self).__init__(
             simulation_options,
             animat,
             *args,
@@ -29,12 +29,11 @@ def main(simulation_options=None, animat_options=None):
     if not simulation_options:
         simulation_options = SimulationOptions.with_clargs()
     if not animat_options:
-        animat_options = SalamanderOptions()
-        animat_options.morphology.n_joints_body = 12
+        animat_options = AmphibiousOptions()
 
     # Setup simulation
     print("Creating simulation")
-    sim = SnakeSimulation(
+    sim = QuadrupedSimulation(
         simulation_options=simulation_options,
         animat_options=animat_options
     )
@@ -68,6 +67,11 @@ def main_parallel():
     # Run simulation
     pool.map(main, [sim_options, sim_options])
     print("Done")
+
+
+if __name__ == '__main__':
+    # main_parallel()
+    main()
 
 
 if __name__ == '__main__':

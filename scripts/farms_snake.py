@@ -1,24 +1,33 @@
 #!/usr/bin/env python3
 """Run snake simulation with bullet"""
 
+import time
 import matplotlib.pyplot as plt
 from farms_bullet.experiments.snake.simulation import main as run_sim
-from farms_bullet.experiments.snake.animat_options import SnakeOptions
+from farms_bullet.experiments.salamander.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
 
 def main():
     """Main"""
-    animat_options = SnakeOptions()
-    # animat_options = SnakeOptions(
-    #     frequency=1.7,
-    #     body_stand_amplitude=0.42
-    # )
+    # Animat options
+    animat_options = AmphibiousOptions(
+        # collect_gps=True,
+        # show_hydrodynamics=True,
+        scale=1
+    )
+    # animat_options.control.drives.forward = 4
+    # Simulation options
     simulation_options = SimulationOptions.with_clargs()
+    simulation_options.units.meters = 1
+    simulation_options.units.seconds = 1
+    simulation_options.units.kilograms = 1
+    # Run simulation
     run_sim(
         simulation_options=simulation_options,
         animat_options=animat_options
     )
+    # Show results
     plt.show()
 
 
@@ -41,6 +50,8 @@ def pycall():
 
 
 if __name__ == '__main__':
+    TIC = time.time()
     # main()
     profile()
     # pycall()
+    print("Total simulation time: {} [s]".format(time.time() - TIC))

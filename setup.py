@@ -25,12 +25,20 @@ setup(
     #     "Topic :: Utilities",
     #     "License :: OSI Approved :: BSD License",
     # ],
-    scripts=["scripts/farms_salamander.py"],
+    scripts=[
+        "scripts/farms_salamander.py",
+        "scripts/farms_snake.py",
+        "scripts/farms_centipede.py",
+        "scripts/farms_polypterus.py",
+        "scripts/farms_quadruped.py",
+        "scripts/farms_view_mo_salamander.py"
+    ],
     # package_data={"farms_bullet": [
     #     "farms_bullet/templates/*",
     #     "farms_bullet/config/*"
     # ]},
     include_package_data=True,
+    include_dirs=[np.get_include()],
     ext_modules=cythonize(
         [
             Extension(

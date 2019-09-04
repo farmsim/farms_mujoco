@@ -1,20 +1,20 @@
-"""Snake simulation"""
+"""Centipede simulation"""
 
 from ...animats.amphibious.simulation import AmphibiousSimulation
-from .animat import Snake
+from .animat import Centipede
 
 
-class SnakeSimulation(AmphibiousSimulation):
+class CentipedeSimulation(AmphibiousSimulation):
     """Salamander simulation"""
 
     def __init__(self, simulation_options, animat_options, *args, **kwargs):
-        animat = Snake(
+        animat = Centipede(
             animat_options,
             simulation_options.timestep,
             simulation_options.n_iterations,
             simulation_options.units
         )
-        super(SnakeSimulation, self).__init__(
+        super(CentipedeSimulation, self).__init__(
             simulation_options,
             animat,
             *args,
@@ -34,7 +34,7 @@ def main(simulation_options=None, animat_options=None):
 
     # Setup simulation
     print("Creating simulation")
-    sim = SnakeSimulation(
+    sim = CentipedeSimulation(
         simulation_options=simulation_options,
         animat_options=animat_options
     )
