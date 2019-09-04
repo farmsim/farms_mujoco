@@ -3,42 +3,38 @@
 import xml.etree.cElementTree as ET
 import xml.dom.minidom
 
+import numpy as np
+import trimesh as tri
+
 from ...simulations.simulation_options import Options
 
 
 class ModelSDF(Options):
     """Farms SDF"""
 
-    def __init__(self, name="animat"):
+    def __init__(self, name="animat", **kwargs):
         super(ModelSDF, self).__init__()
         self.name = name
-        self.pose = "0 0 0 0 0 0"
-        self.links = [
-            Link(name="base_link")
-        ]
-        self.joints = [
-            Joint(
-                name="joint_0",
-                joint_type="revolute",
-                parent=self.links[0],
-                child=self.links[0]
-            )
-        ]
-        self.xml()
+        self.pose = np.zeros(6)
+        self.links = kwargs.pop("links", [])
+        self.joints = kwargs.pop("joints", [])
+        print(self.xml_str())
 
     def xml(self):
         """xml"""
         sdf = ET.Element("sdf", version="1.5")
         model = ET.SubElement(sdf, "model", name=self.name)
-
         pose = ET.SubElement(model, "pose")
-        pose.text = self.pose
+        pose.text = " ".join([str(element) for element in self.pose])
         for link in self.links:
             link.xml(model)
         for joint in self.joints:
             joint.xml(model)
+        return sdf
 
-        tree = ET.ElementTree(sdf)
+    def xml_str(self):
+        """xml string"""
+        sdf = self.xml()
         xml_str = ET.tostring(
             sdf,
             encoding='utf8',
@@ -46,24 +42,48 @@ class ModelSDF(Options):
         ).decode('utf8')
         # dom = xml.dom.minidom.parse(xml_fname)
         dom = xml.dom.minidom.parseString(xml_str)
-        pretty_xml_as_string = dom.toprettyxml(indent=2*" ")
-        print(pretty_xml_as_string)
-        # tree.write("filename.sdf")
+        return dom.toprettyxml(indent=2*" ")
+
+    def write(self, filename="animat.sdf"):
+        """Write SDF to file"""
+        # ET.ElementTree(self.xml()).write(filename)
+        with open(filename, "w+") as sdf_file:
+            sdf_file.write(self.xml_str())
 
 
 class Link(Options):
     """Link"""
 
-    def __init__(self, name="base_link"):
+    def __init__(self, name, inertial, collision, visual):
         super(Link, self).__init__()
         self.name = name
-        self.inertial = Inertial()
-        self.collision = Collision()
-        self.visual = Visual()
+        self.inertial = inertial
+        self.collision = collision
+        self.visual = visual
+
+    @classmethod
+    def box(cls, name, **kwargs):
+        """Box"""
+        return cls(
+            name,
+            inertial=Inertial.box(**kwargs),
+            collision=Collision.box(name, **kwargs),
+            visual=Visual.box(name, **kwargs)
+        )
+
+    @classmethod
+    def from_mesh(cls, name, mesh):
+        """From mesh"""
+        return cls(
+            name,
+            inertial=Inertial.from_mesh(mesh),
+            collision=Collision.from_mesh(name, mesh),
+            visual=Visual.from_mesh(name, mesh)
+        )
 
     def xml(self, model):
         """xml"""
-        link = ET.SubElement(model, "link")
+        link = ET.SubElement(model, "link", name=self.name)
         self.inertial.xml(link)
         self.collision.xml(link)
         self.visual.xml(link)
@@ -76,8 +96,51 @@ class Inertial(Options):
         super(Inertial, self).__init__()
         self.mass = str(mass)
         self.inertias = inertias
-        if self.inertias is None:
-            self.inertias = ["1"]*6
+
+    @classmethod
+    def box(cls, size, **kwargs):
+        """Box"""
+        scale = kwargs.pop("scale", [1, 1, 1])
+        density = kwargs.pop("density", 1000)
+        volume = (
+            scale[0]*scale[1]*scale[2]
+            *size[0]*size[1]*size[2]
+        )
+        mass = volume*density
+        return cls(
+            mass=mass,
+            inertias=[
+                1/12*mass*(size[1]**2 + size[2]**2),
+                0,
+                0,
+                1/12*mass*(size[0]**2 + size[2]**2),
+                0,
+                1/12*mass*(size[0]**2 + size[1]**2)
+            ]
+        )
+
+    @classmethod
+    def from_mesh(cls, mesh, **kwargs):
+        """From mesh"""
+        scale = kwargs.pop("scale", [1, 1, 1])
+        density = kwargs.pop("density", 1000)
+        _mesh = tri.load_mesh(mesh)
+        volume = (
+            scale[0]*scale[1]*scale[2]
+            *_mesh.volume
+        )
+        inertia = _mesh.moment_inertia
+        return cls(
+            mass=volume*density,
+            inertias=[
+                inertia[0, 0],
+                inertia[0, 1],
+                inertia[0, 2],
+                inertia[1, 1],
+                inertia[1, 2],
+                inertia[2, 2]
+            ]
+        )
 
     def xml(self, link):
         """xml"""
@@ -90,77 +153,113 @@ class Inertial(Options):
             for name in ["ixx", "ixy", "ixz", "iyy", "iyz", "izz"]
         ]
         for i, inertia in enumerate(inertias):
-            inertia.text = self.inertias[i]
+            inertia.text = str(self.inertias[i])
 
 
-class Collision(Options):
+class Shape(Options):
+    """Shape"""
+
+    def __init__(self, name, geometry, suffix):
+        super(Shape, self).__init__()
+        self.name = "{}_{}".format(name, suffix)
+        self.geometry = geometry
+        self.suffix = suffix
+        self.pose = np.zeros(6)
+
+    @classmethod
+    def box(cls, name, size, **kwargs):
+        """Box"""
+        return cls(
+            name=name,
+            geometry=Box(size),
+            **kwargs
+        )
+
+    @classmethod
+    def from_mesh(cls, name, mesh, **kwargs):
+        """From mesh"""
+        return cls(
+            name=name,
+            geometry=Mesh(mesh),
+            **kwargs
+        )
+
+    def xml(self, link):
+        """xml"""
+        shape = ET.SubElement(
+            link,
+            self.suffix,
+            name=self.name
+        )
+        pose = ET.SubElement(shape, "pose")
+        pose.text = " ".join([str(element) for element in self.pose])
+        self.geometry.xml(shape)
+
+
+class Collision(Shape):
     """Collision"""
 
-    def __init__(self, name="base_link"):
-        super(Collision, self).__init__()
-        self.name = "{}_collision".format(name)
-        self.pose = "0 0 0 0 0 0"
-        self.geometry = Box()
+    SUFFIX = "collision"
 
-    def xml(self, link):
-        """xml"""
-        collision = ET.SubElement(
-            link,
-            "collision",
-            name=self.name
-        )
-        pose = ET.SubElement(collision, "pose")
-        pose.text = self.pose
-        self.geometry.xml(collision)
+    def __init__(self, name, **kwargs):
+        super(Collision, self).__init__(name=name, suffix=self.SUFFIX, **kwargs)
 
 
-class Visual(Options):
+class Visual(Shape):
     """Visual"""
 
-    def __init__(self, name="base_link"):
-        super(Visual, self).__init__()
-        self.name = "{}_visual".format(name)
-        self.pose = "0 0 0 0 0 0"
-        self.geometry = Box()
+    SUFFIX = "visual"
 
-    def xml(self, link):
-        """xml"""
-        visual = ET.SubElement(
-            link,
-            "visual",
-            name=self.name
-        )
-        pose = ET.SubElement(visual, "pose")
-        pose.text = self.pose
-        self.geometry.xml(visual)
+    def __init__(self, name, **kwargs):
+        super(Visual, self).__init__(name=name, suffix=self.SUFFIX, **kwargs)
 
 
 class Box(Options):
     """Box"""
 
-    def __init__(self):
+    def __init__(self, size):
         super(Box, self).__init__()
-        self.size = "0 0 0"
+        self.size = size
 
     def xml(self, parent):
         """xml"""
         geometry = ET.SubElement(parent, "geometry")
         box = ET.SubElement(geometry, "box")
         size = ET.SubElement(box, "size")
-        size.text = self.size
+        size.text = " ".join([str(element) for element in self.size])
+
+
+class Mesh(Options):
+    """Mesh"""
+
+    def __init__(self, uri):
+        super(Mesh, self).__init__()
+        self.uri = uri
+        self.scale = "1 1 1"
+
+    def xml(self, parent):
+        """xml"""
+        geometry = ET.SubElement(parent, "geometry")
+        mesh = ET.SubElement(geometry, "mesh")
+        uri = ET.SubElement(mesh, "uri")
+        uri.text = self.uri
+        scale = ET.SubElement(mesh, "scale")
+        scale.text = self.scale
 
 
 class Joint(Options):
     """Joint"""
 
-    def __init__(self, name, joint_type, parent, child):
+    def __init__(self, name, joint_type, parent, child, **kwargs):
         super(Joint, self).__init__()
         self.name = name
         self.type = joint_type
         self.parent = parent.name
         self.child = child.name
-        self.pose = "0 0 0 0 0 0"
-        self.axis = Axis()
+        self.pose = np.zeros(6)
+        self.axis = kwargs.pop("axis", None)
+        if self.axis is not None:
+            self.axis = Axis(xyz=self.axis, **kwargs)
 
     def xml(self, model):
         """xml"""
@@ -170,20 +269,35 @@ class Joint(Options):
         child = ET.SubElement(joint, "child")
         child.text = self.child
         pose = ET.SubElement(joint, "pose")
-        pose.text = self.pose
-        self.axis.xml(joint)
+        pose.text = " ".join([str(element) for element in self.pose])
+        if self.axis:
+            self.axis.xml(joint)
 
 
 class Axis(Options):
     """Axis"""
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         super(Axis, self).__init__()
-        self.initial_position = "0"
-        self.xyz = "0 0 1"
+        self.initial_position = kwargs.pop("initial_position", None)
+        self.xyz = kwargs.pop("xyz", [0, 0, 0])
+        self.limits = kwargs.pop("limits", None)
 
     def xml(self, joint):
         """xml"""
         axis = ET.SubElement(joint, "axis")
+        if self.initial_position:
+            initial_position = ET.SubElement(axis, "initial_position")
+            initial_position.text = " ".join(self.initial_position)
         xyz = ET.SubElement(axis, "xyz")
-        xyz.text = self.xyz
+        xyz.text = " ".join([str(element) for element in self.xyz])
+        if self.limits is not None:
+            limit = ET.SubElement(axis, "limit")
+            lower = ET.SubElement(limit, "lower")
+            lower.text = str(self.limits[0])
+            upper = ET.SubElement(limit, "upper")
+            upper.text = str(self.limits[1])
+            effort = ET.SubElement(limit, "effort")
+            effort.text = str(self.limits[2])
+            velocity = ET.SubElement(limit, "velocity")
+            velocity.text = str(self.limits[3])
