@@ -3,17 +3,28 @@
 import numpy as np
 import pybullet
 
+from ..simulations.simulation_options import SimulationUnitScaling
 
-def viscous_swimming(iteration, data_gps, data_hydrodynamics, model, links):
+
+def viscous_swimming(
+        iteration,
+        data_gps,
+        data_hydrodynamics,
+        model,
+        links,
+        **kwargs
+):
     """Viscous swimming"""
-    # Swimming
-    force_coefficients = np.array([-1e-1, -1e0, -1e0])
-    torque_coefficients = np.array([-1e-2, -1e-2, -1e-2])
+    units = kwargs.pop("units", SimulationUnitScaling())
+    force_coefficients, torque_coefficients = kwargs.pop(
+        "coefficients",
+        [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
+    )
     for link_i, link in links:
         ori, lin_velocity, ang_velocity = (
-            data_gps[iteration, link_i, 3:7],
-            data_gps[iteration, link_i, 7:10],
-            data_gps[iteration, link_i, 10:13]
+            data_gps.urdf_orientation(iteration, link_i),
+            data_gps.com_lin_velocity(iteration, link_i),
+            data_gps.com_ang_velocity(iteration, link_i)
         )
         link_orientation_inv = np.linalg.inv(np.array(
             pybullet.getMatrixFromQuaternion(ori)
@@ -31,13 +42,19 @@ def viscous_swimming(iteration, data_gps, data_hydrodynamics, model, links):
         pybullet.applyExternalForce(
             model,
             link,
-            forceObj=data_hydrodynamics[iteration, link_i, :3],
+            forceObj=(
+                np.array(data_hydrodynamics[iteration, link_i, :3])
+                *units.newtons
+            ),
             posObj=[0, 0, 0],
             flags=pybullet.LINK_FRAME
         )
         pybullet.applyExternalTorque(
             model,
             link,
-            torqueObj=data_hydrodynamics[iteration, link_i, 3:6],
+            torqueObj=(
+                np.array(data_hydrodynamics[iteration, link_i, 3:6])
+                *units.torques
+            ),
             flags=pybullet.LINK_FRAME
         )

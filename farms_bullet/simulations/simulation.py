@@ -1,5 +1,8 @@
 """Simulation"""
 
+import os
+import pickle
+
 import numpy as np
 import pybullet
 
@@ -62,7 +65,9 @@ class Simulation:
         # Simulation
         self.iteration = 0
         self.simulation_state = None
-        self.logger = NotImplemented
+
+        # Interface
+        self.interface = None
 
         rendering(1)
 
@@ -73,15 +78,40 @@ class Simulation:
     def init_physics(self):
         """Initialise physics"""
         pybullet.resetSimulation()
-        pybullet.setGravity(0, 0, -9.81)
-        pybullet.setTimeStep(self.options.timestep)
+        pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
+        pybullet.setTimeStep(self.options.timestep*self.options.units.seconds)
         pybullet.setRealTimeSimulation(0)
         pybullet.setPhysicsEngineParameter(
-            fixedTimeStep=self.options.timestep,
+            fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
-            erp=0,
-            contactERP=0,
-            frictionERP=0
+            erp=1e-2,
+            contactERP=1e-2,
+            frictionERP=1e-2,
+            # solverResidualThreshold=1e-12,
+            # restitutionVelocityThreshold=1e-3,
+            # useSplitImpulse=False,
+            # splitImpulsePenetrationThreshold=1e-5,
+            # contactBreakingThreshold=1e-5
+            # numSubSteps=100,
+            # maxNumCmdPer1ms=int(1e5),
+
+            # # Parameters
+            # fixedTimeStep
+            # numSolverIterations
+            # useSplitImpulse
+            # splitImpulsePenetrationThreshold
+            # numSubSteps
+            # collisionFilterMode
+            # contactBreakingThreshold
+            # maxNumCmdPer1ms
+            # enableFileCaching
+            # restitutionVelocityThreshold
+            # erp
+            # contactERP
+            # frictionERP
+            # enableConeFriction
+            # deterministicOverlappingPairs
+            # solverResidualThreshold
         )
         print("Physics parameters:\n{}".format(
             pybullet.getPhysicsEngineParameters()
@@ -111,23 +141,48 @@ class Simulation:
             self.options.timestep
         )[:iteration]
 
-        plot = kwargs.pop("plot", None)
-        if plot:
-            self.logger.plot_all(times)
-
+        # Log
         log_path = kwargs.pop("log_path", None)
         if log_path:
             log_extension = kwargs.pop("log_extension", None)
-            self.logger.log_all(
+            os.makedirs(log_path, exist_ok=True)
+            if log_extension == "npy":
+                save_function = np.save
+            elif log_extension in ("txt", "csv"):
+                save_function = np.savetxt
+            else:
+                raise Exception(
+                    "Format {} is not valid for logging array".format(log_extension)
+                )
+            save_function(log_path+"/times."+log_extension, times)
+            self.elements.animat.data.log(
                 times,
                 folder=log_path,
                 extension=log_extension
             )
+            print(self.options)
+            with open(log_path+"/simulation_options.pickle", "wb") as options:
+                pickle.dump(self.options, options)
+            with open(log_path+"/simulation_options.pickle", "rb") as options:
+                test = pickle.load(options)
+                print("Wrote simulation options:\n{}".format(test))
+            with open(log_path+"/animat_options.pickle", "wb") as options:
+                pickle.dump(self.elements.animat.options, options)
+            with open(log_path+"/animat_options.pickle", "rb") as options:
+                test = pickle.load(options)
+                print("Wrote animat options:\n{}".format(test))
+
+        # Plot
+        plot = kwargs.pop("plot", None)
+        if plot:
+            self.elements.animat.data.plot(times)
 
         # Record video
         record = kwargs.pop("record", None)
         if record:
-            self.camera_record.save("video.avi")
+            self.interface.video.save(
+                "{}.avi".format(self.options.video_name)
+            )
 
     def end(self):
         """Terminate simulation"""

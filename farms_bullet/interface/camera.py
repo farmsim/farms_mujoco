@@ -13,7 +13,7 @@ class Camera:
         self.target = target_identity
         cam_info = self.get_camera()
         self.timestep = timestep
-        self.motion_filter = kwargs.pop("motion_filter", timestep)
+        self.motion_filter = kwargs.pop("motion_filter", 2*timestep)
         self.yaw = kwargs.pop("yaw", cam_info[8])
         self.yaw_speed = kwargs.pop("yaw_speed", 0)
         self.pitch = kwargs.pop("pitch", cam_info[9])
@@ -59,12 +59,29 @@ class UserCamera(CameraTarget):
         super(UserCamera, self).__init__(target_identity, **kwargs)
         self.update(use_camera=False)
 
+    def set_zoom(self, value):
+        """Set zoom"""
+        self.distance = value
+        pybullet.resetDebugVisualizerCamera(
+            cameraDistance=self.distance,
+            cameraYaw=self.yaw,
+            cameraPitch=self.pitch,
+            cameraTargetPosition=self.target_pos
+        )
+
     def update(self, use_camera=True):
         """Camera view"""
         if use_camera:
-            self.yaw, self.pitch, self.distance = self.get_camera()[8:11]
+            (
+                self.yaw,
+                self.pitch,
+                self.distance,
+                target_pos
+            ) = self.get_camera()[8:12]
+            self.target_pos = np.array(target_pos)
         self.update_yaw()
-        self.update_target_pos()
+        if self.target is not None:
+            self.update_target_pos()
         pybullet.resetDebugVisualizerCamera(
             cameraDistance=self.distance,
             cameraYaw=self.yaw,
@@ -78,40 +95,43 @@ class CameraRecord(CameraTarget):
 
     def __init__(self, target_identity, size, fps, **kwargs):
         super(CameraRecord, self).__init__(target_identity, **kwargs)
-        self.width = kwargs.pop("width", 640)
-        self.height = kwargs.pop("height", 480)
+        self.width = kwargs.pop("width", 1280)
+        self.height = kwargs.pop("height", 720)
         self.fps = fps
+        self.skips = kwargs.pop("skips", 1)
         self.data = np.zeros(
             [size, self.height, self.width, 4],
             dtype=np.uint8
         )
         self.iteration = 0
 
-    def record(self, sample):
+    def record(self, step):
         """Record camera"""
-        self.update_yaw()
-        self.update_target_pos()
-        self.data[sample, :, :] = pybullet.getCameraImage(
-            width=self.width,
-            height=self.height,
-            viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
-                cameraTargetPosition=self.target_pos,
-                distance=self.distance,
-                yaw=self.yaw,
-                pitch=self.pitch,
-                roll=0,
-                upAxisIndex=2
-            ),
-            projectionMatrix = pybullet.computeProjectionMatrixFOV(
-                fov=60,
-                aspect=640/480,
-                nearVal=0.1,
-                farVal=5
-            ),
-            renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
-            flags=pybullet.ER_NO_SEGMENTATION_MASK
-        )[2]
-        self.iteration += 1
+        if not step % self.skips:
+            sample = step//self.skips-1
+            self.update_yaw()
+            self.update_target_pos()
+            self.data[sample, :, :] = pybullet.getCameraImage(
+                width=self.width,
+                height=self.height,
+                viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
+                    cameraTargetPosition=self.target_pos,
+                    distance=self.distance,
+                    yaw=self.yaw,
+                    pitch=self.pitch,
+                    roll=0,
+                    upAxisIndex=2
+                ),
+                projectionMatrix = pybullet.computeProjectionMatrixFOV(
+                    fov=60,
+                    aspect=self.width/self.height,
+                    nearVal=0.1,
+                    farVal=5
+                ),
+                renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
+                flags=pybullet.ER_NO_SEGMENTATION_MASK
+            )[2]
+            self.iteration += 1
 
     def save(self, filename="video.avi"):
         """Save recording"""

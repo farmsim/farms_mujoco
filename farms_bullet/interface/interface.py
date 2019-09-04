@@ -3,7 +3,7 @@
 import numpy as np
 import pybullet
 from .camera import UserCamera, CameraRecord
-from .debug import test_debug_info
+# from .debug import test_debug_info
 
 
 class Interfaces:
@@ -38,19 +38,31 @@ class Interfaces:
             timestep=timestep
         )
 
-    def init_video(self, target_identity, timestep, size, **kwargs):
+    def init_video(self, target_identity, simulation_options, **kwargs):
         """Init video"""
         # Video recording
+        # self.video = CameraRecord(
+        #     target_identity=target_identity,
+        #     size=size,
+        #     fps=kwargs.pop("fps", 40),
+        #     yaw=kwargs.pop("yaw", 0),
+        #     yaw_speed=360/10 if kwargs.pop("rotating_camera", False) else 0,
+        #     pitch=-89 if kwargs.pop("top_camera", False) else -45,
+        #     distance=1,
+        #     timestep=timestep,
+        #     motion_filter=1e-1
+        # )
+        skips = kwargs.pop("skips", 1)
         self.video = CameraRecord(
             target_identity=target_identity,
-            size=size,
-            fps=kwargs.pop("fps", 40),
+            size=simulation_options.n_iterations,
+            timestep=simulation_options.timestep,
+            fps=1./(skips*simulation_options.timestep),
+            pitch=kwargs.pop("pitch", -45),
             yaw=kwargs.pop("yaw", 0),
-            yaw_speed=360/10 if kwargs.pop("rotating_camera", False) else 0,
-            pitch=-89 if kwargs.pop("top_camera", False) else -45,
-            distance=1,
-            timestep=timestep,
-            motion_filter=1e-1
+            skips=skips,
+            motion_filter=2*skips*simulation_options.timestep,
+            distance=1
         )
 
     def init_debug(self, animat_options):
@@ -58,8 +70,8 @@ class Interfaces:
         # User parameters
         self.user_params = UserParameters(animat_options)
 
-        # Debug info
-        test_debug_info()
+        # # Debug info
+        # test_debug_info()
 
 
 class DebugParameter:
@@ -160,6 +172,7 @@ class UserParameters(dict):
         lim = np.pi/8
         self["play"] = ParameterPlay()
         self["rtl"] = DebugParameter("Real-time limiter", 1, 1e-3, 3)
+        self["zoom"] = DebugParameter("Zoom", 1, 0, 1)
         # self["gait"] = ParameterGait(gait)
         # self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
         self["body_offset"] = DebugParameter("Body offset", 0, -lim, lim)
@@ -168,15 +181,10 @@ class UserParameters(dict):
             options.control.drives.forward,
             0.9, 5.1
         )
-        self["drive_left"] = DebugParameter(
-            "Drive left",
-            options.control.drives.left,
-            0, 6
-        )
-        self["drive_right"] = DebugParameter(
-            "Drive right",
-            options.control.drives.left,
-            0, 6
+        self["drive_turn"] = DebugParameter(
+            "Drive turn",
+            options.control.drives.turning,
+            -0.2, 0.2
         )
 
     def update(self):
@@ -193,6 +201,11 @@ class UserParameters(dict):
     def rtl(self):
         """Real-time limiter"""
         return self["rtl"]
+
+    @property
+    def zoom(self):
+        """Camera zoom"""
+        return self["zoom"]
 
     # @property
     # def gait(self):
@@ -215,11 +228,6 @@ class UserParameters(dict):
         return self["drive_speed"]
 
     @property
-    def drive_left(self):
+    def drive_turn(self):
         """Drive turn"""
-        return self["drive_left"]
-
-    @property
-    def drive_right(self):
-        """Drive turn"""
-        return self["drive_right"]
+        return self["drive_turn"]
