@@ -223,13 +223,18 @@ class Ramp(SimulationElement):
 class ArenaRamp(Arena):
     """ArenaRamp"""
 
-    def __init__(self, units, ramp_angle=None):
+    def __init__(self, units, ramp_angle=None, elements=None):
         angle = (
             np.deg2rad(ramp_angle)
             if ramp_angle is not None
             else np.deg2rad(30)
         )
-        super(ArenaRamp, self).__init__([Ramp(angle=angle, units=units)])
+        if elements is None:
+            elements = []
+        super(ArenaRamp, self).__init__(
+            [Ramp(angle=angle, units=units)]
+            + elements
+        )
 
     @property
     def floor(self):
@@ -237,8 +242,57 @@ class ArenaRamp(Arena):
         return self.elements[0]
 
 
+class Water(SimulationElement):
+    """Floor"""
+
+    def __init__(self, units):
+        super(Water, self).__init__()
+        self.units = units
+
+    def spawn(self):
+        """Spawn floor"""
+        water_size = [50, 50, 50]
+        water_color = [0.5, 0.5, 0.9, 0.7]
+
+        # Water definition
+        base_link = AnimatLink(
+            geometry=pybullet.GEOM_BOX,
+            size=water_size,
+            mass=0,
+            joint_axis=[0, 0, 1],
+            color=water_color,
+            units=self.units
+        )
+
+        # Spawn
+        self._identity = pybullet.createMultiBody(
+            baseMass=base_link.mass,
+            baseCollisionShapeIndex=base_link.collision,
+            baseVisualShapeIndex=base_link.visual,
+            basePosition=[0, 0, -0.1-water_size[2]],
+            baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
+        )
+
+        # Dynamics properties
+        group = 0  #other objects don't collide with me
+        mask = 0  # don't collide with any other object
+        pybullet. setCollisionFilterGroupMask(
+            self.identity,
+            -1,
+            group,
+            mask
+        )
+
+
 class ArenaWater(ArenaRamp):
     """ArenaRamp"""
+
+    def __init__(self, units, ramp_angle=None, elements=None):
+        super(ArenaWater, self).__init__(
+            units=units,
+            ramp_angle=ramp_angle,
+            elements=[Water(units)]
+        )
 
     @property
     def water(self):
