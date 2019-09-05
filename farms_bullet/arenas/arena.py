@@ -109,27 +109,29 @@ class ArenaScaffold(FlooredArena):
         create_scene(self.floor.identity)
 
 
-class ArenaRamp:
-    def __init__(self, ramp_angle=None):
-        super(ArenaRamp, self).__init__()
-        if ramp_angle is None:
-            self.angle = np.deg2rad(30)
-        else:
-            self.angle = np.deg2rad(ramp_angle)
+class Ramp(SimulationElement):
+    """Floor"""
+
+    def __init__(self, angle, units):
+        super(Ramp, self).__init__()
+        self.angle = angle
+        self.units = units
 
     def spawn(self):
-        """create the arena for experiment 1"""
+        """Spawn floor"""
         ground_dim = [1, 20, 0.1]
         ramp_dim = [3, 20, 0.1]
         upper_lower_dim = [1, 20, 0.1]
         arena_color = [1, 0.8, 0.5, 1]
 
+        # Arena definition
         base_link = AnimatLink(
             geometry=pybullet.GEOM_BOX,
             size=ground_dim,
             mass=0,
             joint_axis=[0, 0, 1],
-            color=arena_color
+            color=arena_color,
+            units=self.units
         )
         links = [
             AnimatLink(
@@ -147,7 +149,8 @@ class ArenaRamp:
                 ],
                 frame_orientation=[0, self.angle, 0],
                 joint_axis=[0, 0, 1],
-                color=arena_color
+                color=arena_color,
+                units=self.units
             ),
             AnimatLink(
                 geometry=pybullet.GEOM_BOX,
@@ -165,14 +168,17 @@ class ArenaRamp:
                 ],
                 frame_orientation=[0, 0, 0],
                 joint_axis=[0, 0, 1],
-                color=arena_color
+                color=arena_color,
+                units=self.units
             )
         ]
-        pybullet.createMultiBody(
+
+        # Spawn
+        self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=[0, 0, -0.12],
+            basePosition=[0, 0, -ground_dim[2]],
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
             linkMasses=[link.mass for link in links],
             linkCollisionShapeIndices=[link.collision for link in links],
@@ -192,8 +198,9 @@ class ArenaRamp:
             linkJointAxis=[link.joint_axis for link in links]
         )
 
+        # Dynamics properties
         pybullet.changeDynamics(
-            bodyUniqueId=1,
+            bodyUniqueId=self.identity,
             linkIndex=0,
             lateralFriction=2,
             spinningFriction=0,
@@ -201,3 +208,39 @@ class ArenaRamp:
             contactDamping=1e2,
             contactStiffness=1e4
         )
+
+        # # Texture
+        # dir_path = os.path.dirname(os.path.realpath(__file__))
+        # texUid = pybullet.loadTexture(dir_path+"/BIOROB2_blue.png")
+        # pybullet.changeVisualShape(
+        #     self._identity, -1,
+        #     textureUniqueId=texUid,
+        #     rgbaColor=[1, 1, 1, 1],
+        #     specularColor=[1, 1, 1]
+        # )
+
+
+class ArenaRamp(Arena):
+    """ArenaRamp"""
+
+    def __init__(self, units, ramp_angle=None):
+        angle = (
+            np.deg2rad(ramp_angle)
+            if ramp_angle is not None
+            else np.deg2rad(30)
+        )
+        super(ArenaRamp, self).__init__([Ramp(angle=angle, units=units)])
+
+    @property
+    def floor(self):
+        """Floor"""
+        return self.elements[0]
+
+
+class ArenaWater(ArenaRamp):
+    """ArenaRamp"""
+
+    @property
+    def water(self):
+        """Floor"""
+        return self.elements[1]
