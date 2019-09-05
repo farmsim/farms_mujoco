@@ -423,6 +423,68 @@ class AmphibiousOscillatorConnectivityArray(ConnectivityArray):
             print("Oscillator connectivity:\n{}".format(np.array(connectivity)))
         return connectivity
 
+    @staticmethod
+    def show_connectivity():
+        import networkx as nx
+        import matplotlib.pyplot as plt
+        from .animat_options import AmphibiousOptions
+        n_joints = 11
+        n_dofs_leg = 4
+        n_leg = 4
+        dim_body = n_joints * 2
+        dim = 2 * n_joints + 2 * n_leg * n_dofs_leg
+        options = AmphibiousOptions()
+        oscillator_array = np.asarray(
+            AmphibiousOscillatorConnectivityArray.from_options(options).array
+        )
+        contact_array = np.asarray(
+            AmphibiousContactsConnectivityArray.from_options(options).array
+        )
+        graph = nx.DiGraph()
+        plt.figure()
+        pos = np.zeros([dim, 2])
+        scale_factor = 0.5
+        offset_leg = 1.5
+
+        for i in np.arange(dim):
+
+            if i < dim_body:
+                graph.add_node(i, pos=(-scale_factor, -scale_factor * (i)))
+                if i >= n_joints:
+                    graph.add_node(i, pos=(scale_factor, -scale_factor * (i - n_joints)))
+            if i < dim_body + n_dofs_leg and i >= dim_body:
+                graph.add_node(i, pos=(scale_factor * (-i + dim_body) - offset_leg, 0))
+            if i < dim_body + 2 * n_dofs_leg and i >= dim_body + n_dofs_leg:
+                graph.add_node(i, pos=(scale_factor * (-i + dim_body + n_dofs_leg) - offset_leg, -scale_factor))
+            if i < dim_body + 3 * n_dofs_leg and i >= dim_body + 2 * n_dofs_leg:
+                graph.add_node(i, pos=(scale_factor * (i - dim_body - 2 * n_dofs_leg) + offset_leg, 0))
+            if i < dim_body + 4 * n_dofs_leg and i >= dim_body + 3 * n_dofs_leg:
+                graph.add_node(i, pos=(scale_factor * (i - dim_body - 3 * n_dofs_leg) + offset_leg, -scale_factor))
+            if i < dim_body + 5 * n_dofs_leg and i >= dim_body + 4 * n_dofs_leg:
+                graph.add_node(i, pos=(scale_factor * (-i + dim_body + 4 * n_dofs_leg) - offset_leg, -2))
+            if i < dim_body + 6 * n_dofs_leg and i >= dim_body + 5 * n_dofs_leg:
+                graph.add_node(i, pos=(scale_factor * (-i + dim_body + 5 * n_dofs_leg) - offset_leg, -2.5))
+            if i < dim_body + 7 * n_dofs_leg and i >= dim_body + 6 * n_dofs_leg:
+                graph.add_node(i, pos=(scale_factor * (i - dim_body - 6 * n_dofs_leg) + offset_leg, -2))
+            if i < dim_body + 8 * n_dofs_leg and i >= dim_body + 7 * n_dofs_leg:
+                graph.add_node(i, pos=(scale_factor * (i - dim_body - 7 * n_dofs_leg) + offset_leg, -2.5))
+
+        graph.add_node(dim + 1, pos=(-5, -1), node_color='r')
+        graph.add_node(dim + 2, pos=(5, -1))
+        graph.add_node(dim + 3, pos=(-5, -2))
+        graph.add_node(dim + 4, pos=(5, -2))
+        graph.add_weighted_edges_from(oscillator_array[:, 0:3], colors='k')
+        graph.add_weighted_edges_from(
+             np.vstack((contact_array[:, 0], contact_array[:, 1] + 55, np.zeros(len(contact_array)))).T,
+             colors='r')
+        graph_pose = nx.get_node_attributes(graph, 'pos')
+        M = graph.reverse()
+        colors = ['g'] * dim + ['r'] * 4
+        nx.draw(M, with_labels=True, node_color=colors, node_size=500, pos=graph_pose)
+        plt.axis('equal')
+        plt.show()
+        return
+
     @classmethod
     def from_options(cls, options):
         """Parameters for walking"""

@@ -127,13 +127,13 @@ def run_gaits_demos():
 def run_transition_demo():
     """Run salamander demos"""
     animat_options = SalamanderOptions(
-        collect_gps=False,
+        collect_gps=True,
         show_hydrodynamics=False,
         transition=True
     )
     simulation_options = SimulationOptions.with_clargs()
-    simulation_options.duration = 20
-    simulation_options.timestep = 0.002
+    simulation_options.duration = 10
+    simulation_options.timestep = 0.001
     simulation_options.video_name = "gait_transition"
     sim = SalamanderSimulation(
         simulation_options=simulation_options,
@@ -180,12 +180,12 @@ def run_scale_demos():
 
 def main():
     """Main"""
-    run_timestep_demos()
-    run_walking_demos()
-    run_swimming_demos()
-    run_gaits_demos()
+    #run_timestep_demos()
+    #run_walking_demos()
+    #run_swimming_demos()
+    #run_gaits_demos()
     run_transition_demo()
-    run_scale_demos()
+    #run_scale_demos()
 
 
 if __name__ == '__main__':
