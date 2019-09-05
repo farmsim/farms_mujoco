@@ -35,7 +35,7 @@ class SalamanderEvolution(FloatProblem):
     def __init__(self):
         super(SalamanderEvolution, self).__init__()
         self.number_of_variables = 18
-        self.number_of_objectives = 2
+        self.number_of_objectives = 3
         self.number_of_constraints = 0
 
         self.obj_directions = [self.MINIMIZE, self.MINIMIZE]
@@ -102,7 +102,7 @@ class SalamanderEvolution(FloatProblem):
     @staticmethod
     def get_name():
         """Name"""
-        return "Salamander evolution complete new"
+        return "Salamander evolution complete test"
 
     def create_solution(self):
         new_solution = FloatSolution(
@@ -177,28 +177,40 @@ class SalamanderEvolution(FloatProblem):
         # Run simulation
         sim.run()
 
-        # Extract fitness
-        power = np.sum(
-            np.asarray(
-                sim.elements.animat.data.sensors.proprioception.motor_torques()
-            )*np.asarray(
-                sim.elements.animat.data.sensors.proprioception.velocities_all()
-            )
-        )*simulation_options.timestep/simulation_options.duration
+        ## Objectives
+
+        sensors = sim.elements.animat.data.sensors
+
+        # Distance
         position = np.array(
-            sim.elements.animat.data.sensors.gps.urdf_position(
+            sensors.gps.urdf_position(
                 iteration=sim.iteration-1,
                 link_i=0
             )
         )
         distance = np.linalg.norm(position[:2])
-        # Penalty
-        if (not 1 < -position[0] < 5) or (not -3 < position[1] < 3):
+
+        # Mechanical work
+        mechanical_work = np.sum(
+            np.asarray(sensors.proprioception.motor_torques())
+            *np.asarray(sensors.proprioception.velocities_all())
+        )*simulation_options.timestep/simulation_options.duration
+
+        # Thermal loss
+        thermal_loss = np.sum(
+            np.asarray(sensors.proprioception.motor_torques())**2
+        )*simulation_options.timestep/simulation_options.duration
+
+        # Penalties
+        if (not 1 < -position[0] < 10) or (not -3 < position[1] < 3):
             distance -= 1e3
-            power += 1e3
-        # Objectives
+            mechanical_work += 1e3
+            thermal_loss += 1e3
+
+        # Objectives array
         solution.objectives[0] = -distance  # Distance along x axis
-        solution.objectives[1] = power  # Energy
+        solution.objectives[1] = mechanical_work  # Energy
+        solution.objectives[2] = thermal_loss  # Energy
 
         # Terminate simulation
         sim.end()
