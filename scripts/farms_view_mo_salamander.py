@@ -63,8 +63,12 @@ def main():
 
     # Load results from file
     front = read_solutions(
-        "VAR.NSGAII.Salamander evolution",
-        "FUN.NSGAII.Salamander evolution"
+        "VAR.NSGAII.Salamander evolution complete test",
+        "FUN.NSGAII.Salamander evolution complete test"
+        # "VAR.NSGAII.Salamander evolution complete new",
+        # "FUN.NSGAII.Salamander evolution complete new"
+        # "VAR.NSGAII.Salamander evolution",
+        # "FUN.NSGAII.Salamander evolution"
         # "VAR.NSGAII.Salamander evolution complete",
         # "FUN.NSGAII.Salamander evolution complete"
         # "VAR.GDE3.Salamander evolution",

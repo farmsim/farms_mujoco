@@ -478,7 +478,7 @@ class Amphibious(Animat):
         # Friction
         self.set_links_dynamics(
             self.links,
-            lateralFriction=1e-1,
+            lateralFriction=0.5,
             spinningFriction=small,
             rollingFriction=small,
         )
