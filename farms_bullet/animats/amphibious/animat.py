@@ -79,35 +79,69 @@ class Amphibious(Animat):
 
     def spawn_sdf(self):
         """Spawn sdf"""
-        links = [
-            Link.from_mesh(
-                name=self.convention.bodylink2name(i),
-                mesh="{}/salamander_body_{}.obj".format(
-                    self.options.morphology.mesh_directory,
-                    i
-                )
+        if self.options.morphology.mesh_directory:
+            body_link_positions = self.scale*np.asarray(
+                [  # From SDF
+                    [0, 0, 0],
+                    [0.200000003, 0, 0.0069946074],
+                    [0.2700000107, 0, 0.010382493],
+                    [0.3400000036, 0, 0.0106022889],
+                    [0.4099999964, 0, 0.010412137],
+                    [0.4799999893, 0, 0.0086611426],
+                    [0.5500000119, 0, 0.0043904358],
+                    [0.6200000048, 0, 0.0006898994],
+                    [0.6899999976, 0, 8.0787e-06],
+                    [0.7599999905, 0, -4.89001e-05],
+                    [0.8299999833, 0, 0.0001386079],
+                    [0.8999999762, 0, 0.0003494423]
+                ]
             )
-            for i in range(self.options.morphology.n_links_body())
-        ] + [
-            Link.box(
+            links_body = [
+                Link.from_mesh(
+                    name=self.convention.bodylink2name(i),
+                    mesh="{}/salamander_body_{}.obj".format(
+                        self.options.morphology.mesh_directory,
+                        i
+                    ),
+                    pose=np.concatenate([
+                        body_link_positions[i],
+                        np.zeros(3)
+                    ]),
+                    color=[0, 0.3, 0]
+                )
+                for i in range(self.options.morphology.n_links_body())
+            ]
+            joints_body = [
+                Joint(
+                    name=self.convention.bodyjoint2name(i),
+                    joint_type="revolute",
+                    parent=links_body[i],
+                    child=links_body[i+1],
+                    axis=[0, 0, 1],
+                    limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
+                )
+                for i in range(self.options.morphology.n_joints_body)
+            ]
+        links_legs = [
+            Link.capsule(
                 name=self.convention.leglink2name(leg_i, side_i, joint_i),
-                size=[0.01, 0.01, 0.01]
+                length=0.1,
+                radius=0.03,
+                pose=np.concatenate([
+                    body_link_positions[5 if leg_i else 2] +  [
+                        leg_i*0.1,
+                        (1 if side_i else -1)*0.1,
+                        0
+                    ],
+                    [np.pi/2, 0, 0]
+                ])
             )
             for leg_i in range(self.options.morphology.n_legs//2)
             for side_i in range(2)
             for joint_i in range(self.options.morphology.n_dof_legs)
         ]
-        joints = [
-            Joint(
-                name=self.convention.bodyjoint2name(i),
-                joint_type="revolute",
-                parent=links[i],
-                child=links[i+1],
-                axis=[0, 0, 1],
-                limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
-            )
-            for i in range(self.options.morphology.n_joints_body)
-        ] + [
+        links = links_body + links_legs
+        joints_legs = [
             Joint(
                 name=self.convention.legjoint2name(leg_i, side_i, 0),
                 joint_type="revolute",
@@ -131,6 +165,9 @@ class Amphibious(Animat):
             for side_i in range(2)
             for joint_i in range(self.options.morphology.n_dof_legs-1)
         ]
+        joints = joints_body + joints_legs
+
+        # Create SDF
         sdf = ModelSDF(links=links, joints=joints)
         sdf.write(filename="animat.sdf")
         import os
