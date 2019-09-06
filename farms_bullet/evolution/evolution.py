@@ -161,7 +161,7 @@ class SalamanderEvolution(FloatProblem):
         simulation_options = SimulationOptions.with_clargs()
         simulation_options.headless = evolution
         simulation_options.fast = evolution
-        simulation_options.timestep = 5e-3
+        simulation_options.timestep = 2e-3
         simulation_options.duration = 10
         simulation_options.units.meters = 1
         simulation_options.units.seconds = 1
