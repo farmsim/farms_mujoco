@@ -153,7 +153,7 @@ class Amphibious(Animat):
                     ),
                     radius=1.1*leg_radius,
                     pose=pose,
-                    color=[0.7, 0.7, 0.7, 0.5]
+                    color=[0.7, 0.5, 0.5, 0.5]
                 )
                 # Shoulder 1
                 links[self.convention.leglink2index(
@@ -168,7 +168,7 @@ class Amphibious(Animat):
                     ),
                     radius=1.3*leg_radius,
                     pose=pose,
-                    color=[0.7, 0.1, 0.1, 0.1]
+                    color=[0.9, 0.9, 0.9, 0.3]
                 )
                 # Shoulder 2
                 shape_pose = [
@@ -208,7 +208,11 @@ class Amphibious(Animat):
                     radius=leg_radius,
                     pose=pose,
                     inertial_pose=shape_pose,
-                    shape_pose=shape_pose
+                    shape_pose=shape_pose,
+                    # color=[
+                    #     [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
+                    #     [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
+                    # ][leg_i][side_i]
                 )
         # Leg joints
         for leg_i in range(self.options.morphology.n_legs//2):
