@@ -97,7 +97,7 @@ class Amphibious(Animat):
                     [0.8299999833, 0, 0.0001386079],
                     [0.8999999762, 0, 0.0003494423]
                 ]
-            )*self.units.meters
+            )
             # Body links
             for i in range(self.options.morphology.n_links_body()):
                 links[i] = Link.from_mesh(
@@ -124,10 +124,38 @@ class Amphibious(Animat):
                     axis=[0, 0, 1],
                     limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                 )
+        else:
+            size = self.scale*np.array([0.08, 0.05, 0.04])
+            body_link_positions = np.zeros([
+                self.options.morphology.n_links_body(), 3
+            ])
+            # Body links
+            for i in range(self.options.morphology.n_links_body()):
+                body_link_positions[i, 0] = i*size[0]
+                links[i] = Link.box(
+                    name=self.convention.bodylink2name(i),
+                    size=size*self.scale,
+                    pose=np.concatenate([
+                        body_link_positions[i],
+                        np.zeros(3)
+                    ]),
+                    units=self.units,
+                    color=[0.1, 0.7, 0.1, 1]
+                )
+            # Body joints
+            for i in range(self.options.morphology.n_joints_body):
+                joints[i] = Joint(
+                    name=self.convention.bodyjoint2name(i),
+                    joint_type="revolute",
+                    parent=links[i],
+                    child=links[i+1],
+                    axis=[0, 0, 1],
+                    limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
+                )
         # Leg links
-        offset = 0.03*self.scale*self.units.meters
-        leg_length = 0.06*self.scale*self.units.meters
-        leg_radius = 0.015*self.scale*self.units.meters
+        offset = 0.03*self.scale
+        leg_length = 0.06*self.scale
+        leg_radius = 0.015*self.scale
         for leg_i in range(self.options.morphology.n_legs//2):
             for side_i in range(2):
                 sign = 1 if side_i else -1
@@ -153,6 +181,7 @@ class Amphibious(Animat):
                     ),
                     radius=1.1*leg_radius,
                     pose=pose,
+                    units=self.units,
                     color=[0.7, 0.5, 0.5, 0.5]
                 )
                 # Shoulder 1
@@ -168,6 +197,7 @@ class Amphibious(Animat):
                     ),
                     radius=1.3*leg_radius,
                     pose=pose,
+                    units=self.units,
                     color=[0.9, 0.9, 0.9, 0.3]
                 )
                 # Shoulder 2
@@ -189,7 +219,8 @@ class Amphibious(Animat):
                     radius=leg_radius,
                     pose=pose,
                     inertial_pose=shape_pose,
-                    shape_pose=shape_pose
+                    shape_pose=shape_pose,
+                    units=self.units
                 )
                 # Elbow
                 pose = np.copy(pose)
@@ -209,6 +240,7 @@ class Amphibious(Animat):
                     pose=pose,
                     inertial_pose=shape_pose,
                     shape_pose=shape_pose,
+                    units=self.units
                     # color=[
                     #     [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
                     #     [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
@@ -276,11 +308,12 @@ class Amphibious(Animat):
         sdf = ModelSDF(
             name="animat",
             pose=np.concatenate([
-                np.asarray([0, 0, 0.1])*self.scale*self.units.meters,
+                np.asarray([0, 0, 0.1])*self.scale,
                 [0, 0, 0]
             ]),
             links=links,
-            joints=joints
+            joints=joints,
+            units=self.units
         )
         sdf.write(filename="animat.sdf")
         import os

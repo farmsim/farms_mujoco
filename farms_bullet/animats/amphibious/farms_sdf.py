@@ -12,10 +12,11 @@ from ...simulations.simulation_options import Options
 class ModelSDF(Options):
     """Farms SDF"""
 
-    def __init__(self, name="animat", pose=np.zeros(6), **kwargs):
+    def __init__(self, name, pose, units, **kwargs):
         super(ModelSDF, self).__init__()
         self.name = name
         self.pose = pose
+        self.units = units
         self.links = kwargs.pop("links", [])
         self.joints = kwargs.pop("joints", [])
         print(self.xml_str())
@@ -25,7 +26,10 @@ class ModelSDF(Options):
         sdf = ET.Element("sdf", version="1.5")
         model = ET.SubElement(sdf, "model", name=self.name)
         pose = ET.SubElement(model, "pose")
-        pose.text = " ".join([str(element) for element in self.pose])
+        pose.text = " ".join([
+            str(element*(self.units.meters if i < 3 else 1))
+            for i, element in enumerate(self.pose)
+        ])
         for link in self.links:
             link.xml(model)
         for joint in self.joints:
@@ -54,16 +58,17 @@ class ModelSDF(Options):
 class Link(Options):
     """Link"""
 
-    def __init__(self, name, pose, inertial, collision, visual):
+    def __init__(self, name, pose, inertial, collision, visual, units):
         super(Link, self).__init__()
         self.name = name
         self.pose = pose
         self.inertial = inertial
         self.collision = collision
         self.visual = visual
+        self.units=units
 
     @classmethod
-    def box(cls, name, pose, **kwargs):
+    def box(cls, name, pose, units, **kwargs):
         """Box"""
         visual_kwargs = {}
         if "color" in kwargs:
@@ -73,18 +78,29 @@ class Link(Options):
         return cls(
             name,
             pose=pose,
-            inertial=Inertial.box(**kwargs, pose=inertial_pose),
-            collision=Collision.box(name, **kwargs, pose=shape_pose),
+            inertial=Inertial.box(
+                pose=inertial_pose,
+                units=units,
+                **kwargs
+            ),
+            collision=Collision.box(
+                name,
+                pose=shape_pose,
+                units=units,
+                **kwargs
+            ),
             visual=Visual.box(
                 name,
-                **kwargs,
                 pose=shape_pose,
-                **visual_kwargs
-            )
+                units=units,
+                **visual_kwargs,
+                **kwargs
+            ),
+            units=units
         )
 
     @classmethod
-    def sphere(cls, name, pose, **kwargs):
+    def sphere(cls, name, pose, units, **kwargs):
         """Sphere"""
         visual_kwargs = {}
         if "color" in kwargs:
@@ -94,18 +110,29 @@ class Link(Options):
         return cls(
             name,
             pose=pose,
-            inertial=Inertial.sphere(**kwargs, pose=inertial_pose),
-            collision=Collision.sphere(name, **kwargs, pose=shape_pose),
+            inertial=Inertial.sphere(
+                pose=inertial_pose,
+                units=units,
+                **kwargs,
+            ),
+            collision=Collision.sphere(
+                name,
+                pose=shape_pose,
+                units=units,
+                **kwargs
+            ),
             visual=Visual.sphere(
                 name,
-                **kwargs,
                 pose=shape_pose,
-                **visual_kwargs
-            )
+                units=units,
+                **visual_kwargs,
+                **kwargs,
+            ),
+            units=units
         )
 
     @classmethod
-    def capsule(cls, name, pose, **kwargs):
+    def capsule(cls, name, pose, units, **kwargs):
         """Capsule"""
         visual_kwargs = {}
         if "color" in kwargs:
@@ -115,14 +142,25 @@ class Link(Options):
         return cls(
             name,
             pose=pose,
-            inertial=Inertial.capsule(**kwargs, pose=inertial_pose),
-            collision=Collision.capsule(name, **kwargs, pose=shape_pose),
+            inertial=Inertial.capsule(
+                pose=inertial_pose,
+                units=units,
+                **kwargs
+            ),
+            collision=Collision.capsule(
+                name,
+                pose=shape_pose,
+                units=units,
+                **kwargs
+            ),
             visual=Visual.capsule(
                 name,
-                **kwargs,
                 pose=shape_pose,
-                **visual_kwargs
-            )
+                units=units,
+                **visual_kwargs,
+                **kwargs
+            ),
+            units=units
         )
 
     @classmethod
@@ -156,14 +194,18 @@ class Link(Options):
                 scale=scale,
                 units=units,
                 **visual_kwargs
-            )
+            ),
+            units=units
         )
 
     def xml(self, model):
         """xml"""
         link = ET.SubElement(model, "link", name=self.name)
         pose = ET.SubElement(link, "pose")
-        pose.text = " ".join([str(element) for element in self.pose])
+        pose.text = " ".join([
+            str(element*(self.units.meters if i < 3 else 1))
+            for i, element in enumerate(self.pose)
+        ])
         self.inertial.xml(link)
         self.collision.xml(link)
         self.visual.xml(link)
@@ -172,20 +214,17 @@ class Link(Options):
 class Inertial(Options):
     """Inertial"""
 
-    def __init__(self, mass=1, inertias=None):
+    def __init__(self, mass, inertias, units):
         super(Inertial, self).__init__()
         self.mass = str(mass)
         self.inertias = inertias
+        self.units = units
 
     @classmethod
-    def box(cls, size, **kwargs):
+    def box(cls, size, units, **kwargs):
         """Box"""
-        scale = kwargs.pop("scale", [1, 1, 1])
         density = kwargs.pop("density", 1000)
-        volume = (
-            scale[0]*scale[1]*scale[2]
-            *size[0]*size[1]*size[2]
-        )
+        volume = size[0]*size[1]*size[2]
         mass = volume*density
         return cls(
             mass=mass,
@@ -196,15 +235,15 @@ class Inertial(Options):
                 1/12*mass*(size[0]**2 + size[2]**2),
                 0,
                 1/12*mass*(size[0]**2 + size[1]**2)
-            ]
+            ],
+            units=units
         )
 
     @classmethod
-    def sphere(cls, radius, **kwargs):
+    def sphere(cls, radius, units, **kwargs):
         """Sphere"""
-        scale = kwargs.pop("scale", [1, 1, 1])
         density = kwargs.pop("density", 1000)
-        volume = scale[0]*scale[1]*scale[2]*4/3*np.pi*radius**3
+        volume = 4/3*np.pi*radius**3
         mass = volume*density
         return cls(
             mass=mass,
@@ -215,20 +254,17 @@ class Inertial(Options):
                 2/5*mass*radius**2,
                 0,
                 2/5*mass*radius**2
-            ]
+            ],
+            units=units
         )
 
     @classmethod
-    def capsule(cls, length, radius, **kwargs):
+    def capsule(cls, length, radius, units, **kwargs):
         """Capsule"""
-        scale = kwargs.pop("scale", [1, 1, 1])
         density = kwargs.pop("density", 1000)
         volume_sphere = 4/3*np.pi*radius**3
         volume_cylinder = np.pi*radius**2*length
-        volume = (
-            scale[0]*scale[1]*scale[2]
-            *(volume_sphere + volume_cylinder)
-        )
+        volume = volume_sphere + volume_cylinder
         mass = volume*density
         return cls(
             mass=mass,
@@ -240,81 +276,84 @@ class Inertial(Options):
                 1/12*mass*(3*radius**2 + length**2),
                 0,
                 1/2*mass*(radius**2)
-            ]
+            ],
+            units=units
         )
 
     @classmethod
     def from_mesh(cls, mesh, scale, units, **kwargs):
         """From mesh"""
-        scale = kwargs.pop("scale", 1)
-        density = kwargs.pop("density", 1000)*units.kilograms/units.meters**3
+        density = kwargs.pop("density", 1000)
         _mesh = tri.load_mesh(mesh)
-        volume = (
-            scale
-            *_mesh.volume
-            *units.meters**3
-        )
-        inertia = _mesh.moment_inertia
+        volume = scale*_mesh.volume
+        inertia = scale**2*_mesh.moment_inertia
         return cls(
             mass=volume*density,
             inertias=[
-                inertia[0, 0]*units.kilograms*units.meters**2,
-                inertia[0, 1]*units.kilograms*units.meters**2,
-                inertia[0, 2]*units.kilograms*units.meters**2,
-                inertia[1, 1]*units.kilograms*units.meters**2,
-                inertia[1, 2]*units.kilograms*units.meters**2,
-                inertia[2, 2]*units.kilograms*units.meters**2
-            ]
+                inertia[0, 0],
+                inertia[0, 1],
+                inertia[0, 2],
+                inertia[1, 1],
+                inertia[1, 2],
+                inertia[2, 2]
+            ],
+            units=units
         )
 
     def xml(self, link):
         """xml"""
         inertial = ET.SubElement(link, "inertial")
         mass = ET.SubElement(inertial, "mass")
-        mass.text = str(self.mass)
+        mass.text = str(self.mass*self.units.kilograms)
         inertia = ET.SubElement(inertial, "inertia")
         inertias = [
             ET.SubElement(inertia, name)
             for name in ["ixx", "ixy", "ixz", "iyy", "iyz", "izz"]
         ]
         for i, inertia in enumerate(inertias):
-            inertia.text = str(self.inertias[i])
+            inertia.text = str(
+                self.inertias[i]*self.units.meters**5
+            )
 
 
 class Shape(Options):
     """Shape"""
 
-    def __init__(self, name, geometry, suffix, pose=np.zeros(6)):
+    def __init__(self, name, geometry, suffix, units, pose=np.zeros(6)):
         super(Shape, self).__init__()
         self.name = "{}_{}".format(name, suffix)
         self.geometry = geometry
         self.suffix = suffix
         self.pose = pose
+        self.units = units
 
     @classmethod
-    def box(cls, name, size, **kwargs):
+    def box(cls, name, size, units, **kwargs):
         """Box"""
         return cls(
             name=name,
-            geometry=Box(size),
+            geometry=Box(size, units),
+            units=units,
             **kwargs
         )
 
     @classmethod
-    def sphere(cls, name, radius, **kwargs):
+    def sphere(cls, name, radius, units, **kwargs):
         """Box"""
         return cls(
             name=name,
-            geometry=Sphere(radius),
+            geometry=Sphere(radius, units),
+            units=units,
             **kwargs
         )
 
     @classmethod
-    def capsule(cls, name, length, radius, **kwargs):
+    def capsule(cls, name, length, radius, units, **kwargs):
         """Box"""
         return cls(
             name=name,
-            geometry=Capsule(length, radius),
+            geometry=Capsule(length, radius, units),
+            units=units,
             **kwargs
         )
 
@@ -324,6 +363,7 @@ class Shape(Options):
         return cls(
             name=name,
             geometry=Mesh(mesh, scale, units),
+            units=units,
             **kwargs
         )
 
@@ -335,7 +375,10 @@ class Shape(Options):
             name=self.name
         )
         pose = ET.SubElement(shape, "pose")
-        pose.text = " ".join([str(element) for element in self.pose])
+        pose.text = " ".join([
+            str(element*(self.units.meters if i < 3 else 1))
+            for i, element in enumerate(self.pose)
+        ])
         self.geometry.xml(shape)
         return shape
 
@@ -387,49 +430,55 @@ class Visual(Shape):
 class Box(Options):
     """Box"""
 
-    def __init__(self, size):
+    def __init__(self, size, units):
         super(Box, self).__init__()
         self.size = size
+        self.units = units
 
     def xml(self, parent):
         """xml"""
         geometry = ET.SubElement(parent, "geometry")
         box = ET.SubElement(geometry, "box")
         size = ET.SubElement(box, "size")
-        size.text = " ".join([str(element) for element in self.size])
+        size.text = " ".join([
+            str(element*self.units.meters)
+            for element in self.size
+        ])
 
 
 class Sphere(Options):
     """Sphere"""
 
-    def __init__(self, radius):
+    def __init__(self, radius, units):
         super(Sphere, self).__init__()
         self.radius = radius
+        self.units = units
 
     def xml(self, parent):
         """xml"""
         geometry = ET.SubElement(parent, "geometry")
         sphere = ET.SubElement(geometry, "sphere")
         radius = ET.SubElement(sphere, "radius")
-        radius.text = str(self.radius)
+        radius.text = str(self.radius*self.units.meters)
 
 
 class Capsule(Options):
     """Capsule"""
 
-    def __init__(self, length, radius):
+    def __init__(self, length, radius, units):
         super(Capsule, self).__init__()
         self.length = length
         self.radius = radius
+        self.units = units
 
     def xml(self, parent):
         """xml"""
         geometry = ET.SubElement(parent, "geometry")
         capsule = ET.SubElement(geometry, "capsule")
         length = ET.SubElement(capsule, "length")
-        length.text = str(self.length)
+        length.text = str(self.length*self.units.meters)
         radius = ET.SubElement(capsule, "radius")
-        radius.text = str(self.radius)
+        radius.text = str(self.radius*self.units.meters)
 
 
 class Mesh(Options):
