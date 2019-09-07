@@ -33,6 +33,12 @@ class AmphibiousConvention:
             + side*n_legs_dof
         )
 
+    def bodylink2name(self, link_i):
+        """bodylink2name"""
+        n_body = self.animat_options.morphology.n_links_body()
+        assert 0 <= link_i < n_body, "Body must be < {}, got {}".format(n_body, link_i)
+        return "link_body_{}".format(link_i)
+
     def leglink2index(self, leg_i, side_i, joint_i):
         """leglink2index"""
         n_legs = self.animat_options.morphology.n_legs
@@ -48,8 +54,14 @@ class AmphibiousConvention:
             + joint_i
         )
 
+    def bodyjoint2name(self, link_i):
+        """bodyjoint2name"""
+        n_body = self.animat_options.morphology.n_links_body()
+        assert 0 <= link_i < n_body, "Body must be < {}, got {}".format(n_body, link_i)
+        return "joint_body_{}".format(link_i)
+
     def leglink2name(self, leg_i, side_i, joint_i):
-        """leglink2index"""
+        """leglink2name"""
         n_legs = self.animat_options.morphology.n_legs
         n_legs_dof = self.animat_options.morphology.n_dof_legs
         assert 0 <= leg_i < n_legs, "Leg must be < {}, got {}".format(n_legs//2, leg_i)
