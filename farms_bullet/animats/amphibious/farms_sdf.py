@@ -65,7 +65,7 @@ class Link(Options):
         self.inertial = inertial
         self.collision = collision
         self.visual = visual
-        self.units=units
+        self.units = units
 
     @classmethod
     def box(cls, name, pose, units, **kwargs):

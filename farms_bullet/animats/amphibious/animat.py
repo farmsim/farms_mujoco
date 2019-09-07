@@ -126,6 +126,7 @@ class Amphibious(Animat):
                 )
         else:
             size = self.scale*np.array([0.08, 0.05, 0.04])
+            shape_pose = [size[0]/2, 0, 0, 0, 0, 0]
             body_link_positions = np.zeros([
                 self.options.morphology.n_links_body(), 3
             ])
@@ -139,6 +140,8 @@ class Amphibious(Animat):
                         body_link_positions[i],
                         np.zeros(3)
                     ]),
+                    inertial_pose=shape_pose,
+                    shape_pose=shape_pose,
                     units=self.units,
                     color=[0.1, 0.7, 0.1, 1]
                 )
@@ -153,18 +156,20 @@ class Amphibious(Animat):
                     limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                 )
         # Leg links
-        offset = 0.03*self.scale
-        leg_length = 0.06*self.scale
-        leg_radius = 0.015*self.scale
+        leg_offset = self.scale*self.options.morphology.leg_offset
+        leg_length = self.scale*self.options.morphology.leg_length
+        leg_radius = self.scale*self.options.morphology.leg_radius
         for leg_i in range(self.options.morphology.n_legs//2):
             for side_i in range(2):
                 sign = 1 if side_i else -1
-                body_position = body_link_positions[5 if leg_i else 1]
+                body_position = body_link_positions[
+                    self.options.morphology.legs_parents[leg_i]+1
+                ]
                 # Shoulder 0
                 pose = np.concatenate([
                     body_position +  [
                         0,
-                        sign*offset,
+                        sign*leg_offset,
                         0
                     ],
                     [0, 0, 0]
