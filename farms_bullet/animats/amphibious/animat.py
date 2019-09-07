@@ -174,11 +174,12 @@ class Amphibious(Animat):
                     ],
                     [0, 0, 0]
                 ])
-                links[self.convention.leglink2index(
+                index = self.convention.leglink2index(
                     leg_i,
                     side_i,
                     0
-                )+1] = Link.sphere(
+                )+1
+                links[index] = Link.sphere(
                     name=self.convention.leglink2name(
                         leg_i,
                         side_i,
@@ -189,12 +190,15 @@ class Amphibious(Animat):
                     units=self.units,
                     color=[0.7, 0.5, 0.5, 0.5]
                 )
+                links[index].inertial.mass = 0
+                links[index].inertial.inertias = np.zeros(6)
                 # Shoulder 1
-                links[self.convention.leglink2index(
+                index = self.convention.leglink2index(
                     leg_i,
                     side_i,
                     1
-                )+1] = Link.sphere(
+                )+1
+                links[index] = Link.sphere(
                     name=self.convention.leglink2name(
                         leg_i,
                         side_i,
@@ -205,6 +209,8 @@ class Amphibious(Animat):
                     units=self.units,
                     color=[0.9, 0.9, 0.9, 0.3]
                 )
+                links[index].inertial.mass = 0
+                links[index].inertial.inertias = np.zeros(6)
                 # Shoulder 2
                 shape_pose = [
                     0, sign*(0.5*leg_length), 0,
@@ -333,7 +339,6 @@ class Amphibious(Animat):
         #     )
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]
-        joints_order = [None for _ in range(self.options.morphology.n_joints())]
         joint_index = 0
         for joint_i in range(self.options.morphology.n_joints_body):
             joint_info = pybullet.getJointInfo(
@@ -640,7 +645,6 @@ class Amphibious(Animat):
         )
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]
-        joints_order = [None for _ in range(self.options.morphology.n_joints())]
         joint_index = 0
         for joint_i in range(self.options.morphology.n_joints_body):
             joint_info = pybullet.getJointInfo(
