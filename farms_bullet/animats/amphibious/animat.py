@@ -329,7 +329,11 @@ class Amphibious(Animat):
         sdf.write(filename="animat.sdf")
         import os
         print(os.getcwd() + "/animat.sdf")
-        self._identity = pybullet.loadSDF(os.getcwd() + "/animat.sdf")[0]
+        self._identity = pybullet.loadSDF(
+            os.getcwd() + "/animat.sdf",
+            useMaximalCoordinates=0,
+            globalScaling=1
+        )[0]
         # texUid = pybullet.loadTexture("salamander_skin.jpg")
         # for i in range(self.options.morphology.n_links_body()+10):
         #     pybullet.changeVisualShape(
