@@ -119,9 +119,9 @@ class ArenaRamp:
 
     def spawn(self):
         """create the arena for experiment 1"""
-        ground_dim = [1, 3, 0.1]
-        ramp_dim = [1, 3, 0.1]
-        upper_lower_dim = [1, 3, 0.1]
+        ground_dim = [1, 20, 0.1]
+        ramp_dim = [3, 20, 0.1]
+        upper_lower_dim = [1, 20, 0.1]
         arena_color = [1, 0.8, 0.5, 1]
 
         base_link = AnimatLink(
