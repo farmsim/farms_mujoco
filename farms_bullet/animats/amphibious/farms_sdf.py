@@ -65,6 +65,9 @@ class Link(Options):
     @classmethod
     def box(cls, name, pose, **kwargs):
         """Box"""
+        visual_kwargs = {}
+        if "color" in kwargs:
+            visual_kwargs["color"] = kwargs.pop("color", None)
         inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
@@ -72,12 +75,20 @@ class Link(Options):
             pose=pose,
             inertial=Inertial.box(**kwargs, pose=inertial_pose),
             collision=Collision.box(name, **kwargs, pose=shape_pose),
-            visual=Visual.box(name, **kwargs, pose=shape_pose)
+            visual=Visual.box(
+                name,
+                **kwargs,
+                pose=shape_pose,
+                **visual_kwargs
+            )
         )
 
     @classmethod
     def sphere(cls, name, pose, **kwargs):
         """Sphere"""
+        visual_kwargs = {}
+        if "color" in kwargs:
+            visual_kwargs["color"] = kwargs.pop("color", None)
         inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
@@ -85,12 +96,20 @@ class Link(Options):
             pose=pose,
             inertial=Inertial.sphere(**kwargs, pose=inertial_pose),
             collision=Collision.sphere(name, **kwargs, pose=shape_pose),
-            visual=Visual.sphere(name, **kwargs, pose=shape_pose)
+            visual=Visual.sphere(
+                name,
+                **kwargs,
+                pose=shape_pose,
+                **visual_kwargs
+            )
         )
 
     @classmethod
     def capsule(cls, name, pose, **kwargs):
         """Capsule"""
+        visual_kwargs = {}
+        if "color" in kwargs:
+            visual_kwargs["color"] = kwargs.pop("color", None)
         inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
@@ -98,7 +117,12 @@ class Link(Options):
             pose=pose,
             inertial=Inertial.capsule(**kwargs, pose=inertial_pose),
             collision=Collision.capsule(name, **kwargs, pose=shape_pose),
-            visual=Visual.capsule(name, **kwargs, pose=shape_pose)
+            visual=Visual.capsule(
+                name,
+                **kwargs,
+                pose=shape_pose,
+                **visual_kwargs
+            )
         )
 
     @classmethod
@@ -106,7 +130,7 @@ class Link(Options):
         """From mesh"""
         visual_kwargs = {}
         if "color" in kwargs:
-            visual_kwargs["color"] = {"color": kwargs["color"]}
+            visual_kwargs["color"] = kwargs.pop("color", None)
         inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
@@ -332,14 +356,27 @@ class Visual(Shape):
 
     def __init__(self, name, **kwargs):
         self.color = kwargs.pop("color", None)
+        self.ambient = self.color
+        self.diffuse = self.color
+        self.specular = self.color
+        self.emissive = self.color
         super(Visual, self).__init__(name=name, suffix=self.SUFFIX, **kwargs)
 
     def xml(self, link):
         """xml"""
         shape = super(Visual, self).xml(link)
+        material = ET.SubElement(shape, "material")
         if self.color is not None:
-            color = ET.SubElement(shape, "color")
-            color.text = " ".join([str(element) for element in self.color])
+            # color = ET.SubElement(material, "color")
+            # color.text = " ".join([str(element) for element in self.color])
+            ambient = ET.SubElement(material, "ambient")
+            ambient.text = " ".join([str(element) for element in self.ambient])
+            diffuse = ET.SubElement(material, "diffuse")
+            diffuse.text = " ".join([str(element) for element in self.diffuse])
+            specular = ET.SubElement(material, "specular")
+            specular.text = " ".join([str(element) for element in self.specular])
+            emissive = ET.SubElement(material, "emissive")
+            emissive.text = " ".join([str(element) for element in self.emissive])
 
 
 class Box(Options):
