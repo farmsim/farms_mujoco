@@ -273,17 +273,19 @@ class Amphibious(Animat):
                         )
 
         # Create SDF
-        sdf = ModelSDF(links=links, joints=joints)
+        sdf = ModelSDF(
+            name="animat",
+            pose=np.concatenate([
+                np.asarray([0, 0, 0.1])*self.scale*self.units.meters,
+                [0, 0, 0]
+            ]),
+            links=links,
+            joints=joints
+        )
         sdf.write(filename="animat.sdf")
         import os
         print(os.getcwd() + "/animat.sdf")
         self._identity = pybullet.loadSDF(os.getcwd() + "/animat.sdf")[0]
-        # Spawn position
-        pybullet.resetBasePositionAndOrientation(
-            self.identity,
-            np.asarray([0, 0, 0.1])*self.scale*self.units.meters,
-            [0, 0, 0, 1]
-        )
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]
         joints_order = [None for _ in range(self.options.morphology.n_joints())]

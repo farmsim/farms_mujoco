@@ -12,10 +12,10 @@ from ...simulations.simulation_options import Options
 class ModelSDF(Options):
     """Farms SDF"""
 
-    def __init__(self, name="animat", **kwargs):
+    def __init__(self, name="animat", pose=np.zeros(6), **kwargs):
         super(ModelSDF, self).__init__()
         self.name = name
-        self.pose = np.zeros(6)
+        self.pose = pose
         self.links = kwargs.pop("links", [])
         self.joints = kwargs.pop("joints", [])
         print(self.xml_str())
