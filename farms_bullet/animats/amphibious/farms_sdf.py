@@ -366,6 +366,11 @@ class Visual(Shape):
         """xml"""
         shape = super(Visual, self).xml(link)
         material = ET.SubElement(shape, "material")
+        # script = ET.SubElement(material, "script")
+        # uri = ET.SubElement(script, "uri")
+        # uri.text = "skin.material"
+        # name = ET.SubElement(script, "name")
+        # name.text = "Skin"
         if self.color is not None:
             # color = ET.SubElement(material, "color")
             # color.text = " ".join([str(element) for element in self.color])

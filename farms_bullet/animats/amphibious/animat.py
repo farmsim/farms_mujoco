@@ -286,6 +286,13 @@ class Amphibious(Animat):
         import os
         print(os.getcwd() + "/animat.sdf")
         self._identity = pybullet.loadSDF(os.getcwd() + "/animat.sdf")[0]
+        # texUid = pybullet.loadTexture("salamander_skin.jpg")
+        # for i in range(self.options.morphology.n_links_body()+10):
+        #     pybullet.changeVisualShape(
+        #         self.identity,
+        #         -1+i,
+        #         textureUniqueId=texUid
+        #     )
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]
         joints_order = [None for _ in range(self.options.morphology.n_joints())]
