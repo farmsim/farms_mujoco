@@ -97,7 +97,7 @@ class Amphibious(Animat):
                     [0.8299999833, 0, 0.0001386079],
                     [0.8999999762, 0, 0.0003494423]
                 ]
-            )
+            )*self.units.meters
             # Body links
             for i in range(self.options.morphology.n_links_body()):
                 links[i] = Link.from_mesh(
@@ -110,6 +110,8 @@ class Amphibious(Animat):
                         body_link_positions[i],
                         np.zeros(3)
                     ]),
+                    scale=self.scale,
+                    units=self.units,
                     color=[0, 0.3, 0]
                 )
             # Body joints
@@ -123,17 +125,17 @@ class Amphibious(Animat):
                     limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                 )
         # Leg links
+        offset = 0.03*self.scale*self.units.meters
+        leg_length = 0.06*self.scale*self.units.meters
+        leg_radius = 0.015*self.scale*self.units.meters
         for leg_i in range(self.options.morphology.n_legs//2):
             for side_i in range(2):
                 sign = 1 if side_i else -1
-                body_position = body_link_positions[4 if leg_i else 1]
-                offset = 0.03
-                leg_length = 0.06
-                leg_radius = 0.015
+                body_position = body_link_positions[5 if leg_i else 1]
                 # Shoulder 0
                 pose = np.concatenate([
                     body_position +  [
-                        leg_i*0.1,
+                        0,
                         sign*offset,
                         0
                     ],
@@ -270,6 +272,12 @@ class Amphibious(Animat):
         import os
         print(os.getcwd() + "/animat.sdf")
         self._identity = pybullet.loadSDF(os.getcwd() + "/animat.sdf")[0]
+        # Spawn position
+        pybullet.resetBasePositionAndOrientation(
+            self.identity,
+            np.asarray([0, 0, 0.1])*self.scale*self.units.meters,
+            [0, 0, 0, 1]
+        )
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]
         joints_order = [None for _ in range(self.options.morphology.n_joints())]
@@ -295,10 +303,6 @@ class Amphibious(Animat):
                     )
                     joints_names[joint_index] = joint_info[1].decode("UTF-8")
                     joint_index += 1
-        # self.joints_order = np.argsort([
-        #     int(name.replace("joint", ""))
-        #     for name in joints_names
-        # ])
         joints_names_dict = {
             name: i
             for i, name in enumerate(joints_names)

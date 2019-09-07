@@ -102,7 +102,7 @@ class Link(Options):
         )
 
     @classmethod
-    def from_mesh(cls, name, mesh, pose, **kwargs):
+    def from_mesh(cls, name, mesh, pose, scale, units, **kwargs):
         """From mesh"""
         visual_kwargs = {}
         if "color" in kwargs:
@@ -112,12 +112,25 @@ class Link(Options):
         return cls(
             name,
             pose=pose,
-            inertial=Inertial.from_mesh(mesh, pose=inertial_pose),
-            collision=Collision.from_mesh(name, mesh, pose=shape_pose),
+            inertial=Inertial.from_mesh(
+                mesh,
+                pose=inertial_pose,
+                scale=scale,
+                units=units
+            ),
+            collision=Collision.from_mesh(
+                name,
+                mesh,
+                pose=shape_pose,
+                scale=scale,
+                units=units
+            ),
             visual=Visual.from_mesh(
                 name,
                 mesh,
                 pose=shape_pose,
+                scale=scale,
+                units=units,
                 **visual_kwargs
             )
         )
@@ -207,25 +220,26 @@ class Inertial(Options):
         )
 
     @classmethod
-    def from_mesh(cls, mesh, **kwargs):
+    def from_mesh(cls, mesh, scale, units, **kwargs):
         """From mesh"""
-        scale = kwargs.pop("scale", [1, 1, 1])
-        density = kwargs.pop("density", 1000)
+        scale = kwargs.pop("scale", 1)
+        density = kwargs.pop("density", 1000)*units.kilograms/units.meters**3
         _mesh = tri.load_mesh(mesh)
         volume = (
-            scale[0]*scale[1]*scale[2]
+            scale
             *_mesh.volume
+            *units.meters**3
         )
         inertia = _mesh.moment_inertia
         return cls(
             mass=volume*density,
             inertias=[
-                inertia[0, 0],
-                inertia[0, 1],
-                inertia[0, 2],
-                inertia[1, 1],
-                inertia[1, 2],
-                inertia[2, 2]
+                inertia[0, 0]*units.kilograms*units.meters**2,
+                inertia[0, 1]*units.kilograms*units.meters**2,
+                inertia[0, 2]*units.kilograms*units.meters**2,
+                inertia[1, 1]*units.kilograms*units.meters**2,
+                inertia[1, 2]*units.kilograms*units.meters**2,
+                inertia[2, 2]*units.kilograms*units.meters**2
             ]
         )
 
@@ -281,11 +295,11 @@ class Shape(Options):
         )
 
     @classmethod
-    def from_mesh(cls, name, mesh, **kwargs):
+    def from_mesh(cls, name, mesh, scale, units, **kwargs):
         """From mesh"""
         return cls(
             name=name,
-            geometry=Mesh(mesh),
+            geometry=Mesh(mesh, scale, units),
             **kwargs
         )
 
@@ -379,10 +393,11 @@ class Capsule(Options):
 class Mesh(Options):
     """Mesh"""
 
-    def __init__(self, uri):
+    def __init__(self, uri, scale, units):
         super(Mesh, self).__init__()
         self.uri = uri
-        self.scale = "1 1 1"
+        self.scale = scale
+        self.units = units
 
     def xml(self, parent):
         """xml"""
@@ -391,7 +406,7 @@ class Mesh(Options):
         uri = ET.SubElement(mesh, "uri")
         uri.text = self.uri
         scale = ET.SubElement(mesh, "scale")
-        scale.text = self.scale
+        scale.text = " ".join([str(self.scale*self.units.meters)]*3)
 
 
 class Joint(Options):
