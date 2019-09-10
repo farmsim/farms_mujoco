@@ -46,6 +46,7 @@ class Amphibious(Animat):
             iterations
         )
         # Hydrodynamic forces
+        self.masses = np.zeros(options.morphology.n_links())
         self.hydrodynamics = None
         # Sensors
         self.sensors = Sensors()
@@ -77,7 +78,7 @@ class Amphibious(Animat):
             for i in range(self.options.morphology.n_links_body())
         ]
 
-    def spawn_sdf(self):
+    def spawn_sdf(self, verbose=False):
         """Spawn sdf"""
         links = [None for _ in range(self.options.morphology.n_links())]
         joints = [None for _ in range(self.options.morphology.n_joints())]
@@ -251,7 +252,7 @@ class Amphibious(Animat):
                     pose=pose,
                     inertial_pose=shape_pose,
                     shape_pose=shape_pose,
-                    units=self.units
+                    units=self.units,
                     # color=[
                     #     [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
                     #     [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
@@ -334,8 +335,8 @@ class Amphibious(Animat):
             useMaximalCoordinates=0,
             globalScaling=1
         )[0]
-        # texUid = pybullet.loadTexture("salamander_skin.jpg")
-        # for i in range(self.options.morphology.n_links_body()+10):
+        # texUid = pybullet.loadTexture("/home/jonathan/Work/EPFL/PhD/Dev/FARMS/farms_bullet/farms_bullet/animats/amphibious/salamander_skin.jpg")
+        # for i in range(self.options.morphology.n_links()):
         #     pybullet.changeVisualShape(
         #         self.identity,
         #         -1+i,
@@ -381,7 +382,6 @@ class Amphibious(Animat):
                 for joint_i in range(self.options.morphology.n_dof_legs)
             ]
         ]
-        print(self.joints_order)
         # Set names
         self.links['link_body_{}'.format(0)] = -1
         for i in range(self.options.morphology.n_links_body()-1):
@@ -416,9 +416,10 @@ class Amphibious(Animat):
                             joint_i=joint_i
                         )
                     ]
-        self.print_information()
+        if verbose:
+            self.print_information()
 
-    def spawn_body(self):
+    def spawn_body(self, verbose=False):
         """Spawn body"""
         if self.options.morphology.mesh_directory:
             body_link_positions = self.scale*np.diff(
@@ -610,20 +611,24 @@ class Amphibious(Animat):
                 )
         for link_i, link in enumerate(links):
             assert link is not None, "link {} is None".format(link_i)
-        for link_i, link in enumerate(links):
-            print(" {} (parent={}): {} (visual={}, collision={})".format(
-                link_i+1,
-                link.parent,
-                link.position,
-                link.visual,
-                link.collision
-            ))
+
+        if verbose:
+            for link_i, link in enumerate(links):
+                print(" {} (parent={}): {} (visual={}, collision={})".format(
+                    link_i+1,
+                    link.parent,
+                    link.position,
+                    link.visual,
+                    link.collision
+                ))
         self._identity = pybullet.createMultiBody(
             baseMass=base_link.mass*self.units.kilograms,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=np.array([0, 0, 0.1])*self.units.meters,
-            baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
+            basePosition=np.array(self.options.spawn_position)*self.units.meters,
+            baseOrientation=pybullet.getQuaternionFromEuler(
+                self.options.spawn_orientation
+            ),
             baseInertialFramePosition=np.array(
                 base_link.inertial_position
             )*self.units.meters,
@@ -709,7 +714,8 @@ class Amphibious(Animat):
                             joint_i=joint_i
                         )
                     ]
-        self.print_information()
+        if verbose:
+            self.print_information()
 
     # @classmethod
     # def spawn_sdf(cls, iterations, timestep, gait="walking", **kwargs):
@@ -786,6 +792,9 @@ class Amphibious(Animat):
 
     def set_body_properties(self):
         """Set body properties"""
+        # Masses
+        for i in range(self.options.morphology.n_links()):
+            self.masses[i] = pybullet.getDynamicsInfo(self.identity, i-1)[0]
         # Deactivate collisions
         links_no_collisions = [
             "link_body_{}".format(body_i)
@@ -841,7 +850,7 @@ class Amphibious(Animat):
             units=self.units
         )
 
-    def animat_swimming_physics(self, iteration):
+    def animat_swimming_physics(self, iteration, water_surface):
         """Animat swimming physics"""
         viscous_swimming(
             iteration,
@@ -851,7 +860,12 @@ class Amphibious(Animat):
             [
                 [i, self.links["link_body_{}".format(i)]]
                 for i in range(self.options.morphology.n_links_body())
+                if (
+                    self.data.sensors.gps.com_position(iteration, i)[2]
+                    < water_surface
+                )
             ],
+            masses=self.masses,
             coefficients=[
                 self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
                 self.options.morphology.scale**6*np.array([-1e-3, -1e-3, -1e-3])

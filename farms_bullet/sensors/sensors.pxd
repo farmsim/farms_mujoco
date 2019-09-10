@@ -26,3 +26,12 @@ cdef class ContactsSensors(NetworkArray3D):
         unsigned int iteration,
         unsigned int sensor
     )
+
+
+cdef class LinksStatesSensor(NetworkArray3D):
+    """Links states sensor"""
+
+    cdef public int animat
+    cdef public object links
+    cdef public object units
+    cpdef public void collect(self, unsigned int iteration, object links)

@@ -6,7 +6,7 @@ import pybullet
 
 from ...simulations.simulation import Simulation, SimulationElements
 from ...simulations.simulation_options import SimulationOptions
-from ...arenas.arena import FlooredArena
+from ...arenas.arena import FlooredArena, ArenaWater
 from ...interface.interface import Interfaces
 from ...simulations.simulator import real_time_handing
 
@@ -18,10 +18,19 @@ class AmphibiousSimulation(Simulation):
     """Amphibious simulation"""
 
     def __init__(self, simulation_options, animat, **kwargs):
+        if "arena" not in kwargs:
+            arena = (
+                ArenaWater(
+                    ramp_angle=-10,
+                    units=animat.units
+                )
+                if simulation_options.arena == "water"
+                else FlooredArena()
+            )
         super(AmphibiousSimulation, self).__init__(
             elements=SimulationElements(
                 animat=animat,
-                arena=kwargs.pop("arena", FlooredArena())
+                arena=kwargs.pop("arena", arena)
             ),
             options=simulation_options
         )
@@ -46,8 +55,8 @@ class AmphibiousSimulation(Simulation):
                 target_identity=self.elements.animat.identity,
                 simulation_options=simulation_options,
                 fps=1./(skips*simulation_options.timestep),
-                pitch=-45,
-                yaw=0,
+                pitch=simulation_options.video_pitch,
+                yaw=simulation_options.video_yaw,
                 skips=skips,
                 motion_filter=2*skips*simulation_options.timestep,
                 distance=1,
@@ -83,33 +92,63 @@ class AmphibiousSimulation(Simulation):
         self.tic_rt[0] = time.time()
         # Interface
         if not self.options.headless:
+
+            # Drive changes depending on simulation time
             if self.elements.animat.options.transition:
                 self.interface.user_params.drive_speed.value = (
                     1+4*sim_step/self.options.n_iterations
                 )
                 self.interface.user_params.drive_speed.changed = True
+
+            # # Switch drive based on position
+            # distance = self.elements.animat.data.sensors.gps.com_position(
+            #     iteration=sim_step-1 if sim_step else 0,
+            #     link_i=0
+            # )[0]
+            # swim_distance = 3
+            # value = self.interface.user_params.drive_speed.value
+            # if distance < -swim_distance:
+            #     self.interface.user_params.drive_speed.value = 4 - (
+            #         0.05*(swim_distance+distance)
+            #     )
+            #     if self.interface.user_params.drive_speed.value != value:
+            #         self.interface.user_params.drive_speed.changed = True
+            # else:
+            #     if self.interface.user_params.drive_speed.value != value:
+            #         self.interface.user_params.drive_speed.changed = True
+
+            # Update interface
             self.animat_interface()
+
         # Animat sensors
         self.elements.animat.sensors.update(sim_step)
+
+        # Physics step
         if sim_step < self.options.n_iterations-1:
-            # Plugins
-            if self.elements.animat.options.control.drives.forward > 3:
-                # Swimming
-                self.elements.animat.animat_swimming_physics(sim_step)
+            # Swimming
+            self.elements.animat.animat_swimming_physics(
+                sim_step,
+                self.elements.arena.water_surface
+            )
             if self.elements.animat.options.show_hydrodynamics:
                 self.elements.animat.draw_hydrodynamics(sim_step)
+
             # Control animat
             self.elements.animat.controller.control()
+
             # Physics step
             pybullet.stepSimulation()
             sim_step += 1
-            # Camera
-            if not self.options.headless:
-                if self.options.record:
-                    self.interface.video.record(sim_step)
-                # User camera
-                self.interface.camera.update()
-            # Real-time
+
+        # Camera
+        if not self.options.headless:
+            if self.options.record:
+                self.interface.video.record(sim_step)
+            # User camera
+            self.interface.camera.update()
+
+        # Real-time
+        if not self.options.headless:
             self.tic_rt[1] = time.time()
             if (
                     not self.options.fast
@@ -145,10 +184,10 @@ class AmphibiousSimulation(Simulation):
             self.elements.animat.controller.network.update(
                 self.elements.animat.options
             )
-            if self.elements.animat.options.control.drives.forward > 3:
-                pybullet.setGravity(0, 0, -0.01*self.options.units.gravity)
-            else:
-                pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
+            # if self.elements.animat.options.control.drives.forward > 3:
+            #     pybullet.setGravity(0, 0, -0.01*self.options.units.gravity)
+            # else:
+            #     pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
             self.interface.user_params.drive_speed.changed = False
         # Turning
         if self.interface.user_params.drive_turn.changed:
