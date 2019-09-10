@@ -129,12 +129,16 @@ class SimulationOptions(Options):
         self.fast = kwargs.pop("fast", False)
         self.record = kwargs.pop("record", False)
         self.video_name = kwargs.pop("video_name", "video")
+        self.video_yaw = kwargs.pop("video_yaw", 0)
+        self.video_pitch = kwargs.pop("video_pitch", -45)
+        self.video_distance = kwargs.pop("video_distance", 1)
         self.headless = kwargs.pop("headless", False)
         self.frequency = kwargs.pop("frequency", 1)
         self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
         self.plot = kwargs.pop("plot", True)
         self.log_path = kwargs.pop("log_path", False)
         self.log_extension = kwargs.pop("log_extension", "npy")
+        self.arena = kwargs.pop("arena", "floor")  # "water"
 
     @property
     def n_iterations(self):

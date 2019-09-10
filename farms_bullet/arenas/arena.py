@@ -8,6 +8,7 @@ import pybullet
 from .create import create_scene
 from ..simulations.element import SimulationElement
 from ..animats.link import AnimatLink
+from ..animats.amphibious.farms_sdf import ModelSDF, Link, Joint
 
 
 class Floor(SimulationElement):
@@ -79,6 +80,7 @@ class Arena:
     def __init__(self, elements):
         super(Arena, self).__init__()
         self.elements = elements
+        self.water_surface = -np.inf
 
     def spawn(self):
         """Spawn"""
@@ -122,7 +124,7 @@ class Ramp(SimulationElement):
         ground_dim = [1, 20, 0.1]
         ramp_dim = [3, 20, 0.1]
         upper_lower_dim = [1, 20, 0.1]
-        arena_color = [1, 0.8, 0.5, 1]
+        arena_color = [1, 0.8, 0.5, 1.0]
 
         # Arena definition
         base_link = AnimatLink(
@@ -198,6 +200,16 @@ class Ramp(SimulationElement):
             linkJointAxis=[link.joint_axis for link in links]
         )
 
+        # Textures
+        texture_file = "{}/BIOROB2_blue.png".format(
+            os.path.dirname(os.path.realpath(__file__))
+        )
+        texUid = pybullet.loadTexture(texture_file)
+        for i in range(3):
+            pybullet.changeVisualShape(
+                self._identity, -1+i, textureUniqueId=texUid
+            )
+
         # Dynamics properties
         pybullet.changeDynamics(
             bodyUniqueId=self.identity,
@@ -220,6 +232,186 @@ class Ramp(SimulationElement):
         # )
 
 
+class RampSDF(SimulationElement):
+    """Floor"""
+
+    def __init__(self, angle, units):
+        super(RampSDF, self).__init__()
+        self.angle = angle
+        self.units = units
+
+    def spawn(self):
+        """Spawn floor"""
+        ground_dim = [2, 20, 0.1]
+        ramp_dim = [6, 20, 0.1]
+        upper_lower_dim = [1, 20, 0.1]
+        # arena_color = [1, 0.8, 0.5, 1.0]
+        arena_color = [1, 1.0, 1.0, 1.0]
+
+        # Arena definition
+        links = [None for _ in range(3)]
+        # links[0] = Link.box(
+        #     name="floor_0",
+        #     size=ground_dim,
+        #     pose=[0, 0, 0, 0, 0, 0],
+        #     inertial_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
+        #     shape_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
+        #     units=self.units,
+        #     color=arena_color
+        # )
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        links[0] = Link.from_mesh(
+            name="floor_0",
+            mesh="{}/arena.obj".format(dir_path),
+            pose=[0, 0, 0, 0, 0, 0],
+            scale=1,
+            inertial_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
+            shape_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
+            units=self.units,
+            color=arena_color
+        )
+        links[0].inertial.mass = 0
+        links[0].inertial.inertia = np.zeros(6)
+        # links[1] = Link.box(
+        #     name="floor_1",
+        #     size=ramp_dim,
+        #     pose=[
+        #         (
+        #             -0.5*(ground_dim[0]+ramp_dim[0])
+        #             + 0.5*(1-np.cos(self.angle))*ramp_dim[0]
+        #         ),
+        #         0,
+        #         0.5*ramp_dim[0]*np.sin(self.angle),
+        #         0,
+        #         self.angle,
+        #         0
+        #     ],
+        #     inertial_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
+        #     shape_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
+        #     units=self.units,
+        #     color=arena_color
+        # )
+        links[1] = Link.from_mesh(
+            name="floor_1",
+            mesh="{}/arena_ramp.obj".format(dir_path),
+            pose=[
+                (
+                    -0.5*(ground_dim[0]+ramp_dim[0])
+                    + 0.5*(1-np.cos(self.angle))*ramp_dim[0]
+                ),
+                0,
+                0.5*ramp_dim[0]*np.sin(self.angle),
+                0,
+                self.angle,
+                0
+            ],
+            scale=1,
+            inertial_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
+            shape_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
+            units=self.units,
+            color=arena_color
+        )
+        links[1].inertial.mass = 0
+        links[1].inertial.inertia = np.zeros(6)
+        # links[2] = Link.box(
+        #     name="floor_2",
+        #     size=ground_dim,
+        #     pose=[
+        #         -ground_dim[0]-ramp_dim[0] + (1-np.cos(self.angle))*ramp_dim[0],
+        #         0,
+        #         ramp_dim[0]*np.sin(self.angle),
+        #         0,
+        #         0,
+        #         0
+        #     ],
+        #     inertial_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
+        #     shape_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
+        #     units=self.units,
+        #     color=arena_color
+        # )
+        links[2] = Link.from_mesh(
+            name="floor_2",
+            mesh="{}/arena.obj".format(dir_path),
+            pose=[
+                -ground_dim[0]-ramp_dim[0] + (1-np.cos(self.angle))*ramp_dim[0],
+                0,
+                ramp_dim[0]*np.sin(self.angle),
+                0,
+                0,
+                0
+            ],
+            scale=1,
+            inertial_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
+            shape_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
+            units=self.units,
+            color=arena_color
+        )
+        links[2].inertial.mass = 0
+        links[2].inertial.inertia = np.zeros(6)
+        # Joints
+        joints = [None, None]
+        for i in range(2):
+            joints[i] = Joint(
+                name="joint_{}".format(i),
+                joint_type="revolute",
+                parent=links[i],
+                child=links[i+1],
+                axis=[0, 1, 0],
+                limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
+            )
+
+        # Spawn
+        sdf = ModelSDF(
+            name="arena",
+            pose=np.zeros(6),
+            links=links,
+            joints=joints,
+            units=self.units
+        )
+        sdf.write(filename="arena.sdf")
+        print(os.getcwd() + "/arena.sdf")
+        self._identity = pybullet.loadSDF(
+            os.getcwd() + "/arena.sdf",
+            useMaximalCoordinates=0,
+            globalScaling=1
+        )[0]
+
+        # # Textures
+        # texture_file = "{}/BIOROB2_blue.png".format(
+        #     os.path.dirname(os.path.realpath(__file__))
+        # )
+        # texUid = pybullet.loadTexture(texture_file)
+        # for i in range(3):
+        #     pybullet.changeVisualShape(
+        #         self._identity, -1+i, textureUniqueId=texUid
+        #     )
+        # Texture
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        path = dir_path+"/BIOROB2_blue.png"
+        print(path)
+        texture = pybullet.loadTexture(path)
+        for i in range(3):
+            pybullet.changeVisualShape(
+                objectUniqueId=self.identity,
+                linkIndex=-1+i,
+                shapeIndex=-1,
+                textureUniqueId=texture,
+                # rgbaColor=[1, 1, 1, 1],
+                # specularColor=[1, 1, 1]
+            )
+
+        # Dynamics properties
+        pybullet.changeDynamics(
+            bodyUniqueId=self.identity,
+            linkIndex=0,
+            lateralFriction=2,
+            spinningFriction=0,
+            rollingFriction=0,
+            # contactDamping=1e2,
+            # contactStiffness=1e4
+        )
+
+
 class ArenaRamp(Arena):
     """ArenaRamp"""
 
@@ -232,7 +424,7 @@ class ArenaRamp(Arena):
         if elements is None:
             elements = []
         super(ArenaRamp, self).__init__(
-            [Ramp(angle=angle, units=units)]
+            [RampSDF(angle=angle, units=units)]
             + elements
         )
 
@@ -245,9 +437,10 @@ class ArenaRamp(Arena):
 class Water(SimulationElement):
     """Floor"""
 
-    def __init__(self, units):
+    def __init__(self, units, water_surface=-0.1):
         super(Water, self).__init__()
         self.units = units
+        self.water_surface = water_surface
 
     def spawn(self):
         """Spawn floor"""
@@ -269,7 +462,7 @@ class Water(SimulationElement):
             baseMass=base_link.mass,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=[0, 0, -0.1-water_size[2]],
+            basePosition=[0, 0, self.water_surface-water_size[2]],
             baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
         )
 
@@ -288,11 +481,13 @@ class ArenaWater(ArenaRamp):
     """ArenaRamp"""
 
     def __init__(self, units, ramp_angle=None, elements=None):
+        water_surface = -0.1
         super(ArenaWater, self).__init__(
             units=units,
             ramp_angle=ramp_angle,
-            elements=[Water(units)]
+            elements=[Water(units, water_surface)]
         )
+        self.water_surface = water_surface
 
     @property
     def water(self):

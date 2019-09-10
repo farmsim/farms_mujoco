@@ -31,6 +31,14 @@ class AmphibiousOptions(Options):
             "transition",
             False
         )
+        self.spawn_position = kwargs.pop(
+            "spawn_position",
+            [0, 0, 0.1]
+        )
+        self.spawn_orientation = kwargs.pop(
+            "spawn_orientation",
+            [0, 0, 0]
+        )
         if kwargs:
             raise Exception("Unknown kwargs: {}".format(kwargs))
 

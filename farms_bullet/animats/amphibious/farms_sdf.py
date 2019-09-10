@@ -19,7 +19,6 @@ class ModelSDF(Options):
         self.units = units
         self.links = kwargs.pop("links", [])
         self.joints = kwargs.pop("joints", [])
-        print(self.xml_str())
 
     def xml(self):
         """xml"""
