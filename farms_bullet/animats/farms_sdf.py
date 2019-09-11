@@ -6,7 +6,7 @@ import xml.dom.minidom
 import numpy as np
 import trimesh as tri
 
-from ...simulations.simulation_options import Options
+from ..simulations.simulation_options import Options
 
 
 class ModelSDF(Options):

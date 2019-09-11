@@ -12,6 +12,8 @@ from ...sensors.sensors import (
     ContactsSensors
 )
 
+from ..farms_sdf import ModelSDF, Link, Joint
+
 from .convention import AmphibiousConvention
 from .animat_data import (
     AmphibiousOscillatorNetworkState,
@@ -19,7 +21,6 @@ from .animat_data import (
 )
 from .control import AmphibiousController
 from .sensors import AmphibiousGPS
-from .farms_sdf import ModelSDF, Link, Joint
 
 
 class Amphibious(Animat):
