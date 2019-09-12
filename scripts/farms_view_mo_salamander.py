@@ -1,9 +1,12 @@
+#!/usr/bin/env python3
 """Farms multiobjective optimisation for salamander"""
+
+import os
 
 import numpy as np
 from jmetal.core.solution import FloatSolution
 from jmetal.util.ranking import FastNonDominatedRanking
-from farms_mo_salamander import SalamanderEvolution
+from farms_bullet.evolution.evolution import SalamanderEvolution
 
 
 def read_solutions(var_filename, fun_filename, order=0):
@@ -16,11 +19,13 @@ def read_solutions(var_filename, fun_filename, order=0):
     front = []
     number_of_objectives = 2
 
+    directory = os.path.dirname(os.path.realpath(__file__))
+
     # Variables
-    with open(var_filename) as file:
+    with open("/{}/{}".format(directory, var_filename)) as file:
         for line in file:
             variables.append([float(x) for x in line.split()])
-    with open(fun_filename) as file:
+    with open("/{}/{}".format(directory, fun_filename)) as file:
         for line in file:
             objectives.append([float(x) for x in line.split()])
     variables, objectives = map(np.array, [variables, objectives])
@@ -58,8 +63,14 @@ def main():
 
     # Load results from file
     front = read_solutions(
-        "VAR.NSGAII.Salamander evolution",
-        "FUN.NSGAII.Salamander evolution"
+        "VAR.NSGAII.Salamander evolution complete test",
+        "FUN.NSGAII.Salamander evolution complete test"
+        # "VAR.NSGAII.Salamander evolution complete new",
+        # "FUN.NSGAII.Salamander evolution complete new"
+        # "VAR.NSGAII.Salamander evolution",
+        # "FUN.NSGAII.Salamander evolution"
+        # "VAR.NSGAII.Salamander evolution complete",
+        # "FUN.NSGAII.Salamander evolution complete"
         # "VAR.GDE3.Salamander evolution",
         # "FUN.GDE3.Salamander evolution"
     )

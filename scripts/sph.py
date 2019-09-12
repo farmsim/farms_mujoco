@@ -45,7 +45,7 @@ from pysph.base.reduce_array import parallel_reduce_array
 
 # Rigid body physics
 import pybullet
-from farms_bullet.experiments.salamander.animat_options import SalamanderOptions
+from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 from farms_bullet.experiments.salamander.simulation import SalamanderSimulation
 
@@ -422,7 +422,7 @@ class RigidFluidCoupling(Application):
         ## Rigid body physics
 
         # Animat options
-        animat_options = SalamanderOptions(
+        animat_options = AmphibiousOptions(
             collect_gps=False,
             show_hydrodynamics=True,
             density=self.density_solid,

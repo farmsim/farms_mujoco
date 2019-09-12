@@ -2,15 +2,15 @@
 
 import numpy as np
 from scipy import integrate
-from .convention import bodyosc2index, legosc2index  # legjoint2index
+from .convention import AmphibiousConvention
 from ...controllers.controller import ode_oscillators_sparse
 
 
-class SalamanderNetworkODE:
-    """Salamander network"""
+class AmphibiousNetworkODE:
+    """Amphibious network"""
 
     def __init__(self, animat_options, animat_data, timestep):
-        super(SalamanderNetworkODE, self).__init__()
+        super(AmphibiousNetworkODE, self).__init__()
         self.ode = ode_oscillators_sparse
         self.animat_options = animat_options
         self.animat_data = animat_data
@@ -19,12 +19,16 @@ class SalamanderNetworkODE:
         n_body = self.animat_options.morphology.n_joints_body
         n_legs_dofs = self.animat_options.morphology.n_dof_legs
         self.groups = [None, None]
+        convention = AmphibiousConvention(animat_options)
         self.groups = [
             [
-                bodyosc2index(joint_i=i, side=side, n_body_joints=animat_options.morphology.n_joints_body)
+                convention.bodyosc2index(
+                    joint_i=i,
+                    side=side
+                )
                 for i in range(n_body)
             ] + [
-                legosc2index(
+                convention.legosc2index(
                     leg_i=leg_i,
                     side_i=side_i,
                     joint_i=joint_i,

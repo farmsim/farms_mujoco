@@ -1,20 +1,20 @@
-"""Salamander simulation"""
+"""Centipede simulation"""
 
 from ...animats.amphibious.simulation import AmphibiousSimulation
-from .animat import Salamander
+from .animat import Centipede
 
 
-class SalamanderSimulation(AmphibiousSimulation):
+class CentipedeSimulation(AmphibiousSimulation):
     """Salamander simulation"""
 
     def __init__(self, simulation_options, animat_options, *args, **kwargs):
-        animat = Salamander(
+        animat = Centipede(
             animat_options,
             simulation_options.timestep,
             simulation_options.n_iterations,
             simulation_options.units
         )
-        super(SalamanderSimulation, self).__init__(
+        super(CentipedeSimulation, self).__init__(
             simulation_options,
             animat,
             *args,
@@ -29,11 +29,12 @@ def main(simulation_options=None, animat_options=None):
     if not simulation_options:
         simulation_options = SimulationOptions.with_clargs()
     if not animat_options:
-        animat_options = AmphibiousOptions()
+        animat_options = SalamanderOptions()
+        animat_options.morphology.n_joints_body = 12
 
     # Setup simulation
     print("Creating simulation")
-    sim = SalamanderSimulation(
+    sim = CentipedeSimulation(
         simulation_options=simulation_options,
         animat_options=animat_options
     )
@@ -51,12 +52,6 @@ def main(simulation_options=None, animat_options=None):
         log_extension=simulation_options.log_extension,
         record=sim.options.record and not sim.options.headless
     )
-    if simulation_options.log_path:
-        np.save(
-            simulation_options.log_path+"/hydrodynamics.npy",
-            sim.elements.animat.data.sensors.hydrodynamics.array
-        )
-
     sim.end()
 
 

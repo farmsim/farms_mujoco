@@ -11,10 +11,16 @@ import pybullet_data
 def init_engine(headless=False):
     """Initialise engine"""
     print(pybullet.getAPIVersion())
+    background_color = 0.9*np.ones(3)
     pybullet.connect(
         pybullet.DIRECT if headless else pybullet.GUI,
         # options="--enable_experimental_opencl"
         # options="--opengl2"  #  --minGraphicsUpdateTimeMs=32000
+        options=(
+            "--background_color_red={}"
+            " --background_color_green={}"
+            " --background_color_blue={}"
+        ).format(*background_color)
     )
     pybullet_path = pybullet_data.getDataPath()
     print("Adding pybullet data path {}".format(pybullet_path))

@@ -6,26 +6,26 @@ from scipy import interpolate
 from ...simulations.simulation_options import Options
 
 
-class SalamanderOptions(Options):
+class AmphibiousOptions(Options):
     """Simulation options"""
 
     def __init__(self, **kwargs):
-        super(SalamanderOptions, self).__init__()
+        super(AmphibiousOptions, self).__init__()
         self.morphology = kwargs.pop(
             "morphology",
-            SalamanderMorphologyOptions(kwargs)
+            AmphibiousMorphologyOptions(kwargs)
         )
         self.spawn = kwargs.pop(
             "spawn",
-            SalamanderSpawnOptions(kwargs)
+            AmphibiousSpawnOptions(kwargs)
         )
         self.physics = kwargs.pop(
             "physics",
-            SalamanderPhysicsOptions(kwargs)
+            AmphibiousPhysicsOptions(kwargs)
         )
         self.control = kwargs.pop(
             "control",
-            SalamanderControlOptions(self.morphology, **kwargs)
+            AmphibiousControlOptions(self.morphology, **kwargs)
         )
         self.collect_gps = kwargs.pop(
             "collect_gps",
@@ -43,16 +43,22 @@ class SalamanderOptions(Options):
             raise Exception("Unknown kwargs: {}".format(kwargs))
 
 
-class SalamanderMorphologyOptions(Options):
-    """Salamander morphology options"""
+class AmphibiousMorphologyOptions(Options):
+    """Amphibious morphology options"""
 
     def __init__(self, options):
-        super(SalamanderMorphologyOptions, self).__init__()
+        super(AmphibiousMorphologyOptions, self).__init__()
+        self.mesh_directory = ""
         self.scale = options.pop("scale", 1.0)
         self.density = options.pop("density", 1000.0)
         self.n_joints_body = options.pop("n_joints_body", 11)
         self.n_dof_legs = options.pop("n_dof_legs", 4)
+        self.legs_parents = options.pop("legs_parents", [0, 4])
+        assert len(self.legs_parents) == self.n_dof_legs//2
         self.n_legs = options.pop("n_legs", 4)
+        self.leg_offset = options.pop("leg_offset", 0.03)
+        self.leg_length = options.pop("leg_length", 0.06)
+        self.leg_radius = options.pop("leg_radius", 0.015)
 
     def n_joints(self):
         """Number of joints"""
@@ -71,42 +77,42 @@ class SalamanderMorphologyOptions(Options):
         return self.n_links_body() + self.n_joints_legs()
 
 
-class SalamanderSpawnOptions(Options):
-    """Salamander spawn options"""
+class AmphibiousSpawnOptions(Options):
+    """Amphibious spawn options"""
 
     def __init__(self, options):
-        super(SalamanderSpawnOptions, self).__init__()
+        super(AmphibiousSpawnOptions, self).__init__()
         # Position in [m]
         self.position = options.pop("spawn_position", [0, 0, 0.1])
         # Orientation (Euler angles in [rad])
         self.orientation = options.pop("spawn_orientation", [0, 0, 0])
 
 
-class SalamanderPhysicsOptions(Options):
-    """Salamander physics options"""
+class AmphibiousPhysicsOptions(Options):
+    """Amphibious physics options"""
 
     def __init__(self, options):
-        super(SalamanderPhysicsOptions, self).__init__()
+        super(AmphibiousPhysicsOptions, self).__init__()
         self.viscous = options.pop("viscous", True)
         self.sph = options.pop("sph", False)
 
 
-class SalamanderControlOptions(Options):
-    """Salamander control options"""
+class AmphibiousControlOptions(Options):
+    """Amphibious control options"""
 
     def __init__(self, morphology, **kwargs):
-        super(SalamanderControlOptions, self).__init__()
+        super(AmphibiousControlOptions, self).__init__()
         self.drives = kwargs.pop(
             "drives",
-            SalamanderDrives(**kwargs)
+            AmphibiousDrives(**kwargs)
         )
         self.joints_controllers = kwargs.pop(
             "joints_controllers",
-            SalamanderJointsControllers(**kwargs)
+            AmphibiousJointsControllers(**kwargs)
         )
         self.network = kwargs.pop(
             "network",
-            SalamanderNetworkOptions(morphology, **kwargs)
+            AmphibiousNetworkOptions(morphology, **kwargs)
         )
 
     def to_vector(self):
@@ -156,22 +162,22 @@ class SalamanderControlOptions(Options):
         ) = vector
 
 
-class SalamanderDrives(Options):
-    """Salamander drives"""
+class AmphibiousDrives(Options):
+    """Amphibious drives"""
 
     def __init__(self, **kwargs):
-        super(SalamanderDrives, self).__init__()
+        super(AmphibiousDrives, self).__init__()
         self.forward = kwargs.pop("drive_forward", 2)
         self.turning = kwargs.pop("drive_turn", 0)
         self.left = kwargs.pop("drive_left", 0)
         self.right = kwargs.pop("drive_right", 0)
 
 
-class SalamanderJointsControllers(Options):
-    """Salamander joints controllers"""
+class AmphibiousJointsControllers(Options):
+    """Amphibious joints controllers"""
 
     def __init__(self, **kwargs):
-        super(SalamanderJointsControllers, self).__init__()
+        super(AmphibiousJointsControllers, self).__init__()
         self.body_p = kwargs.pop("body_p", 1e-1)
         self.body_d = kwargs.pop("body_d", 1e0)
         self.body_f = kwargs.pop("body_f", 1e1)
@@ -180,27 +186,32 @@ class SalamanderJointsControllers(Options):
         self.legs_f = kwargs.pop("legs_f", 1e1)
 
 
-class SalamanderNetworkOptions(Options):
-    """Salamander network options"""
+class AmphibiousNetworkOptions(Options):
+    """Amphibious network options"""
 
     def __init__(self, morphology, **kwargs):
-        super(SalamanderNetworkOptions, self).__init__()
+        super(AmphibiousNetworkOptions, self).__init__()
         self.oscillators = kwargs.pop(
             "oscillators",
-            SalamanderOscillatorOptions(morphology, **kwargs)
+            AmphibiousOscillatorOptions(morphology, **kwargs)
         )
         self.connectivity = kwargs.pop(
             "connectivity",
-            SalamanderConnectivityOptions(morphology, **kwargs)
+            AmphibiousConnectivityOptions(morphology, **kwargs)
         )
         self.joints = kwargs.pop(
             "joints",
-            SalamanderJointsOptions(**kwargs)
+            AmphibiousJointsOptions(morphology, **kwargs)
         )
         self.sensors = kwargs.pop(
             "sensors",
             None
         )
+
+    def update(self):
+        """Update"""
+        self.oscillators.update()
+        self.joints.update()
 
 
 class DriveDependentProperty(Options):
@@ -216,8 +227,8 @@ class DriveDependentProperty(Options):
         return self.interp(drives.forward)
 
 
-class SalamanderOscillatorFrequenciesOptions(DriveDependentProperty):
-    """Salamander oscillator frequencies options"""
+class AmphibiousOscillatorFrequenciesOptions(DriveDependentProperty):
+    """Amphibious oscillator frequencies options"""
 
     @classmethod
     def legs_freqs(cls):
@@ -248,8 +259,8 @@ class SalamanderOscillatorFrequenciesOptions(DriveDependentProperty):
         return self.interp(drives.forward)
 
 
-class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
-    """Salamander oscillators amplitudes options"""
+class AmphibiousOscillatorAmplitudeOptions(DriveDependentProperty):
+    """Amphibious oscillators amplitudes options"""
 
     @classmethod
     def legs_nominal_amplitudes(cls, joint_i, **kwargs):
@@ -300,8 +311,8 @@ class SalamanderOscillatorAmplitudeOptions(DriveDependentProperty):
         )
 
 
-class SalamanderOscillatorJointsOptions(DriveDependentProperty):
-    """Salamander drive dependent properties"""
+class AmphibiousOscillatorJointsOptions(DriveDependentProperty):
+    """Amphibious drive dependent properties"""
 
     @classmethod
     def legs_joints_offsets(cls, joint_i, **kwargs):
@@ -332,16 +343,15 @@ class SalamanderOscillatorJointsOptions(DriveDependentProperty):
         ])
 
 
-class SalamanderOscillatorOptions(Options):
-    """Salamander oscillator options
+class AmphibiousOscillatorOptions(Options):
+    """Amphibious oscillator options
 
     Includes frequencies, amplitudes rates and nominal amplitudes
 
     """
 
     def __init__(self, morphology, **kwargs):
-        super(SalamanderOscillatorOptions, self).__init__()
-
+        super(AmphibiousOscillatorOptions, self).__init__()
         self.morphology = morphology
         self.body_head_amplitude = kwargs.pop("body_head_amplitude", 0)
         self.body_tail_amplitude = kwargs.pop("body_tail_amplitude", 0)
@@ -352,13 +362,17 @@ class SalamanderOscillatorOptions(Options):
         )
         self._body_stand_shift = kwargs.pop("body_stand_shift", np.pi/4)
         self.body_nominal_amplitudes = None
-        self.set_body_nominal_amplitudes()
         self.legs_nominal_amplitudes = None
-        self.set_legs_nominal_amplitudes()
+        self.update()
 
         # Frequencies
-        self.body_freqs = SalamanderOscillatorFrequenciesOptions.body_freqs()
-        self.legs_freqs = SalamanderOscillatorFrequenciesOptions.legs_freqs()
+        self.body_freqs = AmphibiousOscillatorFrequenciesOptions.body_freqs()
+        self.legs_freqs = AmphibiousOscillatorFrequenciesOptions.legs_freqs()
+
+    def update(self):
+        """Update all"""
+        self.set_body_nominal_amplitudes()
+        self.set_legs_nominal_amplitudes()
 
     def get_body_stand_amplitude(self):
         """Body stand amplitude"""
@@ -377,7 +391,7 @@ class SalamanderOscillatorOptions(Options):
     def set_body_nominal_amplitudes(self):
         """Set body nominal amplitudes"""
         self.body_nominal_amplitudes = [
-            SalamanderOscillatorAmplitudeOptions.body_nominal_amplitudes(
+            AmphibiousOscillatorAmplitudeOptions.body_nominal_amplitudes(
                 self.morphology,
                 joint_i,
                 body_stand_amplitude=self._body_stand_amplitude
@@ -397,7 +411,7 @@ class SalamanderOscillatorOptions(Options):
     def set_legs_nominal_amplitudes(self):
         """Set legs nominal amplitudes"""
         self.legs_nominal_amplitudes = [
-            SalamanderOscillatorAmplitudeOptions.legs_nominal_amplitudes(
+            AmphibiousOscillatorAmplitudeOptions.legs_nominal_amplitudes(
                 joint_i,
                 **{
                     "leg_{}_amplitude".format(joint_i): (
@@ -409,14 +423,18 @@ class SalamanderOscillatorOptions(Options):
         ]
 
 
-class SalamanderConnectivityOptions(Options):
-    """Salamander connectivity options"""
+class AmphibiousConnectivityOptions(Options):
+    """Amphibious connectivity options"""
 
     def __init__(self, morphology, **kwargs):
-        super(SalamanderConnectivityOptions, self).__init__()
+        super(AmphibiousConnectivityOptions, self).__init__()
         self.body_phase_bias = kwargs.pop(
             "body_phase_bias",
             2*np.pi/morphology.n_joints_body
+        )
+        self.leg_phase_follow = kwargs.pop(
+            "leg_phase_follow",
+            np.pi
         )
         self.weight_osc_body = 1e3
         self.weight_osc_legs_internal = 1e3
@@ -429,11 +447,12 @@ class SalamanderConnectivityOptions(Options):
         self.weight_sens_hydro_amp = 1
 
 
-class SalamanderJointsOptions(Options):
-    """Salamander joints options"""
+class AmphibiousJointsOptions(Options):
+    """Amphibious joints options"""
 
-    def __init__(self, **kwargs):
-        super(SalamanderJointsOptions, self).__init__()
+    def __init__(self, morphology, **kwargs):
+        super(AmphibiousJointsOptions, self).__init__()
+        self.morphology = morphology
         self._legs_offsets = kwargs.pop(
             "legs_offsets_walking",
             [0, np.pi/32, 0, np.pi/8]
@@ -449,6 +468,11 @@ class SalamanderJointsOptions(Options):
         self.body_offsets = None
         self.update_body_offsets()
 
+    def update(self):
+        """Update"""
+        self.update_body_offsets()
+        self.update_legs_offsets()
+
     def get_legs_offsets(self):
         """Get legs offsets"""
         return self._legs_offsets
@@ -461,12 +485,12 @@ class SalamanderJointsOptions(Options):
     def update_legs_offsets(self):
         """Set legs joints offsets"""
         self.legs_offsets = [
-            SalamanderOscillatorJointsOptions.legs_joints_offsets(
+            AmphibiousOscillatorJointsOptions.legs_joints_offsets(
                 joint_i,
                 legs_offsets_walking=self._legs_offsets,
                 legs_offsets_swimming=self._legs_offsets_swimming
             )
-            for joint_i in range(4)
+            for joint_i in range(self.morphology.n_dof_legs)
         ]
 
     def set_body_offsets(self, value):
@@ -477,9 +501,9 @@ class SalamanderJointsOptions(Options):
     def update_body_offsets(self):
         """Set body joints offsets"""
         self.body_offsets = [
-            SalamanderOscillatorJointsOptions.body_joints_offsets(
+            AmphibiousOscillatorJointsOptions.body_joints_offsets(
                 joint_i,
                 offset=self._body_offset
             )
-            for joint_i in range(11)
+            for joint_i in range(self.morphology.n_joints_body)
         ]

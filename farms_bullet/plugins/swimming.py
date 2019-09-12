@@ -11,16 +11,17 @@ def viscous_forces(
         data_gps,
         data_hydrodynamics,
         links,
+        masses,
         **kwargs
 ):
-    """Viscous swimming forces"""
-    # Coefficients
+    """Viscous swimming"""
+    gravity = kwargs.pop("gravity", -9.81)
     force_coefficients, torque_coefficients = kwargs.pop(
         "coefficients",
         [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
     )
-    for link_i, _ in links:
-        # Get velocity in global frame
+    for link_i in links:
+        pos = data_gps.com_position(iteration, link_i)
         ori, lin_velocity, ang_velocity = (
             data_gps.urdf_orientation(iteration, link_i),
             data_gps.com_lin_velocity(iteration, link_i),
@@ -33,8 +34,10 @@ def viscous_forces(
         link_velocity = np.dot(link_orientation_inv, lin_velocity)
         link_angular_velocity = np.dot(link_orientation_inv, ang_velocity)
         # Data
+        buoyancy = 10*masses[link_i]*gravity*(0.1+pos[2])
         data_hydrodynamics[iteration, link_i, :3] = (
             np.sign(link_velocity)*force_coefficients*link_velocity**2
+            + np.dot(link_orientation_inv, [0, 0, buoyancy])
         )
         data_hydrodynamics[iteration, link_i, 3:6] = (
             np.sign(link_angular_velocity)*torque_coefficients*link_angular_velocity**2

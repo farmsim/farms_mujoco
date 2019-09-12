@@ -58,11 +58,11 @@ class Interfaces:
             size=simulation_options.n_iterations,
             timestep=simulation_options.timestep,
             fps=1./(skips*simulation_options.timestep),
-            pitch=kwargs.pop("pitch", -45),
-            yaw=kwargs.pop("yaw", 0),
+            pitch=kwargs.pop("pitch", simulation_options.video_pitch),
+            yaw=kwargs.pop("yaw", simulation_options.video_yaw),
             skips=skips,
             motion_filter=2*skips*simulation_options.timestep,
-            distance=1
+            distance=simulation_options.video_distance
         )
 
     def init_debug(self, animat_options):

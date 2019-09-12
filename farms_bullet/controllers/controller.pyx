@@ -14,7 +14,7 @@ from libc.math cimport sin, fabs  # cos,
 cpdef double[:] ode_oscillators_sparse(
     double time,
     CTYPE[:] state,
-    AnimatData data
+    AnimatDataCy data
 ) nogil:
     """ODE"""
     cdef unsigned int i, i0, i1

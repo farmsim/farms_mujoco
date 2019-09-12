@@ -1,20 +1,20 @@
-"""Salamander simulation"""
+"""Polypterus simulation"""
 
 from ...animats.amphibious.simulation import AmphibiousSimulation
-from .animat import Salamander
+from .animat import Polypterus
 
 
-class SalamanderSimulation(AmphibiousSimulation):
-    """Salamander simulation"""
+class PolypterusSimulation(AmphibiousSimulation):
+    """Polypterus simulation"""
 
     def __init__(self, simulation_options, animat_options, *args, **kwargs):
-        animat = Salamander(
+        animat = Polypterus(
             animat_options,
             simulation_options.timestep,
             simulation_options.n_iterations,
             simulation_options.units
         )
-        super(SalamanderSimulation, self).__init__(
+        super(PolypterusSimulation, self).__init__(
             simulation_options,
             animat,
             *args,
@@ -33,7 +33,7 @@ def main(simulation_options=None, animat_options=None):
 
     # Setup simulation
     print("Creating simulation")
-    sim = SalamanderSimulation(
+    sim = PolypterusSimulation(
         simulation_options=simulation_options,
         animat_options=animat_options
     )
@@ -51,12 +51,6 @@ def main(simulation_options=None, animat_options=None):
         log_extension=simulation_options.log_extension,
         record=sim.options.record and not sim.options.headless
     )
-    if simulation_options.log_path:
-        np.save(
-            simulation_options.log_path+"/hydrodynamics.npy",
-            sim.elements.animat.data.sensors.hydrodynamics.array
-        )
-
     sim.end()
 
 
@@ -73,6 +67,11 @@ def main_parallel():
     # Run simulation
     pool.map(main, [sim_options, sim_options])
     print("Done")
+
+
+if __name__ == '__main__':
+    # main_parallel()
+    main()
 
 
 if __name__ == '__main__':

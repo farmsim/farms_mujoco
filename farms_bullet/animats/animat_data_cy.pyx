@@ -4,11 +4,11 @@ import numpy as np
 cimport numpy as np
 
 
-cdef class AnimatData:
+cdef class AnimatDataCy:
     """Network parameter"""
 
     def __init__(self, state=None, network=None, joints=None, sensors=None):
-        super(AnimatData, self).__init__()
+        super(AnimatDataCy, self).__init__()
         self.state = state
         self.network = network
         self.joints = joints
@@ -16,7 +16,7 @@ cdef class AnimatData:
         self.iteration = 0
 
 
-cdef class NetworkParameters:
+cdef class NetworkParametersCy:
     """Network parameter"""
 
     def __init__(
@@ -26,20 +26,29 @@ cdef class NetworkParameters:
             contacts_connectivity,
             hydro_connectivity
     ):
-        super(NetworkParameters, self).__init__()
+        super(NetworkParametersCy, self).__init__()
         self.oscillators = oscillators
         self.connectivity = connectivity
         self.contacts_connectivity = contacts_connectivity
         self.hydro_connectivity = hydro_connectivity
 
 
-cdef class OscillatorNetworkState(NetworkArray3D):
+cdef class OscillatorNetworkStateCy(NetworkArray3D):
     """Network state"""
 
     def __init__(self, state, n_oscillators, iteration=0):
-        super(OscillatorNetworkState, self).__init__(state)
+        super(OscillatorNetworkStateCy, self).__init__(state)
         self.n_oscillators = n_oscillators
         self._iteration = iteration
+
+    @classmethod
+    def from_options(cls, state, animat_options, iteration=0):
+        """From options"""
+        return cls(
+            state=state,
+            n_oscillators=2*animat_options.morphology.n_joints(),
+            iteration=iteration
+        )
 
     @classmethod
     def from_solver(cls, solver, n_oscillators):
@@ -50,9 +59,17 @@ cdef class OscillatorNetworkState(NetworkArray3D):
         """Phases"""
         return self.array[iteration, 0, :self.n_oscillators]
 
+    def phases_all(self):
+        """Phases"""
+        return self.array[:, 0, :self.n_oscillators]
+
     def amplitudes(self, unsigned int iteration):
         """Amplitudes"""
         return self.array[iteration, 0, self.n_oscillators:]
+
+    def amplitudes_all(self):
+        """Phases"""
+        return self.array[:, 0, self.n_oscillators:]
 
     def dphases(self, unsigned int iteration):
         """Phases derivative"""
@@ -63,7 +80,7 @@ cdef class OscillatorNetworkState(NetworkArray3D):
         return self.array[iteration, 1, self.n_oscillators:]
 
 
-cdef class OscillatorArray(NetworkArray2D):
+cdef class OscillatorArrayCy(NetworkArray2D):
     """Oscillator array"""
 
     @classmethod
@@ -97,7 +114,7 @@ cdef class OscillatorArray(NetworkArray2D):
         self.array[2, :] = value
 
 
-cdef class ConnectivityArray(NetworkArray2D):
+cdef class ConnectivityArrayCy(NetworkArray2D):
     """Connectivity array"""
 
     @classmethod
@@ -121,7 +138,7 @@ cdef class ConnectivityArray(NetworkArray2D):
         return self.array[:][3]
 
 
-cdef class JointsArray(NetworkArray2D):
+cdef class JointsArrayCy(NetworkArray2D):
     """Oscillator array"""
 
     @classmethod
@@ -148,24 +165,24 @@ cdef class JointsArray(NetworkArray2D):
         self.array[0, n_body_joints:] = value
 
 
-cdef class Sensors:
-    """Sensors"""
+cdef class SensorsDataCy:
+    """SensorsData"""
 
     def __init__(
             self,
-            ContactsArray contacts=None,
-            ProprioceptionArray proprioception=None,
-            GpsArray gps=None,
-            HydrodynamicsArray hydrodynamics=None
+            ContactsArrayCy contacts=None,
+            ProprioceptionArrayCy proprioception=None,
+            GpsArrayCy gps=None,
+            HydrodynamicsArrayCy hydrodynamics=None
     ):
-        super(Sensors, self).__init__()
+        super(SensorsDataCy, self).__init__()
         self.contacts = contacts
         self.proprioception = proprioception
         self.gps = gps
         self.hydrodynamics = hydrodynamics
 
 
-cdef class ContactsArray(NetworkArray3D):
+cdef class ContactsArrayCy(NetworkArray3D):
     """Sensor array"""
 
     @classmethod
@@ -177,16 +194,28 @@ cdef class ContactsArray(NetworkArray3D):
         """Reaction force"""
         return self.array[iteration, sensor_i, 0:3]
 
+    cpdef double[:, :] reaction_all(self, unsigned int sensor_i):
+        """Reaction force"""
+        return self.array[:, sensor_i, 0:3]
+
     cpdef double[:] friction(self, unsigned int iteration, unsigned int sensor_i):
         """Friction force"""
         return self.array[iteration, sensor_i, 3:6]
+
+    cpdef double[:, :] friction_all(self, unsigned int sensor_i):
+        """Friction force"""
+        return self.array[:, sensor_i, 3:6]
 
     cpdef double[:] total(self, unsigned int iteration, unsigned int sensor_i):
         """Total force"""
         return self.array[iteration, sensor_i, 6:9]
 
+    cpdef double[:, :] total_all(self, unsigned int sensor_i):
+        """Total force"""
+        return self.array[:, sensor_i, 6:9]
 
-cdef class ProprioceptionArray(NetworkArray3D):
+
+cdef class ProprioceptionArrayCy(NetworkArray3D):
     """Proprioception array"""
 
     @classmethod
@@ -199,28 +228,40 @@ cdef class ProprioceptionArray(NetworkArray3D):
         return self.array[iteration, joint_i, 0]
 
     cpdef double[:] positions(self, unsigned int iteration):
-        """Joint position"""
+        """Joints positions"""
         return self.array[iteration, :, 0]
+
+    cpdef double[:, :] positions_all(self):
+        """Joints positions"""
+        return self.array[:, :, 0]
 
     cpdef double velocity(self, unsigned int iteration, unsigned int joint_i):
         """Joint velocity"""
         return self.array[iteration, joint_i, 1]
 
     cpdef double[:] velocities(self, unsigned int iteration):
-        """Joint velocity"""
+        """Joints velocities"""
         return self.array[iteration, :, 1]
 
     cpdef double[:, :] velocities_all(self):
-        """Joint velocity"""
+        """Joints velocities"""
         return self.array[:, :, 1]
 
     cpdef double[:] force(self, unsigned int iteration, unsigned int joint_i):
         """Joint force"""
         return self.array[iteration, joint_i, 2:5]
 
+    cpdef double[:, :, :] forces_all(self):
+        """Joints forces"""
+        return self.array[:, :, 2:5]
+
     cpdef double[:] torque(self, unsigned int iteration, unsigned int joint_i):
         """Joint torque"""
         return self.array[iteration, joint_i, 5:8]
+
+    cpdef double[:, :, :] torques_all(self):
+        """Joints torques"""
+        return self.array[:, :, 5:8]
 
     cpdef double motor_torque(self, unsigned int iteration, unsigned int joint_i):
         """Joint velocity"""
@@ -231,7 +272,7 @@ cdef class ProprioceptionArray(NetworkArray3D):
         return self.array[:, :, 8]
 
 
-cdef class GpsArray(NetworkArray3D):
+cdef class GpsArrayCy(NetworkArray3D):
     """Gps array"""
 
     @classmethod
@@ -251,6 +292,10 @@ cdef class GpsArray(NetworkArray3D):
         """URDF position of a link"""
         return self.array[iteration, link_i, 7:10]
 
+    cpdef double[:, :, :] urdf_positions(self):
+        """URDF position of a link"""
+        return self.array[:, :, 7:10]
+
     cpdef double[:] urdf_orientation(self, unsigned int iteration, unsigned int link_i):
         """URDF orientation of a link"""
         return self.array[iteration, link_i, 10:14]
@@ -259,15 +304,27 @@ cdef class GpsArray(NetworkArray3D):
         """CoM linear velocity of a link"""
         return self.array[iteration, link_i, 14:17]
 
+    cpdef double[:, :, :] com_lin_velocities(self):
+        """CoM linear velocities"""
+        return self.array[:, :, 14:17]
+
     cpdef double[:] com_ang_velocity(self, unsigned int iteration, unsigned int link_i):
         """CoM angular velocity of a link"""
         return self.array[iteration, link_i, 17:20]
 
 
-cdef class HydrodynamicsArray(NetworkArray3D):
+cdef class HydrodynamicsArrayCy(NetworkArray3D):
     """Hydrodynamics array"""
 
     @classmethod
     def from_parameters(cls, n_iterations, n_links):
         """From parameters"""
         return cls(np.zeros([n_iterations, n_links, 6]))
+
+    cpdef double[:, :, :] forces(self):
+        """Forces"""
+        return self.array[:, :, 0:3]
+
+    cpdef double[:, :, :] torques(self):
+        """Torques"""
+        return self.array[:, :, 3:6]

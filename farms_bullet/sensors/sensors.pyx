@@ -91,7 +91,7 @@ cdef class ContactsSensors(NetworkArray3D):
             )
 
 
-class ContactTarget(dict):
+cdef class ContactTarget(dict):
     """Documentation for ContactTarget"""
 
     __getattr__ = dict.__getitem__
@@ -193,7 +193,7 @@ class JointsStatesSensor(NetworkArray3D):
         ])
 
 
-class LinksStatesSensor(NetworkArray3D):
+cdef class LinksStatesSensor(NetworkArray3D):
     """Links states sensor
 
     links is an array of size (N, 3) where the 3 values are:
@@ -214,32 +214,38 @@ class LinksStatesSensor(NetworkArray3D):
         """Update sensor"""
         self.collect(iteration, self.links)
 
-    def collect(self, iteration, links):
+    cpdef void collect(self, unsigned int iteration, object links):
         """Collect gps data"""
-        imeters = 1./self.units.meters
-        ivelocity = 1./self.units.velocity
-        seconds = self.units.seconds
+        cdef int link_id
+        cdef unsigned int link_i
+        cdef double pos_com[3]
+        cdef double ori_com[4]
+        cdef double pos_urdf[3]
+        cdef double ori_urdf[4]
+        cdef double lin_velocity[3]
+        cdef double ang_velocity[3]
+        cdef double imeters = 1./self.units.meters
+        cdef double ivelocity = 1./self.units.velocity
+        cdef double seconds = self.units.seconds
         for _, link_i, link_id in links:
             # Collect data
             if link_id == -1:
                 # Base link
-                pos_com, ori_com = pybullet.getBasePositionAndOrientation(
-                    self.animat
-                )
-                # pos_urdf, ori_urdf = pos_com, ori_com
-                local_pos = np.array(
-                    pybullet.getDynamicsInfo(self.animat, link_id)[3]
-                )
-                pos_urdf = np.array(pos_com) + np.dot(
-                    np.array(
+                base_info = pybullet.getBasePositionAndOrientation(self.animat)
+                pos_com = base_info[0]
+                ori_com = base_info[1]
+                pos_urdf = np.asarray(pos_com) + np.dot(
+                    np.asarray(
                         pybullet.getMatrixFromQuaternion(ori_com)
                     ).reshape([3, 3]),
-                    -local_pos
+                    -np.asarray(
+                        pybullet.getDynamicsInfo(self.animat, link_id)[3]
+                    )
                 )
                 ori_urdf = ori_com
-                lin_velocity, ang_velocity = pybullet.getBaseVelocity(
-                    self.animat
-                )
+                base_velocity = pybullet.getBaseVelocity(self.animat)
+                lin_velocity = base_velocity[0]
+                ang_velocity = base_velocity[1]
             else:
                 # Children links
                 link_state = pybullet.getLinkState(
@@ -248,21 +254,12 @@ class LinksStatesSensor(NetworkArray3D):
                     computeLinkVelocity=1,
                     computeForwardKinematics=1
                 )
-                (
-                    pos_com,
-                    ori_com,
-                    pos_urdf,
-                    ori_urdf,
-                    lin_velocity,
-                    ang_velocity
-                )= (
-                    link_state[0],  # Position of CoM
-                    link_state[1],  # Orientation of CoM
-                    link_state[4],  # Position of URDF frame
-                    link_state[5],  # Orientation of URDF frame
-                    link_state[6],  # Velocity of CoM
-                    link_state[7]   # Angular velocity of CoM
-                )
+                pos_com = link_state[0]  # Position of CoM
+                ori_com = link_state[1]  # Orientation of CoM
+                pos_urdf = link_state[4]  # Position of URDF frame
+                ori_urdf = link_state[5]  # Orientation of URDF frame
+                lin_velocity = link_state[6]  # Velocity of CoM
+                ang_velocity = link_state[7]  # Angular velocity of CoM
             # Position of CoM
             self.array[iteration, link_i, 0] = pos_com[0]*imeters
             self.array[iteration, link_i, 1] = pos_com[1]*imeters

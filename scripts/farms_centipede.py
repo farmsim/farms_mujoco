@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Run snake simulation with bullet"""
+"""Run centipede simulation with bullet"""
 
 import time
 import matplotlib.pyplot as plt
-from farms_bullet.experiments.snake.simulation import main as run_sim
+from farms_bullet.experiments.centipede.simulation import main as run_sim
 from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
@@ -20,7 +20,7 @@ def main():
     # Simulation options
     simulation_options = SimulationOptions.with_clargs()
     simulation_options.units.meters = 1
-    simulation_options.units.seconds = 1
+    simulation_options.units.seconds = 1000
     simulation_options.units.kilograms = 1
     # Run simulation
     run_sim(
