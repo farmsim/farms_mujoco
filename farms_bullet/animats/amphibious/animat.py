@@ -142,7 +142,7 @@ class Amphibious(Animat):
                         body_link_positions[i],
                         np.zeros(3)
                     ]),
-                    inertial_pose=shape_pose,
+                    # inertial_pose=shape_pose,
                     shape_pose=shape_pose,
                     units=self.units,
                     color=[0.1, 0.7, 0.1, 1]
@@ -231,7 +231,7 @@ class Amphibious(Animat):
                     length=leg_length,
                     radius=leg_radius,
                     pose=pose,
-                    inertial_pose=shape_pose,
+                    # inertial_pose=shape_pose,
                     shape_pose=shape_pose,
                     units=self.units
                 )
@@ -251,7 +251,7 @@ class Amphibious(Animat):
                     length=leg_length,
                     radius=leg_radius,
                     pose=pose,
-                    inertial_pose=shape_pose,
+                    # inertial_pose=shape_pose,
                     shape_pose=shape_pose,
                     units=self.units,
                     # color=[

@@ -72,13 +72,13 @@ class Link(Options):
         visual_kwargs = {}
         if "color" in kwargs:
             visual_kwargs["color"] = kwargs.pop("color", None)
-        inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
+        # inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
             name,
             pose=pose,
             inertial=Inertial.box(
-                pose=inertial_pose,
+                pose=shape_pose,
                 units=units,
                 **kwargs
             ),
@@ -104,13 +104,13 @@ class Link(Options):
         visual_kwargs = {}
         if "color" in kwargs:
             visual_kwargs["color"] = kwargs.pop("color", None)
-        inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
+        # inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
             name,
             pose=pose,
             inertial=Inertial.sphere(
-                pose=inertial_pose,
+                pose=shape_pose,
                 units=units,
                 **kwargs,
             ),
@@ -136,13 +136,13 @@ class Link(Options):
         visual_kwargs = {}
         if "color" in kwargs:
             visual_kwargs["color"] = kwargs.pop("color", None)
-        inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
+        # inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
             name,
             pose=pose,
             inertial=Inertial.capsule(
-                pose=inertial_pose,
+                pose=shape_pose,
                 units=units,
                 **kwargs
             ),
@@ -168,14 +168,14 @@ class Link(Options):
         visual_kwargs = {}
         if "color" in kwargs:
             visual_kwargs["color"] = kwargs.pop("color", None)
-        inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
+        # inertial_pose = kwargs.pop("inertial_pose", np.zeros(6))
         shape_pose = kwargs.pop("shape_pose", np.zeros(6))
         return cls(
             name,
             pose=pose,
             inertial=Inertial.from_mesh(
                 mesh,
-                pose=inertial_pose,
+                pose=shape_pose,
                 scale=scale,
                 units=units
             ),
@@ -213,19 +213,21 @@ class Link(Options):
 class Inertial(Options):
     """Inertial"""
 
-    def __init__(self, mass, inertias, units):
+    def __init__(self, pose, mass, inertias, units):
         super(Inertial, self).__init__()
         self.mass = str(mass)
         self.inertias = inertias
         self.units = units
+        self.pose = pose
 
     @classmethod
-    def box(cls, size, units, **kwargs):
+    def box(cls, size, pose, units, **kwargs):
         """Box"""
         density = kwargs.pop("density", 1000)
         volume = size[0]*size[1]*size[2]
         mass = volume*density
         return cls(
+            pose=np.asarray(pose),
             mass=mass,
             inertias=[
                 1/12*mass*(size[1]**2 + size[2]**2),
@@ -239,12 +241,13 @@ class Inertial(Options):
         )
 
     @classmethod
-    def sphere(cls, radius, units, **kwargs):
+    def sphere(cls, radius, pose, units, **kwargs):
         """Sphere"""
         density = kwargs.pop("density", 1000)
         volume = 4/3*np.pi*radius**3
         mass = volume*density
         return cls(
+            pose=np.asarray(pose),
             mass=mass,
             inertias=[
                 2/5*mass*radius**2,
@@ -258,7 +261,7 @@ class Inertial(Options):
         )
 
     @classmethod
-    def capsule(cls, length, radius, units, **kwargs):
+    def capsule(cls, length, radius, pose, units, **kwargs):
         """Capsule"""
         density = kwargs.pop("density", 1000)
         volume_sphere = 4/3*np.pi*radius**3
@@ -266,6 +269,7 @@ class Inertial(Options):
         volume = volume_sphere + volume_cylinder
         mass = volume*density
         return cls(
+            pose=np.asarray(pose),
             mass=mass,
             # TODO: This is Cylinder inertia!!
             inertias=[
@@ -280,13 +284,17 @@ class Inertial(Options):
         )
 
     @classmethod
-    def from_mesh(cls, mesh, scale, units, **kwargs):
+    def from_mesh(cls, mesh, scale, pose, units, **kwargs):
         """From mesh"""
         density = kwargs.pop("density", 1000)
         _mesh = tri.load_mesh(mesh)
         volume = scale*_mesh.volume
         inertia = scale**2*_mesh.moment_inertia
         return cls(
+            pose=np.concatenate([
+                scale*(_mesh.center_mass+np.asarray(pose[:3])),
+                pose[3:]
+            ]),
             mass=volume*density,
             inertias=[
                 inertia[0, 0],
@@ -302,6 +310,11 @@ class Inertial(Options):
     def xml(self, link):
         """xml"""
         inertial = ET.SubElement(link, "inertial")
+        pose = ET.SubElement(inertial, "pose")
+        pose.text = " ".join([
+            str(element*(self.units.meters if i < 3 else 1))
+            for i, element in enumerate(self.pose)
+        ])
         mass = ET.SubElement(inertial, "mass")
         mass.text = str(self.mass*self.units.kilograms)
         inertia = ET.SubElement(inertial, "inertia")
