@@ -1,6 +1,10 @@
 """Snake simulation"""
 
+import numpy as np
+
+from ...simulations.simulation_options import SimulationOptions
 from ...animats.amphibious.simulation import AmphibiousSimulation
+from ...animats.amphibious.animat_options import AmphibiousOptions
 from .animat import Snake
 
 
@@ -29,7 +33,7 @@ def main(simulation_options=None, animat_options=None):
     if not simulation_options:
         simulation_options = SimulationOptions.with_clargs()
     if not animat_options:
-        animat_options = SalamanderOptions()
+        animat_options = AmphibiousOptions()
         animat_options.morphology.n_joints_body = 12
 
     # Setup simulation
@@ -52,6 +56,12 @@ def main(simulation_options=None, animat_options=None):
         log_extension=simulation_options.log_extension,
         record=sim.options.record and not sim.options.headless
     )
+    if simulation_options.log_path:
+        np.save(
+            simulation_options.log_path+"/hydrodynamics.npy",
+            sim.elements.animat.data.sensors.hydrodynamics.array
+        )
+
     sim.end()
 
 

@@ -17,9 +17,9 @@ from ..animats.amphibious.sensors import AmphibiousGPS
 
 def global2local(vector_global, orientation):
     """Vector in global frame to local frame"""
-    orientation_inv = np.linalg.inv(np.array(
+    orientation_inv = np.array(
         pybullet.getMatrixFromQuaternion(orientation)
-    ).reshape([3, 3]))
+    ).reshape([3, 3]).T
     return np.dot(orientation_inv, vector_global)
 
 
@@ -220,6 +220,10 @@ class LinksStatesLogger(SensorLogger):
             times=times,
             figure=figure
         )
+        self.plot_trajectories_top(
+            times=times,
+            figure=figure
+        )
         self.plot_linear_velocities(
             times=times,
             local=True,
@@ -300,6 +304,37 @@ class LinksStatesLogger(SensorLogger):
         plt.axis("equal")
         plt.xlabel("Position x [m]")
         plt.ylabel("Position y [m]")
+
+    def plot_trajectories_top(self, times, **kwargs):
+        """Plot positions"""
+        plt.figure(kwargs.pop("figure", "") + "_trajectories_top")
+        shape = np.shape(self.array)
+        plt.plot(
+            self.array[:len(times), 0, 0],
+            self.array[:len(times), 0, 1],
+            "bo"
+        )
+        plt.plot(
+            self.array[:len(times), 0, 7],
+            self.array[:len(times), 0, 8],
+            "ro"
+        )
+        for i in range(shape[1]):
+            plt.plot(
+                self.array[:len(times), i, 0],
+                self.array[:len(times), i, 1],
+                label="link_com_{}".format(i)
+            )
+            plt.plot(
+                self.array[:len(times), i, 7],
+                self.array[:len(times), i, 8],
+                label="link_urdf_{}".format(i)
+            )
+        plt.grid(True)
+        plt.axis("equal")
+        plt.xlabel("Position x [m]")
+        plt.ylabel("Position y [m]")
+        plt.legend()
 
     def plot_linear_velocities(self, times, local=False, **kwargs):
         """Plot velocities"""

@@ -17,6 +17,7 @@ def main():
         # show_hydrodynamics=True,
         scale=1
     )
+    animat_options.spawn.position = [0, 0, 0.1]
     # animat_options.control.drives.forward = 4
 
     # Simulation options

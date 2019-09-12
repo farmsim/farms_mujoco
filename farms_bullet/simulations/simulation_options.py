@@ -150,7 +150,7 @@ class SimulationOptions(Options):
         """Create simulation options and consider command-line arguments"""
         clargs = parse_args()
         return cls(
-            timestep=kwargs.pop("free_camera", clargs.timestep),
+            timestep=kwargs.pop("timestep", clargs.timestep),
             duration=kwargs.pop("duration", clargs.duration),
             n_solver_iters=kwargs.pop("n_solver_iters", clargs.n_solver_iters),
             free_camera=kwargs.pop("free_camera", clargs.free_camera),

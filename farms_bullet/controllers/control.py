@@ -10,17 +10,22 @@ class AnimatController:
         super(AnimatController, self).__init__()
         self.model = model
         self.network = network
+        self.joint_list = joints_order
+        # Commands
         self.positions = None
         self.velocities = None
-        self.joint_list = joints_order
         self.torques = np.zeros_like(self.joint_list)
+        # Units
         self.units = units
+        self.unit_iseconds = 1./units.seconds
+        # Gains
         self.gain_position = 1e-1*np.ones_like(joints_order)*(
             self.units.torques
         )
         self.gain_velocity = 1e0*np.ones_like(joints_order)*(
             self.units.torques*self.units.seconds
         )
+        # Reset controllers
         pybullet.setJointMotorControlArray(
             self.model,
             self.joint_list,
@@ -61,6 +66,7 @@ class AnimatController:
             self.joint_list,
             pybullet.POSITION_CONTROL,
             targetPositions=self.positions,
+            targetVelocities=self.velocities*self.unit_iseconds,
             # targetVelocities=self.velocities/self.units.seconds,
             # targetVelocities=np.zeros_like(self.positions),
             # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
@@ -86,5 +92,5 @@ class AnimatController:
         #     self.model,
         #     self.joint_list,
         #     pybullet.TORQUE_CONTROL,
-        #     forces=self.torques,
+        #     forces=self.torques*self.units.torques,
         # )

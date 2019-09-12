@@ -5,7 +5,7 @@ import pybullet
 
 from ...animats.animat import Animat
 from ...animats.link import AnimatLink
-from ...plugins.swimming import viscous_swimming
+from ...plugins.swimming import viscous_forces, swimming_motion, swimming_debug
 from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
@@ -626,9 +626,9 @@ class Amphibious(Animat):
             baseMass=base_link.mass*self.units.kilograms,
             baseCollisionShapeIndex=base_link.collision,
             baseVisualShapeIndex=base_link.visual,
-            basePosition=np.array(self.options.spawn_position)*self.units.meters,
+            basePosition=np.array(self.options.spawn.position)*self.units.meters,
             baseOrientation=pybullet.getQuaternionFromEuler(
-                self.options.spawn_orientation
+                self.options.spawn.orientation
             ),
             baseInertialFramePosition=np.array(
                 base_link.inertial_position
@@ -851,11 +851,33 @@ class Amphibious(Animat):
             units=self.units
         )
 
-    def animat_swimming_physics(self, iteration, water_surface):
+    def viscous_swimming_forces(self, iteration, water_surface):
         """Animat swimming physics"""
-        viscous_swimming(
+        viscous_forces(
             iteration,
             self.data.sensors.gps,
+            self.data.sensors.hydrodynamics.array,
+            [
+                link_i
+                for link_i in range(self.options.morphology.n_links_body())
+                if (
+                    self.data.sensors.gps.com_position(iteration, link_i)[2]
+                    < water_surface
+                )
+            ],
+            masses=self.masses,
+            coefficients=[
+                self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
+                self.options.morphology.scale**6*np.array([-1e-3, -1e-3, -1e-3])
+            ]
+        )
+
+    def apply_swimming_forces(
+            self, iteration, water_surface, link_frame=True, debug=False
+    ):
+        """Animat swimming physics"""
+        swimming_motion(
+            iteration,
             self.data.sensors.hydrodynamics.array,
             self.identity,
             [
@@ -866,13 +888,18 @@ class Amphibious(Animat):
                     < water_surface
                 )
             ],
-            masses=self.masses,
-            coefficients=[
-                self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
-                self.options.morphology.scale**6*np.array([-1e-3, -1e-3, -1e-3])
-            ],
+            link_frame=link_frame,
             units=self.units
         )
+        if debug:
+            swimming_debug(
+                iteration,
+                self.data.sensors.gps,
+                [
+                    [i, self.links["link_body_{}".format(i)]]
+                    for i in range(self.options.morphology.n_links_body())
+                ]
+            )
 
     def draw_hydrodynamics(self, iteration):
         """Draw hydrodynamics forces"""

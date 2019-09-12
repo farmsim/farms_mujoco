@@ -69,6 +69,11 @@ class AmphibiousSimulation(Simulation):
         self.simulation_state = None
         self.save()
 
+    @property
+    def animat(self):
+        """Salamander animat"""
+        return self.elements.animat
+
     def pre_step(self, sim_step):
         """New step"""
         play = True
@@ -126,10 +131,24 @@ class AmphibiousSimulation(Simulation):
         # Physics step
         if sim_step < self.options.n_iterations-1:
             # Swimming
-            self.elements.animat.animat_swimming_physics(
-                sim_step,
-                self.elements.arena.water_surface
-            )
+            if self.elements.animat.options.physics.viscous:
+                self.elements.animat.viscous_swimming_forces(
+                    sim_step,
+                    self.elements.arena.water_surface
+                )
+            if (
+                    self.elements.animat.options.physics.viscous
+                    or self.elements.animat.options.physics.sph
+            ):
+                water_surface = (
+                    np.inf
+                    if self.elements.animat.options.physics.sph
+                    else self.elements.arena.water_surface
+                )
+                self.elements.animat.apply_swimming_forces(
+                    sim_step,
+                    water_surface
+                )
             if self.elements.animat.options.show_hydrodynamics:
                 self.elements.animat.draw_hydrodynamics(sim_step)
 
@@ -234,6 +253,12 @@ def main(simulation_options=None, animat_options=None):
         log_extension=simulation_options.log_extension,
         record=sim.options.record and not sim.options.headless
     )
+    if simulation_options.log_path:
+        np.save(
+            simulation_options.log_path+"/hydrodynamics.npy",
+            sim.elements.animat.data.sensors.hydrodynamics.array
+        )
+
     sim.end()
 
 

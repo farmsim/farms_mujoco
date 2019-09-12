@@ -15,6 +15,14 @@ class AmphibiousOptions(Options):
             "morphology",
             AmphibiousMorphologyOptions(kwargs)
         )
+        self.spawn = kwargs.pop(
+            "spawn",
+            AmphibiousSpawnOptions(kwargs)
+        )
+        self.physics = kwargs.pop(
+            "physics",
+            AmphibiousPhysicsOptions(kwargs)
+        )
         self.control = kwargs.pop(
             "control",
             AmphibiousControlOptions(self.morphology, **kwargs)
@@ -31,14 +39,6 @@ class AmphibiousOptions(Options):
             "transition",
             False
         )
-        self.spawn_position = kwargs.pop(
-            "spawn_position",
-            [0, 0, 0.1]
-        )
-        self.spawn_orientation = kwargs.pop(
-            "spawn_orientation",
-            [0, 0, 0]
-        )
         if kwargs:
             raise Exception("Unknown kwargs: {}".format(kwargs))
 
@@ -50,6 +50,7 @@ class AmphibiousMorphologyOptions(Options):
         super(AmphibiousMorphologyOptions, self).__init__()
         self.mesh_directory = ""
         self.scale = options.pop("scale", 1.0)
+        self.density = options.pop("density", 1000.0)
         self.n_joints_body = options.pop("n_joints_body", 11)
         self.n_dof_legs = options.pop("n_dof_legs", 4)
         self.legs_parents = options.pop("legs_parents", [0, 4])
@@ -74,6 +75,26 @@ class AmphibiousMorphologyOptions(Options):
     def n_links(self):
         """Number of links"""
         return self.n_links_body() + self.n_joints_legs()
+
+
+class AmphibiousSpawnOptions(Options):
+    """Amphibious spawn options"""
+
+    def __init__(self, options):
+        super(AmphibiousSpawnOptions, self).__init__()
+        # Position in [m]
+        self.position = options.pop("spawn_position", [0, 0, 0.1])
+        # Orientation (Euler angles in [rad])
+        self.orientation = options.pop("spawn_orientation", [0, 0, 0])
+
+
+class AmphibiousPhysicsOptions(Options):
+    """Amphibious physics options"""
+
+    def __init__(self, options):
+        super(AmphibiousPhysicsOptions, self).__init__()
+        self.viscous = options.pop("viscous", True)
+        self.sph = options.pop("sph", False)
 
 
 class AmphibiousControlOptions(Options):
@@ -422,7 +443,7 @@ class AmphibiousConnectivityOptions(Options):
         self.weight_osc_legs2body = 3e1
         self.weight_sens_contact_i = -2e0
         self.weight_sens_contact_e = 2e0  # +3e-1
-        self.weight_sens_hydro_freq = 1
+        self.weight_sens_hydro_freq = -1
         self.weight_sens_hydro_amp = 1
 
 
