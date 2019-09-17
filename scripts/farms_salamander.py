@@ -12,26 +12,26 @@ from farms_bullet.simulations.simulation_options import SimulationOptions
 def main():
     """Main"""
     # Animat options
+    scale = 1
     animat_options = AmphibiousOptions(
         # collect_gps=True,
         # show_hydrodynamics=True,
-        scale=1
+        scale=scale
     )
-    animat_options.spawn.position = [0, 0, 0.1]
     # animat_options.control.drives.forward = 4
 
     # Simulation options
     simulation_options = SimulationOptions.with_clargs()
     simulation_options.units.meters = 1
-    simulation_options.units.seconds = 1
+    simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
 
     # Walking
-    animat_options.spawn_position = [0, 0, 0.1]
-    animat_options.spawn_orientation = [0, 0, 0]
+    animat_options.spawn.position = [0, 0, scale*0.1]
+    animat_options.spawn.orientation = [0, 0, 0]
     # Swiming
-    # animat_options.spawn_position = [-10, 0, 0]
-    # animat_options.spawn_orientation = [0, 0, np.pi]
+    # animat_options.spawn.position = [-10, 0, 0]
+    # animat_options.spawn.orientation = [0, 0, np.pi]
 
     # Camera options
     simulation_options.video_yaw = 0

@@ -28,7 +28,7 @@ class SimulationUnitScaling(Options):
 
     """
 
-    def __init__(self, meters=1, seconds=1, kilograms=1):
+    def __init__(self, meters=1, seconds=1e3, kilograms=1):
         super(SimulationUnitScaling, self).__init__()
         self.meters = meters
         self.seconds = seconds

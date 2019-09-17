@@ -84,9 +84,9 @@ class Simulation:
         pybullet.setPhysicsEngineParameter(
             fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
-            erp=1e-2,
-            contactERP=1e-2,
-            frictionERP=1e-2,
+            erp=1e-3,
+            contactERP=1e-6,
+            frictionERP=1e-6,
             # solverResidualThreshold=1e-12,
             # restitutionVelocityThreshold=1e-3,
             # useSplitImpulse=False,

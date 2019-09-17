@@ -20,7 +20,7 @@ def main():
     # Simulation options
     simulation_options = SimulationOptions.with_clargs()
     simulation_options.units.meters = 1
-    simulation_options.units.seconds = 1000
+    simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
     # Run simulation
     run_sim(
