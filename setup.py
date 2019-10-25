@@ -30,8 +30,7 @@ setup(
         "scripts/farms_snake.py",
         "scripts/farms_centipede.py",
         "scripts/farms_polypterus.py",
-        "scripts/farms_quadruped.py",
-        "scripts/farms_view_mo_salamander.py"
+        "scripts/farms_quadruped.py"
     ],
     # package_data={"farms_bullet": [
     #     "farms_bullet/templates/*",
