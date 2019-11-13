@@ -13,7 +13,7 @@ def init_engine(headless=False):
     print(pybullet.getAPIVersion())
     background_color = 0.9*np.ones(3)
     pybullet.connect(
-        pybullet.DIRECT if headless else pybullet.GUI,
+        pybullet.DIRECT if headless else pybullet.GUI,  # pybullet.DIRECT
         # options="--enable_experimental_opencl"
         # options="--opengl2"  #  --minGraphicsUpdateTimeMs=32000
         options=(

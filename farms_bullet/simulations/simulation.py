@@ -53,13 +53,18 @@ class Simulation:
         self.options = options
 
         # Initialise engine
+        print("Initialising physics engine")
         init_engine(self.options.headless)
-        rendering(0)
+        if not self.options.headless:
+            print("Disabling rendering")
+            rendering(0)
 
         # Initialise physics
+        print("Initialising physics")
         self.init_physics()
 
         # Initialise models
+        print("Spawning elements")
         self.elements.spawn()
 
         # Simulation
@@ -69,7 +74,9 @@ class Simulation:
         # Interface
         self.interface = None
 
-        rendering(1)
+        if not self.options.headless:
+            print("Reactivating rendering")
+            rendering(1)
 
     def save(self):
         """Save experiment state"""
@@ -77,16 +84,24 @@ class Simulation:
 
     def init_physics(self):
         """Initialise physics"""
-        pybullet.resetSimulation()
+        # print("Resetting simulation")
+        # pybullet.resetSimulation()
+        print("Setting gravity")
         pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
+        print("Setting timestep")
         pybullet.setTimeStep(self.options.timestep*self.options.units.seconds)
+        print("Setting non real-time simulation")
         pybullet.setRealTimeSimulation(0)
+        print("Setting simulation parameters")
         pybullet.setPhysicsEngineParameter(
             fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
-            erp=1e-3,
-            contactERP=1e-6,
-            frictionERP=1e-6,
+            erp=0,
+            contactERP=0,
+            frictionERP=0,
+            numSubSteps=0,
+            maxNumCmdPer1ms=int(1e8),
+            solverResidualThreshold=0,
             # solverResidualThreshold=1e-12,
             # restitutionVelocityThreshold=1e-3,
             # useSplitImpulse=False,
@@ -121,9 +136,14 @@ class Simulation:
         """Pre-step"""
         raise NotImplementedError
 
-    def run(self):
+    def run(self, profile=False):
         """Run simulation"""
         # Run simulation
+        if profile:
+            logger = pybullet.startStateLogging(
+                loggingType=pybullet.STATE_LOGGING_PROFILE_TIMINGS,
+                fileName="profile.log"
+            )
         while self.iteration < self.options.n_iterations:
             if not self.options.headless:
                 keys = pybullet.getKeyboardEvents()
@@ -132,6 +152,8 @@ class Simulation:
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
                 self.iteration += 1
+        if profile:
+            pybullet.stopStateLogging(loggingId=logger)
 
     def postprocess(self, iteration, **kwargs):
         """Plot after simulation"""
