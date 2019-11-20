@@ -18,3 +18,13 @@ __pycache__
 *.avi
 *.png
 *.csv
+*scripts/benchmark*
+*old*
+*Old*
+scripts/*test*
+*eps
+*.blend*
+*#
+*.gz
+*.pbs
+*.org
