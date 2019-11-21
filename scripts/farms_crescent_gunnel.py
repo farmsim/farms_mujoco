@@ -20,7 +20,7 @@ def main():
         n_joints_body=20,
         viscous=True,
         viscous_coefficients=[
-            np.array([-1e-2, -5e-1, -3e-1]),
+            np.array([-1e-4, -5e-1, -3e-1]),
             np.array([-1e-6, -1e-6, -1e-6])
         ],
         water_surface=False
