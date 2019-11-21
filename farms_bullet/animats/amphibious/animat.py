@@ -1,5 +1,6 @@
 """Amphibious"""
 
+import re
 import numpy as np
 import pybullet
 
@@ -23,11 +24,21 @@ from .control import AmphibiousController
 from .sensors import AmphibiousGPS
 
 
+def links_ordering(text):
+    """links ordering"""
+    text = re.sub("version[0-9]_", "", text)
+    text = re.sub("[a-z]", "", text)
+    text = re.sub("_", "", text)
+    text = int(text)
+    return [text]
+
+
 class Amphibious(Animat):
     """Amphibious animat"""
 
-    def __init__(self, options, timestep, iterations, units):
+    def __init__(self, options, timestep, iterations, units, sdf=None):
         super(Amphibious, self).__init__(options=options)
+        self.sdf = sdf
         self.timestep = timestep
         self.n_iterations = iterations
         self.convention = AmphibiousConvention(self.options)
@@ -57,8 +68,8 @@ class Amphibious(Animat):
 
     def spawn(self):
         """Spawn amphibious"""
-        self.spawn_body()
-        # self.spawn_sdf()
+        # self.spawn_body()
+        self.spawn_sdf()
         # Controller
         self.setup_controller()
         # Sensors
@@ -81,270 +92,278 @@ class Amphibious(Animat):
 
     def spawn_sdf(self, verbose=False):
         """Spawn sdf"""
-        links = [None for _ in range(self.options.morphology.n_links())]
-        joints = [None for _ in range(self.options.morphology.n_joints())]
-        if self.options.morphology.mesh_directory:
-            body_link_positions = self.scale*np.asarray(
-                [  # From SDF
-                    [0, 0, 0],
-                    [0.200000003, 0, 0.0069946074],
-                    [0.2700000107, 0, 0.010382493],
-                    [0.3400000036, 0, 0.0106022889],
-                    [0.4099999964, 0, 0.010412137],
-                    [0.4799999893, 0, 0.0086611426],
-                    [0.5500000119, 0, 0.0043904358],
-                    [0.6200000048, 0, 0.0006898994],
-                    [0.6899999976, 0, 8.0787e-06],
-                    [0.7599999905, 0, -4.89001e-05],
-                    [0.8299999833, 0, 0.0001386079],
-                    [0.8999999762, 0, 0.0003494423]
-                ]
-            )
-            # Body links
-            for i in range(self.options.morphology.n_links_body()):
-                links[i] = Link.from_mesh(
-                    name=self.convention.bodylink2name(i),
-                    mesh="{}/salamander_body_{}.obj".format(
-                        self.options.morphology.mesh_directory,
-                        i
-                    ),
-                    pose=np.concatenate([
-                        body_link_positions[i],
-                        np.zeros(3)
-                    ]),
-                    scale=self.scale,
-                    units=self.units,
-                    color=[0.1, 0.7, 0.1, 1]
-                )
-            # Body joints
-            for i in range(self.options.morphology.n_joints_body):
-                joints[i] = Joint(
-                    name=self.convention.bodyjoint2name(i),
-                    joint_type="revolute",
-                    parent=links[i],
-                    child=links[i+1],
-                    axis=[0, 0, 1],
-                    limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
-                )
+        if self.sdf:
+            self._identity = pybullet.loadSDF(
+                self.sdf,
+                useMaximalCoordinates=0,
+                globalScaling=1
+            )[0]
         else:
-            size = self.scale*np.array([0.08, 0.05, 0.04])
-            shape_pose = [size[0]/2, 0, 0, 0, 0, 0]
-            body_link_positions = np.zeros([
-                self.options.morphology.n_links_body(), 3
-            ])
-            # Body links
-            for i in range(self.options.morphology.n_links_body()):
-                body_link_positions[i, 0] = i*size[0]
-                links[i] = Link.box(
-                    name=self.convention.bodylink2name(i),
-                    size=size*self.scale,
-                    pose=np.concatenate([
-                        body_link_positions[i],
-                        np.zeros(3)
-                    ]),
-                    # inertial_pose=shape_pose,
-                    shape_pose=shape_pose,
-                    units=self.units,
-                    color=[0.1, 0.7, 0.1, 1]
+            links = [None for _ in range(self.options.morphology.n_links())]
+            joints = [None for _ in range(self.options.morphology.n_joints())]
+            if self.options.morphology.mesh_directory:
+                body_link_positions = self.scale*np.asarray(
+                    [  # From SDF
+                        [0, 0, 0],
+                        [0.200000003, 0, 0.0069946074],
+                        [0.2700000107, 0, 0.010382493],
+                        [0.3400000036, 0, 0.0106022889],
+                        [0.4099999964, 0, 0.010412137],
+                        [0.4799999893, 0, 0.0086611426],
+                        [0.5500000119, 0, 0.0043904358],
+                        [0.6200000048, 0, 0.0006898994],
+                        [0.6899999976, 0, 8.0787e-06],
+                        [0.7599999905, 0, -4.89001e-05],
+                        [0.8299999833, 0, 0.0001386079],
+                        [0.8999999762, 0, 0.0003494423]
+                    ]
                 )
-            # Body joints
-            for i in range(self.options.morphology.n_joints_body):
-                joints[i] = Joint(
-                    name=self.convention.bodyjoint2name(i),
-                    joint_type="revolute",
-                    parent=links[i],
-                    child=links[i+1],
-                    axis=[0, 0, 1],
-                    limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
-                )
-        # Leg links
-        leg_offset = self.scale*self.options.morphology.leg_offset
-        leg_length = self.scale*self.options.morphology.leg_length
-        leg_radius = self.scale*self.options.morphology.leg_radius
-        for leg_i in range(self.options.morphology.n_legs//2):
-            for side_i in range(2):
-                sign = 1 if side_i else -1
-                body_position = body_link_positions[
-                    self.options.morphology.legs_parents[leg_i]+1
-                ]
-                # Shoulder 0
-                pose = np.concatenate([
-                    body_position +  [
-                        0,
-                        sign*leg_offset,
-                        0
-                    ],
-                    [0, 0, 0]
+                # Body links
+                for i in range(self.options.morphology.n_links_body()):
+                    links[i] = Link.from_mesh(
+                        name=self.convention.bodylink2name(i),
+                        mesh="{}/salamander_body_{}.obj".format(
+                            self.options.morphology.mesh_directory,
+                            i
+                        ),
+                        pose=np.concatenate([
+                            body_link_positions[i],
+                            np.zeros(3)
+                        ]),
+                        scale=self.scale,
+                        units=self.units,
+                        color=[0.1, 0.7, 0.1, 1]
+                    )
+                # Body joints
+                for i in range(self.options.morphology.n_joints_body):
+                    joints[i] = Joint(
+                        name=self.convention.bodyjoint2name(i),
+                        joint_type="revolute",
+                        parent=links[i],
+                        child=links[i+1],
+                        axis=[0, 0, 1],
+                        limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
+                    )
+            else:
+                size = self.scale*np.array([0.08, 0.05, 0.04])
+                shape_pose = [size[0]/2, 0, 0, 0, 0, 0]
+                body_link_positions = np.zeros([
+                    self.options.morphology.n_links_body(), 3
                 ])
-                index = self.convention.leglink2index(
-                    leg_i,
-                    side_i,
-                    0
-                )+1
-                links[index] = Link.sphere(
-                    name=self.convention.leglink2name(
+                # Body links
+                for i in range(self.options.morphology.n_links_body()):
+                    body_link_positions[i, 0] = i*size[0]
+                    links[i] = Link.box(
+                        name=self.convention.bodylink2name(i),
+                        size=size*self.scale,
+                        pose=np.concatenate([
+                            body_link_positions[i],
+                            np.zeros(3)
+                        ]),
+                        # inertial_pose=shape_pose,
+                        shape_pose=shape_pose,
+                        units=self.units,
+                        color=[0.1, 0.7, 0.1, 1]
+                    )
+                # Body joints
+                for i in range(self.options.morphology.n_joints_body):
+                    joints[i] = Joint(
+                        name=self.convention.bodyjoint2name(i),
+                        joint_type="revolute",
+                        parent=links[i],
+                        child=links[i+1],
+                        axis=[0, 0, 1],
+                        limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
+                    )
+            # Leg links
+            leg_offset = self.scale*self.options.morphology.leg_offset
+            leg_length = self.scale*self.options.morphology.leg_length
+            leg_radius = self.scale*self.options.morphology.leg_radius
+            for leg_i in range(self.options.morphology.n_legs//2):
+                for side_i in range(2):
+                    sign = 1 if side_i else -1
+                    body_position = body_link_positions[
+                        self.options.morphology.legs_parents[leg_i]+1
+                    ]
+                    # Shoulder 0
+                    pose = np.concatenate([
+                        body_position +  [
+                            0,
+                            sign*leg_offset,
+                            0
+                        ],
+                        [0, 0, 0]
+                    ])
+                    index = self.convention.leglink2index(
                         leg_i,
                         side_i,
                         0
-                    ),
-                    radius=1.1*leg_radius,
-                    pose=pose,
-                    units=self.units,
-                    color=[0.7, 0.5, 0.5, 0.5]
-                )
-                links[index].inertial.mass = 0
-                links[index].inertial.inertias = np.zeros(6)
-                # Shoulder 1
-                index = self.convention.leglink2index(
-                    leg_i,
-                    side_i,
-                    1
-                )+1
-                links[index] = Link.sphere(
-                    name=self.convention.leglink2name(
+                    )+1
+                    links[index] = Link.sphere(
+                        name=self.convention.leglink2name(
+                            leg_i,
+                            side_i,
+                            0
+                        ),
+                        radius=1.1*leg_radius,
+                        pose=pose,
+                        units=self.units,
+                        color=[0.7, 0.5, 0.5, 0.5]
+                    )
+                    links[index].inertial.mass = 0
+                    links[index].inertial.inertias = np.zeros(6)
+                    # Shoulder 1
+                    index = self.convention.leglink2index(
                         leg_i,
                         side_i,
                         1
-                    ),
-                    radius=1.3*leg_radius,
-                    pose=pose,
-                    units=self.units,
-                    color=[0.9, 0.9, 0.9, 0.3]
-                )
-                links[index].inertial.mass = 0
-                links[index].inertial.inertias = np.zeros(6)
-                # Shoulder 2
-                shape_pose = [
-                    0, sign*(0.5*leg_length), 0,
-                    np.pi/2, 0, 0
-                ]
-                links[self.convention.leglink2index(
-                    leg_i,
-                    side_i,
-                    2
-                )+1] = Link.capsule(
-                    name=self.convention.leglink2name(
+                    )+1
+                    links[index] = Link.sphere(
+                        name=self.convention.leglink2name(
+                            leg_i,
+                            side_i,
+                            1
+                        ),
+                        radius=1.3*leg_radius,
+                        pose=pose,
+                        units=self.units,
+                        color=[0.9, 0.9, 0.9, 0.3]
+                    )
+                    links[index].inertial.mass = 0
+                    links[index].inertial.inertias = np.zeros(6)
+                    # Shoulder 2
+                    shape_pose = [
+                        0, sign*(0.5*leg_length), 0,
+                        np.pi/2, 0, 0
+                    ]
+                    links[self.convention.leglink2index(
                         leg_i,
                         side_i,
                         2
-                    ),
-                    length=leg_length,
-                    radius=leg_radius,
-                    pose=pose,
-                    # inertial_pose=shape_pose,
-                    shape_pose=shape_pose,
-                    units=self.units
-                )
-                # Elbow
-                pose = np.copy(pose)
-                pose[1] += sign*leg_length
-                links[self.convention.leglink2index(
-                    leg_i,
-                    side_i,
-                    3
-                )+1] = Link.capsule(
-                    name=self.convention.leglink2name(
+                    )+1] = Link.capsule(
+                        name=self.convention.leglink2name(
+                            leg_i,
+                            side_i,
+                            2
+                        ),
+                        length=leg_length,
+                        radius=leg_radius,
+                        pose=pose,
+                        # inertial_pose=shape_pose,
+                        shape_pose=shape_pose,
+                        units=self.units
+                    )
+                    # Elbow
+                    pose = np.copy(pose)
+                    pose[1] += sign*leg_length
+                    links[self.convention.leglink2index(
                         leg_i,
                         side_i,
                         3
-                    ),
-                    length=leg_length,
-                    radius=leg_radius,
-                    pose=pose,
-                    # inertial_pose=shape_pose,
-                    shape_pose=shape_pose,
-                    units=self.units,
-                    # color=[
-                    #     [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
-                    #     [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
-                    # ][leg_i][side_i]
-                )
-        # Leg joints
-        for leg_i in range(self.options.morphology.n_legs//2):
-            for side_i in range(2):
-                for joint_i in range(self.options.morphology.n_dof_legs):
-                    sign = 1 if side_i else -1
-                    axis = [
-                        [0, 0, sign],
-                        [-sign, 0, 0],
-                        [0, 1, 0],
-                        [-sign, 0, 0]
-                    ]
-                    if joint_i == 0:
-                        joints[self.convention.legjoint2index(
+                    )+1] = Link.capsule(
+                        name=self.convention.leglink2name(
                             leg_i,
                             side_i,
-                            joint_i
-                        )] = Joint(
-                            name=self.convention.legjoint2name(
+                            3
+                        ),
+                        length=leg_length,
+                        radius=leg_radius,
+                        pose=pose,
+                        # inertial_pose=shape_pose,
+                        shape_pose=shape_pose,
+                        units=self.units,
+                        # color=[
+                        #     [[0.9, 0.0, 0.0, 1.0], [0.0, 0.9, 0.0, 1.0]],
+                        #     [[0.0, 0.0, 0.9, 1.0], [1.0, 0.7, 0.0, 1.0]]
+                        # ][leg_i][side_i]
+                    )
+            # Leg joints
+            for leg_i in range(self.options.morphology.n_legs//2):
+                for side_i in range(2):
+                    for joint_i in range(self.options.morphology.n_dof_legs):
+                        sign = 1 if side_i else -1
+                        axis = [
+                            [0, 0, sign],
+                            [-sign, 0, 0],
+                            [0, 1, 0],
+                            [-sign, 0, 0]
+                        ]
+                        if joint_i == 0:
+                            joints[self.convention.legjoint2index(
                                 leg_i,
                                 side_i,
                                 joint_i
-                            ),
-                            joint_type="revolute",
-                            parent=links[5 if leg_i else 2],
-                            child=links[self.convention.leglink2index(
+                            )] = Joint(
+                                name=self.convention.legjoint2name(
+                                    leg_i,
+                                    side_i,
+                                    joint_i
+                                ),
+                                joint_type="revolute",
+                                parent=links[5 if leg_i else 2],
+                                child=links[self.convention.leglink2index(
+                                    leg_i,
+                                    side_i,
+                                    joint_i
+                                )+1],
+                                axis=axis[joint_i],
+                                limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
+                            )
+                        else:
+                            joints[self.convention.legjoint2index(
                                 leg_i,
                                 side_i,
                                 joint_i
-                            )+1],
-                            axis=axis[joint_i],
-                            limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
-                        )
-                    else:
-                        joints[self.convention.legjoint2index(
-                            leg_i,
-                            side_i,
-                            joint_i
-                        )] = Joint(
-                            name=self.convention.legjoint2name(
-                                leg_i,
-                                side_i,
-                                joint_i
-                            ),
-                            joint_type="revolute",
-                            parent=links[self.convention.leglink2index(
-                                leg_i,
-                                side_i,
-                                joint_i-1
-                            )+1],
-                            child=links[self.convention.leglink2index(
-                                leg_i,
-                                side_i,
-                                joint_i
-                            )+1],
-                            axis=axis[joint_i],
-                            limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
-                        )
+                            )] = Joint(
+                                name=self.convention.legjoint2name(
+                                    leg_i,
+                                    side_i,
+                                    joint_i
+                                ),
+                                joint_type="revolute",
+                                parent=links[self.convention.leglink2index(
+                                    leg_i,
+                                    side_i,
+                                    joint_i-1
+                                )+1],
+                                child=links[self.convention.leglink2index(
+                                    leg_i,
+                                    side_i,
+                                    joint_i
+                                )+1],
+                                axis=axis[joint_i],
+                                limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
+                            )
 
-        # Create SDF
-        sdf = ModelSDF(
-            name="animat",
-            pose=np.concatenate([
-                np.asarray([0, 0, 0.1])*self.scale,
-                [0, 0, 0]
-            ]),
-            links=links,
-            joints=joints,
-            units=self.units
-        )
-        sdf.write(filename="animat.sdf")
-        import os
-        print(os.getcwd() + "/animat.sdf")
-        self._identity = pybullet.loadSDF(
-            os.getcwd() + "/animat.sdf",
-            useMaximalCoordinates=0,
-            globalScaling=1
-        )[0]
-        # texUid = pybullet.loadTexture("/home/jonathan/Work/EPFL/PhD/Dev/FARMS/farms_bullet/farms_bullet/animats/amphibious/salamander_skin.jpg")
-        # for i in range(self.options.morphology.n_links()):
-        #     pybullet.changeVisualShape(
-        #         self.identity,
-        #         -1+i,
-        #         textureUniqueId=texUid
-        #     )
-        # Joint order
-        joints_names = [None for _ in range(self.options.morphology.n_joints())]
+            # Create SDF
+            sdf = ModelSDF(
+                name="animat",
+                pose=np.concatenate([
+                    np.asarray([0, 0, 0.1])*self.scale,
+                    [0, 0, 0]
+                ]),
+                links=links,
+                joints=joints,
+                units=self.units
+            )
+            sdf.write(filename="animat.sdf")
+            import os
+            print(os.getcwd() + "/animat.sdf")
+            self._identity = pybullet.loadSDF(
+                os.getcwd() + "/animat.sdf",
+                useMaximalCoordinates=0,
+                globalScaling=1
+            )[0]
+            # texUid = pybullet.loadTexture("/home/jonathan/Work/EPFL/PhD/Dev/FARMS/farms_bullet/farms_bullet/animats/amphibious/salamander_skin.jpg")
+            # for i in range(self.options.morphology.n_links()):
+            #     pybullet.changeVisualShape(
+            #         self.identity,
+            #         -1+i,
+            #         textureUniqueId=texUid
+            #     )
+            # Joint order
+        n_joints = self.options.morphology.n_joints()
+        joints_names = [None for _ in range(n_joints)]
         joint_index = 0
         for joint_i in range(self.options.morphology.n_joints_body):
             joint_info = pybullet.getJointInfo(
@@ -353,70 +372,85 @@ class Amphibious(Animat):
             )
             joints_names[joint_index] = joint_info[1].decode("UTF-8")
             joint_index += 1
-        for leg_i in range(self.options.morphology.n_legs//2):
-            for side_i in range(2):
-                for part_i in range(self.options.morphology.n_dof_legs):
-                    index = self.convention.leglink2index(
-                        leg_i,
-                        side_i,
-                        part_i
-                    )
-                    joint_info = pybullet.getJointInfo(
-                        self.identity,
-                        index
-                    )
-                    joints_names[joint_index] = joint_info[1].decode("UTF-8")
-                    joint_index += 1
-        joints_names_dict = {
-            name: i
-            for i, name in enumerate(joints_names)
-        }
-        self.joints_order = [
-            joints_names_dict[name]
-            for name in [
-                self.convention.bodyjoint2name(i)
-                for i in range(self.options.morphology.n_joints_body)
-            ] + [
-                self.convention.legjoint2name(leg_i, side_i, joint_i)
-                for leg_i in range(self.options.morphology.n_legs//2)
-                for side_i in range(2)
-                for joint_i in range(self.options.morphology.n_dof_legs)
+        if self.sdf:
+            joints_names_dict = {
+                name: i
+                for i, name in enumerate(joints_names)
+            }
+            self.joints_order = [
+                joints_names_dict[name]
+                for name in sorted(joints_names_dict.keys(), key=links_ordering)
             ]
-        ]
-        # Set names
-        self.links['link_body_{}'.format(0)] = -1
-        for i in range(self.options.morphology.n_links_body()-1):
-            self.links['link_body_{}'.format(i+1)] = self.joints_order[i]
-            self.joints['joint_link_body_{}'.format(i)] = self.joints_order[i]
-        for leg_i in range(self.options.morphology.n_legs//2):
-            for side in range(2):
-                for joint_i in range(self.options.morphology.n_dof_legs):
-                    self.links[
-                        self.convention.leglink2name(
-                            leg_i=leg_i,
-                            side_i=side,
-                            joint_i=joint_i
+            # Set names
+            self.links['link_body_{}'.format(0)] = -1
+            for i in range(self.options.morphology.n_links_body()-1):
+                self.links['link_body_{}'.format(i+1)] = self.joints_order[i]
+                self.joints['joint_link_body_{}'.format(i)] = self.joints_order[i]
+        else:
+            for leg_i in range(self.options.morphology.n_legs//2):
+                for side_i in range(2):
+                    for part_i in range(self.options.morphology.n_dof_legs):
+                        index = self.convention.leglink2index(
+                            leg_i,
+                            side_i,
+                            part_i
                         )
-                    ] = self.joints_order[
-                        self.convention.leglink2index(
-                            leg_i=leg_i,
-                            side_i=side,
-                            joint_i=joint_i
+                        joint_info = pybullet.getJointInfo(
+                            self.identity,
+                            index
                         )
-                    ]
-                    self.joints[
-                        self.convention.legjoint2name(
-                            leg_i=leg_i,
-                            side_i=side,
-                            joint_i=joint_i
-                        )
-                    ] = self.joints_order[
-                        self.convention.legjoint2index(
-                            leg_i=leg_i,
-                            side_i=side,
-                            joint_i=joint_i
-                        )
-                    ]
+                        joints_names[joint_index] = joint_info[1].decode("UTF-8")
+                        joint_index += 1
+            joints_names_dict = {
+                name: i
+                for i, name in enumerate(joints_names)
+            }
+            self.joints_order = [
+                joints_names_dict[name]
+                for name in [
+                    self.convention.bodyjoint2name(i)
+                    for i in range(self.options.morphology.n_joints_body)
+                ] + [
+                    self.convention.legjoint2name(leg_i, side_i, joint_i)
+                    for leg_i in range(self.options.morphology.n_legs//2)
+                    for side_i in range(2)
+                    for joint_i in range(self.options.morphology.n_dof_legs)
+                ]
+            ]
+            # Set names
+            self.links['link_body_{}'.format(0)] = -1
+            for i in range(self.options.morphology.n_links_body()-1):
+                self.links['link_body_{}'.format(i+1)] = self.joints_order[i]
+                self.joints['joint_link_body_{}'.format(i)] = self.joints_order[i]
+            for leg_i in range(self.options.morphology.n_legs//2):
+                for side in range(2):
+                    for joint_i in range(self.options.morphology.n_dof_legs):
+                        self.links[
+                            self.convention.leglink2name(
+                                leg_i=leg_i,
+                                side_i=side,
+                                joint_i=joint_i
+                            )
+                        ] = self.joints_order[
+                            self.convention.leglink2index(
+                                leg_i=leg_i,
+                                side_i=side,
+                                joint_i=joint_i
+                            )
+                        ]
+                        self.joints[
+                            self.convention.legjoint2name(
+                                leg_i=leg_i,
+                                side_i=side,
+                                joint_i=joint_i
+                            )
+                        ] = self.joints_order[
+                            self.convention.legjoint2index(
+                                leg_i=leg_i,
+                                side_i=side,
+                                joint_i=joint_i
+                            )
+                        ]
         if verbose:
             self.print_information()
 

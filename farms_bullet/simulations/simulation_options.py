@@ -138,7 +138,7 @@ class SimulationOptions(Options):
         self.plot = kwargs.pop("plot", True)
         self.log_path = kwargs.pop("log_path", False)
         self.log_extension = kwargs.pop("log_extension", "npy")
-        self.arena = kwargs.pop("arena", "floor")  # "water"
+        self.arena = kwargs.pop("arena", "water")  # "water"
 
     @property
     def n_iterations(self):
