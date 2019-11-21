@@ -98,6 +98,13 @@ class Amphibious(Animat):
                 useMaximalCoordinates=0,
                 globalScaling=1
             )[0]
+            pybullet.resetBasePositionAndOrientation(
+                self._identity,
+                self.options.spawn.position,
+                pybullet.getQuaternionFromEuler(
+                    self.options.spawn.orientation
+                )
+            )
         else:
             links = [None for _ in range(self.options.morphology.n_links())]
             joints = [None for _ in range(self.options.morphology.n_joints())]
@@ -354,6 +361,13 @@ class Amphibious(Animat):
                 useMaximalCoordinates=0,
                 globalScaling=1
             )[0]
+            pybullet.resetBasePositionAndOrientation(
+                self._identity,
+                self.options.spawn.position,
+                pybullet.getQuaternionFromEuler(
+                    self.options.spawn.orientation
+                )
+            )
             # texUid = pybullet.loadTexture("/home/jonathan/Work/EPFL/PhD/Dev/FARMS/farms_bullet/farms_bullet/animats/amphibious/salamander_skin.jpg")
             # for i in range(self.options.morphology.n_links()):
             #     pybullet.changeVisualShape(

@@ -28,7 +28,7 @@ def main():
     simulation_options.units.kilograms = 1
 
     # Walking
-    animat_options.spawn.position = [0, 0, scale*0.1]
+    animat_options.spawn.position = scale*np.asarray([0, 0, 1])
     animat_options.spawn.orientation = [0, 0, 0]
     # Swiming
     # animat_options.spawn.position = [-10, 0, 0]

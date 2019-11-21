@@ -1,5 +1,7 @@
 """Crescent_Gunnel simulation"""
 
+import pybullet
+
 from ...animats.amphibious.simulation import AmphibiousSimulation
 from .animat import Crescent_Gunnel
 
@@ -37,6 +39,7 @@ def main(simulation_options=None, animat_options=None):
         simulation_options=simulation_options,
         animat_options=animat_options
     )
+    pybullet.setGravity(0, 0, 0)
 
     # Run simulation
     print("Running simulation")
