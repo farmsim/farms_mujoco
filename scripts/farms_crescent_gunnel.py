@@ -15,9 +15,15 @@ def main():
     scale = 1
     animat_options = AmphibiousOptions(
         # collect_gps=True,
-        # show_hydrodynamics=True,
+        show_hydrodynamics=True,
         scale=scale,
-        n_joints_body=20
+        n_joints_body=20,
+        viscous=True,
+        viscous_coefficients=[
+            np.array([-1e-2, -5e-1, -3e-1]),
+            np.array([-1e-6, -1e-6, -1e-6])
+        ],
+        water_surface=False
     )
     # animat_options.control.drives.forward = 4
 
@@ -30,6 +36,7 @@ def main():
     # Walking
     animat_options.spawn.position = scale*np.asarray([0, 0, 1])
     animat_options.spawn.orientation = [0, 0, 0]
+    animat_options.physics.buoyancy = False
     # Swiming
     # animat_options.spawn.position = [-10, 0, 0]
     # animat_options.spawn.orientation = [0, 0, np.pi]

@@ -899,7 +899,7 @@ class Amphibious(Animat):
             units=self.units
         )
 
-    def viscous_swimming_forces(self, iteration, water_surface):
+    def viscous_swimming_forces(self, iteration, water_surface, **kwargs):
         """Animat swimming physics"""
         viscous_forces(
             iteration,
@@ -914,10 +914,7 @@ class Amphibious(Animat):
                 )
             ],
             masses=self.masses,
-            coefficients=[
-                self.options.morphology.scale**3*np.array([-1e-1, -1e0, -1e0]),
-                self.options.morphology.scale**6*np.array([-1e-3, -1e-3, -1e-3])
-            ]
+            **kwargs
         )
 
     def apply_swimming_forces(
