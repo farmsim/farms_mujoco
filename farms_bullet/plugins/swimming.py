@@ -29,7 +29,7 @@ def viscous_forces(
             data_gps.com_ang_velocity(iteration, link_i)
         )
         if not any(ori):
-            return
+            continue
         # Compute velocity in local frame
         link_orientation_inv = np.array(
             pybullet.getMatrixFromQuaternion(ori)
