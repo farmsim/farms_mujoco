@@ -114,6 +114,10 @@ class AmphibiousControlOptions(Options):
 
     def __init__(self, morphology, **kwargs):
         super(AmphibiousControlOptions, self).__init__()
+        self.kinematics_file = kwargs.pop(
+            "kinematics_file",
+            ""
+        )
         self.drives = kwargs.pop(
             "drives",
             AmphibiousDrives(**kwargs)

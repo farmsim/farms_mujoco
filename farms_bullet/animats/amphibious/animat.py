@@ -890,14 +890,24 @@ class Amphibious(Animat):
 
     def setup_controller(self):
         """Setup controller"""
-        self.controller = AmphibiousController.from_data(
-            self.identity,
-            animat_options=self.options,
-            animat_data=self.data,
-            timestep=self.timestep,
-            joints_order=self.joints_order,
-            units=self.units
-        )
+        if self.options.control.kinematics_file:
+            self.controller = AmphibiousController.from_kinematics(
+                self.identity,
+                animat_options=self.options,
+                animat_data=self.data,
+                timestep=self.timestep,
+                joints_order=self.joints_order,
+                units=self.units
+            )
+        else:
+            self.controller = AmphibiousController.from_data(
+                self.identity,
+                animat_options=self.options,
+                animat_data=self.data,
+                timestep=self.timestep,
+                joints_order=self.joints_order,
+                units=self.units
+            )
 
     def viscous_swimming_forces(self, iteration, water_surface, **kwargs):
         """Animat swimming physics"""

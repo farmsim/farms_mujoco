@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run crescent_gunnel simulation with bullet"""
 
+import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,8 +21,8 @@ def main():
         n_joints_body=20,
         viscous=True,
         viscous_coefficients=[
-            np.array([-1e-4, -5e-1, -3e-1]),
-            np.array([-1e-6, -1e-6, -1e-6])
+            1e-1*np.array([-1e-4, -5e-1, -3e-1]),
+            1e-1*np.array([-1e-6, -1e-6, -1e-6])
         ],
         water_surface=False
     )
@@ -40,6 +41,15 @@ def main():
     # Swiming
     # animat_options.spawn.position = [-10, 0, 0]
     # animat_options.spawn.orientation = [0, 0, np.pi]
+    animat_options.control.kinematics_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..",
+        "farms_bullet",
+        "experiments",
+        "crescent_gunnel",
+        "kinematics",
+        "kinematics.csv"
+    )
 
     # Camera options
     simulation_options.video_yaw = 0
