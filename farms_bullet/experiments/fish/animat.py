@@ -37,10 +37,9 @@ class Fish(Amphibious):
             units,
             sdf_path=os.path.join(
                 directory,
-                "..",
                 fish_name,
                 version,
                 "sdf",
-                "crescent_gunnel.sdf"
+                "{}.sdf".format(fish_name)
             )
         )

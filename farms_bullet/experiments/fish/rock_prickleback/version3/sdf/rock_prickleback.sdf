@@ -1,0 +1,616 @@
+<?xml version="1.0"?>
+<!-- created with Phobos 0.7 -->
+<sdf version="1.5">
+  <model name="rock_prickleback">
+    <link name="body_0_link">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.0015794317</mass>
+        <inertia>
+          <ixx>1.38e-07</ixx>
+          <ixy>-1.7e-09</ixy>
+          <ixz>0</ixz>
+          <iyy>5.18e-07</iyy>
+          <iyz>0</iyz>
+          <izz>4.928e-07</izz>
+        </inertia>
+        <pose>0.0154670542 0 0.0003908267 0 0 0</pose>
+      </inertial>
+      <collision name="body_0_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_0_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_0_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_0.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_1_link">
+      <pose>0.0375519991 0 8.0623e-06 0 0 0</pose>
+      <inertial>
+        <mass>0.0007510047</mass>
+        <inertia>
+          <ixx>7.06e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>8.46e-08</iyy>
+          <iyz>0</iyz>
+          <izz>6.12e-08</izz>
+        </inertia>
+        <pose>-0.0052875583 0 0.0003804957 0 0 0</pose>
+      </inertial>
+      <collision name="body_1_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_1_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_1_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_1.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_2_link">
+      <pose>0.0506951995 0 9.03e-07 0 0 0</pose>
+      <inertial>
+        <mass>0.0005567551</mass>
+        <inertia>
+          <ixx>5.2e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>6.29e-08</iyy>
+          <iyz>0</iyz>
+          <izz>4.5e-08</izz>
+        </inertia>
+        <pose>-0.0052076392 0 0.0003839493 0 0 0</pose>
+      </inertial>
+      <collision name="body_2_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_2_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_2_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_2.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_3_link">
+      <pose>0.0638383999 0 -3.927e-07 0 0 0</pose>
+      <inertial>
+        <mass>0.0004901997</mass>
+        <inertia>
+          <ixx>4.48e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>5.54e-08</iyy>
+          <iyz>0</iyz>
+          <izz>3.93e-08</izz>
+        </inertia>
+        <pose>-0.005752217 0 0.0003909689 0 0 0</pose>
+      </inertial>
+      <collision name="body_3_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_3_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_3_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_3.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_4_link">
+      <pose>0.0769815966 0 4.18e-08 0 0 0</pose>
+      <inertial>
+        <mass>0.000572432</mass>
+        <inertia>
+          <ixx>5.17e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>6.63e-08</iyy>
+          <iyz>0</iyz>
+          <izz>4.61e-08</izz>
+        </inertia>
+        <pose>-0.0060546175 0 0.0003954238 0 0 0</pose>
+      </inertial>
+      <collision name="body_4_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_4_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_4_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_4.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_5_link">
+      <pose>0.0901248008 0 -4.8e-09 0 0 0</pose>
+      <inertial>
+        <mass>0.0001213688</mass>
+        <inertia>
+          <ixx>1.08e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.51e-08</iyy>
+          <iyz>0</iyz>
+          <izz>1.02e-08</izz>
+        </inertia>
+        <pose>-0.0065402384 0 0.0004230227 0 0 0</pose>
+      </inertial>
+      <collision name="body_5_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_5_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_5_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_5.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_6_link">
+      <pose>0.1032679975 0 6.4e-09 0 0 0</pose>
+      <inertial>
+        <mass>0.0004382177</mass>
+        <inertia>
+          <ixx>4.06e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>6.17e-08</iyy>
+          <iyz>0</iyz>
+          <izz>3.86e-08</izz>
+        </inertia>
+        <pose>-0.0057611833 0 0.0004252401 0 0 0</pose>
+      </inertial>
+      <collision name="body_6_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_6_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_6_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_6.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_7_link">
+      <pose>0.1164112017 0 -4.84e-08 0 0 0</pose>
+      <inertial>
+        <mass>0.0003581496</mass>
+        <inertia>
+          <ixx>3.07e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>4.84e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.97e-08</izz>
+        </inertia>
+        <pose>-0.0062930803 0 0.0003587519 0 0 0</pose>
+      </inertial>
+      <collision name="body_7_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_7_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_7_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_7.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_8_link">
+      <pose>0.1295544058 0 -1.45e-07 0 0 0</pose>
+      <inertial>
+        <mass>0.000290353</mass>
+        <inertia>
+          <ixx>2.38e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>4.02e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.41e-08</izz>
+        </inertia>
+        <pose>-0.0052945688 0 0.0004144336 0 0 0</pose>
+      </inertial>
+      <collision name="body_8_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_8_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_8_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_8.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_9_link">
+      <pose>0.1426976025 0 2.4108e-06 0 0 0</pose>
+      <inertial>
+        <mass>0.0005906168</mass>
+        <inertia>
+          <ixx>4.51e-08</ixx>
+          <ixy>-1e-10</ixy>
+          <ixz>0</ixz>
+          <iyy>8.22e-08</iyy>
+          <iyz>0</iyz>
+          <izz>4.79e-08</izz>
+        </inertia>
+        <pose>-0.0044667572 0 0.0003911167 0 0 0</pose>
+      </inertial>
+      <collision name="body_9_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_9_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_9_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_9.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_10_link">
+      <pose>0.1558407992 0 -9.4495e-06 0 0 0</pose>
+      <inertial>
+        <mass>0.0005311796</mass>
+        <inertia>
+          <ixx>3.33e-08</ixx>
+          <ixy>-1e-10</ixy>
+          <ixz>0</ixz>
+          <iyy>6.45e-08</iyy>
+          <iyz>0</iyz>
+          <izz>3.62e-08</izz>
+        </inertia>
+        <pose>-0.0030214489 2e-10 0.0002514006 0 0 0</pose>
+      </inertial>
+      <collision name="body_10_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_10_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_10_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_10.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_11_link">
+      <pose>0.1689839959 0 -2.9608e-05 0 0 0</pose>
+      <inertial>
+        <mass>0.000758349</mass>
+        <inertia>
+          <ixx>2.63e-08</ixx>
+          <ixy>-9e-10</ixy>
+          <ixz>0</ixz>
+          <iyy>7.05e-08</iyy>
+          <iyz>0</iyz>
+          <izz>4.77e-08</izz>
+        </inertia>
+        <pose>0.0023021849 0 0.0001752972 0 0 0</pose>
+      </inertial>
+      <collision name="body_11_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_11_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_11_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://rock_prickleback/meshes/salamander_body_11.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="body_1_link" type="revolute">
+      <parent>body_0_link</parent>
+      <child>body_1_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_2_link" type="revolute">
+      <parent>body_1_link</parent>
+      <child>body_2_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_3_link" type="revolute">
+      <parent>body_2_link</parent>
+      <child>body_3_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_4_link" type="revolute">
+      <parent>body_3_link</parent>
+      <child>body_4_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_5_link" type="revolute">
+      <parent>body_4_link</parent>
+      <child>body_5_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_6_link" type="revolute">
+      <parent>body_5_link</parent>
+      <child>body_6_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_7_link" type="revolute">
+      <parent>body_6_link</parent>
+      <child>body_7_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_8_link" type="revolute">
+      <parent>body_7_link</parent>
+      <child>body_8_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_9_link" type="revolute">
+      <parent>body_8_link</parent>
+      <child>body_9_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_10_link" type="revolute">
+      <parent>body_9_link</parent>
+      <child>body_10_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_11_link" type="revolute">
+      <parent>body_10_link</parent>
+      <child>body_11_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+  </model>
+</sdf>

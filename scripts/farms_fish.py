@@ -34,8 +34,8 @@ def main():
     simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
 
-    fish_name = "crescent_gunnel"
-    version_name = "version0"
+    fish_name = "penpoint_gunnel"
+    version_name = "version1"
 
     # Kinematics
     animat_options.control.kinematics_file = os.path.join(
@@ -43,6 +43,7 @@ def main():
         "..",
         "farms_bullet",
         "experiments",
+        "fish",
         fish_name,
         version_name,
         "kinematics",

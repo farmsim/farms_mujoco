@@ -1,0 +1,616 @@
+<?xml version="1.0"?>
+<!-- created with Phobos 0.7 -->
+<sdf version="1.5">
+  <model name="slender_cockscomb">
+    <link name="body_0_link">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.0003786646</mass>
+        <inertia>
+          <ixx>2e-08</ixx>
+          <ixy>-3e-10</ixy>
+          <ixz>0</ixz>
+          <iyy>4.39e-08</iyy>
+          <iyz>0</iyz>
+          <izz>3.14e-08</izz>
+        </inertia>
+        <pose>0.0092347572 0 0.0003383253 0 0 0</pose>
+      </inertial>
+      <collision name="body_0_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_0_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_0_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_0.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_1_link">
+      <pose>0.0240583997 0 3.1752e-06 0 0 0</pose>
+      <inertial>
+        <mass>0.0001944943</mass>
+        <inertia>
+          <ixx>1.09e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.74e-08</iyy>
+          <iyz>0</iyz>
+          <izz>1.09e-08</izz>
+        </inertia>
+        <pose>-0.0060690884 0 0.0003412935 0 0 0</pose>
+      </inertial>
+      <collision name="body_1_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_1_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_1_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_1.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_2_link">
+      <pose>0.0324788392 0 3.468e-07 0 0 0</pose>
+      <inertial>
+        <mass>8.57507e-05</mass>
+        <inertia>
+          <ixx>4.7e-09</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>7.7e-09</iyy>
+          <iyz>0</iyz>
+          <izz>4.9e-09</izz>
+        </inertia>
+        <pose>-0.0067312848 0 0.0003422323 0 0 0</pose>
+      </inertial>
+      <collision name="body_2_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_2_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_2_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_2.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_3_link">
+      <pose>0.0408992805 0 -1.49e-07 0 0 0</pose>
+      <inertial>
+        <mass>6.75943e-05</mass>
+        <inertia>
+          <ixx>3.8e-09</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>6.5e-09</iyy>
+          <iyz>0</iyz>
+          <izz>4.3e-09</izz>
+        </inertia>
+        <pose>-0.007368993 0 0.0003535068 0 0 0</pose>
+      </inertial>
+      <collision name="body_3_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_3_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_3_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_3.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_4_link">
+      <pose>0.0493197218 0 1.7e-08 0 0 0</pose>
+      <inertial>
+        <mass>8.60724e-05</mass>
+        <inertia>
+          <ixx>5.1e-09</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>9.3e-09</iyy>
+          <iyz>0</iyz>
+          <izz>6.1e-09</izz>
+        </inertia>
+        <pose>-0.0074808192 0 0.000380005 0 0 0</pose>
+      </inertial>
+      <collision name="body_4_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_4_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_4_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_4.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_5_link">
+      <pose>0.0577401593 0 1.3e-09 0 0 0</pose>
+      <inertial>
+        <mass>0.0002502584</mass>
+        <inertia>
+          <ixx>1.55e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.88e-08</iyy>
+          <iyz>0</iyz>
+          <izz>1.79e-08</izz>
+        </inertia>
+        <pose>-0.0068321824 2e-10 0.0003932645 0 0 0</pose>
+      </inertial>
+      <collision name="body_5_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_5_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_5_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_5.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_6_link">
+      <pose>0.0661605969 0 9.2e-09 0 0 0</pose>
+      <inertial>
+        <mass>0.0003173517</mass>
+        <inertia>
+          <ixx>1.92e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.67e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.27e-08</izz>
+        </inertia>
+        <pose>-0.0076576993 0 0.0003760272 0 0 0</pose>
+      </inertial>
+      <collision name="body_6_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_6_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_6_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_6.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_7_link">
+      <pose>0.0745810419 0 -2.97e-08 0 0 0</pose>
+      <inertial>
+        <mass>0.0002990213</mass>
+        <inertia>
+          <ixx>1.84e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.54e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.1e-08</izz>
+        </inertia>
+        <pose>-0.0060146898 -2e-10 0.000375328 0 0 0</pose>
+      </inertial>
+      <collision name="body_7_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_7_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_7_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_7.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_8_link">
+      <pose>0.0830014795 0 -1.162e-07 0 0 0</pose>
+      <inertial>
+        <mass>0.0004772523</mass>
+        <inertia>
+          <ixx>2.66e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>5.06e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.96e-08</izz>
+        </inertia>
+        <pose>-0.0058515966 0 0.0002157239 0 0 0</pose>
+      </inertial>
+      <collision name="body_8_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_8_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_8_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_8.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_9_link">
+      <pose>0.0914219171 0 1.876e-06 0 0 0</pose>
+      <inertial>
+        <mass>0.0002660335</mass>
+        <inertia>
+          <ixx>1.38e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.63e-08</iyy>
+          <iyz>0</iyz>
+          <izz>1.49e-08</izz>
+        </inertia>
+        <pose>-0.004563719 0 0.0003028713 0 0 0</pose>
+      </inertial>
+      <collision name="body_9_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_9_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_9_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_9.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_10_link">
+      <pose>0.0998423621 0 -7.8869e-06 0 0 0</pose>
+      <inertial>
+        <mass>0.0004702891</mass>
+        <inertia>
+          <ixx>1.87e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.71e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.14e-08</izz>
+        </inertia>
+        <pose>-0.0030273723 0 0.0001348532 0 0 0</pose>
+      </inertial>
+      <collision name="body_10_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_10_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_10_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_10.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_11_link">
+      <pose>0.1082627997 0 -3.29494e-05 0 0 0</pose>
+      <inertial>
+        <mass>7.9105e-05</mass>
+        <inertia>
+          <ixx>1.4e-09</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.4e-09</iyy>
+          <iyz>0</iyz>
+          <izz>2.2e-09</izz>
+        </inertia>
+        <pose>0.0009134337 1e-10 7.58107e-05 0 0 0</pose>
+      </inertial>
+      <collision name="body_11_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_11_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_11_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://slender_cockscomb/meshes/salamander_body_11.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="body_1_link" type="revolute">
+      <parent>body_0_link</parent>
+      <child>body_1_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_2_link" type="revolute">
+      <parent>body_1_link</parent>
+      <child>body_2_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_3_link" type="revolute">
+      <parent>body_2_link</parent>
+      <child>body_3_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_4_link" type="revolute">
+      <parent>body_3_link</parent>
+      <child>body_4_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_5_link" type="revolute">
+      <parent>body_4_link</parent>
+      <child>body_5_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_6_link" type="revolute">
+      <parent>body_5_link</parent>
+      <child>body_6_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_7_link" type="revolute">
+      <parent>body_6_link</parent>
+      <child>body_7_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_8_link" type="revolute">
+      <parent>body_7_link</parent>
+      <child>body_8_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_9_link" type="revolute">
+      <parent>body_8_link</parent>
+      <child>body_9_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_10_link" type="revolute">
+      <parent>body_9_link</parent>
+      <child>body_10_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_11_link" type="revolute">
+      <parent>body_10_link</parent>
+      <child>body_11_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+  </model>
+</sdf>

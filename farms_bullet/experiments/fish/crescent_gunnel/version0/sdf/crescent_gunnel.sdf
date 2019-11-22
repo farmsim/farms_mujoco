@@ -20,7 +20,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_0_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_0_collision.001.obj</uri>
             <scale>1.0 1.0 1.0</scale>
           </mesh>
         </geometry>
@@ -53,7 +53,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_1_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_1_collision.001.obj</uri>
             <scale>0.0045409203 0.0045409203 0.0072059035</scale>
           </mesh>
         </geometry>
@@ -86,7 +86,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_2_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_2_collision.001.obj</uri>
             <scale>0.0043151975 0.0043151975 0.0071265101</scale>
           </mesh>
         </geometry>
@@ -119,7 +119,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_3_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_3_collision.001.obj</uri>
             <scale>0.0044519305 0.0044519305 0.0072491765</scale>
           </mesh>
         </geometry>
@@ -152,7 +152,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_4_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_4_collision.001.obj</uri>
             <scale>0.0045102239 0.0045102239 0.0074436069</scale>
           </mesh>
         </geometry>
@@ -185,7 +185,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_5_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_5_collision.001.obj</uri>
             <scale>0.0044298768 0.0044298768 0.0075314641</scale>
           </mesh>
         </geometry>
@@ -218,7 +218,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_6_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_6_collision.001.obj</uri>
             <scale>0.0044527054 0.0044527054 0.0077864528</scale>
           </mesh>
         </geometry>
@@ -251,7 +251,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_7_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_7_collision.001.obj</uri>
             <scale>0.0043032169 0.0043032169 0.0079433322</scale>
           </mesh>
         </geometry>
@@ -284,7 +284,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_8_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_8_collision.001.obj</uri>
             <scale>0.0040659308 0.0040659308 0.0080484152</scale>
           </mesh>
         </geometry>
@@ -317,7 +317,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_9_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_9_collision.001.obj</uri>
             <scale>0.0039129257 0.0039129257 0.0081698895</scale>
           </mesh>
         </geometry>
@@ -350,7 +350,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_10_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_10_collision.001.obj</uri>
             <scale>0.0037176609 0.0037176609 0.0081620216</scale>
           </mesh>
         </geometry>
@@ -383,7 +383,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_11_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_11_collision.001.obj</uri>
             <scale>0.003449142 0.003449142 0.0079735518</scale>
           </mesh>
         </geometry>
@@ -416,7 +416,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_12_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_12_collision.001.obj</uri>
             <scale>0.003121376 0.003121376 0.0078519583</scale>
           </mesh>
         </geometry>
@@ -449,7 +449,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_13_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_13_collision.001.obj</uri>
             <scale>0.0027296543 0.0027296543 0.0078131557</scale>
           </mesh>
         </geometry>
@@ -482,7 +482,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_14_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_14_collision.001.obj</uri>
             <scale>0.002353251 0.002353251 0.0075334311</scale>
           </mesh>
         </geometry>
@@ -515,7 +515,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_15_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_15_collision.001.obj</uri>
             <scale>0.0020675063 0.0020675063 0.0071589351</scale>
           </mesh>
         </geometry>
@@ -548,7 +548,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_16_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_16_collision.001.obj</uri>
             <scale>0.0019308329 0.0019308329 0.0065559149</scale>
           </mesh>
         </geometry>
@@ -581,7 +581,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_17_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_17_collision.001.obj</uri>
             <scale>0.0017700195 0.0017700195 0.0058298111</scale>
           </mesh>
         </geometry>
@@ -614,7 +614,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_18_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_18_collision.001.obj</uri>
             <scale>0.001637876 0.001637876 0.004999876</scale>
           </mesh>
         </geometry>
@@ -647,7 +647,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_19_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_19_collision.001.obj</uri>
             <scale>0.001265049 0.001265049 0.0041057467</scale>
           </mesh>
         </geometry>
@@ -680,7 +680,7 @@
         <pose>0 0 0 0 0 0</pose>
         <geometry>
           <mesh>
-            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_20_collision.obj</uri>
+            <uri>../meshes/obj/animat_crescent_gunnel_version0_body_20_collision.001.obj</uri>
             <scale>0.0006264448 0.0006264448 0.0029065013</scale>
           </mesh>
         </geometry>
