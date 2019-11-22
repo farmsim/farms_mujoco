@@ -39,6 +39,7 @@ class Fish(Amphibious):
                 directory,
                 "..",
                 fish_name,
+                version,
                 "sdf",
                 "crescent_gunnel.sdf"
             )

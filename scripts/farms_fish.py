@@ -34,13 +34,17 @@ def main():
     simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
 
+    fish_name = "crescent_gunnel"
+    version_name = "version0"
+
     # Kinematics
     animat_options.control.kinematics_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "..",
         "farms_bullet",
         "experiments",
-        "crescent_gunnel",
+        fish_name,
+        version_name,
         "kinematics",
         "kinematics.csv"
     )
@@ -84,8 +88,8 @@ def main():
 
     # Run simulation
     run_sim(
-        "crescent_gunnel",
-        "version0",
+        fish_name,
+        version_name,
         simulation_options=simulation_options,
         animat_options=animat_options
     )
