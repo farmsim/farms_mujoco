@@ -84,8 +84,12 @@ class AmphibiousSpawnOptions(Options):
         super(AmphibiousSpawnOptions, self).__init__()
         # Position in [m]
         self.position = options.pop("spawn_position", [0, 0, 0.1])
-        # Orientation (Euler angles in [rad])
+        # Orientation in [rad] (Euler angles)
         self.orientation = options.pop("spawn_orientation", [0, 0, 0])
+        # Linear velocity in [m/s]
+        self.velocity_lin = options.pop("spawn_velocity_lin", [0, 0, 0])
+        # Angular velocity in [rad/s] (Euler angles)
+        self.velocity_ang = options.pop("spawn_velocity_ang", [0, 0, 0])
 
 
 class AmphibiousPhysicsOptions(Options):

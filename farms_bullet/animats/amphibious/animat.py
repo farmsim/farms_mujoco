@@ -105,6 +105,11 @@ class Amphibious(Animat):
                     self.options.spawn.orientation
                 )
             )
+            pybullet.resetBaseVelocity(
+                objectUniqueId=self._identity,
+                linearVelocity=self.options.spawn.velocity_lin,
+                angularVelocity=self.options.spawn.velocity_ang
+            )
         else:
             links = [None for _ in range(self.options.morphology.n_links())]
             joints = [None for _ in range(self.options.morphology.n_joints())]
@@ -367,6 +372,11 @@ class Amphibious(Animat):
                 pybullet.getQuaternionFromEuler(
                     self.options.spawn.orientation
                 )
+            )
+            pybullet.resetBaseVelocity(
+                objectUniqueId=self._identity,
+                linearVelocity=self.options.spawn.velocity_lin,
+                angularVelocity=self.options.spawn.velocity_ang
             )
             # texUid = pybullet.loadTexture("/home/jonathan/Work/EPFL/PhD/Dev/FARMS/farms_bullet/farms_bullet/animats/amphibious/salamander_skin.jpg")
             # for i in range(self.options.morphology.n_links()):
@@ -700,6 +710,11 @@ class Amphibious(Animat):
             linkParentIndices=[link.parent for link in links],
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
+        )
+        pybullet.resetBaseVelocity(
+            objectUniqueId=self._identity,
+            linearVelocity=self.options.spawn.velocity_lin,
+            angularVelocity=self.options.spawn.velocity_ang
         )
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]

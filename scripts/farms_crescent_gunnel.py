@@ -34,13 +34,7 @@ def main():
     simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
 
-    # Walking
-    animat_options.spawn.position = scale*np.asarray([0, 0, 1])
-    animat_options.spawn.orientation = [0, 0, 0]
-    animat_options.physics.buoyancy = False
-    # Swiming
-    # animat_options.spawn.position = [-10, 0, 0]
-    # animat_options.spawn.orientation = [0, 0, np.pi]
+    # Kinematics
     animat_options.control.kinematics_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         "..",
@@ -50,6 +44,17 @@ def main():
         "kinematics",
         "kinematics.csv"
     )
+
+    # Walking
+    animat_options.spawn.position = scale*np.asarray([0, 0, 1])
+    animat_options.spawn.orientation = [0, 0, 0]
+    animat_options.physics.buoyancy = False
+    animat_options.spawn.velocity_lin = [0, 0, 0]
+    animat_options.spawn.velocity_ang = [0, 0, 0]
+    # Swiming
+    # animat_options.spawn.position = [-10, 0, 0]
+    # animat_options.spawn.orientation = [0, 0, np.pi]
+
 
     # Camera options
     simulation_options.video_yaw = 0
