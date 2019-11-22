@@ -50,6 +50,8 @@ def main():
         "kinematics.csv"
     )
     kinematics = np.loadtxt(animat_options.control.kinematics_file)
+    len_kinematics = np.shape(kinematics)[0]
+    simulation_options.duration = len_kinematics*1e-2
     pose = kinematics[:, :3]
     # pose *= 1e-3
     pose *= 1e-3
