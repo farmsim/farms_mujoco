@@ -1,0 +1,616 @@
+<?xml version="1.0"?>
+<!-- created with Phobos 0.7 -->
+<sdf version="1.5">
+  <model name="crescent_gunnel">
+    <link name="body_0_link">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.0018677608</mass>
+        <inertia>
+          <ixx>1.15e-07</ixx>
+          <ixy>-2.3e-09</ixy>
+          <ixz>0</ixz>
+          <iyy>5.667e-07</iyy>
+          <iyz>0</iyz>
+          <izz>5.169e-07</izz>
+        </inertia>
+        <pose>0.0150786638 0 0.0002919044 0 0 0</pose>
+      </inertial>
+      <collision name="body_0_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_0_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_0_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_0.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_1_link">
+      <pose>0.0365701988 0 7.1467e-06 0 0 0</pose>
+      <inertial>
+        <mass>0.0007366544</mass>
+        <inertia>
+          <ixx>4.76e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>6.53e-08</iyy>
+          <iyz>0</iyz>
+          <izz>4.11e-08</izz>
+        </inertia>
+        <pose>-0.0042908932 0 0.000335315 0 0 0</pose>
+      </inertial>
+      <collision name="body_1_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_1_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_1_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_1.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_2_link">
+      <pose>0.049369771 0 8.222e-07 0 0 0</pose>
+      <inertial>
+        <mass>0.000339026</mass>
+        <inertia>
+          <ixx>2.26e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.17e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.02e-08</izz>
+        </inertia>
+        <pose>-0.0049558245 0 0.0003588174 0 0 0</pose>
+      </inertial>
+      <collision name="body_2_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_2_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_2_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_2.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_3_link">
+      <pose>0.0621693395 0 -3.518e-07 0 0 0</pose>
+      <inertial>
+        <mass>0.0006579559</mass>
+        <inertia>
+          <ixx>4.64e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>6.76e-08</iyy>
+          <iyz>0</iyz>
+          <izz>4.21e-08</izz>
+        </inertia>
+        <pose>-0.0052249208 0 0.0003734014 0 0 0</pose>
+      </inertial>
+      <collision name="body_3_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_3_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_3_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_3.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_4_link">
+      <pose>0.0749689117 0 4.12e-08 0 0 0</pose>
+      <inertial>
+        <mass>0.0001429523</mass>
+        <inertia>
+          <ixx>1.02e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.57e-08</iyy>
+          <iyz>0</iyz>
+          <izz>9.7e-09</izz>
+        </inertia>
+        <pose>-0.0053608045 0 0.000385897 0 0 0</pose>
+      </inertial>
+      <collision name="body_4_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_4_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_4_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_4.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_5_link">
+      <pose>0.0877684802 0 7.8e-09 0 0 0</pose>
+      <inertial>
+        <mass>0.0003417958</mass>
+        <inertia>
+          <ixx>2.48e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.94e-08</iyy>
+          <iyz>0</iyz>
+          <izz>2.33e-08</izz>
+        </inertia>
+        <pose>-0.0045685023 5e-10 0.0003812086 0 0 0</pose>
+      </inertial>
+      <collision name="body_5_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_5_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_5_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_5.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_6_link">
+      <pose>0.1005680487 0 4.4e-09 0 0 0</pose>
+      <inertial>
+        <mass>0.0002132594</mass>
+        <inertia>
+          <ixx>1.45e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.37e-08</iyy>
+          <iyz>0</iyz>
+          <izz>1.39e-08</izz>
+        </inertia>
+        <pose>-0.0048956126 2e-10 0.0003287943 0 0 0</pose>
+      </inertial>
+      <collision name="body_6_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_6_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_6_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_6.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_7_link">
+      <pose>0.1133676171 0 -2.49e-08 0 0 0</pose>
+      <inertial>
+        <mass>7.92219e-05</mass>
+        <inertia>
+          <ixx>5e-09</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>8.7e-09</iyy>
+          <iyz>0</iyz>
+          <izz>5e-09</izz>
+        </inertia>
+        <pose>-0.0038815441 -2e-10 0.0003605352 0 0 0</pose>
+      </inertial>
+      <collision name="body_7_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_7_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_7_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_7.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_8_link">
+      <pose>0.1261671931 0 -7.46e-08 0 0 0</pose>
+      <inertial>
+        <mass>0.0002249134</mass>
+        <inertia>
+          <ixx>1.29e-08</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.32e-08</iyy>
+          <iyz>0</iyz>
+          <izz>1.29e-08</izz>
+        </inertia>
+        <pose>-0.0029795764 0 0.0002720883 0 0 0</pose>
+      </inertial>
+      <collision name="body_8_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_8_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_8_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_8.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_9_link">
+      <pose>0.1389667541 0 1.226e-06 0 0 0</pose>
+      <inertial>
+        <mass>8.98625e-05</mass>
+        <inertia>
+          <ixx>4.2e-09</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>7.5e-09</iyy>
+          <iyz>0</iyz>
+          <izz>4.1e-09</izz>
+        </inertia>
+        <pose>-0.0018743427 2e-10 0.0001998079 0 0 0</pose>
+      </inertial>
+      <collision name="body_9_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_9_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_9_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_9.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_10_link">
+      <pose>0.15176633 0 -4.7023e-06 0 0 0</pose>
+      <inertial>
+        <mass>5.9929e-05</mass>
+        <inertia>
+          <ixx>1.9e-09</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>3.4e-09</iyy>
+          <iyz>0</iyz>
+          <izz>1.9e-09</izz>
+        </inertia>
+        <pose>-0.000352487 0 0.0001454885 0 0 0</pose>
+      </inertial>
+      <collision name="body_10_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_10_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_10_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_10.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="body_11_link">
+      <pose>0.1645659059 0 -1.47393e-05 0 0 0</pose>
+      <inertial>
+        <mass>0.0003124792</mass>
+        <inertia>
+          <ixx>4.9e-09</ixx>
+          <ixy>-1e-10</ixy>
+          <ixz>0</ixz>
+          <iyy>1.45e-08</iyy>
+          <iyz>0</iyz>
+          <izz>1.07e-08</izz>
+        </inertia>
+        <pose>0.0044663996 0 0.000113662 0 0 0</pose>
+      </inertial>
+      <collision name="body_11_collision">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_11_collision.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </collision>
+      <visual name="body_11_visual">
+        <pose>0.0 0.0 0.0 0.0 -0.0 0.0</pose>
+        <material>
+          <ambient>0 0 0 0</ambient>
+          <diffuse>0 0 0 0</diffuse>
+          <specular>0.4499999881 0.4499999881 0 1.0</specular>
+        </material>
+        <geometry>
+          <mesh>
+            <uri>model://crescent_gunnel/meshes/salamander_body_11.dae</uri>
+            <scale>1.0 1.0 1.0</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="body_1_link" type="revolute">
+      <parent>body_0_link</parent>
+      <child>body_1_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_2_link" type="revolute">
+      <parent>body_1_link</parent>
+      <child>body_2_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_3_link" type="revolute">
+      <parent>body_2_link</parent>
+      <child>body_3_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_4_link" type="revolute">
+      <parent>body_3_link</parent>
+      <child>body_4_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_5_link" type="revolute">
+      <parent>body_4_link</parent>
+      <child>body_5_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_6_link" type="revolute">
+      <parent>body_5_link</parent>
+      <child>body_6_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_7_link" type="revolute">
+      <parent>body_6_link</parent>
+      <child>body_7_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_8_link" type="revolute">
+      <parent>body_7_link</parent>
+      <child>body_8_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_9_link" type="revolute">
+      <parent>body_8_link</parent>
+      <child>body_9_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_10_link" type="revolute">
+      <parent>body_9_link</parent>
+      <child>body_10_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="body_11_link" type="revolute">
+      <parent>body_10_link</parent>
+      <child>body_11_link</child>
+      <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+      <axis>
+        <xyz>0 0 1.0</xyz>
+        <limit>
+          <lower>-0.5235987902</lower>
+          <upper>0.5235987902</upper>
+          <effort>10.0</effort>
+          <velocity>10.0</velocity>
+        </limit>
+      </axis>
+    </joint>
+  </model>
+</sdf>

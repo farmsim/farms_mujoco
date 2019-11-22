@@ -84,8 +84,15 @@ class AmphibiousSpawnOptions(Options):
         super(AmphibiousSpawnOptions, self).__init__()
         # Position in [m]
         self.position = options.pop("spawn_position", [0, 0, 0.1])
-        # Orientation (Euler angles in [rad])
+        # Orientation in [rad] (Euler angles)
         self.orientation = options.pop("spawn_orientation", [0, 0, 0])
+        # Linear velocity in [m/s]
+        self.velocity_lin = options.pop("spawn_velocity_lin", [0, 0, 0])
+        # Angular velocity in [rad/s] (Euler angles)
+        self.velocity_ang = options.pop("spawn_velocity_ang", [0, 0, 0])
+        # Joints positions
+        self.joints_positions = options.pop("joints_positions", None)
+        self.joints_velocities = options.pop("joints_velocities", None)
 
 
 class AmphibiousPhysicsOptions(Options):
@@ -93,8 +100,31 @@ class AmphibiousPhysicsOptions(Options):
 
     def __init__(self, options):
         super(AmphibiousPhysicsOptions, self).__init__()
-        self.viscous = options.pop("viscous", True)
+        self.viscous = options.pop("viscous", False)
+        self.resistive = options.pop("resistive", True)
+        self.viscous_coefficients = options.pop(
+            "viscous_coefficients",
+            [
+                np.array([-1e-1, -1e0, -1e0]),
+                np.array([-1e-2, -1e-2, -1e-2])
+            ]
+        )
+        self.resistive_coefficients = options.pop(
+            "resistive_coefficients",
+            [
+                np.array([-1e-1, -1e0, -1e0]),
+                np.array([-1e-2, -1e-2, -1e-2])
+            ]
+        )
         self.sph = options.pop("sph", False)
+        self.buoyancy = options.pop(
+            "buoyancy",
+            (self.resistive or self.viscous) and not self.sph
+        )
+        self.water_surface = options.pop(
+            "water_surface",
+            self.viscous or self.sph
+        )
 
 
 class AmphibiousControlOptions(Options):
@@ -102,6 +132,10 @@ class AmphibiousControlOptions(Options):
 
     def __init__(self, morphology, **kwargs):
         super(AmphibiousControlOptions, self).__init__()
+        self.kinematics_file = kwargs.pop(
+            "kinematics_file",
+            ""
+        )
         self.drives = kwargs.pop(
             "drives",
             AmphibiousDrives(**kwargs)

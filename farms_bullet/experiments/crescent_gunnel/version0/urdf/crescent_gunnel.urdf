@@ -1,0 +1,585 @@
+<?xml version="1.0"?>
+<!-- created with Phobos 0.7 -->
+  <robot name="crescent_gunnel">
+
+    <link name="crescent_gunnel_version0_body_0_link">
+      <inertial>
+        <origin xyz="0.0111169033 2.812e-07 0.0001181091" rpy="0 0 0"/>
+        <mass value="0.000825494"/>
+        <inertia ixx="1.06e-08" ixy="0" ixz="0" iyy="1.79e-08" iyz="0" izz="1.42e-08"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_0_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_0.obj" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_0_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_0_collision.obj" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_10_link">
+      <inertial>
+        <origin xyz="0.0025525317 -8.4e-09 4.8619e-06" rpy="0 0 0"/>
+        <mass value="0.0007320913"/>
+        <inertia ixx="1.33e-08" ixy="0" ixz="0" iyy="1.57e-08" iyz="0" izz="7e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_10_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_10.obj" scale="0.0037176609 0.0037176609 0.0081620216"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_10_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_10_collision.obj" scale="0.0037176609 0.0037176609 0.0081620216"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_11_link">
+      <inertial>
+        <origin xyz="0.0026843844 5.6e-09 5.7838e-06" rpy="0 0 0"/>
+        <mass value="0.0006613666"/>
+        <inertia ixx="1.12e-08" ixy="0" ixz="0" iyy="1.37e-08" iyz="0" izz="6e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_11_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_11.obj" scale="0.003449142 0.003449142 0.0079735518"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_11_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_11_collision.obj" scale="0.003449142 0.003449142 0.0079735518"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_12_link">
+      <inertial>
+        <origin xyz="0.0028533863 -4.5e-09 8.0222e-06" rpy="0 0 0"/>
+        <mass value="0.0005888624"/>
+        <inertia ixx="9.5e-09" ixy="0" ixz="0" iyy="1.2e-08" iyz="0" izz="5e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_12_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_12.obj" scale="0.003121376 0.003121376 0.0078519583"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_12_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_12_collision.obj" scale="0.003121376 0.003121376 0.0078519583"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_13_link">
+      <inertial>
+        <origin xyz="0.0029943066 3.5e-09 1.11302e-05" rpy="0 0 0"/>
+        <mass value="0.0005021081"/>
+        <inertia ixx="7.6e-09" ixy="0" ixz="0" iyy="1e-08" iyz="0" izz="3.9e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_13_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_13.obj" scale="0.0027296543 0.0027296543 0.0078131557"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_13_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_13_collision.obj" scale="0.0027296543 0.0027296543 0.0078131557"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_14_link">
+      <inertial>
+        <origin xyz="0.0031466039 5e-10 1.39779e-05" rpy="0 0 0"/>
+        <mass value="0.0004113464"/>
+        <inertia ixx="5.6e-09" ixy="0" ixz="0" iyy="7.7e-09" iyz="0" izz="3e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_14_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_14.obj" scale="0.002353251 0.002353251 0.0075334311"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_14_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_14_collision.obj" scale="0.002353251 0.002353251 0.0075334311"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_15_link">
+      <inertial>
+        <origin xyz="0.0032526106 3.5e-09 1.48841e-05" rpy="0 0 0"/>
+        <mass value="0.0003413994"/>
+        <inertia ixx="4.1e-09" ixy="0" ixz="0" iyy="5.8e-09" iyz="0" izz="2.4e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_15_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_15.obj" scale="0.0020675063 0.0020675063 0.0071589351"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_15_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_15_collision.obj" scale="0.0020675063 0.0020675063 0.0071589351"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_16_link">
+      <inertial>
+        <origin xyz="0.0032877177 3.8e-09 1.17023e-05" rpy="0 0 0"/>
+        <mass value="0.0002891406"/>
+        <inertia ixx="2.9e-09" ixy="0" ixz="0" iyy="4.3e-09" iyz="0" izz="2e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_16_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_16.obj" scale="0.0019308329 0.0019308329 0.0065559149"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_16_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_16_collision.obj" scale="0.0019308329 0.0019308329 0.0065559149"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_17_link">
+      <inertial>
+        <origin xyz="0.0033273103 -1.18e-08 1.3133e-05" rpy="0 0 0"/>
+        <mass value="0.0002310995"/>
+        <inertia ixx="1.8e-09" ixy="0" ixz="0" iyy="3e-09" iyz="0" izz="1.5e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_17_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_17.obj" scale="0.0017700195 0.0017700195 0.0058298111"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_17_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_17_collision.obj" scale="0.0017700195 0.0017700195 0.0058298111"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_18_link">
+      <inertial>
+        <origin xyz="0.0033252242 4.57e-08 -9.67e-08" rpy="0 0 0"/>
+        <mass value="0.0001790714"/>
+        <inertia ixx="1e-09" ixy="0" ixz="0" iyy="2e-09" iyz="0" izz="1.2e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_18_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_18.obj" scale="0.001637876 0.001637876 0.004999876"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_18_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_18_collision.obj" scale="0.001637876 0.001637876 0.004999876"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_19_link">
+      <inertial>
+        <origin xyz="0.0032387376 -4.76e-08 3.12971e-05" rpy="0 0 0"/>
+        <mass value="9.12754e-05"/>
+        <inertia ixx="3e-10" ixy="0" ixz="0" iyy="8e-10" iyz="0" izz="6e-10"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_19_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_19.obj" scale="0.001265049 0.001265049 0.0041057467"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_19_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_19_collision.obj" scale="0.001265049 0.001265049 0.0041057467"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_1_link">
+      <inertial>
+        <origin xyz="0.0021612197 3.4e-09 -3.32064e-05" rpy="0 0 0"/>
+        <mass value="0.0007961419"/>
+        <inertia ixx="1.32e-08" ixy="0" ixz="0" iyy="1.48e-08" iyz="0" izz="9.1e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_1_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_1.obj" scale="0.0045409203 0.0045409203 0.0072059035"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_1_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_1_collision.obj" scale="0.0045409203 0.0045409203 0.0072059035"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_20_link">
+      <inertial>
+        <origin xyz="0.0028029531 -2.289e-07 7.48927e-05" rpy="0 0 0"/>
+        <mass value="2.29698e-05"/>
+        <inertia ixx="1e-10" ixy="0" ixz="0" iyy="1e-10" iyz="0" izz="1e-10"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_20_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_20.obj" scale="0.0006264448 0.0006264448 0.0029065013"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_20_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_20_collision.obj" scale="0.0006264448 0.0006264448 0.0029065013"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_2_link">
+      <inertial>
+        <origin xyz="0.0021835882 6e-10 2.57447e-05" rpy="0 0 0"/>
+        <mass value="0.0007243024"/>
+        <inertia ixx="1.16e-08" ixy="0" ixz="0" iyy="1.29e-08" iyz="0" izz="7.7e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_2_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_2.obj" scale="0.0043151975 0.0043151975 0.0071265101"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_2_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_2_collision.obj" scale="0.0043151975 0.0043151975 0.0071265101"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_3_link">
+      <inertial>
+        <origin xyz="0.0022261704 -1.04e-08 -6.6428e-06" rpy="0 0 0"/>
+        <mass value="0.0007828775"/>
+        <inertia ixx="1.34e-08" ixy="0" ixz="0" iyy="1.47e-08" iyz="0" izz="8.8e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_3_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_3.obj" scale="0.0044519305 0.0044519305 0.0072491765"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_3_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_3_collision.obj" scale="0.0044519305 0.0044519305 0.0072491765"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_4_link">
+      <inertial>
+        <origin xyz="0.00213366 -1.14e-08 4.6994e-06" rpy="0 0 0"/>
+        <mass value="0.0008061575"/>
+        <inertia ixx="1.4e-08" ixy="0" ixz="0" iyy="1.55e-08" iyz="0" izz="9e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_4_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_4.obj" scale="0.0045102239 0.0045102239 0.0074436069"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_4_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_4_collision.obj" scale="0.0045102239 0.0045102239 0.0074436069"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_5_link">
+      <inertial>
+        <origin xyz="0.0022085235 -4.5e-09 1.4267e-06" rpy="0 0 0"/>
+        <mass value="0.0008043398"/>
+        <inertia ixx="1.44e-08" ixy="0" ixz="0" iyy="1.58e-08" iyz="0" izz="8.9e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_5_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_5.obj" scale="0.0044298768 0.0044298768 0.0075314641"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_5_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_5_collision.obj" scale="0.0044298768 0.0044298768 0.0075314641"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_6_link">
+      <inertial>
+        <origin xyz="0.0022183359 4.29e-08 2.604e-06" rpy="0 0 0"/>
+        <mass value="0.0008443013"/>
+        <inertia ixx="1.57e-08" ixy="0" ixz="0" iyy="1.74e-08" iyz="0" izz="9.5e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_6_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_6.obj" scale="0.0044527054 0.0044527054 0.0077864528"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_6_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_6_collision.obj" scale="0.0044527054 0.0044527054 0.0077864528"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_7_link">
+      <inertial>
+        <origin xyz="0.0022815838 2e-08 2.87e-06" rpy="0 0 0"/>
+        <mass value="0.0008314426"/>
+        <inertia ixx="1.56e-08" ixy="0" ixz="0" iyy="1.75e-08" iyz="0" izz="9e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_7_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_7.obj" scale="0.0043032169 0.0043032169 0.0079433322"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_7_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_7_collision.obj" scale="0.0043032169 0.0043032169 0.0079433322"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_8_link">
+      <inertial>
+        <origin xyz="0.0023920015 5.7e-09 3.4152e-06" rpy="0 0 0"/>
+        <mass value="0.000791764"/>
+        <inertia ixx="1.48e-08" ixy="0" ixz="0" iyy="1.69e-08" iyz="0" izz="8.1e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_8_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_8.obj" scale="0.0040659308 0.0040659308 0.0080484152"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_8_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_8_collision.obj" scale="0.0040659308 0.0040659308 0.0080484152"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="crescent_gunnel_version0_body_9_link">
+      <inertial>
+        <origin xyz="0.0024762526 2.9e-09 4.2231e-06" rpy="0 0 0"/>
+        <mass value="0.0007760612"/>
+        <inertia ixx="1.46e-08" ixy="0" ixz="0" iyy="1.69e-08" iyz="0" izz="7.7e-09"/>
+      </inertial>
+      <visual name="crescent_gunnel_version0_body_9_visual">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_9.obj" scale="0.0039129257 0.0039129257 0.0081698895"/>
+        </geometry>
+      </visual>
+      <collision name="crescent_gunnel_version0_body_9_collision">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="../meshes/obj/animat_crescent_gunnel_version0_body_9_collision.obj" scale="0.0039129257 0.0039129257 0.0081698895"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="crescent_gunnel_version0_body_10_link" type="revolute">
+      <origin xyz="0.0082282946 0 1.73e-08" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_9_link"/>
+      <child link="crescent_gunnel_version0_body_10_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_11_link" type="revolute">
+      <origin xyz="0.0082282946 0 4e-10" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_10_link"/>
+      <child link="crescent_gunnel_version0_body_11_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_12_link" type="revolute">
+      <origin xyz="0.0082282946 0 -2.22e-08" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_11_link"/>
+      <child link="crescent_gunnel_version0_body_12_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_13_link" type="revolute">
+      <origin xyz="0.0082282946 0 4.56e-08" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_12_link"/>
+      <child link="crescent_gunnel_version0_body_13_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_14_link" type="revolute">
+      <origin xyz="0.0082282946 0 -3.7e-08" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_13_link"/>
+      <child link="crescent_gunnel_version0_body_14_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_15_link" type="revolute">
+      <origin xyz="0.008228302 0 -2.171e-07" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_14_link"/>
+      <child link="crescent_gunnel_version0_body_15_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_16_link" type="revolute">
+      <origin xyz="0.0082282871 0 1.5793e-06" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_15_link"/>
+      <child link="crescent_gunnel_version0_body_16_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_17_link" type="revolute">
+      <origin xyz="0.008228302 0 -6.7496e-06" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_16_link"/>
+      <child link="crescent_gunnel_version0_body_17_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_18_link" type="revolute">
+      <origin xyz="0.0082282871 0 2.26604e-05" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_17_link"/>
+      <child link="crescent_gunnel_version0_body_18_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_19_link" type="revolute">
+      <origin xyz="0.008228302 0 -6.50667e-05" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_18_link"/>
+      <child link="crescent_gunnel_version0_body_19_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_1_link" type="revolute">
+      <origin xyz="0.0182850994 0 4.47509e-05" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_0_link"/>
+      <child link="crescent_gunnel_version0_body_1_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_20_link" type="revolute">
+      <origin xyz="0.0082282871 0 0.0001184349" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_19_link"/>
+      <child link="crescent_gunnel_version0_body_20_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_2_link" type="revolute">
+      <origin xyz="0.0082282964 0 -8.20359e-05" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_1_link"/>
+      <child link="crescent_gunnel_version0_body_2_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_3_link" type="revolute">
+      <origin xyz="0.0082282927 0 5.1419e-05" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_2_link"/>
+      <child link="crescent_gunnel_version0_body_3_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_4_link" type="revolute">
+      <origin xyz="0.0082282983 0 -1.91565e-05" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_3_link"/>
+      <child link="crescent_gunnel_version0_body_4_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_5_link" type="revolute">
+      <origin xyz="0.0082282946 0 6.3377e-06" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_4_link"/>
+      <child link="crescent_gunnel_version0_body_5_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_6_link" type="revolute">
+      <origin xyz="0.0082282946 0 -1.5851e-06" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_5_link"/>
+      <child link="crescent_gunnel_version0_body_6_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_7_link" type="revolute">
+      <origin xyz="0.0082282946 0 2.864e-07" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_6_link"/>
+      <child link="crescent_gunnel_version0_body_7_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_8_link" type="revolute">
+      <origin xyz="0.0082282946 0 4.4e-09" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_7_link"/>
+      <child link="crescent_gunnel_version0_body_8_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+    <joint name="crescent_gunnel_version0_body_9_link" type="revolute">
+      <origin xyz="0.0082282946 0 -3.42e-08" rpy="0 0 0"/>
+      <parent link="crescent_gunnel_version0_body_8_link"/>
+      <child link="crescent_gunnel_version0_body_9_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-0.5235987902" upper="0.5235987902" effort="10.0" velocity="10.0"/>
+    </joint>
+
+  </robot>

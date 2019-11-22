@@ -24,4 +24,4 @@ class AmphibiousGPS(LinksStatesSensor):
         # else:
         #     self.collect(iteration, [self.links[0]])
         else:
-            self.collect(iteration, self.links[:12])
+            self.collect(iteration, self.links[:self.options.morphology.n_joints_body])

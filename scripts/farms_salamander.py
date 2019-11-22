@@ -25,6 +25,7 @@ def main():
     simulation_options.units.meters = 1
     simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
+    simulation_options.arena = "water"
 
     # Walking
     animat_options.spawn.position = [0, 0, scale*0.1]
