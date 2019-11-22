@@ -51,7 +51,10 @@ def main():
     )
     kinematics = np.loadtxt(animat_options.control.kinematics_file)
     pose = kinematics[:, :3]
+    # pose *= 1e-3
     pose *= 1e-3
+    # pose[0, :2] *= 1e-3
+    # pose[0, 2] *= 1e-3
     position = np.ones(3)
     position[:2] = pose[0, :2]
     orientation = np.zeros(3)
