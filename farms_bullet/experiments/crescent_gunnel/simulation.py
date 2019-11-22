@@ -2,6 +2,8 @@
 
 import pybullet
 
+import numpy as np
+
 from ...animats.amphibious.simulation import AmphibiousSimulation
 from .animat import Crescent_Gunnel
 

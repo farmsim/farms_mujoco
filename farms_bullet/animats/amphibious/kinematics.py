@@ -32,7 +32,7 @@ class AmphibiousKinematics:
 
     def get_outputs_all(self):
         """Outputs"""
-        return self.kinematics[:] % np.pi
+        return self.kinematics[:]
 
     def get_doutputs(self):
         """Outputs velocity"""
