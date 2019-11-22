@@ -78,6 +78,9 @@ def main():
     # animat_options.spawn.position = [-10, 0, 0]
     # animat_options.spawn.orientation = [0, 0, np.pi]
 
+    # Logging
+    simulation_options.log_path = "fish_results"
+
     # Camera options
     simulation_options.video_yaw = 0
     simulation_options.video_pitch = -30

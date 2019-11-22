@@ -45,14 +45,18 @@ def main():
     )
     simulation = np.load(simulation_file)
     pose_sim = simulation[:, 0, :3]
+    pose_sim[:, :2] += pose_fish[0, :2] - pose_sim[0, :2]
 
     # Plot kinematics
-    plt.plot(pose_fish[:, 0], pose_fish[:, 1])
+    plt.plot(pose_fish[:, 0], pose_fish[:, 1], label="Fish data")
 
     # Plot simulation results
-    plt.plot(pose_sim[:, 0], pose_sim[:, 1])
+    plt.plot(pose_sim[:, 0], pose_sim[:, 1], label="Simulation data")
 
     # Plot options
+    plt.xlabel("X axis [m]")
+    plt.ylabel("Y axis [m]")
+    plt.legend()
     plt.axis('equal')
     plt.grid(True)
     plt.show()
