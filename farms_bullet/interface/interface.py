@@ -171,7 +171,7 @@ class UserParameters(dict):
         super(UserParameters, self).__init__()
         lim = np.pi/8
         self["play"] = ParameterPlay()
-        self["rtl"] = DebugParameter("Real-time limiter", 1e-1, 1e-3, 3)
+        self["rtl"] = DebugParameter("Real-time limiter", 1, 1e-3, 3)
         self["zoom"] = DebugParameter("Zoom", 1, 0, 1)
         # self["gait"] = ParameterGait(gait)
         # self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
