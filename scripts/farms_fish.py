@@ -5,7 +5,7 @@ import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from farms_bullet.experiments.crescent_gunnel.simulation import main as run_sim
+from farms_bullet.experiments.fish.simulation import main as run_sim
 from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
@@ -70,7 +70,6 @@ def main():
     # animat_options.spawn.position = [-10, 0, 0]
     # animat_options.spawn.orientation = [0, 0, np.pi]
 
-
     # Camera options
     simulation_options.video_yaw = 0
     simulation_options.video_pitch = -30
@@ -85,6 +84,8 @@ def main():
 
     # Run simulation
     run_sim(
+        "crescent_gunnel",
+        "version0",
         simulation_options=simulation_options,
         animat_options=animat_options
     )
