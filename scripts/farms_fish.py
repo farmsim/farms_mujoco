@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run crescent_gunnel simulation with bullet"""
+"""Run fish simulation with bullet"""
 
 import os
 import time
@@ -20,7 +20,7 @@ def main():
         scale=scale,
         n_joints_body=20,
         viscous=True,
-        viscous_coefficients=[
+        resistive_coefficients=[
             1e-1*np.array([-1e-4, -5e-1, -3e-1]),
             1e-1*np.array([-1e-6, -1e-6, -1e-6])
         ],

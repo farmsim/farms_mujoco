@@ -6,7 +6,12 @@ import pybullet
 
 from ...animats.animat import Animat
 from ...animats.link import AnimatLink
-from ...plugins.swimming import viscous_forces, swimming_motion, swimming_debug
+from ...plugins.swimming import (
+    viscous_forces,
+    resistive_forces,
+    swimming_motion,
+    swimming_debug
+)
 from ...sensors.sensors import (
     Sensors,
     JointsStatesSensor,
@@ -939,6 +944,24 @@ class Amphibious(Animat):
     def viscous_swimming_forces(self, iteration, water_surface, **kwargs):
         """Animat swimming physics"""
         viscous_forces(
+            iteration,
+            self.data.sensors.gps,
+            self.data.sensors.hydrodynamics.array,
+            [
+                link_i
+                for link_i in range(self.options.morphology.n_links_body())
+                if (
+                    self.data.sensors.gps.com_position(iteration, link_i)[2]
+                    < water_surface
+                )
+            ],
+            masses=self.masses,
+            **kwargs
+        )
+
+    def resistive_swimming_forces(self, iteration, water_surface, **kwargs):
+        """Animat swimming physics"""
+        resistive_forces(
             iteration,
             self.data.sensors.gps,
             self.data.sensors.hydrodynamics.array,

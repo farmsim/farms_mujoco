@@ -132,7 +132,11 @@ class AmphibiousSimulation(Simulation):
         if sim_step < self.options.n_iterations-1:
             physics_options = self.elements.animat.options.physics
             # Swimming
-            if physics_options.viscous or physics_options.sph:
+            if (
+                    physics_options.resistive
+                    or physics_options.viscous
+                    or physics_options.sph
+            ):
                 water_surface = (
                     np.inf
                     if physics_options.sph or not physics_options.water_surface
@@ -143,6 +147,13 @@ class AmphibiousSimulation(Simulation):
                         sim_step,
                         water_surface=water_surface,
                         coefficients=physics_options.viscous_coefficients,
+                        buoyancy=physics_options.buoyancy,
+                    )
+                if physics_options.resistive:
+                    self.elements.animat.resistive_swimming_forces(
+                        sim_step,
+                        water_surface=water_surface,
+                        coefficients=physics_options.resistive_coefficients,
                         buoyancy=physics_options.buoyancy,
                     )
                 self.elements.animat.apply_swimming_forces(

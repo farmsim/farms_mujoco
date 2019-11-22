@@ -100,7 +100,8 @@ class AmphibiousPhysicsOptions(Options):
 
     def __init__(self, options):
         super(AmphibiousPhysicsOptions, self).__init__()
-        self.viscous = options.pop("viscous", True)
+        self.viscous = options.pop("viscous", False)
+        self.resistive = options.pop("resistive", True)
         self.viscous_coefficients = options.pop(
             "viscous_coefficients",
             [
@@ -108,8 +109,18 @@ class AmphibiousPhysicsOptions(Options):
                 np.array([-1e-2, -1e-2, -1e-2])
             ]
         )
+        self.resistive_coefficients = options.pop(
+            "resistive_coefficients",
+            [
+                np.array([-1e-1, -1e0, -1e0]),
+                np.array([-1e-2, -1e-2, -1e-2])
+            ]
+        )
         self.sph = options.pop("sph", False)
-        self.buoyancy = options.pop("buoyancy", self.viscous and not self.sph)
+        self.buoyancy = options.pop(
+            "buoyancy",
+            (self.resistive or self.viscous) and not self.sph
+        )
         self.water_surface = options.pop(
             "water_surface",
             self.viscous or self.sph
