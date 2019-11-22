@@ -38,7 +38,7 @@ def links_ordering(text):
     return [text]
 
 
-def initial_pose(identity, spawn_options):
+def initial_pose(identity, spawn_options, units):
     """Initial pose"""
     pybullet.resetBasePositionAndOrientation(
         identity,
@@ -49,9 +49,12 @@ def initial_pose(identity, spawn_options):
     )
     pybullet.resetBaseVelocity(
         objectUniqueId=identity,
-        linearVelocity=spawn_options.velocity_lin,
-        angularVelocity=spawn_options.velocity_ang
+        linearVelocity=spawn_options.velocity_lin*units.velocity,
+        angularVelocity=np.array(spawn_options.velocity_ang)/units.seconds
     )
+    # print(spawn_options.velocity_lin)
+    # print(spawn_options.velocity_ang)
+    # raise Exception
     if (
             spawn_options.joints_positions is not None
             or spawn_options.joints_velocities is not None
@@ -72,7 +75,7 @@ def initial_pose(identity, spawn_options):
                 bodyUniqueId=identity,
                 jointIndex=joint_i,
                 targetValue=position,
-                targetVelocity=velocity
+                targetVelocity=velocity/units.seconds
             )
 
 
@@ -141,7 +144,7 @@ class Amphibious(Animat):
                 useMaximalCoordinates=0,
                 globalScaling=1
             )[0]
-            initial_pose(self._identity, self.options.spawn)
+            initial_pose(self._identity, self.options.spawn, self.units)
         else:
             links = [None for _ in range(self.options.morphology.n_links())]
             joints = [None for _ in range(self.options.morphology.n_joints())]
@@ -398,7 +401,7 @@ class Amphibious(Animat):
                 useMaximalCoordinates=0,
                 globalScaling=1
             )[0]
-            initial_pose(self._identity, self.options.spawn)
+            initial_pose(self._identity, self.options.spawn, self.units)
             # texUid = pybullet.loadTexture("/home/jonathan/Work/EPFL/PhD/Dev/FARMS/farms_bullet/farms_bullet/animats/amphibious/salamander_skin.jpg")
             # for i in range(self.options.morphology.n_links()):
             #     pybullet.changeVisualShape(
@@ -732,7 +735,7 @@ class Amphibious(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
-        initial_pose(self._identity, self.options.spawn)
+        initial_pose(self._identity, self.options.spawn, self.units)
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]
         joint_index = 0

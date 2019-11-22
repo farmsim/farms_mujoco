@@ -19,7 +19,8 @@ def main():
         show_hydrodynamics=True,
         scale=scale,
         n_joints_body=20,
-        viscous=True,
+        viscous=False,
+        resistive=True,
         resistive_coefficients=[
             1e-1*np.array([-1e-4, -5e-1, -3e-1]),
             1e-1*np.array([-1e-6, -1e-6, -1e-6])
@@ -34,8 +35,8 @@ def main():
     simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
 
-    fish_name = "penpoint_gunnel"
-    version_name = "version1"
+    fish_name = "snake_prickleback"
+    version_name = "version3"
 
     # Kinematics
     animat_options.control.kinematics_file = os.path.join(
@@ -54,15 +55,15 @@ def main():
     simulation_options.duration = len_kinematics*1e-2
     pose = kinematics[:, :3]
     # pose *= 1e-3
-    pose *= 1e-3
+    # pose *= 1e-3
     # pose[0, :2] *= 1e-3
     # pose[0, 2] *= 1e-3
     position = np.ones(3)
     position[:2] = pose[0, :2]
     orientation = np.zeros(3)
-    orientation[2] = pose[0, 2] + np.pi
+    orientation[2] = pose[0, 2]  #  + np.pi
     velocity = np.zeros(3)
-    n_sample = 5
+    n_sample = 100
     velocity[:2] = pose[n_sample, :2] - pose[0, :2]
     sampling_timestep = 1e-2
     velocity /= n_sample*sampling_timestep

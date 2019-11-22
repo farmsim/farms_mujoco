@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 
 def main():
     """Main"""
-    fish_name = "penpoint_gunnel"
-    version_name = "version1"
+    fish_name = "snake_prickleback"
+    version_name = "version3"
 
     # Kinematics data from fish
     kinematics_file = os.path.join(
