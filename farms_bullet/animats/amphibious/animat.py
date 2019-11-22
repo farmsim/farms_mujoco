@@ -33,6 +33,44 @@ def links_ordering(text):
     return [text]
 
 
+def initial_pose(identity, spawn_options):
+    """Initial pose"""
+    pybullet.resetBasePositionAndOrientation(
+        identity,
+        spawn_options.position,
+        pybullet.getQuaternionFromEuler(
+            spawn_options.orientation
+        )
+    )
+    pybullet.resetBaseVelocity(
+        objectUniqueId=identity,
+        linearVelocity=spawn_options.velocity_lin,
+        angularVelocity=spawn_options.velocity_ang
+    )
+    if (
+            spawn_options.joints_positions is not None
+            or spawn_options.joints_velocities is not None
+    ):
+        if spawn_options.joints_positions is None:
+            spawn_options.joints_positions = np.zeros_like(
+                spawn_options.joints_velocities
+            )
+        if spawn_options.joints_velocities is None:
+            spawn_options.joints_velocities = np.zeros_like(
+                spawn_options.joints_positions
+            )
+        for joint_i, (position, velocity) in enumerate(zip(
+                spawn_options.joints_positions,
+                spawn_options.joints_velocities
+        )):
+            pybullet.resetJointState(
+                bodyUniqueId=identity,
+                jointIndex=joint_i,
+                targetValue=position,
+                targetVelocity=velocity
+            )
+
+
 class Amphibious(Animat):
     """Amphibious animat"""
 
@@ -98,18 +136,7 @@ class Amphibious(Animat):
                 useMaximalCoordinates=0,
                 globalScaling=1
             )[0]
-            pybullet.resetBasePositionAndOrientation(
-                self._identity,
-                self.options.spawn.position,
-                pybullet.getQuaternionFromEuler(
-                    self.options.spawn.orientation
-                )
-            )
-            pybullet.resetBaseVelocity(
-                objectUniqueId=self._identity,
-                linearVelocity=self.options.spawn.velocity_lin,
-                angularVelocity=self.options.spawn.velocity_ang
-            )
+            initial_pose(self._identity, self.options.spawn)
         else:
             links = [None for _ in range(self.options.morphology.n_links())]
             joints = [None for _ in range(self.options.morphology.n_joints())]
@@ -366,18 +393,7 @@ class Amphibious(Animat):
                 useMaximalCoordinates=0,
                 globalScaling=1
             )[0]
-            pybullet.resetBasePositionAndOrientation(
-                self._identity,
-                self.options.spawn.position,
-                pybullet.getQuaternionFromEuler(
-                    self.options.spawn.orientation
-                )
-            )
-            pybullet.resetBaseVelocity(
-                objectUniqueId=self._identity,
-                linearVelocity=self.options.spawn.velocity_lin,
-                angularVelocity=self.options.spawn.velocity_ang
-            )
+            initial_pose(self._identity, self.options.spawn)
             # texUid = pybullet.loadTexture("/home/jonathan/Work/EPFL/PhD/Dev/FARMS/farms_bullet/farms_bullet/animats/amphibious/salamander_skin.jpg")
             # for i in range(self.options.morphology.n_links()):
             #     pybullet.changeVisualShape(
@@ -711,11 +727,7 @@ class Amphibious(Animat):
             linkJointTypes=[link.joint_type for link in links],
             linkJointAxis=[link.joint_axis for link in links]
         )
-        pybullet.resetBaseVelocity(
-            objectUniqueId=self._identity,
-            linearVelocity=self.options.spawn.velocity_lin,
-            angularVelocity=self.options.spawn.velocity_ang
-        )
+        initial_pose(self._identity, self.options.spawn)
         # Joint order
         joints_names = [None for _ in range(self.options.morphology.n_joints())]
         joint_index = 0

@@ -90,6 +90,9 @@ class AmphibiousSpawnOptions(Options):
         self.velocity_lin = options.pop("spawn_velocity_lin", [0, 0, 0])
         # Angular velocity in [rad/s] (Euler angles)
         self.velocity_ang = options.pop("spawn_velocity_ang", [0, 0, 0])
+        # Joints positions
+        self.joints_positions = options.pop("joints_positions", None)
+        self.joints_velocities = options.pop("joints_velocities", None)
 
 
 class AmphibiousPhysicsOptions(Options):

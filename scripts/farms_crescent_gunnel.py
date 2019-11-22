@@ -4,7 +4,6 @@
 import os
 import time
 import numpy as np
-from scipy.signal import resample
 import matplotlib.pyplot as plt
 from farms_bullet.experiments.crescent_gunnel.simulation import main as run_sim
 from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
@@ -47,20 +46,18 @@ def main():
     )
     kinematics = np.loadtxt(animat_options.control.kinematics_file)
     pose = kinematics[:, :3]
-    n_samples = 10*np.shape(kinematics)[0]
     pose *= 1e-3
-    pose = resample(pose, n_samples)
     position = np.ones(3)
     position[:2] = pose[0, :2]
     orientation = np.zeros(3)
     orientation[2] = pose[0, 2] + np.pi
     velocity = np.zeros(3)
-    n_sample = 100
+    n_sample = 5
     velocity[:2] = pose[n_sample, :2] - pose[0, :2]
-    velocity /= n_sample*simulation_options.timestep
+    sampling_timestep = 1e-2
+    velocity /= n_sample*sampling_timestep
     kinematics = kinematics[:, 3:]
     kinematics = ((kinematics + np.pi) % (2*np.pi)) - np.pi
-    kinematics = resample(kinematics, n_samples)
 
     # Walking
     animat_options.spawn.position = position
@@ -68,6 +65,7 @@ def main():
     animat_options.physics.buoyancy = False
     animat_options.spawn.velocity_lin = velocity
     animat_options.spawn.velocity_ang = [0, 0, 0]
+    animat_options.spawn.joints_positions = kinematics[0, :]
     # Swiming
     # animat_options.spawn.position = [-10, 0, 0]
     # animat_options.spawn.orientation = [0, 0, np.pi]
