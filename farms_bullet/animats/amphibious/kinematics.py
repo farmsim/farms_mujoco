@@ -36,7 +36,6 @@ class AmphibiousKinematics:
 
     def get_doutputs(self):
         """Outputs velocity"""
-        print(len(self.kinematics[self.animat_data.iteration]))
         return (
             (
                 self.kinematics[self.animat_data.iteration]
