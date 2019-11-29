@@ -30,6 +30,9 @@ def main():
     # Walking
     animat_options.spawn.position = [0, 0, scale*0.1]
     animat_options.spawn.orientation = [0, 0, 0]
+    animat_options.physics.viscous = True
+    animat_options.physics.buoyancy = True
+    animat_options.physics.water_surface = True
     # Swiming
     # animat_options.spawn.position = [-10, 0, 0]
     # animat_options.spawn.orientation = [0, 0, np.pi]

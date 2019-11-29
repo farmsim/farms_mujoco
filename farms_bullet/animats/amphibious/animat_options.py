@@ -101,7 +101,7 @@ class AmphibiousPhysicsOptions(Options):
     def __init__(self, options):
         super(AmphibiousPhysicsOptions, self).__init__()
         self.viscous = options.pop("viscous", False)
-        self.resistive = options.pop("resistive", True)
+        self.resistive = options.pop("resistive", False)
         self.viscous_coefficients = options.pop(
             "viscous_coefficients",
             [
@@ -123,7 +123,7 @@ class AmphibiousPhysicsOptions(Options):
         )
         self.water_surface = options.pop(
             "water_surface",
-            self.viscous or self.sph
+            self.viscous or self.resistive or self.sph
         )
 
 
