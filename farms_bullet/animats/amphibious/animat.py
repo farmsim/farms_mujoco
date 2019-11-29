@@ -49,7 +49,7 @@ def initial_pose(identity, spawn_options, units):
     )
     pybullet.resetBaseVelocity(
         objectUniqueId=identity,
-        linearVelocity=spawn_options.velocity_lin*units.velocity,
+        linearVelocity=np.array(spawn_options.velocity_lin)*units.velocity,
         angularVelocity=np.array(spawn_options.velocity_ang)/units.seconds
     )
     # print(spawn_options.velocity_lin)
