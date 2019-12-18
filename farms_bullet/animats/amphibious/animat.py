@@ -18,7 +18,7 @@ from ...sensors.sensors import (
     ContactsSensors
 )
 
-from ..farms_sdf import ModelSDF, Link, Joint
+from farms_sdf.sdf import ModelSDF, Link, Joint
 
 from .convention import AmphibiousConvention
 from .animat_data import (

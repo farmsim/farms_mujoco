@@ -8,7 +8,7 @@ import pybullet
 from .create import create_scene
 from ..simulations.element import SimulationElement
 from ..animats.link import AnimatLink
-from ..animats.farms_sdf import ModelSDF, Link, Joint
+from farms_sdf.sdf import ModelSDF, Link, Joint
 
 
 class Floor(SimulationElement):
