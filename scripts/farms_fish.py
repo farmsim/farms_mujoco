@@ -6,6 +6,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from farms_bullet.experiments.fish.simulation import main as run_sim
+from farms_bullet.experiments.fish.simulation import FISH_DIRECTORY
 from farms_bullet.animats.amphibious.animat_options import AmphibiousOptions
 from farms_bullet.simulations.simulation_options import SimulationOptions
 
@@ -35,16 +36,13 @@ def main():
     simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
 
-    fish_name = "snake_prickleback"
-    version_name = "version3"
+    fish_name = "crescent_gunnel"
+    version_name = "version0"
 
     # Kinematics
     animat_options.control.kinematics_file = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
-        "..",
-        "farms_bullet",
-        "experiments",
-        "fish",
+        FISH_DIRECTORY,
         fish_name,
         version_name,
         "kinematics",
@@ -97,9 +95,15 @@ def main():
     # )
 
     # Run simulation
-    run_sim(
+    sdf_path = os.path.join(
+        FISH_DIRECTORY,
         fish_name,
         version_name,
+        "sdf",
+        "{}.sdf".format(fish_name)
+    )
+    run_sim(
+        sdf_path,
         simulation_options=simulation_options,
         animat_options=animat_options
     )

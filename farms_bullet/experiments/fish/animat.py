@@ -26,20 +26,21 @@ class Fish(Amphibious):
             sdf=sdf_path
         )
 
-    @classmethod
-    def from_fish_data(cls, fish_name, version, options, timestep, iterations, units):
-        """From fish data"""
-        directory = os.path.dirname(os.path.realpath(__file__))
-        return cls(
-            options,
-            timestep,
-            iterations,
-            units,
-            sdf_path=os.path.join(
-                directory,
-                fish_name,
-                version,
-                "sdf",
-                "{}.sdf".format(fish_name)
-            )
-        )
+    # @classmethod
+    # def from_fish_data(cls, fish_name, version, options, timestep, iterations, units):
+    #     """From fish data"""
+    #     directory = os.path.dirname(os.path.realpath(__file__))
+    #     sdf_path = os.path.join(
+    #         directory,
+    #         fish_name,
+    #         version,
+    #         "sdf",
+    #         "{}.sdf".format(fish_name)
+    #     )
+    #     return cls(
+    #         options,
+    #         timestep,
+    #         iterations,
+    #         units,
+    #         sdf_path=sdf_path
+    #     )

@@ -1,5 +1,7 @@
 """Fish simulation"""
 
+import os
+
 import pybullet
 
 import numpy as np
@@ -11,14 +13,13 @@ from .animat import Fish
 class FishSimulation(AmphibiousSimulation):
     """Fish simulation"""
 
-    def __init__(self, fish_name, fish_version, simulation_options, animat_options, *args, **kwargs):
-        animat = Fish.from_fish_data(
-            fish_name,
-            fish_version,
+    def __init__(self, sdf_path, simulation_options, animat_options, *args, **kwargs):
+        animat = Fish(
             animat_options,
             simulation_options.timestep,
             simulation_options.n_iterations,
-            simulation_options.units
+            simulation_options.units,
+            sdf_path=sdf_path
         )
         super(FishSimulation, self).__init__(
             simulation_options,
@@ -28,14 +29,16 @@ class FishSimulation(AmphibiousSimulation):
         )
 
 
-def main(fish_name, fish_version, simulation_options, animat_options):
+FISH_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
+
+
+def main(sdf_path, simulation_options, animat_options):
     """Main"""
 
     # Setup simulation
     print("Creating simulation")
     sim = FishSimulation(
-        fish_name,
-        fish_version,
+        sdf_path,
         simulation_options=simulation_options,
         animat_options=animat_options
     )
