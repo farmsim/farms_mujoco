@@ -234,15 +234,21 @@ cdef class LinksStatesSensor(NetworkArray3D):
                 base_info = pybullet.getBasePositionAndOrientation(self.animat)
                 pos_com = base_info[0]
                 ori_com = base_info[1]
-                pos_urdf = np.asarray(pos_com) + np.dot(
-                    np.asarray(
-                        pybullet.getMatrixFromQuaternion(ori_com)
-                    ).reshape([3, 3]),
-                    -np.asarray(
-                        pybullet.getDynamicsInfo(self.animat, link_id)[3]
-                    )
+                transform_loc = (
+                    pybullet.getDynamicsInfo(self.animat, link_id)[3:5]
                 )
-                ori_urdf = ori_com
+                transform_inv = pybullet.invertTransform(
+                    position=transform_loc[0],
+                    orientation=transform_loc[1]
+                )
+                transform_urdf = pybullet.multiplyTransforms(
+                    pos_com,
+                    ori_com,
+                    transform_inv[0],
+                    transform_inv[1]
+                )
+                pos_urdf = transform_urdf[0]
+                ori_urdf = transform_urdf[1]
                 base_velocity = pybullet.getBaseVelocity(self.animat)
                 lin_velocity = base_velocity[0]
                 ang_velocity = base_velocity[1]
