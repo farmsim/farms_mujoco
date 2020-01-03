@@ -5,6 +5,7 @@ import pickle
 
 import numpy as np
 import pybullet
+from tqdm import tqdm
 
 from .simulator import init_engine
 from ..render.render import rendering
@@ -136,7 +137,7 @@ class Simulation:
         """Pre-step"""
         raise NotImplementedError
 
-    def run(self, profile=False):
+    def run(self, profile=False, show_progress=False):
         """Run simulation"""
         # Run simulation
         if profile:
@@ -144,6 +145,8 @@ class Simulation:
                 loggingType=pybullet.STATE_LOGGING_PROFILE_TIMINGS,
                 fileName="profile.log"
             )
+        if show_progress:
+            pbar = tqdm(total=self.options.n_iterations)
         while self.iteration < self.options.n_iterations:
             if not self.options.headless:
                 keys = pybullet.getKeyboardEvents()
@@ -152,6 +155,8 @@ class Simulation:
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
                 self.iteration += 1
+            if show_progress:
+                pbar.update(1)
         if profile:
             pybullet.stopStateLogging(loggingId=logger)
 

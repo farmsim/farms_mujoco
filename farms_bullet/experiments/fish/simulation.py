@@ -32,7 +32,7 @@ class FishSimulation(AmphibiousSimulation):
 FISH_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
 
-def main(sdf_path, simulation_options, animat_options):
+def main(sdf_path, simulation_options, animat_options, show_progress=False):
     """Main"""
 
     # Setup simulation
@@ -46,7 +46,7 @@ def main(sdf_path, simulation_options, animat_options):
 
     # Run simulation
     print("Running simulation")
-    sim.run()
+    sim.run(show_progress=show_progress)
 
     # Analyse results
     print("Analysing simulation")
