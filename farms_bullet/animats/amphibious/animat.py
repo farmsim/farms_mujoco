@@ -382,6 +382,41 @@ class Amphibious(Animat):
                                 limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                             )
 
+            # Use 2D
+            use_2d = False
+            constraint_links = [
+                Link.empty(
+                    name="world",
+                    pose=[0, 0, 0, 0, 0, 0],
+                    units=self.units
+                ),
+                Link.empty(
+                    name="world_2",
+                    pose=[0, 0, 0, 0, 0, 0],
+                    units=self.units
+                )
+            ] if use_2d else []
+            constraint_joints = [
+                Joint(
+                    name="world_joint",
+                    joint_type="prismatic",
+                    parent=constraint_links[0],
+                    child=constraint_links[1],
+                    pose=[0, 0, 0, 0, 0, 0],
+                    axis=[1, 0, 0],
+                    limits=np.array([-1, 1, 0, 1])
+                ),
+                Joint(
+                    name="world_joint2",
+                    joint_type="prismatic",
+                    parent=constraint_links[1],
+                    child=links[0],
+                    pose=[0, 0, 0, 0, 0, 0],
+                    axis=[0, 0, 1],
+                    limits=np.array([-1, 1, 0, 1])
+                )
+            ] if use_2d else []
+
             # Create SDF
             sdf = ModelSDF(
                 name="animat",
@@ -389,8 +424,8 @@ class Amphibious(Animat):
                     np.asarray([0, 0, 0.1])*self.scale,
                     [0, 0, 0]
                 ]),
-                links=links,
-                joints=joints,
+                links=constraint_links+links,
+                joints=constraint_joints+joints,
                 units=self.units
             )
             sdf.write(filename="animat.sdf")
@@ -410,10 +445,11 @@ class Amphibious(Animat):
             #         textureUniqueId=texUid
             #     )
             # Joint order
-        n_joints = self.options.morphology.n_joints()
+        n_joints = pybullet.getNumJoints(self.identity)
+        print(n_joints)
         joints_names = [None for _ in range(n_joints)]
         joint_index = 0
-        for joint_i in range(self.options.morphology.n_joints_body):
+        for joint_i in range(n_joints):
             joint_info = pybullet.getJointInfo(
                 self.identity,
                 joint_i
@@ -435,24 +471,18 @@ class Amphibious(Animat):
                 self.links['link_body_{}'.format(i+1)] = self.joints_order[i]
                 self.joints['joint_link_body_{}'.format(i)] = self.joints_order[i]
         else:
-            for leg_i in range(self.options.morphology.n_legs//2):
-                for side_i in range(2):
-                    for part_i in range(self.options.morphology.n_dof_legs):
-                        index = self.convention.leglink2index(
-                            leg_i,
-                            side_i,
-                            part_i
-                        )
-                        joint_info = pybullet.getJointInfo(
-                            self.identity,
-                            index
-                        )
-                        joints_names[joint_index] = joint_info[1].decode("UTF-8")
-                        joint_index += 1
+            for joint_index in range(n_joints):
+                joint_info = pybullet.getJointInfo(
+                    self.identity,
+                    joint_index
+                )
+                joints_names[joint_index] = joint_info[1].decode("UTF-8")
+                # joint_index += 1
             joints_names_dict = {
                 name: i
                 for i, name in enumerate(joints_names)
             }
+            print(joints_names_dict)
             self.joints_order = [
                 joints_names_dict[name]
                 for name in [

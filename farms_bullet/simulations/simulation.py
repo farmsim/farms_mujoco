@@ -97,7 +97,7 @@ class Simulation:
         pybullet.setPhysicsEngineParameter(
             fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
-            erp=0,
+            erp=1e-2,
             contactERP=0,
             frictionERP=0,
             numSubSteps=0,

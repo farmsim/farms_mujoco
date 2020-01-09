@@ -11,38 +11,41 @@ class AnimatController:
         self.model = model
         self.network = network
         self.joint_list = joints_order
+        n_joints = pybullet.getNumJoints(self.model)
         # Commands
         self.positions = None
         self.velocities = None
-        self.torques = np.zeros_like(self.joint_list)
+        self.torques = np.zeros(n_joints)
         # Units
         self.units = units
         self.unit_iseconds = 1./units.seconds
         # Gains
-        self.gain_position = 1e-1*np.ones_like(joints_order)*(
+        self.gain_position = 1e-1*np.ones(n_joints)*(
             self.units.torques
         )
-        self.gain_velocity = 1e0*np.ones_like(joints_order)*(
+        self.gain_velocity = 1e0*np.ones(n_joints)*(
             self.units.torques*self.units.seconds
         )
         # Reset controllers
+        joint_list = np.arange(n_joints)
+        zeros = np.zeros(n_joints)
         pybullet.setJointMotorControlArray(
             self.model,
-            self.joint_list,
+            joint_list,
             pybullet.POSITION_CONTROL,
-            forces=np.zeros_like(self.joint_list)
+            forces=zeros
         )
         pybullet.setJointMotorControlArray(
             self.model,
-            self.joint_list,
+            joint_list,
             pybullet.VELOCITY_CONTROL,
-            forces=np.zeros_like(self.joint_list)
+            forces=zeros
         )
         pybullet.setJointMotorControlArray(
             self.model,
-            self.joint_list,
+            joint_list,
             pybullet.TORQUE_CONTROL,
-            forces=np.zeros_like(self.joint_list)
+            forces=zeros
         )
 
     def update(self):
@@ -67,6 +70,7 @@ class AnimatController:
             pybullet.POSITION_CONTROL,
             targetPositions=self.positions,
             targetVelocities=self.velocities*self.unit_iseconds,
+            # forces=self.positions*1e1
             # targetVelocities=self.velocities/self.units.seconds,
             # targetVelocities=np.zeros_like(self.positions),
             # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
