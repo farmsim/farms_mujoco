@@ -137,7 +137,7 @@ class Simulation:
         """Pre-step"""
         raise NotImplementedError
 
-    def run(self, profile=False, show_progress=False):
+    def run(self, profile=False, show_progress=False, yield_data=False):
         """Run simulation"""
         # Run simulation
         if profile:
@@ -155,6 +155,8 @@ class Simulation:
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
                 self.iteration += 1
+                if yield_data:
+                    yield self.iteration, self.elements.animat.data
             if show_progress:
                 pbar.update(1)
         if profile:

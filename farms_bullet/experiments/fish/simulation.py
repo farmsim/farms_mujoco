@@ -69,6 +69,20 @@ def main(sdf_path, simulation_options, animat_options, show_progress=False):
     return sim
 
 
+def iterator(sdf_path, simulation_options, animat_options, show_progress=False):
+    """Main"""
+
+    # Setup simulation
+    print("Creating simulation")
+    sim = FishSimulation(
+        sdf_path,
+        simulation_options=simulation_options,
+        animat_options=animat_options
+    )
+    pybullet.setGravity(0, 0, 0)
+    return sim
+
+
 def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     """Fish simulation"""
     # Animat options
@@ -144,11 +158,21 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     #     )
     # )
 
+
     # Run simulation
-    sim = main(
-        sdf_path,
-        simulation_options=simulation_options,
-        animat_options=animat_options,
-        show_progress=True
-    )
+    if kwargs.pop("iterator", False):
+        sim = iterator(
+            sdf_path,
+            simulation_options=simulation_options,
+            animat_options=animat_options,
+            show_progress=True
+        )
+    else:
+        sim = main(
+            sdf_path,
+            simulation_options=simulation_options,
+            animat_options=animat_options,
+            show_progress=True
+        )
+    assert not kwargs, kwargs
     return sim, original_kinematics
