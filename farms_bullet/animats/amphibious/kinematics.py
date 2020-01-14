@@ -1,7 +1,7 @@
 """Kinematics"""
 
 import numpy as np
-from scipy.signal import resample
+from scipy.interpolate import interp1d
 
 
 class AmphibiousKinematics:
@@ -12,8 +12,15 @@ class AmphibiousKinematics:
         self.kinematics = np.loadtxt(animat_options.control.kinematics_file)
         self.kinematics = self.kinematics[:, 3:]
         self.kinematics = ((self.kinematics + np.pi) % (2*np.pi)) - np.pi
-        n_samples = 10*np.shape(self.kinematics)[0]
-        self.kinematics = resample(self.kinematics, n_samples)
+        len_kinematics = len(self.kinematics)
+        n_iterations = (len_kinematics-1)*10+1
+        interp_x = np.arange(0, n_iterations, 10)
+        interp_xn = np.arange(n_iterations)
+        self.kinematics = interp1d(
+            interp_x,
+            self.kinematics,
+            axis=0
+        )(interp_xn)
         self.animat_options = animat_options
         self.animat_data = animat_data
         self._timestep = timestep

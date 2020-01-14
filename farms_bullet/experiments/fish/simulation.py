@@ -5,6 +5,7 @@ import os
 import pybullet
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 from ...animats.amphibious.animat_options import AmphibiousOptions
 from ...simulations.simulation_options import SimulationOptions
@@ -117,7 +118,7 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     animat_options.control.kinematics_file = kinematics_file
     original_kinematics = np.loadtxt(animat_options.control.kinematics_file)
     len_kinematics = np.shape(original_kinematics)[0]
-    simulation_options.duration = len_kinematics*1e-2
+    simulation_options.duration = (len_kinematics-1)*1e-2
     pose = original_kinematics[:, :3]
     # pose *= 1e-3
     # pose *= 1e-3
@@ -125,15 +126,27 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     # pose[0, 2] *= 1e-3
     position = np.ones(3)
     position[:2] = pose[0, :2]
-    orientation = np.zeros(3)
-    orientation[2] = pose[0, 2]  #  + np.pi
-    velocity = np.zeros(3)
-    n_sample = 100 if pose.shape[0] > 100 else (pose.shape[0]-1)
-    velocity[:2] = pose[n_sample, :2] - pose[0, :2]
-    sampling_timestep = 1e-2
-    velocity /= n_sample*sampling_timestep
-    kinematics = original_kinematics[:, 3:]
-    kinematics = ((kinematics + np.pi) % (2*np.pi)) - np.pi
+    orientation = kwargs.pop("orientation", None)
+    if orientation is None:
+        orientation = np.zeros(3)
+        orientation[2] = pose[0, 2]
+    velocity = kwargs.pop("velocity", None)
+    if velocity is None:
+        velocity = np.zeros(3)
+        n_sample = 5 if pose.shape[0] > 3 else (pose.shape[0]-1)
+        velocity[:2] = pose[n_sample, :2] - pose[0, :2]
+        sampling_timestep = 1e-2
+        velocity /= n_sample*sampling_timestep
+    kinematics = np.copy(original_kinematics)
+    kinematics[:, 3:] = ((kinematics[:, 3:] + np.pi) % (2*np.pi)) - np.pi
+    n_iterations = (len_kinematics-1)*10+1
+    interp_x = np.arange(0, n_iterations, 10)
+    interp_xn = np.arange(n_iterations)
+    kinematics = interp1d(
+        interp_x,
+        kinematics,
+        axis=0
+    )(interp_xn)
 
     # Swimming
     animat_options.spawn.position = position
@@ -141,7 +154,7 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     animat_options.physics.buoyancy = False
     animat_options.spawn.velocity_lin = velocity
     animat_options.spawn.velocity_ang = [0, 0, 0]
-    animat_options.spawn.joints_positions = kinematics[0, :]
+    animat_options.spawn.joints_positions = kinematics[0, 3:]
 
     # Logging
     simulation_options.log_path = results_path
@@ -175,4 +188,4 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
             show_progress=True
         )
     assert not kwargs, kwargs
-    return sim, original_kinematics
+    return sim, kinematics
