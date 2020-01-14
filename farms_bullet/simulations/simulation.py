@@ -11,6 +11,23 @@ from .simulator import init_engine
 from ..render.render import rendering
 
 
+def simulation_profiler(func):
+    """Profile simulation"""
+    def inner(self, profile=False, show_progress=False):
+        """Inner function"""
+        if profile:
+            logger = pybullet.startStateLogging(
+                loggingType=pybullet.STATE_LOGGING_PROFILE_TIMINGS,
+                fileName="profile.log"
+            )
+        pbar = tqdm(total=self.options.n_iterations) if show_progress else None
+        result = func(self, pbar=pbar)
+        if profile:
+            pybullet.stopStateLogging(loggingId=logger)
+        return result
+    return inner
+
+
 class SimulationElements(dict):
     """Simulation elements"""
 
@@ -133,34 +150,48 @@ class Simulation:
             pybullet.getPhysicsEngineParameters()
         ))
 
+    def check_quit(self):
+        """Check quit"""
+        if not self.options.headless:
+            keys = pybullet.getKeyboardEvents()
+            if ord("q") in keys:
+                return True
+        return False
+
+    @simulation_profiler
+    def run(self, pbar=None):
+        """Run simulation"""
+        while self.iteration < self.options.n_iterations:
+            if self.check_quit():
+                break
+            self.step_func()
+            if pbar is not None:
+                pbar.update(1)
+
+    @simulation_profiler
+    def iterator(self, pbar=None):
+        """Run simulation"""
+        while self.iteration < self.options.n_iterations:
+            if self.check_quit():
+                break
+            self.step_func()
+            yield self.iteration, self.elements.animat.data
+            if pbar is not None:
+                pbar.update(1)
+
+    def step_func(self):
+        """Simulation step"""
+        if self.pre_step(self.iteration):
+            self.step(self.iteration)
+            self.iteration += 1
+
     def pre_step(self, sim_step):
         """Pre-step"""
         raise NotImplementedError
 
-    def run(self, profile=False, show_progress=False, yield_data=False):
-        """Run simulation"""
-        # Run simulation
-        if profile:
-            logger = pybullet.startStateLogging(
-                loggingType=pybullet.STATE_LOGGING_PROFILE_TIMINGS,
-                fileName="profile.log"
-            )
-        if show_progress:
-            pbar = tqdm(total=self.options.n_iterations)
-        while self.iteration < self.options.n_iterations:
-            if not self.options.headless:
-                keys = pybullet.getKeyboardEvents()
-                if ord("q") in keys:
-                    break
-            if self.pre_step(self.iteration):
-                self.step(self.iteration)
-                self.iteration += 1
-                if yield_data:
-                    yield self.iteration, self.elements.animat.data
-            if show_progress:
-                pbar.update(1)
-        if profile:
-            pybullet.stopStateLogging(loggingId=logger)
+    def step(self, iteration):
+        """Step function"""
+        raise NotImplementedError
 
     def postprocess(self, iteration, **kwargs):
         """Plot after simulation"""

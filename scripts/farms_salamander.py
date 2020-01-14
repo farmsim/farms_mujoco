@@ -52,7 +52,8 @@ def main():
     # Run simulation
     run_sim(
         simulation_options=simulation_options,
-        animat_options=animat_options
+        animat_options=animat_options,
+        show_progress=True,
     )
     # Show results
     plt.show()

@@ -22,7 +22,7 @@ class SalamanderSimulation(AmphibiousSimulation):
         )
 
 
-def main(simulation_options=None, animat_options=None):
+def main(simulation_options=None, animat_options=None, show_progress=False):
     """Main"""
 
     # Parse command line arguments
@@ -40,7 +40,7 @@ def main(simulation_options=None, animat_options=None):
 
     # Run simulation
     print("Running simulation")
-    sim.run()
+    sim.run(show_progress=show_progress)
 
     # Analyse results
     print("Analysing simulation")
