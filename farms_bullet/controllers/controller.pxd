@@ -2,7 +2,7 @@
 
 cimport numpy as np
 
-from ..animats.animat_data_cy cimport AnimatDataCy
+from ..animats.data.animat_data_cy cimport AnimatDataCy
 
 
 ctypedef double CTYPE

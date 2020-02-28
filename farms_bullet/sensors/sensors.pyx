@@ -6,7 +6,7 @@ cimport numpy as np
 import pybullet
 
 
-from ..animats.array import NetworkArray3D
+from ..animats.data.array import NetworkArray3D
 
 
 class Sensor:
