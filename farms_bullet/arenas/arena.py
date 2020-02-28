@@ -442,23 +442,33 @@ class Water(SimulationElement):
         water_color = [0.5, 0.5, 0.9, 0.7]
 
         # Water definition
-        base_link = AnimatLink(
-            geometry=pybullet.GEOM_BOX,
+        link = Link.box(
+            name="water",
             size=water_size,
-            mass=0,
-            joint_axis=[0, 0, 1],
-            color=water_color,
-            units=self.units
+            pose=[0, 0, 0, 0, 0, 0],
+            shape_pose=[0, 0, self.water_surface-0.5*water_size[2], 0, 0, 0],
+            units=self.units,
+            color=water_color
         )
+        link.collisions = []
+        link.inertial.mass = 0
+        link.inertial.inertias = np.zeros(6)
 
         # Spawn
-        self._identity = pybullet.createMultiBody(
-            baseMass=base_link.mass,
-            baseCollisionShapeIndex=base_link.collision,
-            baseVisualShapeIndex=base_link.visual,
-            basePosition=[0, 0, self.water_surface-water_size[2]],
-            baseOrientation=pybullet.getQuaternionFromEuler([0, 0, 0]),
+        sdf = ModelSDF(
+            name="water",
+            pose=np.zeros(6),
+            links=[link],
+            joints=[],
+            units=self.units
         )
+        sdf.write(filename="water.sdf")
+        print(os.getcwd() + "/water.sdf")
+        self._identity = pybullet.loadSDF(
+            os.getcwd() + "/water.sdf",
+            useMaximalCoordinates=0,
+            globalScaling=1
+        )[0]
 
         # Dynamics properties
         group = 0  #other objects don't collide with me
