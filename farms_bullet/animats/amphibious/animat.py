@@ -188,7 +188,7 @@ class Amphibious(Animat):
                         joint_type="revolute",
                         parent=links[i],
                         child=links[i+1],
-                        axis=[0, 0, 1],
+                        xyz=[0, 0, 1],
                         limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                     )
             else:
@@ -219,7 +219,7 @@ class Amphibious(Animat):
                         joint_type="revolute",
                         parent=links[i],
                         child=links[i+1],
-                        axis=[0, 0, 1],
+                        xyz=[0, 0, 1],
                         limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                     )
             # Leg links
@@ -353,7 +353,7 @@ class Amphibious(Animat):
                                     side_i,
                                     joint_i
                                 )+1],
-                                axis=axis[joint_i],
+                                xyz=axis[joint_i],
                                 limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                             )
                         else:
@@ -378,7 +378,7 @@ class Amphibious(Animat):
                                     side_i,
                                     joint_i
                                 )+1],
-                                axis=axis[joint_i],
+                                xyz=axis[joint_i],
                                 limits=[-np.pi, np.pi, 1e10, 2*np.pi*100]
                             )
 
@@ -403,7 +403,7 @@ class Amphibious(Animat):
                     parent=constraint_links[0],
                     child=constraint_links[1],
                     pose=[0, 0, 0, 0, 0, 0],
-                    axis=[1, 0, 0],
+                    xyz=[1, 0, 0],
                     limits=np.array([-1, 1, 0, 1])
                 ),
                 Joint(
@@ -412,7 +412,7 @@ class Amphibious(Animat):
                     parent=constraint_links[1],
                     child=links[0],
                     pose=[0, 0, 0, 0, 0, 0],
-                    axis=[0, 0, 1],
+                    xyz=[0, 0, 1],
                     limits=np.array([-1, 1, 0, 1])
                 )
             ] if use_2d else []
@@ -550,7 +550,7 @@ class Amphibious(Animat):
                     [0.8299999833, 0, 0.0001386079],
                     [0.8999999762, 0, 0.0003494423]
                 ],
-                axis=0,
+                xyz=0,
                 prepend=0
             )
             body_color = [0, 0.3, 0, 1]

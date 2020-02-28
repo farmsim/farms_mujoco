@@ -254,7 +254,6 @@ class RampSDF(SimulationElement):
         #     name="floor_0",
         #     size=ground_dim,
         #     pose=[0, 0, 0, 0, 0, 0],
-        #     inertial_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
         #     shape_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
         #     units=self.units,
         #     color=arena_color
@@ -265,7 +264,6 @@ class RampSDF(SimulationElement):
             mesh="{}/arena.obj".format(dir_path),
             pose=[0, 0, 0, 0, 0, 0],
             scale=1,
-            inertial_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
             shape_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
             units=self.units,
             color=arena_color
@@ -286,7 +284,6 @@ class RampSDF(SimulationElement):
         #         self.angle,
         #         0
         #     ],
-        #     inertial_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
         #     shape_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
         #     units=self.units,
         #     color=arena_color
@@ -306,7 +303,6 @@ class RampSDF(SimulationElement):
                 0
             ],
             scale=1,
-            inertial_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
             shape_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
             units=self.units,
             color=arena_color
@@ -324,7 +320,6 @@ class RampSDF(SimulationElement):
         #         0,
         #         0
         #     ],
-        #     inertial_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
         #     shape_pose=[0, 0, -0.5*ground_dim[2], 0, 0, 0],
         #     units=self.units,
         #     color=arena_color
@@ -341,7 +336,6 @@ class RampSDF(SimulationElement):
                 0
             ],
             scale=1,
-            inertial_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
             shape_pose=[0, 0, -0.5*ground_dim[2], np.pi/2, 0, 0],
             units=self.units,
             color=arena_color
