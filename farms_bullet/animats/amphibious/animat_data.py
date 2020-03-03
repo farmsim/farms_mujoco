@@ -4,7 +4,7 @@ import sys
 import numpy as np
 
 from .convention import AmphibiousConvention
-from ..animat_data import (
+from ..data.animat_data import (
     OscillatorNetworkState,
     AnimatData,
     NetworkParameters,

@@ -15,7 +15,7 @@ def main():
     scale = 1
     animat_options = AmphibiousOptions(
         # collect_gps=True,
-        # show_hydrodynamics=True,
+        show_hydrodynamics=True,
         scale=scale
     )
     # animat_options.control.drives.forward = 4

@@ -1,6 +1,6 @@
 """Cython sensors"""
 
-from ..animats.array cimport NetworkArray2D, NetworkArray3D
+from ..animats.data.array cimport NetworkArray2D, NetworkArray3D
 
 
 cdef class Sensors(dict):

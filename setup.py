@@ -41,13 +41,13 @@ setup(
     ext_modules=cythonize(
         [
             Extension(
-                "farms_bullet.{}*".format(folder + "." if folder else ""),
-                ["farms_bullet/{}*.pyx".format(folder + "/" if folder else "")],
+                "farms_bullet.{}*".format(folder.replace("/", "_") + "." if folder else ""),
+                sources=["farms_bullet/{}*.pyx".format(folder + "/" if folder else "")],
                 extra_compile_args=["-O3"],  # , "-fopenmp"
                 extra_link_args=["-O3"]  # , "-fopenmp"
             )
             for folder in [
-                "animats",
+                "animats/data",
                 "controllers",
                 "sensors"
             ]
