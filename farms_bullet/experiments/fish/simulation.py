@@ -62,7 +62,7 @@ def main(sdf_path, simulation_options, animat_options, show_progress=False):
     )
     if simulation_options.log_path:
         np.save(
-            simulation_options.log_path+"/hydrodynamics.npy",
+            os.path.join(simulation_options.log_path, 'hydrodynamics.npy'),
             sim.elements.animat.data.sensors.hydrodynamics.array
         )
 
@@ -96,7 +96,7 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
         viscous=False,
         resistive=True,
         resistive_coefficients=kwargs.pop(
-            "resistive_coefficients",
+            'resistive_coefficients',
             [
                 1e-1*np.array([-1e-4, -5e-1, -3e-1]),
                 1e-1*np.array([-1e-6, -1e-6, -1e-6])
@@ -111,8 +111,8 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     simulation_options.units.meters = 1
     simulation_options.units.seconds = 1e3
     simulation_options.units.kilograms = 1
-    simulation_options.fast = kwargs.pop("fast", False)
-    simulation_options.headless = kwargs.pop("headless", False)
+    simulation_options.fast = kwargs.pop('fast', False)
+    simulation_options.headless = kwargs.pop('headless', False)
 
     # Kinematics
     animat_options.control.kinematics_file = kinematics_file
@@ -126,11 +126,11 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     # pose[0, 2] *= 1e-3
     position = np.ones(3)
     position[:2] = pose[0, :2]
-    orientation = kwargs.pop("orientation", None)
+    orientation = kwargs.pop('orientation', None)
     if orientation is None:
         orientation = np.zeros(3)
         orientation[2] = pose[0, 2]
-    velocity = kwargs.pop("velocity", None)
+    velocity = kwargs.pop('velocity', None)
     if velocity is None:
         velocity = np.zeros(3)
         n_sample = 5 if pose.shape[0] > 3 else (pose.shape[0]-1)
@@ -164,7 +164,7 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
     simulation_options.video_pitch = -30
     simulation_options.video_distance = 1
     # simulation_options.video_name = (
-    #     "transition_videos/swim2walk_y{}_p{}_d{}".format(
+    #     'transition_videos/swim2walk_y{}_p{}_d{}'.format(
     #         simulation_options.video_yaw,
     #         simulation_options.video_pitch,
     #         simulation_options.video_distance,
@@ -173,7 +173,7 @@ def fish_simulation(kinematics_file, sdf_path, results_path, **kwargs):
 
 
     # Run simulation
-    if kwargs.pop("iterator", False):
+    if kwargs.pop('iterator', False):
         sim = iterator(
             sdf_path,
             simulation_options=simulation_options,
