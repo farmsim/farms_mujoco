@@ -138,12 +138,14 @@ class Amphibious(Animat):
     def spawn_sdf(self, verbose=False):
         """Spawn sdf"""
         if self.sdf:
+            print(self.sdf)
             self._identity = pybullet.loadSDF(
                 self.sdf,
                 useMaximalCoordinates=0,
                 globalScaling=1
             )[0]
             initial_pose(self._identity, self.options.spawn, self.units)
+            self.sdf = False
         else:
             links = [None for _ in range(self.options.morphology.n_links())]
             joints = [None for _ in range(self.options.morphology.n_joints())]
@@ -445,7 +447,6 @@ class Amphibious(Animat):
             #     )
             # Joint order
         n_joints = pybullet.getNumJoints(self.identity)
-        print(n_joints)
         joints_names = [None for _ in range(n_joints)]
         joint_index = 0
         for joint_i in range(n_joints):
@@ -481,7 +482,6 @@ class Amphibious(Animat):
                 name: i
                 for i, name in enumerate(joints_names)
             }
-            print(joints_names_dict)
             self.joints_order = [
                 joints_names_dict[name]
                 for name in [

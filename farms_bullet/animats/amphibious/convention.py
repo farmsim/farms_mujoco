@@ -88,16 +88,16 @@ class AmphibiousConvention:
         """legjoint2index"""
         n_legs = self.animat_options.morphology.n_legs
         n_legs_dof = self.animat_options.morphology.n_dof_legs
+        link_name = self.leglink2name(
+            leg_i,
+            side_i,
+            joint_i
+        )
         assert 0 <= leg_i < n_legs, "Leg must be < {}, got {}".format(n_legs//2, leg_i)
         assert 0 <= side_i < 2, "Body side must be < 2, got {}".format(side_i)
         assert 0 <= joint_i < n_legs_dof, "Joint must be < {}, got {}".format(n_legs_dof, joint_i)
-        return "joint_{}".format(
-            self.leglink2name(
-                leg_i,
-                side_i,
-                joint_i
-            )
-        )
+        assert "link_" in link_name, "Link_ not in {}".format(link_name)
+        return link_name.replace("link_", "joint_")
 
     def contactleglink2index(self, leg_i, side_i):
         """Contact leg link 2 index"""

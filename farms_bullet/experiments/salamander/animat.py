@@ -2,6 +2,7 @@
 
 import os
 
+from farms_models.utils import get_sdf_path
 from ...animats.amphibious.animat import Amphibious
 
 
@@ -17,4 +18,10 @@ class Salamander(Amphibious):
                 os.path.dirname(os.path.realpath(__file__))
             ) if use_directory else ""
         )
-        super(Salamander, self).__init__(options, timestep, iterations, units)
+        super(Salamander, self).__init__(
+            options,
+            timestep,
+            iterations,
+            units,
+            sdf=get_sdf_path(name='salamander', version='v1')
+        )
