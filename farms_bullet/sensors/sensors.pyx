@@ -6,7 +6,7 @@ cimport numpy as np
 import pybullet
 
 
-from ..animats.data.array import NetworkArray3D
+from farms_amphibious.data.array import NetworkArray3D
 
 
 class Sensor:
