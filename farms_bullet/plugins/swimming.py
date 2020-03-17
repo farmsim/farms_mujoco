@@ -3,7 +3,7 @@
 import numpy as np
 import pybullet
 
-from ..simulations.simulation_options import SimulationUnitScaling
+from ..simulation.simulation_options import SimulationUnitScaling
 
 
 def viscous_forces(
