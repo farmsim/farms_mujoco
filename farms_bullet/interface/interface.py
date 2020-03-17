@@ -3,7 +3,7 @@
 import numpy as np
 import pybullet
 from .camera import UserCamera, CameraRecord
-# from .debug import test_debug_info
+import farms_pylog as pylog
 
 
 class Interfaces:
@@ -117,7 +117,7 @@ class DebugParameter:
         self.value = self.get_value()
         self.changed = (self.value != previous_value)
         if self.changed:
-            print("{} changed ({} -> {})".format(
+            pylog.debug("{} changed ({} -> {})".format(
                 self.name,
                 previous_value,
                 self.value
@@ -158,7 +158,7 @@ class ParameterPlay(DebugParameter):
 #         )
 #         self.changed = (self.value != previous_value)
 #         if self.changed:
-#             print("Gait changed ({} > {})".format(
+#             pylog.debug("Gait changed ({} > {})".format(
 #                 previous_value,
 #                 self.value
 #             ))

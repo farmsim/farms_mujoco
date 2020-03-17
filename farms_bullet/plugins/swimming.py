@@ -3,6 +3,8 @@
 import numpy as np
 import pybullet
 
+import farms_pylog as pylog
+
 from ..simulation.options import SimulationUnitScaling
 
 
@@ -137,7 +139,7 @@ def swimming_debug(iteration, data_gps, links):
     for link_i, _ in links:
         joint = np.array(data_gps.urdf_position(iteration, link_i))
         if link_i == 11:
-            print("RBP position: {}".format(np.array(joint)))
+            pylog.debug("RBP position: {}".format(np.array(joint)))
         joint_ori = np.array(data_gps.urdf_orientation(iteration, link_i))
         # com_ori = np.array(data_gps.com_orientation(iteration, link_i))
         ori_joint = np.array(
@@ -151,7 +153,7 @@ def swimming_debug(iteration, data_gps, links):
         offset_x = np.dot(ori_joint, np.array([axis, 0, 0]))
         offset_y = np.dot(ori_joint, np.array([0, axis, 0]))
         offset_z = np.dot(ori_joint, np.array([0, 0, axis]))
-        print("SPH position: {}".format(np.array(joint)))
+        pylog.debug("SPH position: {}".format(np.array(joint)))
         for i, offset in enumerate([offset_x, offset_y, offset_z]):
             color = np.zeros(3)
             color[i] = 1

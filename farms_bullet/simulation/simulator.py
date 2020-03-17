@@ -7,10 +7,12 @@ import numpy as np
 import pybullet
 import pybullet_data
 
+import farms_pylog as pylog
+
 
 def init_engine(headless=False):
     """Initialise engine"""
-    print(pybullet.getAPIVersion())
+    pylog.debug('Pybullet version: {}'.format(pybullet.getAPIVersion()))
     background_color = 0.9*np.ones(3)
     pybullet.connect(
         pybullet.DIRECT if headless else pybullet.GUI,  # pybullet.DIRECT
@@ -23,7 +25,7 @@ def init_engine(headless=False):
         ).format(*background_color)
     )
     pybullet_path = pybullet_data.getDataPath()
-    print("Adding pybullet data path {}".format(pybullet_path))
+    pylog.debug("Adding pybullet data path {}".format(pybullet_path))
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
@@ -37,13 +39,13 @@ def real_time_handing(timestep, tic_rt, rtl=1.0, **kwargs):
         while time.time() - tic < sleep_rtl:
             time.sleep(0.1*sleep_rtl)
     if rtf < 0.5:
-        print("Significantly slower than real-time: {} %".format(100*rtf))
+        pylog.debug("Significantly slower than real-time: {} %".format(100*rtf))
         time_plugin = kwargs.pop("time_plugin", False)
         time_control = kwargs.pop("time_control", False)
         time_sim = kwargs.pop("time_sim", False)
         if time_plugin:
-            print("  Time in py_plugins: {} [ms]".format(time_plugin))
+            pylog.debug("  Time in py_plugins: {} [ms]".format(time_plugin))
         if time_control:
-            print("    Time in control: {} [ms]".format(time_control))
+            pylog.debug("    Time in control: {} [ms]".format(time_control))
         if time_sim:
-            print("  Time in simulation: {} [ms]".format(time_sim))
+            pylog.debug("  Time in simulation: {} [ms]".format(time_sim))

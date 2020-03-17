@@ -1,5 +1,7 @@
 """Profile"""
 
+import farms_pylog as pylog
+
 
 class SimulationProfiler:
     """Simulation profiler"""
@@ -41,23 +43,25 @@ class SimulationProfiler:
 
     def print_times(self):
         """Print times"""
-        print("Time to simulate {} [s]: {} [s]".format(
-            self.sim_duration,
-            self.sim_time,
-        ))
-        print("  Plugin: {} [s]".format(self.plugin_time))
-        print("  Bullet physics: {} [s]".format(self.physics_time))
-        print("  Controller: {} [s]".format(self.ctrl_time))
-        print("  Sensors: {} [s]".format(self.sensors_time))
-        print("  Logging: {} [s]".format(self.log_time))
-        print("  Camera: {} [s]".format(self.camera_time))
-        print("  Wait real-time: {} [s]".format(self.waitrt_time))
-        print("  Sum: {} [s]".format(
-            self.plugin_time
-            + self.physics_time
-            + self.ctrl_time
-            + self.sensors_time
-            + self.log_time
-            + self.camera_time
-            + self.waitrt_time
-        ))
+        pylog.debug("\n".join((
+            "Time to simulate {} [s]: {} [s]".format(
+                self.sim_duration,
+                self.sim_time,
+            ),
+            "  Plugin: {} [s]".format(self.plugin_time),
+            "  Bullet physics: {} [s]".format(self.physics_time),
+            "  Controller: {} [s]".format(self.ctrl_time),
+            "  Sensors: {} [s]".format(self.sensors_time),
+            "  Logging: {} [s]".format(self.log_time),
+            "  Camera: {} [s]".format(self.camera_time),
+            "  Wait real-time: {} [s]".format(self.waitrt_time),
+            "  Sum: {} [s]".format(
+                self.plugin_time
+                + self.physics_time
+                + self.ctrl_time
+                + self.sensors_time
+                + self.log_time
+                + self.camera_time
+                + self.waitrt_time
+            ),
+        )))

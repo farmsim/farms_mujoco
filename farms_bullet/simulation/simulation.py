@@ -7,6 +7,8 @@ import numpy as np
 import pybullet
 from tqdm import tqdm
 
+import farms_pylog as pylog
+
 from .simulator import init_engine
 from ..render.render import rendering
 
@@ -42,7 +44,7 @@ class SimulationModels(dict):
     def spawn(self):
         """Spawn"""
         for model_name, model in self.items():
-            print("Spawning {}".format(model_name))
+            pylog.debug("Spawning {}".format(model_name))
             model.spawn()
 
     def step(self):
@@ -71,18 +73,18 @@ class Simulation:
         self.options = options
 
         # Initialise engine
-        print("Initialising physics engine")
+        pylog.debug("Initialising physics engine")
         init_engine(self.options.headless)
         if not self.options.headless:
-            print("Disabling rendering")
+            pylog.debug("Disabling rendering")
             rendering(0)
 
         # Initialise physics
-        print("Initialising physics")
+        pylog.debug("Initialising physics")
         self.init_physics()
 
         # Initialise models
-        print("Spawning models")
+        pylog.debug("Spawning models")
         self.models.spawn()
 
         # Simulation
@@ -93,7 +95,7 @@ class Simulation:
         self.interface = None
 
         if not self.options.headless:
-            print("Reactivating rendering")
+            pylog.debug("Reactivating rendering")
             rendering(1)
 
     def save(self):
@@ -102,15 +104,15 @@ class Simulation:
 
     def init_physics(self):
         """Initialise physics"""
-        # print("Resetting simulation")
+        # pylog.debug("Resetting simulation")
         # pybullet.resetSimulation()
-        print("Setting gravity")
+        pylog.debug("Setting gravity")
         pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
-        print("Setting timestep")
+        pylog.debug("Setting timestep")
         pybullet.setTimeStep(self.options.timestep*self.options.units.seconds)
-        print("Setting non real-time simulation")
+        pylog.debug("Setting non real-time simulation")
         pybullet.setRealTimeSimulation(0)
-        print("Setting simulation parameters")
+        pylog.debug("Setting simulation parameters")
         pybullet.setPhysicsEngineParameter(
             fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
@@ -146,7 +148,7 @@ class Simulation:
             # deterministicOverlappingPairs
             # solverResidualThreshold
         )
-        print("Physics parameters:\n{}".format(
+        pylog.debug("Physics parameters:\n{}".format(
             pybullet.getPhysicsEngineParameters()
         ))
 
@@ -189,11 +191,10 @@ class Simulation:
 
     def pre_step(self, sim_step):
         """Pre-step"""
-        raise NotImplementedError
+        return True
 
-    def step(self, iteration):
+    def step(self, sim_step):
         """Step function"""
-        raise NotImplementedError
 
     def post_step(self, sim_step):
         """Post-step"""
@@ -225,17 +226,17 @@ class Simulation:
                 folder=log_path,
                 extension=log_extension
             )
-            print(self.options)
+            pylog.debug(self.options)
             with open(log_path+"/simulation_options.pickle", "wb") as options:
                 pickle.dump(self.options, options)
             with open(log_path+"/simulation_options.pickle", "rb") as options:
                 test = pickle.load(options)
-                print("Wrote simulation options:\n{}".format(test))
+                pylog.debug("Wrote simulation options:\n{}".format(test))
             with open(log_path+"/animat_options.pickle", "wb") as options:
                 pickle.dump(self.models.animat.options, options)
             with open(log_path+"/animat_options.pickle", "rb") as options:
                 test = pickle.load(options)
-                print("Wrote animat options:\n{}".format(test))
+                pylog.debug("Wrote animat options:\n{}".format(test))
 
         # Plot
         plot = kwargs.pop("plot", None)
