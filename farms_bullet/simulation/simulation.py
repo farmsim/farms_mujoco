@@ -175,7 +175,7 @@ class Simulation:
             if self.check_quit():
                 break
             self.step_func()
-            yield self.iteration, self.models.animat.data
+            yield self.iteration-1
             if pbar is not None:
                 pbar.update(1)
 
