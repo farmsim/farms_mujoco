@@ -164,7 +164,11 @@ class Simulation:
         while self.iteration < self.options.n_iterations:
             if self.check_quit():
                 break
-            self.step_func()
+            if self.pre_step(self.iteration):
+                self.step(self.iteration)
+                pybullet.stepSimulation()
+                self.iteration += 1
+                self.post_step(self.iteration)
             if pbar is not None:
                 pbar.update(1)
 
@@ -174,16 +178,14 @@ class Simulation:
         while self.iteration < self.options.n_iterations:
             if self.check_quit():
                 break
-            self.step_func()
-            yield self.iteration-1
+            if self.pre_step(self.iteration):
+                self.step(self.iteration)
+                pybullet.stepSimulation()
+                self.iteration += 1
+                self.post_step(self.iteration)
+                yield self.iteration-1
             if pbar is not None:
                 pbar.update(1)
-
-    def step_func(self):
-        """Simulation step"""
-        if self.pre_step(self.iteration):
-            self.step(self.iteration)
-            self.iteration += 1
 
     def pre_step(self, sim_step):
         """Pre-step"""
@@ -192,6 +194,9 @@ class Simulation:
     def step(self, iteration):
         """Step function"""
         raise NotImplementedError
+
+    def post_step(self, sim_step):
+        """Post-step"""
 
     def postprocess(self, iteration, **kwargs):
         """Plot after simulation"""
