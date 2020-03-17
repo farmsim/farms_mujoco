@@ -12,7 +12,6 @@ class SimulationModel:
         super(SimulationModel, self).__init__()
         self._identity = identity
 
-    @property
     def identity(self):
         """Model identity"""
         return self._identity

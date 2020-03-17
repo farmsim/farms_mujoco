@@ -77,7 +77,7 @@ class Animat(SimulationModel):
                     self.joints[name],
                     joint_type_str(
                         pybullet.getJointInfo(
-                            self.identity,
+                            self.identity(),
                             self.joints[name]
                         )[2]
                     )
@@ -107,7 +107,7 @@ class Animat(SimulationModel):
             pylog.debug("  - {}:{}".format(
                 link,
                 dynamics_msg.format(*pybullet.getDynamicsInfo(
-                    self.identity,
+                    self.identity(),
                     self.links[link]
                 ))
             ))
@@ -116,13 +116,13 @@ class Animat(SimulationModel):
     def mass(self):
         """Print dynamics"""
         return np.sum([
-            pybullet.getDynamicsInfo(self.identity, self.links[link])[0]
+            pybullet.getDynamicsInfo(self.identity(), self.links[link])[0]
             for link in self.links
         ])
 
     def get_position(self):
         """Get position"""
-        return pybullet.getLinkState(self.identity, 0)[0]
+        return pybullet.getLinkState(self.identity(), 0)[0]
 
     def set_collisions(self, links, group=0, mask=0):
         """Activate/Deactivate leg collisions"""
@@ -138,7 +138,7 @@ class Animat(SimulationModel):
         """Apply motor damping"""
         for link in links:
             pybullet.changeDynamics(
-                bodyUniqueId=self.identity,
+                bodyUniqueId=self.identity(),
                 linkIndex=self.links[link],
                 **kwargs
             )

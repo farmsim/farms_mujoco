@@ -53,7 +53,6 @@ class SimulationOptions(Options):
         self.log_extension = kwargs.pop("log_extension", "npy")
         self.arena = kwargs.pop("arena", "floor")  # "water"
 
-    @property
     def n_iterations(self):
         """Number of simulation iterations"""
         return int(self.duration / self.timestep)
@@ -81,67 +80,54 @@ class SimulationOptions(Options):
             **kwargs
         )
 
-    @property
-    def frequency(self):
-        """Model frequency"""
-        return self["frequency"]
+    # def frequency(self):
+    #     """Model frequency"""
+    #     return self["frequency"]
 
-    @property
-    def body_stand_amplitude(self):
-        """Model body amplitude"""
-        return self["body_stand_amplitude"]
+    # def body_stand_amplitude(self):
+    #     """Model body amplitude"""
+    #     return self["body_stand_amplitude"]
 
-    @property
-    def timestep(self):
-        """Simulation timestep"""
-        return self["timestep"]
+    # def timestep(self):
+    #     """Simulation timestep"""
+    #     return self["timestep"]
 
-    @property
-    def duration(self):
-        """Simulation duration"""
-        return self["duration"]
+    # def duration(self):
+    #     """Simulation duration"""
+    #     return self["duration"]
 
-    @property
-    def free_camera(self):
-        """Use a free camera during simulation"""
-        return self["free_camera"]
+    # def free_camera(self):
+    #     """Use a free camera during simulation"""
+    #     return self["free_camera"]
 
-    @property
-    def rotating_camera(self):
-        """Use a rotating camera during simulation"""
-        return self["rotating_camera"]
+    # def rotating_camera(self):
+    #     """Use a rotating camera during simulation"""
+    #     return self["rotating_camera"]
 
-    @property
-    def top_camera(self):
-        """Use a top view camera during simulation"""
-        return self["top_camera"]
+    # def top_camera(self):
+    #     """Use a top view camera during simulation"""
+    #     return self["top_camera"]
 
-    @property
-    def fast(self):
-        """Disable real-time simulation and run as fast as possible"""
-        return self["fast"]
+    # def fast(self):
+    #     """Disable real-time simulation and run as fast as possible"""
+    #     return self["fast"]
 
-    @property
-    def record(self):
-        """Record simulation to video"""
-        return self["record"]
+    # def record(self):
+    #     """Record simulation to video"""
+    #     return self["record"]
 
-    @property
-    def headless(self):
-        """Headless simulation instead of using GUI"""
-        return self["headless"]
+    # def headless(self):
+    #     """Headless simulation instead of using GUI"""
+    #     return self["headless"]
 
-    @property
-    def plot(self):
-        """Plot at end of experiment for results analysis"""
-        return self["plot"]
+    # def plot(self):
+    #     """Plot at end of experiment for results analysis"""
+    #     return self["plot"]
 
-    @property
-    def log_path(self):
-        """Log at end of experiment for results analysis"""
-        return self["log_path"]
+    # def log_path(self):
+    #     """Log at end of experiment for results analysis"""
+    #     return self["log_path"]
 
-    @property
-    def log_extension(self):
-        """Logs files extention"""
-        return self["log_extension"]
+    # def log_extension(self):
+    #     """Logs files extention"""
+    #     return self["log_extension"]
