@@ -28,32 +28,32 @@ def simulation_profiler(func):
     return inner
 
 
-class SimulationElements(dict):
-    """Simulation elements"""
+class SimulationModels(dict):
+    """Simulation models"""
 
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
     def __init__(self, animat, arena):
-        super(SimulationElements, self).__init__()
+        super(SimulationModels, self).__init__()
         self.animat = animat
         self.arena = arena
 
     def spawn(self):
         """Spawn"""
-        for element_name, element in self.items():
-            print("Spawning {}".format(element_name))
-            element.spawn()
+        for model_name, model in self.items():
+            print("Spawning {}".format(model_name))
+            model.spawn()
 
     def step(self):
         """Step"""
-        for element in self.values():
-            element.step()
+        for model in self.values():
+            model.step()
 
     def log(self):
         """Step"""
-        for element in self.values():
-            element.log()
+        for model in self.values():
+            model.log()
 
 
 class Simulation:
@@ -64,10 +64,10 @@ class Simulation:
 
     """
 
-    def __init__(self, elements, options):
+    def __init__(self, models, options):
         super(Simulation, self).__init__()
 
-        self.elements = elements
+        self.models = models
         self.options = options
 
         # Initialise engine
@@ -82,8 +82,8 @@ class Simulation:
         self.init_physics()
 
         # Initialise models
-        print("Spawning elements")
-        self.elements.spawn()
+        print("Spawning models")
+        self.models.spawn()
 
         # Simulation
         self.iteration = 0
@@ -175,7 +175,7 @@ class Simulation:
             if self.check_quit():
                 break
             self.step_func()
-            yield self.iteration, self.elements.animat.data
+            yield self.iteration, self.models.animat.data
             if pbar is not None:
                 pbar.update(1)
 
@@ -215,7 +215,7 @@ class Simulation:
                     "Format {} is not valid for logging array".format(log_extension)
                 )
             save_function(log_path+"/times."+log_extension, times)
-            self.elements.animat.data.log(
+            self.models.animat.data.log(
                 times,
                 folder=log_path,
                 extension=log_extension
@@ -227,7 +227,7 @@ class Simulation:
                 test = pickle.load(options)
                 print("Wrote simulation options:\n{}".format(test))
             with open(log_path+"/animat_options.pickle", "wb") as options:
-                pickle.dump(self.elements.animat.options, options)
+                pickle.dump(self.models.animat.options, options)
             with open(log_path+"/animat_options.pickle", "rb") as options:
                 test = pickle.load(options)
                 print("Wrote animat options:\n{}".format(test))
@@ -235,7 +235,7 @@ class Simulation:
         # Plot
         plot = kwargs.pop("plot", None)
         if plot:
-            self.elements.animat.data.plot(times)
+            self.models.animat.data.plot(times)
 
         # Record video
         record = kwargs.pop("record", None)

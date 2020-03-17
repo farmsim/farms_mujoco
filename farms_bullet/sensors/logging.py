@@ -28,12 +28,12 @@ class SensorLogger:
 
     def __init__(self, sensor):
         super(SensorLogger, self).__init__()
-        self._element = sensor
+        self._model = sensor
 
     @property
     def array(self):
         """Log array"""
-        return self._element.array
+        return self._model.array
 
     def plot(self, times, figure=None, label=None):
         """Plot"""
@@ -288,7 +288,7 @@ class LinksStatesLogger(SensorLogger):
             times=times,
             array_ids=[0, 1, 2],
             figure=figure,
-            labels=[label + "_" + element for element in ["x", "y", "z"]]
+            labels=[label + "_" + model for model in ["x", "y", "z"]]
         )
         plt.xlabel("Time [s]")
         plt.ylabel("Position [m]")
@@ -345,14 +345,14 @@ class LinksStatesLogger(SensorLogger):
                 times=times,
                 array=self.array[:, 0, 14:17],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         else:
             self.plot_array(
                 times=times,
                 array_ids=[14, 15, 16],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         plt.xlabel("Time [s]")
         plt.ylabel("Velocity [m/s]")
@@ -366,14 +366,14 @@ class LinksStatesLogger(SensorLogger):
                 times=times,
                 array=self.array[:, 0, 17:20],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         else:
             self.plot_array(
                 times=times,
                 array_ids=[17, 18, 19],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         plt.xlabel("Time [s]")
         plt.ylabel("Angular velocity [rad/s]")
@@ -457,7 +457,7 @@ class LinkStateLogger(SensorLogger):
             times=times,
             array_ids=[0, 1, 2],
             figure=figure,
-            labels=[label + "_" + element for element in ["x", "y", "z"]]
+            labels=[label + "_" + model for model in ["x", "y", "z"]]
         )
         plt.xlabel("Time [s]")
         plt.ylabel("Position [m]")
@@ -482,14 +482,14 @@ class LinkStateLogger(SensorLogger):
                 times=times,
                 array=self.array[:, 7:10],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         else:
             self.plot_array(
                 times=times,
                 array_ids=[7, 8, 9],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         plt.xlabel("Time [s]")
         plt.ylabel("Velocity [m/s]")
@@ -503,14 +503,14 @@ class LinkStateLogger(SensorLogger):
                 times=times,
                 array=self.array[:, 10:],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         else:
             self.plot_array(
                 times=times,
                 array_ids=[10, 11, 12],
                 figure=figure,
-                labels=[label + "_" + element for element in ["x", "y", "z"]]
+                labels=[label + "_" + model for model in ["x", "y", "z"]]
             )
         plt.xlabel("Time [s]")
         plt.ylabel("Angular velocity [rad/s]")

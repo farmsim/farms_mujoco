@@ -1,18 +1,18 @@
-"""Simulation element"""
+"""Simulation model"""
 
 import pybullet
 
 
-class SimulationElement:
-    """Documentation for SimulationElement"""
+class SimulationModel:
+    """Documentation for SimulationModel"""
 
     def __init__(self, identity=None):
-        super(SimulationElement, self).__init__()
+        super(SimulationModel, self).__init__()
         self._identity = identity
 
     @property
     def identity(self):
-        """Element identity"""
+        """Model identity"""
         return self._identity
 
     @staticmethod

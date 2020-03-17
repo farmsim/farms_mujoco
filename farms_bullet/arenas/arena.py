@@ -9,11 +9,11 @@ from farms_sdf.sdf import ModelSDF, Link, Joint
 from farms_models.utils import get_sdf_path
 
 from .create import create_scene
-from ..simulations.element import SimulationElement
+from ..simulations.model import SimulationModel
 # from ..animats.link import AnimatLink
 
 
-# class Floor(SimulationElement):
+# class Floor(SimulationModel):
 #     """Floor"""
 
 #     def __init__(self, position):
@@ -53,7 +53,7 @@ from ..simulations.element import SimulationElement
 #         )
 
 
-class FloorURDF(SimulationElement):
+class FloorURDF(SimulationModel):
     """Floor"""
 
     def __init__(self, position):
@@ -79,15 +79,15 @@ class FloorURDF(SimulationElement):
 class Arena:
     """Documentation for Arena"""
 
-    def __init__(self, elements):
+    def __init__(self, models):
         super(Arena, self).__init__()
-        self.elements = elements
+        self.models = models
         self.water_surface = -np.inf
 
     def spawn(self):
         """Spawn"""
-        for element in self.elements:
-            element.spawn()
+        for model in self.models:
+            model.spawn()
 
 
 class FlooredArena(Arena):
@@ -101,7 +101,7 @@ class FlooredArena(Arena):
     @property
     def floor(self):
         """Floor"""
-        return self.elements[0]
+        return self.models[0]
 
 
 class ArenaScaffold(FlooredArena):
@@ -113,7 +113,7 @@ class ArenaScaffold(FlooredArena):
         create_scene(self.floor.identity)
 
 
-# class Ramp(SimulationElement):
+# class Ramp(SimulationModel):
 #     """Floor"""
 
 #     def __init__(self, angle, units):
@@ -234,7 +234,7 @@ class ArenaScaffold(FlooredArena):
 #         # )
 
 
-class RampSDF(SimulationElement):
+class RampSDF(SimulationModel):
     """Floor"""
 
     def __init__(self, angle, units):
@@ -428,26 +428,26 @@ class RampSDF(SimulationElement):
 class ArenaRamp(Arena):
     """ArenaRamp"""
 
-    def __init__(self, units, ramp_angle=None, elements=None):
+    def __init__(self, units, ramp_angle=None, models=None):
         angle = (
             np.deg2rad(ramp_angle)
             if ramp_angle is not None
             else np.deg2rad(30)
         )
-        if elements is None:
-            elements = []
+        if models is None:
+            models = []
         super(ArenaRamp, self).__init__(
             [RampSDF(angle=angle, units=units)]
-            + elements
+            + models
         )
 
     @property
     def floor(self):
         """Floor"""
-        return self.elements[0]
+        return self.models[0]
 
 
-class Water(SimulationElement):
+class Water(SimulationModel):
     """Floor"""
 
     def __init__(self, units, water_surface=-0.1):
@@ -520,16 +520,16 @@ class Water(SimulationElement):
 class ArenaWater(ArenaRamp):
     """ArenaRamp"""
 
-    def __init__(self, units, ramp_angle=None, elements=None):
+    def __init__(self, units, ramp_angle=None, models=None):
         water_surface = -0.1
         super(ArenaWater, self).__init__(
             units=units,
             ramp_angle=ramp_angle,
-            elements=[Water(units, water_surface)]
+            models=[Water(units, water_surface)]
         )
         self.water_surface = water_surface
 
     @property
     def water(self):
         """Floor"""
-        return self.elements[1]
+        return self.models[1]
