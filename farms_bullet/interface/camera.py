@@ -3,6 +3,7 @@
 import numpy as np
 
 import pybullet
+import farms_pylog as pylog
 
 
 class Camera:
@@ -135,7 +136,7 @@ class CameraRecord(CameraTarget):
 
     def save(self, filename="video.avi"):
         """Save recording"""
-        print("Recording video to {}".format(filename))
+        pylog.debug("Recording video to {}".format(filename))
         import cv2
         writer = cv2.VideoWriter(
             filename,

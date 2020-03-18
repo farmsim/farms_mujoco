@@ -26,11 +26,11 @@ setup(
     #     "License :: OSI Approved :: BSD License",
     # ],
     scripts=[
-        "scripts/farms_salamander.py",
-        "scripts/farms_snake.py",
-        "scripts/farms_centipede.py",
-        "scripts/farms_polypterus.py",
-        "scripts/farms_quadruped.py"
+        # "scripts/farms_salamander.py",
+        # "scripts/farms_snake.py",
+        # "scripts/farms_centipede.py",
+        # "scripts/farms_polypterus.py",
+        # "scripts/farms_quadruped.py"
     ],
     # package_data={"farms_bullet": [
     #     "farms_bullet/templates/*",
@@ -47,8 +47,8 @@ setup(
                 extra_link_args=["-O3"]  # , "-fopenmp"
             )
             for folder in [
-                "animats/data",
-                "controllers",
+                # "animats/data",
+                # "controllers",
                 "sensors"
             ]
         ],

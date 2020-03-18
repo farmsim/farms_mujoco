@@ -3,7 +3,7 @@
 import numpy as np
 import pybullet
 from .camera import UserCamera, CameraRecord
-# from .debug import test_debug_info
+import farms_pylog as pylog
 
 
 class Interfaces:
@@ -55,7 +55,7 @@ class Interfaces:
         skips = kwargs.pop("skips", 1)
         self.video = CameraRecord(
             target_identity=target_identity,
-            size=simulation_options.n_iterations,
+            size=simulation_options.n_iterations(),
             timestep=simulation_options.timestep,
             fps=1./(skips*simulation_options.timestep),
             pitch=kwargs.pop("pitch", simulation_options.video_pitch),
@@ -117,7 +117,7 @@ class DebugParameter:
         self.value = self.get_value()
         self.changed = (self.value != previous_value)
         if self.changed:
-            print("{} changed ({} -> {})".format(
+            pylog.debug("{} changed ({} -> {})".format(
                 self.name,
                 previous_value,
                 self.value
@@ -158,7 +158,7 @@ class ParameterPlay(DebugParameter):
 #         )
 #         self.changed = (self.value != previous_value)
 #         if self.changed:
-#             print("Gait changed ({} > {})".format(
+#             pylog.debug("Gait changed ({} > {})".format(
 #                 previous_value,
 #                 self.value
 #             ))
@@ -192,17 +192,14 @@ class UserParameters(dict):
         for parameter in self:
             self[parameter].update()
 
-    @property
     def play(self):
         """Play"""
         return self["play"]
 
-    @property
     def rtl(self):
         """Real-time limiter"""
         return self["rtl"]
 
-    @property
     def zoom(self):
         """Camera zoom"""
         return self["zoom"]
@@ -217,17 +214,14 @@ class UserParameters(dict):
     #     """Frequency"""
     #     return self["frequency"]
 
-    @property
     def body_offset(self):
         """Body offset"""
         return self["body_offset"]
 
-    @property
     def drive_speed(self):
         """Drive speed"""
         return self["drive_speed"]
 
-    @property
     def drive_turn(self):
         """Drive turn"""
         return self["drive_turn"]

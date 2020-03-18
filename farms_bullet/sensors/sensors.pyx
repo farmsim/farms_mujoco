@@ -6,11 +6,11 @@ cimport numpy as np
 import pybullet
 
 
-from ..animats.data.array import NetworkArray3D
+from farms_amphibious.data.array import NetworkArray3D
 
 
 class Sensor:
-    """Sensor base class for simulation elements"""
+    """Sensor base class for simulation models"""
     def __init__(self, shape):
         super(Sensor, self).__init__()
         self.array = np.zeros(shape)
