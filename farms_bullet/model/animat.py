@@ -2,8 +2,8 @@
 
 import numpy as np
 import pybullet
-from farms_bullet.simulation.model import SimulationModel
 import farms_pylog as pylog
+from .model import SimulationModel
 
 
 def joint_type_str(joint_type):

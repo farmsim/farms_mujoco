@@ -10,7 +10,7 @@ from tqdm import tqdm
 import farms_pylog as pylog
 
 from .simulator import init_engine
-from ..render.render import rendering
+from .render import rendering
 
 
 def simulation_profiler(func):

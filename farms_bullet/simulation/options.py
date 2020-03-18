@@ -47,7 +47,6 @@ class SimulationOptions(Options):
         self.video_distance = kwargs.pop("video_distance", 1)
         self.headless = kwargs.pop("headless", False)
         self.frequency = kwargs.pop("frequency", 1)
-        self.body_stand_amplitude = kwargs.pop("body_stand_amplitude", 0.2)
         self.plot = kwargs.pop("plot", True)
         self.log_path = kwargs.pop("log_path", False)
         self.log_extension = kwargs.pop("log_extension", "npy")
@@ -83,10 +82,6 @@ class SimulationOptions(Options):
     # def frequency(self):
     #     """Model frequency"""
     #     return self["frequency"]
-
-    # def body_stand_amplitude(self):
-    #     """Model body amplitude"""
-    #     return self["body_stand_amplitude"]
 
     # def timestep(self):
     #     """Simulation timestep"""
