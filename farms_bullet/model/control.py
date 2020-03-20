@@ -4,101 +4,112 @@ import pybullet
 import numpy as np
 
 
-class ModelController:
-    """ModelController"""
+def reset_controllers(identity):
+    """Reset controllers"""
+    n_joints = pybullet.getNumJoints(identity)
+    joints = np.arange(n_joints)
+    zeros = np.zeros_like(joints)
+    pybullet.setJointMotorControlArray(
+        identity,
+        joints,
+        pybullet.POSITION_CONTROL,
+        forces=zeros
+    )
+    pybullet.setJointMotorControlArray(
+        identity,
+        joints,
+        pybullet.VELOCITY_CONTROL,
+        forces=zeros
+    )
+    pybullet.setJointMotorControlArray(
+        identity,
+        joints,
+        pybullet.TORQUE_CONTROL,
+        forces=zeros
+    )
 
-    def __init__(self, identity, network, joints_order, units):
-        super(ModelController, self).__init__()
-        self.identity = identity
-        self.network = network
-        self.joint_list = joints_order
-        n_joints = len(self.joint_list)
-        # Commands
-        self.positions = None
-        self.velocities = None
-        self.torques = np.zeros(n_joints)
-        # Units
-        self.units = units
-        self.unit_iseconds = 1./units.seconds
-        # Gains
-        self.gain_position = 1e-1*np.ones(n_joints)*(
-            self.units.torques
-        )
-        self.gain_velocity = 1e0*np.ones(n_joints)*(
-            self.units.torques*self.units.seconds
-        )
-        self.reset()
 
-    def reset(self):
-        """Reset controllers"""
-        # Reset controllers
-        zeros = np.zeros_like(self.joint_list)
-        pybullet.setJointMotorControlArray(
-            self.identity,
-            self.joint_list,
-            pybullet.POSITION_CONTROL,
-            forces=zeros
-        )
-        pybullet.setJointMotorControlArray(
-            self.identity,
-            self.joint_list,
-            pybullet.VELOCITY_CONTROL,
-            forces=zeros
-        )
-        pybullet.setJointMotorControlArray(
-            self.identity,
-            self.joint_list,
-            pybullet.TORQUE_CONTROL,
-            forces=zeros
-        )
-
-    def update(self):
-        """Step"""
-        self.network.control_step()
-        self.positions = self.network.get_position_output()
-        self.velocities = self.network.get_velocity_output()
-        # a_filter = 0
-        # self.torques = (
-        #     a_filter*self.torques
-        #     + (1-a_filter)*self.network.get_torque_output()
-        # )
-
-    def control(self):
-        """Control"""
-        self.update()
-        # if not all(np.abs(self.velocities) < 2*np.pi*3):
-        #     print("Velocities too fast:\n{}".format(self.velocities/(2*np.pi)))
-        pybullet.setJointMotorControlArray(
-            self.identity,
-            self.joint_list,
-            pybullet.POSITION_CONTROL,
-            targetPositions=self.positions,
-            targetVelocities=self.velocities*self.unit_iseconds,
-            # forces=self.positions*1e1
-            # targetVelocities=self.velocities/self.units.seconds,
-            # targetVelocities=np.zeros_like(self.positions),
-            # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
-            # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
-            # positionGains=self.gain_position,
-            # velocityGains=self.gain_velocity,
-            # forces=[ctrl["pdf"]["f"] for ctrl in controls],
-            # maxVelocities=2*np.pi*0.1*np.ones_like(self.positions)
-        )
-        # for joint_i, joint in enumerate(self.joint_list):
+def control_models(iteration, models, seconds, torques):
+    """Control"""
+    # if not all(np.abs(velocities) < 2*np.pi*3):
+    #     print("Velocities too fast:\n{}".format(velocities/(2*np.pi)))
+    isec = 1.0/seconds
+    for model in models:
+        if model.controller is None:
+            continue
+        if model.controller.use_position:
+            pybullet.setJointMotorControlArray(
+                model.identity(),
+                model.joints_order,
+                pybullet.POSITION_CONTROL,
+                targetPositions=model.controller.positions(),
+                targetVelocities=model.controller.velocities()*isec,
+                # forces=positions*1e1
+                # targetVelocities=velocities/units.seconds,
+                # targetVelocities=np.zeros_like(positions),
+                # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
+                # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
+                # positionGains=gain_position,
+                # velocityGains=gain_velocity,
+                # forces=[ctrl["pdf"]["f"] for ctrl in controls],
+                # maxVelocities=2*np.pi*0.1*np.ones_like(positions)
+            )
+        if model.controller.use_torque:
+            pybullet.setJointMotorControlArray(
+                model.identity(),
+                model.joints_order,
+                pybullet.TORQUE_CONTROL,
+                targetForces=model.controller.positions()*torques,
+                # forces=positions*1e1
+                # targetVelocities=velocities/units.seconds,
+                # targetVelocities=np.zeros_like(positions),
+                # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
+                # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
+                # positionGains=gain_position,
+                # velocityGains=gain_velocity,
+                # forces=[ctrl["pdf"]["f"] for ctrl in controls],
+                # maxVelocities=2*np.pi*0.1*np.ones_like(positions)
+            )
+        # for joint_i, joint in enumerate(joint_list):
         #     pybullet.setJointMotorControl2(
-        #         self.identity,
+        #         model.identity(),
         #         joint,
         #         pybullet.POSITION_CONTROL,
-        #         targetPosition=self.positions[joint_i],
-        #         targetVelocity=self.velocities[joint_i]*self.units.seconds,
+        #         targetPosition=positions[joint_i],
+        #         targetVelocity=velocities[joint_i]*units.seconds,
         #         # positionGains=[ctrl["pdf"]["p"] for ctrl in controls],
         #         # velocityGains=[ctrl["pdf"]["d"] for ctrl in controls],
         #         # forces=[ctrl["pdf"]["f"] for ctrl in controls],
         #         maxVelocity=2*np.pi*3
         #     )
         # pybullet.setJointMotorControlArray(
-        #     self.identity,
-        #     self.joint_list,
+        #     model.identity(),
+        #     joint_list,
         #     pybullet.TORQUE_CONTROL,
-        #     forces=self.torques*self.units.torques,
+        #     forces=torques*units.torques,
         # )
+
+
+class ModelController:
+    """ModelController"""
+
+    def __init__(self, joints, use_position, use_torque):
+        super(ModelController, self).__init__()
+        self.joints = joints  # List of joint names
+        self.use_position = use_position
+        self.use_torque = use_torque
+
+    def step(self):
+        """Step"""
+
+    def postions(self):
+        """Positions"""
+        return np.zeros_like(self.joints)
+
+    def velocities(self):
+        """Velocities"""
+        return np.zeros_like(self.joints)
+
+    def torques(self):
+        """Torques"""
+        return np.zeros_like(self.joints)

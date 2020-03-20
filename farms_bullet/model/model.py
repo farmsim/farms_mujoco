@@ -3,6 +3,7 @@
 import os
 import numpy as np
 import pybullet
+import farms_pylog as pylog
 
 
 class SimulationModel:
@@ -11,37 +12,32 @@ class SimulationModel:
     def __init__(self, identity=None):
         super(SimulationModel, self).__init__()
         self._identity = identity
+        self.joint_list = None
+        self.controller = None
 
     def identity(self):
         """Model identity"""
         return self._identity
 
-    @staticmethod
-    def spawn():
+    def spawn(self):
         """Spawn"""
 
-    @staticmethod
-    def step():
+    def step(self):
         """Step"""
 
-    @staticmethod
-    def log():
+    def log(self):
         """Log"""
 
-    @staticmethod
-    def save_logs():
+    def save_logs(self):
         """Save logs"""
 
-    @staticmethod
-    def plot():
+    def plot(self):
         """Plot"""
 
-    @staticmethod
-    def reset():
+    def reset(self):
         """Reset"""
 
-    @staticmethod
-    def delete():
+    def delete(self):
         """Delete"""
 
     @staticmethod
@@ -53,19 +49,6 @@ class SimulationModel:
     def from_urdf(urdf, **kwargs):
         """Model from SDF"""
         return pybullet.loadURDF(urdf, **kwargs)
-
-
-class SimulationModels(SimulationModel):
-    """Multiple models"""
-
-    def __init__(self, models):
-        super(SimulationModels, self).__init__()
-        self.models = models
-
-    def spawn(self):
-        """Spawn"""
-        for model in self.models:
-            model.spawn()
 
 
 class DescriptionFormatModel(SimulationModel):
@@ -139,3 +122,29 @@ class DescriptionFormatModel(SimulationModel):
                         specularColor=specular_color,
                         **self.visual_options,
                     )
+
+
+class SimulationModels(SimulationModel):
+    """Simulation models"""
+
+    def __init__(self, models):
+        super(SimulationModels, self).__init__()
+        self._models = models
+
+    def __getitem__(self, key):
+        return self._models[key]
+
+    def spawn(self):
+        """Spawn"""
+        for model in self:
+            model.spawn()
+
+    def step(self):
+        """Step"""
+        for model in self:
+            model.step()
+
+    def log(self):
+        """Log"""
+        for model in self:
+            model.log()

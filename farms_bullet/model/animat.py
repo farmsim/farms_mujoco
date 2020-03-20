@@ -27,7 +27,6 @@ class Animat(SimulationModel):
         self.links = {}
         self.joints = {}
         self.sensors = {}
-        self.controller = None
         self.data = None
 
     def n_joints(self):
