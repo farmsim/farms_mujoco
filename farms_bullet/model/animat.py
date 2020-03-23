@@ -27,7 +27,6 @@ class Animat(SimulationModel):
         self.links = {}
         self.joints = {}
         self.sensors = {}
-        self.controller = None
         self.data = None
 
     def n_joints(self):
@@ -127,18 +126,24 @@ class Animat(SimulationModel):
     def set_collisions(self, links, group=0, mask=0):
         """Activate/Deactivate leg collisions"""
         for link in links:
-            pybullet.setCollisionFilterGroupMask(
-                bodyUniqueId=self._identity,
-                linkIndexA=self.links[link],
-                collisionFilterGroup=group,
-                collisionFilterMask=mask
-            )
+            if self.links[link] is not None:
+                pybullet.setCollisionFilterGroupMask(
+                    bodyUniqueId=self._identity,
+                    linkIndexA=self.links[link],
+                    collisionFilterGroup=group,
+                    collisionFilterMask=mask
+                )
+            else:
+                pylog.error("Link {} was not found".format(link))
 
     def set_links_dynamics(self, links, **kwargs):
         """Apply motor damping"""
         for link in links:
-            pybullet.changeDynamics(
-                bodyUniqueId=self.identity(),
-                linkIndex=self.links[link],
-                **kwargs
-            )
+            if self.links[link] is not None:
+                pybullet.changeDynamics(
+                    bodyUniqueId=self.identity(),
+                    linkIndex=self.links[link],
+                    **kwargs
+                )
+            else:
+                pylog.error("Link {} was not found".format(link))

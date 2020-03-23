@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 import farms_pylog as pylog
 
+from ..model.control import control_models
 from .simulator import init_engine
 from .render import rendering
 
@@ -28,34 +29,6 @@ def simulation_profiler(func):
             pybullet.stopStateLogging(loggingId=logger)
         return result
     return inner
-
-
-class SimulationModels(dict):
-    """Simulation models"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-
-    def __init__(self, animat, arena):
-        super(SimulationModels, self).__init__()
-        self.animat = animat
-        self.arena = arena
-
-    def spawn(self):
-        """Spawn"""
-        for model_name, model in self.items():
-            pylog.debug("Spawning {}".format(model_name))
-            model.spawn()
-
-    def step(self):
-        """Step"""
-        for model in self.values():
-            model.step()
-
-    def log(self):
-        """Step"""
-        for model in self.values():
-            model.log()
 
 
 class Simulation:
@@ -168,11 +141,12 @@ class Simulation:
                 break
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
+                self.control_step(self.iteration)
                 pybullet.stepSimulation()
                 self.iteration += 1
                 self.post_step(self.iteration)
-            if pbar is not None:
-                pbar.update(1)
+                if pbar is not None:
+                    pbar.update(1)
 
     @simulation_profiler
     def iterator(self, pbar=None):
@@ -182,19 +156,32 @@ class Simulation:
                 break
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
+                self.control_step(self.iteration)
                 pybullet.stepSimulation()
                 self.iteration += 1
                 self.post_step(self.iteration)
                 yield self.iteration-1
-            if pbar is not None:
-                pbar.update(1)
+                if pbar is not None:
+                    pbar.update(1)
 
     def pre_step(self, sim_step):
-        """Pre-step"""
-        return True
+        """Pre-step
+
+        Returns bool
+
+        """
 
     def step(self, sim_step):
         """Step function"""
+
+    def control_step(self, sim_step):
+        """Physics step"""
+        control_models(
+            iteration=sim_step,
+            models=self.models,
+            seconds=self.options.units.seconds,
+            torques=self.options.units.torques,
+        )
 
     def post_step(self, sim_step):
         """Post-step"""
