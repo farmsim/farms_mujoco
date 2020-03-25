@@ -212,7 +212,7 @@ class Simulation:
                     "Format {} is not valid for logging array".format(log_extension)
                 )
             save_function(log_path+"/times."+log_extension, times)
-            self.models.animat.data.log(
+            self.animat().data.log(
                 times,
                 folder=log_path,
                 extension=log_extension
@@ -224,7 +224,7 @@ class Simulation:
                 test = pickle.load(options)
                 pylog.debug("Wrote simulation options:\n{}".format(test))
             with open(log_path+"/animat_options.pickle", "wb") as options:
-                pickle.dump(self.models.animat.options, options)
+                pickle.dump(self.animat().options, options)
             with open(log_path+"/animat_options.pickle", "rb") as options:
                 test = pickle.load(options)
                 pylog.debug("Wrote animat options:\n{}".format(test))
@@ -232,7 +232,7 @@ class Simulation:
         # Plot
         plot = kwargs.pop("plot", None)
         if plot:
-            self.models.animat.data.plot(times)
+            self.animat().data.plot(times)
 
         # Record video
         record = kwargs.pop("record", None)
