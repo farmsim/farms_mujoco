@@ -40,7 +40,7 @@ def control_models(iteration, models, seconds, torques):
         if model.controller.use_position:
             pybullet.setJointMotorControlArray(
                 model.identity(),
-                model.joints_order,
+                model.joints_identities(),
                 pybullet.POSITION_CONTROL,
                 targetPositions=model.controller.positions(),
                 targetVelocities=model.controller.velocities()*isec,
@@ -57,7 +57,7 @@ def control_models(iteration, models, seconds, torques):
         if model.controller.use_torque:
             pybullet.setJointMotorControlArray(
                 model.identity(),
-                model.joints_order,
+                model.joints_identities(),
                 pybullet.TORQUE_CONTROL,
                 targetForces=model.controller.positions()*torques,
                 # forces=positions*1e1

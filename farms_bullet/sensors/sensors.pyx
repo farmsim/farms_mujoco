@@ -227,7 +227,7 @@ cdef class LinksStatesSensor(NetworkArray3D):
         cdef double imeters = 1./self.units.meters
         cdef double ivelocity = 1./self.units.velocity
         cdef double seconds = self.units.seconds
-        for _, link_i, link_id in links:
+        for link_i, link_id in enumerate(links):
             # Collect data
             if link_id == -1:
                 # Base link

@@ -24,14 +24,22 @@ class Animat(SimulationModel):
     def __init__(self, identity=None, options=None):
         super(Animat, self).__init__(identity=identity)
         self.options = options
-        self.links = {}
-        self.joints = {}
+        self._links = {}
+        self._joints = {}
         self.sensors = {}
         self.data = None
 
     def n_joints(self):
         """Get number of joints"""
         return pybullet.getNumJoints(self._identity)
+
+    def links_identities(self):
+        """Joints"""
+        return np.arange(-1, pybullet.getNumJoints(self._identity), dtype=int)
+
+    def joints_identities(self):
+        """Joints"""
+        return np.arange(pybullet.getNumJoints(self._identity), dtype=int)
 
     @staticmethod
     def get_parent_links_info(identity, base_link="base_link"):
@@ -47,7 +55,7 @@ class Animat(SimulationModel):
         return links
 
     @staticmethod
-    def get_joints_info(identity, base_link="base_link"):
+    def get_joints_info(identity):
         """Get joints"""
         joints = {
             info[1].decode("UTF-8"): info[0]
@@ -62,32 +70,29 @@ class Animat(SimulationModel):
         """Print information"""
         pylog.debug("Links ids:\n{}".format(
             "\n".join([
-                "  {}: {}".format(
-                    name,
-                    self.links[name]
-                )
-                for name in self.links
+                "  {}: {}".format(name, identity)
+                for name, identity in self._links.items()
             ])
         ))
         pylog.debug("Joints ids:\n{}".format(
             "\n".join([
                 "  {}: {} (type: {})".format(
                     name,
-                    self.joints[name],
+                    identity,
                     joint_type_str(
                         pybullet.getJointInfo(
                             self.identity(),
-                            self.joints[name]
+                            identity
                         )[2]
                     )
                 )
-                for name in self.joints
+                for name, identity in self._joints.items()
             ])
         ))
 
     def print_dynamics_info(self, links=None):
         """Print dynamics info"""
-        links = links if links is not None else self.links
+        links = links if links is not None else self._links
         pylog.debug("Dynamics:")
         for link in links:
             dynamics_msg = (
@@ -107,43 +112,38 @@ class Animat(SimulationModel):
                 link,
                 dynamics_msg.format(*pybullet.getDynamicsInfo(
                     self.identity(),
-                    self.links[link]
+                    self._links[link]
                 ))
             ))
         pylog.debug("Model mass: {} [kg]".format(self.mass()))
 
-    def mass(self):
+    def total_mass(self):
         """Print dynamics"""
         return np.sum([
-            pybullet.getDynamicsInfo(self.identity(), self.links[link])[0]
-            for link in self.links
+            pybullet.getDynamicsInfo(self.identity(), self._links[link])[0]
+            for link in self._links
         ])
 
-    def get_position(self):
+    def get_position(self, link):
         """Get position"""
-        return pybullet.getLinkState(self.identity(), 0)[0]
+        return pybullet.getLinkState(self.identity(), link)[0]
 
     def set_collisions(self, links, group=0, mask=0):
         """Activate/Deactivate leg collisions"""
         for link in links:
-            if self.links[link] is not None:
-                pybullet.setCollisionFilterGroupMask(
-                    bodyUniqueId=self._identity,
-                    linkIndexA=self.links[link],
-                    collisionFilterGroup=group,
-                    collisionFilterMask=mask
-                )
-            else:
-                pylog.error("Link {} was not found".format(link))
+            pybullet.setCollisionFilterGroupMask(
+                bodyUniqueId=self._identity,
+                linkIndexA=self._links[link],
+                collisionFilterGroup=group,
+                collisionFilterMask=mask
+            )
 
     def set_links_dynamics(self, links, **kwargs):
         """Apply motor damping"""
         for link in links:
-            if self.links[link] is not None:
+            for key, value in kwargs.items():
                 pybullet.changeDynamics(
                     bodyUniqueId=self.identity(),
-                    linkIndex=self.links[link],
-                    **kwargs
+                    linkIndex=self._links[link],
+                    **{key: value}
                 )
-            else:
-                pylog.error("Link {} was not found".format(link))
