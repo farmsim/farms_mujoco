@@ -80,7 +80,11 @@ class Simulation:
         # pylog.debug("Resetting simulation")
         # pybullet.resetSimulation()
         pylog.debug("Setting gravity")
-        pybullet.setGravity(0, 0, -9.81*self.options.units.gravity)
+        pybullet.setGravity(
+            self.options.gravity[0]*self.options.units.gravity,
+            self.options.gravity[1]*self.options.units.gravity,
+            self.options.gravity[2]*self.options.units.gravity
+        )
         pylog.debug("Setting timestep")
         pybullet.setTimeStep(self.options.timestep*self.options.units.seconds)
         pylog.debug("Setting non real-time simulation")
