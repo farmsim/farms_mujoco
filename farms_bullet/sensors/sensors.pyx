@@ -168,8 +168,8 @@ class JointsStatesSensor(NetworkArray3D):
     def update(self, iteration):
         """Update sensor"""
         seconds = self.units.seconds
-        inewtons = self.units.newtons
-        itorques = self.units.torques
+        inewtons = 1./self.units.newtons
+        itorques = 1./self.units.torques
         self.array[iteration] = np.array([
             (
                 # Position
