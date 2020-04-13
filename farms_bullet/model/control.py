@@ -13,13 +13,16 @@ def reset_controllers(identity):
         identity,
         joints,
         pybullet.POSITION_CONTROL,
+        targetPositions=zeros,
+        targetVelocities=zeros,
         forces=zeros
     )
     pybullet.setJointMotorControlArray(
         identity,
         joints,
         pybullet.VELOCITY_CONTROL,
-        forces=zeros
+        targetVelocities=zeros,
+        forces=zeros,
     )
     pybullet.setJointMotorControlArray(
         identity,
@@ -29,21 +32,28 @@ def reset_controllers(identity):
     )
 
 
-def control_models(iteration, models, seconds, torques):
+def control_models(iteration, models, seconds, torques, max_torque=100):
     """Control"""
     # if not all(np.abs(velocities) < 2*np.pi*3):
     #     print("Velocities too fast:\n{}".format(velocities/(2*np.pi)))
-    isec = 1.0/seconds
+    # isec = 1.0/seconds
     for model in models:
         if model.controller is None:
             continue
+        if iteration == 0:
+            reset_controllers(model.identity())
         if model.controller.use_position:
+            positions = model.controller.positions(iteration)
             pybullet.setJointMotorControlArray(
                 model.identity(),
                 model.joints_identities(),
                 pybullet.POSITION_CONTROL,
-                targetPositions=model.controller.positions(),
-                targetVelocities=model.controller.velocities()*isec,
+                targetPositions=positions,
+                forces=np.repeat(max_torque, len(positions))
+                # positionGains=1e0*np.ones_like(positions),
+                # velocityGains=1e0*np.ones_like(positions),
+                # forces=1e6*np.ones_like(positions)
+                # targetVelocities=model.controller.velocities(iteration)*isec,
                 # forces=positions*1e1
                 # targetVelocities=velocities/units.seconds,
                 # targetVelocities=np.zeros_like(positions),
@@ -59,7 +69,7 @@ def control_models(iteration, models, seconds, torques):
                 model.identity(),
                 model.joints_identities(),
                 pybullet.TORQUE_CONTROL,
-                targetForces=model.controller.positions()*torques,
+                forces=model.controller.torques(iteration)*torques,
                 # forces=positions*1e1
                 # targetVelocities=velocities/units.seconds,
                 # targetVelocities=np.zeros_like(positions),
@@ -102,14 +112,17 @@ class ModelController:
     def step(self):
         """Step"""
 
-    def postions(self):
+    def positions(self, iteration):
         """Positions"""
+        assert iteration >= 0
         return np.zeros_like(self.joints)
 
-    def velocities(self):
+    def velocities(self, iteration):
         """Velocities"""
+        assert iteration >= 0
         return np.zeros_like(self.joints)
 
-    def torques(self):
+    def torques(self, iteration):
         """Torques"""
+        assert iteration >= 0
         return np.zeros_like(self.joints)
