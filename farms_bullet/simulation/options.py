@@ -1,30 +1,13 @@
 """Simulation options"""
 
+import yaml
+from farms_data.options import Options
 from farms_sdf.units import SimulationUnitScaling
 from .parse_args import parse_args
 
 
-class Options(dict):
-    """Options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-
-    def __getstate__(self):
-        """Get state"""
-        return self
-
-    def __setstate__(self, value):
-        """Get state"""
-        for item in value:
-            self[item] = value[item]
-
-
 class SimulationOptions(Options):
     """Simulation options"""
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
 
     def __init__(self, **kwargs):
         super(SimulationOptions, self).__init__()
