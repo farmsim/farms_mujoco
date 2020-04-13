@@ -170,7 +170,7 @@ class JointsStatesSensor(NetworkArray3D):
         seconds = self.units.seconds
         inewtons = 1./self.units.newtons
         itorques = 1./self.units.torques
-        self.array[iteration] = np.array([
+        self.array[iteration, :, :9] = np.array([
             (
                 # Position
                 state[0],
