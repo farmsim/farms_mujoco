@@ -12,7 +12,7 @@ setup(
     name='farms_bullet',
     version='0.1',
     author='farmsdev',
-    author_email='jonathan.arreguitoneill@epfl.ch',
+    author_email='biorob-farms@groupes.epfl.ch',
     description='FARMS package for running simulation with the Bullet engine',
     # license='BSD',
     keywords='farms simulation bullet',
