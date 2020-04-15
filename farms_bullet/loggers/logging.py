@@ -46,7 +46,7 @@ class PositionLogger:
         """Update phase logs"""
         self.data[iteration, :] = self.model.get_position()
 
-    def plot(self, times, figure_name="Model position"):
+    def plot(self, times, figure_name='Model position'):
         """Plot body phases"""
         plt.figure(figure_name)
         plt.plot(
@@ -54,8 +54,8 @@ class PositionLogger:
             self.data[:len(times), 1]
         )
         plt.axis('equal')
-        plt.xlabel("Position X [m]")
-        plt.ylabel("Position Y [m]")
+        plt.xlabel('Position X [m]')
+        plt.ylabel('Position Y [m]')
         plt.grid(True)
         plt.legend()
 
@@ -72,30 +72,30 @@ class SensorsLogger:
     def plot_contacts(self, times):
         """Plot sensors"""
         # Plot contacts
-        plt.figure("Contacts")
+        plt.figure('Contacts')
         for foot_i, foot in enumerate(self.feet):
             plt.plot(
                 times,
                 self.contact_forces[:len(times), foot_i],
                 label=foot
             )
-            plt.xlabel("Time [s]")
-            plt.ylabel("Reaction force [N]")
+            plt.xlabel('Time [s]')
+            plt.ylabel('Reaction force [N]')
             plt.grid(True)
             plt.legend()
 
     def plot_ft(self, times):
         """Plot force-torque sensors"""
         # Plot Feet forces
-        plt.figure("Feet forces")
+        plt.figure('Feet forces')
         for dim in range(3):
             plt.plot(
                 times,
                 self.feet_ft[:len(times), 0, dim],
-                label=["x", "y", "z"][dim]
+                label=['x', 'y', 'z'][dim]
             )
-            plt.xlabel("Time [s]")
-            plt.ylabel("Force [N]")
+            plt.xlabel('Time [s]')
+            plt.ylabel('Force [N]')
             plt.grid(True)
             plt.legend()
 
@@ -136,29 +136,29 @@ class MotorsLogger:
 
     def plot_body(self, times):
         """Plot body motors"""
-        plt.figure("Body motor torques")
+        plt.figure('Body motor torques')
         for joint_i, joint in enumerate(self.joints_commanded_body):
             plt.plot(
                 times,
                 self.joints_cmds_body[:len(times), joint_i],
                 label=joint
             )
-            plt.xlabel("Time [s]")
-            plt.ylabel("Torque [Nm]")
+            plt.xlabel('Time [s]')
+            plt.ylabel('Torque [Nm]')
             plt.grid(True)
             plt.legend()
 
     def plot_legs(self, times):
         """Plot legs motors"""
-        plt.figure("Legs motor torques")
+        plt.figure('Legs motor torques')
         for joint_i, joint in enumerate(self.joints_commanded_legs):
             plt.plot(
                 times,
                 self.joints_cmds_legs[:len(times), joint_i],
                 label=joint
             )
-            plt.xlabel("Time [s]")
-            plt.ylabel("Torque [Nm]")
+            plt.xlabel('Time [s]')
+            plt.ylabel('Torque [Nm]')
             plt.grid(True)
             plt.legend()
 
@@ -177,13 +177,13 @@ class PhasesLogger:
             ])
         ])
         self.oscillator_names = [
-            "body_{}_{}".format(i, side)
+            'body_{}_{}'.format(i, side)
             for i in range(11)
             for side in range(2)
         ] +  [
-            "leg_{}_{}_{}_{}".format(leg_i, side, joint_i, _side)
+            'leg_{}_{}_{}_{}'.format(leg_i, side, joint_i, _side)
             for leg_i in range(2)
-            for side in ["L", "R"]
+            for side in ['L', 'R']
             for _side in range(2)
             for joint_i in range(3)
         ]
@@ -200,16 +200,16 @@ class PhasesLogger:
         """Plot body phases"""
 
         for phase_i, phase in enumerate(self.oscillator_names):
-            if "body" in phase:
-                plt.figure("Oscillator body phases")
+            if 'body' in phase:
+                plt.figure('Oscillator body phases')
             else:
-                plt.figure("Oscillator legs phases")
+                plt.figure('Oscillator legs phases')
             plt.plot(
                 times,
                 self.phases_log[:len(times), phase_i],
                 label=phase
             )
-            plt.xlabel("Time [s]")
-            plt.ylabel("Phase [rad]")
+            plt.xlabel('Time [s]')
+            plt.ylabel('Phase [rad]')
             plt.grid(True)
             plt.legend()

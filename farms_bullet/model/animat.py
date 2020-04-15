@@ -9,12 +9,12 @@ from .model import SimulationModel
 def joint_type_str(joint_type):
     """Return joint type as str"""
     return (
-        "Revolute" if joint_type == pybullet.JOINT_REVOLUTE
-        else "Prismatic" if joint_type == pybullet.JOINT_PRISMATIC
-        else "Spherical" if joint_type == pybullet.JOINT_SPHERICAL
-        else "Planar" if joint_type == pybullet.JOINT_PLANAR
-        else "Fixed" if joint_type == pybullet.JOINT_FIXED
-        else "Unknown"
+        'Revolute' if joint_type == pybullet.JOINT_REVOLUTE
+        else 'Prismatic' if joint_type == pybullet.JOINT_PRISMATIC
+        else 'Spherical' if joint_type == pybullet.JOINT_SPHERICAL
+        else 'Planar' if joint_type == pybullet.JOINT_PLANAR
+        else 'Fixed' if joint_type == pybullet.JOINT_FIXED
+        else 'Unknown'
     )
 
 
@@ -42,11 +42,11 @@ class Animat(SimulationModel):
         return np.arange(pybullet.getNumJoints(self._identity), dtype=int)
 
     @staticmethod
-    def get_parent_links_info(identity, base_link="base_link"):
+    def get_parent_links_info(identity, base_link='base_link'):
         """Get links (parent of joint)"""
         links = {base_link: -1}
         links.update({
-            info[12].decode("UTF-8"): info[16] + 1
+            info[12].decode('UTF-8'): info[16] + 1
             for info in [
                 pybullet.getJointInfo(identity, j)
                 for j in range(pybullet.getNumJoints(identity))
@@ -58,7 +58,7 @@ class Animat(SimulationModel):
     def get_joints_info(identity):
         """Get joints"""
         joints = {
-            info[1].decode("UTF-8"): info[0]
+            info[1].decode('UTF-8'): info[0]
             for info in [
                 pybullet.getJointInfo(identity, j)
                 for j in range(pybullet.getNumJoints(identity))
@@ -68,15 +68,15 @@ class Animat(SimulationModel):
 
     def print_information(self):
         """Print information"""
-        pylog.debug("Links ids:\n{}".format(
-            "\n".join([
-                "  {}: {}".format(name, identity)
+        pylog.debug('Links ids:\n{}'.format(
+            '\n'.join([
+                '  {}: {}'.format(name, identity)
                 for name, identity in self._links.items()
             ])
         ))
-        pylog.debug("Joints ids:\n{}".format(
-            "\n".join([
-                "  {}: {} (type: {})".format(
+        pylog.debug('Joints ids:\n{}'.format(
+            '\n'.join([
+                '  {}: {} (type: {})'.format(
                     name,
                     identity,
                     joint_type_str(
@@ -93,29 +93,29 @@ class Animat(SimulationModel):
     def print_dynamics_info(self, links=None):
         """Print dynamics info"""
         links = links if links is not None else self._links
-        pylog.debug("Dynamics:")
+        pylog.debug('Dynamics:')
         for link in links:
             dynamics_msg = (
-                "\n      mass: {}"
-                "\n      lateral_friction: {}"
-                "\n      local inertia diagonal: {}"
-                "\n      local inertial pos: {}"
-                "\n      local inertial orn: {}"
-                "\n      restitution: {}"
-                "\n      rolling friction: {}"
-                "\n      spinning friction: {}"
-                "\n      contact damping: {}"
-                "\n      contact stiffness: {}"
+                '\n      mass: {}'
+                '\n      lateral_friction: {}'
+                '\n      local inertia diagonal: {}'
+                '\n      local inertial pos: {}'
+                '\n      local inertial orn: {}'
+                '\n      restitution: {}'
+                '\n      rolling friction: {}'
+                '\n      spinning friction: {}'
+                '\n      contact damping: {}'
+                '\n      contact stiffness: {}'
             )
 
-            pylog.debug("  - {}:{}".format(
+            pylog.debug('  - {}:{}'.format(
                 link,
                 dynamics_msg.format(*pybullet.getDynamicsInfo(
                     self.identity(),
                     self._links[link]
                 ))
             ))
-        pylog.debug("Model mass: {} [kg]".format(self.mass()))
+        pylog.debug('Model mass: {} [kg]'.format(self.mass()))
 
     def total_mass(self):
         """Print dynamics"""

@@ -17,7 +17,7 @@ def simulation_profiler(func):
         if profile:
             logger = pybullet.startStateLogging(
                 loggingType=pybullet.STATE_LOGGING_PROFILE_TIMINGS,
-                fileName="profile.log"
+                fileName='profile.log'
             )
         pbar = tqdm(total=self.options.n_iterations()) if show_progress else None
         result = func(self, pbar=pbar)
@@ -42,18 +42,18 @@ class Simulation:
         self.options = options
 
         # Initialise engine
-        pylog.debug("Initialising physics engine")
+        pylog.debug('Initialising physics engine')
         init_engine(self.options.headless)
         if not self.options.headless:
-            pylog.debug("Disabling rendering")
+            pylog.debug('Disabling rendering')
             rendering(0)
 
         # Initialise physics
-        pylog.debug("Initialising physics")
+        pylog.debug('Initialising physics')
         self.init_physics()
 
         # Initialise models
-        pylog.debug("Spawning models")
+        pylog.debug('Spawning models')
         self.models.spawn()
 
         # Simulation
@@ -64,7 +64,7 @@ class Simulation:
         self.interface = None
 
         if not self.options.headless:
-            pylog.debug("Reactivating rendering")
+            pylog.debug('Reactivating rendering')
             rendering(1)
 
     def save(self):
@@ -73,19 +73,19 @@ class Simulation:
 
     def init_physics(self):
         """Initialise physics"""
-        # pylog.debug("Resetting simulation")
+        # pylog.debug('Resetting simulation')
         # pybullet.resetSimulation()
-        pylog.debug("Setting gravity")
+        pylog.debug('Setting gravity')
         pybullet.setGravity(
             self.options.gravity[0]*self.options.units.gravity,
             self.options.gravity[1]*self.options.units.gravity,
             self.options.gravity[2]*self.options.units.gravity
         )
-        pylog.debug("Setting timestep")
+        pylog.debug('Setting timestep')
         pybullet.setTimeStep(self.options.timestep*self.options.units.seconds)
-        pylog.debug("Setting non real-time simulation")
+        pylog.debug('Setting non real-time simulation')
         pybullet.setRealTimeSimulation(0)
-        pylog.debug("Setting simulation parameters")
+        pylog.debug('Setting simulation parameters')
         pybullet.setPhysicsEngineParameter(
             fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
@@ -121,7 +121,7 @@ class Simulation:
             # deterministicOverlappingPairs
             # solverResidualThreshold
         )
-        pylog.debug("Physics parameters:\n{}".format(
+        pylog.debug('Physics parameters:\n{}'.format(
             pybullet.getPhysicsEngineParameters()
         ))
 
@@ -129,7 +129,7 @@ class Simulation:
         """Check quit"""
         if not self.options.headless:
             keys = pybullet.getKeyboardEvents()
-            if ord("q") in keys:
+            if ord('q') in keys:
                 return True
         return False
 

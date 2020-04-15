@@ -13,7 +13,7 @@ def test_debug_info():
         lifeTime=0
     )
     text = pybullet.addUserDebugText(
-        text="BIOROB",
+        text='BIOROB',
         textPosition=[-3, 0.1, -0.09],
         textColorRGB=[0, 0, 0],
         textSize=1,

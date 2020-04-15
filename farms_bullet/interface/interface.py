@@ -30,10 +30,10 @@ class Interfaces:
             yaw=0,
             yaw_speed=(
                 360/10*self.camera_skips
-                if kwargs.pop("rotating_camera", False)
+                if kwargs.pop('rotating_camera', False)
                 else 0
             ),
-            pitch=-89 if kwargs.pop("top_camera", False) else -45,
+            pitch=-89 if kwargs.pop('top_camera', False) else -45,
             distance=1,
             timestep=timestep
         )
@@ -44,22 +44,22 @@ class Interfaces:
         # self.video = CameraRecord(
         #     target_identity=target_identity,
         #     size=size,
-        #     fps=kwargs.pop("fps", 40),
-        #     yaw=kwargs.pop("yaw", 0),
-        #     yaw_speed=360/10 if kwargs.pop("rotating_camera", False) else 0,
-        #     pitch=-89 if kwargs.pop("top_camera", False) else -45,
+        #     fps=kwargs.pop('fps', 40),
+        #     yaw=kwargs.pop('yaw', 0),
+        #     yaw_speed=360/10 if kwargs.pop('rotating_camera', False) else 0,
+        #     pitch=-89 if kwargs.pop('top_camera', False) else -45,
         #     distance=1,
         #     timestep=timestep,
         #     motion_filter=1e-1
         # )
-        skips = kwargs.pop("skips", 1)
+        skips = kwargs.pop('skips', 1)
         self.video = CameraRecord(
             target_identity=target_identity,
             size=simulation_options.n_iterations(),
             timestep=simulation_options.timestep,
             fps=1./(skips*simulation_options.timestep),
-            pitch=kwargs.pop("pitch", simulation_options.video_pitch),
-            yaw=kwargs.pop("yaw", simulation_options.video_yaw),
+            pitch=kwargs.pop('pitch', simulation_options.video_pitch),
+            yaw=kwargs.pop('yaw', simulation_options.video_yaw),
             skips=skips,
             motion_filter=2*skips*simulation_options.timestep,
             distance=simulation_options.video_distance
@@ -98,7 +98,7 @@ class DebugParameter:
             )
         else:
             raise Exception(
-                "Handler for parameter '{}' is already used".format(
+                'Handler for parameter \'{}\' is already used'.format(
                     self.name
                 )
             )
@@ -117,7 +117,7 @@ class DebugParameter:
         self.value = self.get_value()
         self.changed = (self.value != previous_value)
         if self.changed:
-            pylog.debug("{} changed ({} -> {})".format(
+            pylog.debug('{} changed ({} -> {})'.format(
                 self.name,
                 previous_value,
                 self.value
@@ -128,7 +128,7 @@ class ParameterPlay(DebugParameter):
     """Play/pause parameter"""
 
     def __init__(self):
-        super(ParameterPlay, self).__init__("Play", 1, 0, 1)
+        super(ParameterPlay, self).__init__('Play', 1, 0, 1)
         self.value = True
 
     def update(self):
@@ -140,8 +140,8 @@ class ParameterPlay(DebugParameter):
 #     """Gait control"""
 
 #     def __init__(self, gait):
-#         value = 0 if gait == "standing" else 2 if gait == "swimming" else 1
-#         super(ParameterGait, self).__init__("Gait", value, 0, 2)
+#         value = 0 if gait == 'standing' else 2 if gait == 'swimming' else 1
+#         super(ParameterGait, self).__init__('Gait', value, 0, 2)
 #         self.value = gait
 #         self.changed = False
 
@@ -150,15 +150,15 @@ class ParameterPlay(DebugParameter):
 #         previous_value = self.value
 #         value = self.get_value()
 #         self.value = (
-#             "standing"
+#             'standing'
 #             if value < 0.5
-#             else "walking"
+#             else 'walking'
 #             if 0.5 < value < 1.5
-#             else "swimming"
+#             else 'swimming'
 #         )
 #         self.changed = (self.value != previous_value)
 #         if self.changed:
-#             pylog.debug("Gait changed ({} > {})".format(
+#             pylog.debug('Gait changed ({} > {})'.format(
 #                 previous_value,
 #                 self.value
 #             ))
@@ -170,19 +170,19 @@ class UserParameters(dict):
     def __init__(self, options):
         super(UserParameters, self).__init__()
         lim = np.pi/8
-        self["play"] = ParameterPlay()
-        self["rtl"] = DebugParameter("Real-time limiter", 1, 1e-3, 3)
-        self["zoom"] = DebugParameter("Zoom", 1, 0, 1)
-        # self["gait"] = ParameterGait(gait)
-        # self["frequency"] = DebugParameter("Frequency", frequency, 0, 5)
-        self["body_offset"] = DebugParameter("Body offset", 0, -lim, lim)
-        self["drive_speed"] = DebugParameter(
-            "Drive speed",
+        self['play'] = ParameterPlay()
+        self['rtl'] = DebugParameter('Real-time limiter', 1, 1e-3, 3)
+        self['zoom'] = DebugParameter('Zoom', 1, 0, 1)
+        # self['gait'] = ParameterGait(gait)
+        # self['frequency'] = DebugParameter('Frequency', frequency, 0, 5)
+        self['body_offset'] = DebugParameter('Body offset', 0, -lim, lim)
+        self['drive_speed'] = DebugParameter(
+            'Drive speed',
             options.control.drives.forward,
             0.9, 5.1
         )
-        self["drive_turn"] = DebugParameter(
-            "Drive turn",
+        self['drive_turn'] = DebugParameter(
+            'Drive turn',
             options.control.drives.turning,
             -0.2, 0.2
         )
@@ -194,34 +194,34 @@ class UserParameters(dict):
 
     def play(self):
         """Play"""
-        return self["play"]
+        return self['play']
 
     def rtl(self):
         """Real-time limiter"""
-        return self["rtl"]
+        return self['rtl']
 
     def zoom(self):
         """Camera zoom"""
-        return self["zoom"]
+        return self['zoom']
 
     # @property
     # def gait(self):
     #     """Gait"""
-    #     return self["gait"]
+    #     return self['gait']
 
     # @property
     # def frequency(self):
     #     """Frequency"""
-    #     return self["frequency"]
+    #     return self['frequency']
 
     def body_offset(self):
         """Body offset"""
-        return self["body_offset"]
+        return self['body_offset']
 
     def drive_speed(self):
         """Drive speed"""
-        return self["drive_speed"]
+        return self['drive_speed']
 
     def drive_turn(self):
         """Drive turn"""
-        return self["drive_turn"]
+        return self['drive_turn']

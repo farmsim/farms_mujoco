@@ -17,12 +17,12 @@ def viscous_forces(
         **kwargs
 ):
     """Viscous swimming"""
-    gravity = kwargs.pop("gravity", -9.81)
+    gravity = kwargs.pop('gravity', -9.81)
     force_coefficients, torque_coefficients = kwargs.pop(
-        "coefficients",
+        'coefficients',
         [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
     )
-    use_buoyancy = kwargs.pop("buoyancy", True)
+    use_buoyancy = kwargs.pop('buoyancy', True)
     buoyancy = np.zeros(3)
     for link_i in links:
         ori, lin_velocity, ang_velocity = (
@@ -64,12 +64,12 @@ def resistive_forces(
         **kwargs
 ):
     """Resistive swimming"""
-    gravity = kwargs.pop("gravity", -9.81)
+    gravity = kwargs.pop('gravity', -9.81)
     force_coefficients, torque_coefficients = kwargs.pop(
-        "coefficients",
+        'coefficients',
         [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
     )
-    use_buoyancy = kwargs.pop("buoyancy", True)
+    use_buoyancy = kwargs.pop('buoyancy', True)
     buoyancy = np.zeros(3)
     for link_i in links:
         ori, lin_velocity, ang_velocity = (
@@ -111,7 +111,7 @@ def swimming_motion(
         **kwargs
 ):
     """Swimming motion"""
-    units = kwargs.pop("units", SimulationUnitScaling())
+    units = kwargs.pop('units', SimulationUnitScaling())
     for link_i, link in links:
         pybullet.applyExternalForce(
             model,
@@ -139,7 +139,7 @@ def swimming_debug(iteration, data_gps, links):
     for link_i, _ in links:
         joint = np.array(data_gps.urdf_position(iteration, link_i))
         if link_i == 11:
-            pylog.debug("RBP position: {}".format(np.array(joint)))
+            pylog.debug('RBP position: {}'.format(np.array(joint)))
         joint_ori = np.array(data_gps.urdf_orientation(iteration, link_i))
         # com_ori = np.array(data_gps.com_orientation(iteration, link_i))
         ori_joint = np.array(
@@ -153,7 +153,7 @@ def swimming_debug(iteration, data_gps, links):
         offset_x = np.dot(ori_joint, np.array([axis, 0, 0]))
         offset_y = np.dot(ori_joint, np.array([0, axis, 0]))
         offset_z = np.dot(ori_joint, np.array([0, 0, axis]))
-        pylog.debug("SPH position: {}".format(np.array(joint)))
+        pylog.debug('SPH position: {}'.format(np.array(joint)))
         for i, offset in enumerate([offset_x, offset_y, offset_z]):
             color = np.zeros(3)
             color[i] = 1

@@ -14,11 +14,11 @@ class Camera:
         self.target = target_identity
         cam_info = self.get_camera()
         self.timestep = timestep
-        self.motion_filter = kwargs.pop("motion_filter", 2*timestep)
-        self.yaw = kwargs.pop("yaw", cam_info[8])
-        self.yaw_speed = kwargs.pop("yaw_speed", 0)
-        self.pitch = kwargs.pop("pitch", cam_info[9])
-        self.distance = kwargs.pop("distance", cam_info[10])
+        self.motion_filter = kwargs.pop('motion_filter', 2*timestep)
+        self.yaw = kwargs.pop('yaw', cam_info[8])
+        self.yaw_speed = kwargs.pop('yaw_speed', 0)
+        self.pitch = kwargs.pop('pitch', cam_info[9])
+        self.distance = kwargs.pop('distance', cam_info[10])
 
     @staticmethod
     def get_camera():
@@ -37,7 +37,7 @@ class CameraTarget(Camera):
         super(CameraTarget, self).__init__(**kwargs)
         self.target = target_identity
         self.target_pos = kwargs.pop(
-            "target_pos",
+            'target_pos',
             np.array(pybullet.getBasePositionAndOrientation(self.target)[0])
             if self.target is not None
             else np.array(self.get_camera()[11])
@@ -96,10 +96,10 @@ class CameraRecord(CameraTarget):
 
     def __init__(self, target_identity, size, fps, **kwargs):
         super(CameraRecord, self).__init__(target_identity, **kwargs)
-        self.width = kwargs.pop("width", 1280)
-        self.height = kwargs.pop("height", 720)
+        self.width = kwargs.pop('width', 1280)
+        self.height = kwargs.pop('height', 720)
         self.fps = fps
-        self.skips = kwargs.pop("skips", 1)
+        self.skips = kwargs.pop('skips', 1)
         self.data = np.zeros(
             [size, self.height, self.width, 4],
             dtype=np.uint8
@@ -134,9 +134,9 @@ class CameraRecord(CameraTarget):
             )[2]
             self.iteration += 1
 
-    def save(self, filename="video.avi"):
+    def save(self, filename='video.avi'):
         """Save recording"""
-        pylog.debug("Recording video to {}".format(filename))
+        pylog.debug('Recording video to {}'.format(filename))
         import cv2
         writer = cv2.VideoWriter(
             filename,
