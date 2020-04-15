@@ -1,9 +1,5 @@
 """Simulation"""
 
-import os
-import pickle
-
-import numpy as np
 import pybullet
 from tqdm import tqdm
 
@@ -189,57 +185,6 @@ class Simulation:
 
     def post_step(self, sim_step):
         """Post-step"""
-
-    def postprocess(self, iteration, **kwargs):
-        """Plot after simulation"""
-        times = np.arange(
-            0,
-            self.options.timestep*self.options.n_iterations(),
-            self.options.timestep
-        )[:iteration]
-
-        # Log
-        log_path = kwargs.pop("log_path", None)
-        if log_path:
-            log_extension = kwargs.pop("log_extension", None)
-            os.makedirs(log_path, exist_ok=True)
-            if log_extension == "npy":
-                save_function = np.save
-            elif log_extension in ("txt", "csv"):
-                save_function = np.savetxt
-            else:
-                raise Exception(
-                    "Format {} is not valid for logging array".format(log_extension)
-                )
-            save_function(log_path+"/times."+log_extension, times)
-            self.animat().data.log(
-                times,
-                folder=log_path,
-                extension=log_extension
-            )
-            pylog.debug(self.options)
-            with open(log_path+"/simulation_options.pickle", "wb") as options:
-                pickle.dump(self.options, options)
-            with open(log_path+"/simulation_options.pickle", "rb") as options:
-                test = pickle.load(options)
-                pylog.debug("Wrote simulation options:\n{}".format(test))
-            with open(log_path+"/animat_options.pickle", "wb") as options:
-                pickle.dump(self.animat().options, options)
-            with open(log_path+"/animat_options.pickle", "rb") as options:
-                test = pickle.load(options)
-                pylog.debug("Wrote animat options:\n{}".format(test))
-
-        # Plot
-        plot = kwargs.pop("plot", None)
-        if plot:
-            self.animat().data.plot(times)
-
-        # Record video
-        record = kwargs.pop("record", None)
-        if record:
-            self.interface.video.save(
-                "{}.avi".format(self.options.video_name)
-            )
 
     def end(self):
         """Terminate simulation"""
