@@ -19,7 +19,7 @@ def simulation_profiler(func):
                 loggingType=pybullet.STATE_LOGGING_PROFILE_TIMINGS,
                 fileName='profile.log'
             )
-        pbar = tqdm(total=self.options.n_iterations()) if show_progress else None
+        pbar = tqdm(total=self.options.n_iterations) if show_progress else None
         result = func(self, pbar=pbar)
         if profile:
             pybullet.stopStateLogging(loggingId=logger)
@@ -136,7 +136,7 @@ class Simulation:
     @simulation_profiler
     def run(self, pbar=None):
         """Run simulation"""
-        while self.iteration < self.options.n_iterations():
+        while self.iteration < self.options.n_iterations:
             if self.check_quit():
                 break
             if self.pre_step(self.iteration):
@@ -151,7 +151,7 @@ class Simulation:
     @simulation_profiler
     def iterator(self, pbar=None):
         """Run simulation"""
-        while self.iteration < self.options.n_iterations():
+        while self.iteration < self.options.n_iterations:
             if self.check_quit():
                 break
             if self.pre_step(self.iteration):

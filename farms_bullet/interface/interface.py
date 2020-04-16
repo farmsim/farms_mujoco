@@ -55,7 +55,7 @@ class Interfaces:
         skips = kwargs.pop('skips', 1)
         self.video = CameraRecord(
             target_identity=target_identity,
-            size=simulation_options.n_iterations(),
+            size=simulation_options.n_iterations,
             timestep=simulation_options.timestep,
             fps=1./(skips*simulation_options.timestep),
             pitch=kwargs.pop('pitch', simulation_options.video_pitch),
