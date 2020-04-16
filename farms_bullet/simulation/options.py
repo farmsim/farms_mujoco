@@ -28,6 +28,7 @@ class SimulationOptions(Options):
         self.top_camera = kwargs.pop('top_camera', False)
         self.fast = kwargs.pop('fast', False)
         self.record = kwargs.pop('record', False)
+        self.fps = kwargs.pop('fps', False)
         self.video_name = kwargs.pop('video_name', 'video')
         self.video_yaw = kwargs.pop('video_yaw', 0)
         self.video_pitch = kwargs.pop('video_pitch', -45)
@@ -54,6 +55,7 @@ class SimulationOptions(Options):
             top_camera=kwargs.pop('top_camera', clargs.top_camera),
             fast=kwargs.pop('fast', clargs.fast),
             record=kwargs.pop('record', clargs.record),
+            fps=kwargs.pop('fps', clargs.fps),
             headless=kwargs.pop('headless', clargs.headless),
             **kwargs,
         )

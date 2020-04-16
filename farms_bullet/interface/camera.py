@@ -1,6 +1,11 @@
 """Camera"""
 
 import numpy as np
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import matplotlib.animation as manimation
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import pybullet
 import farms_pylog as pylog
@@ -94,22 +99,25 @@ class UserCamera(CameraTarget):
 class CameraRecord(CameraTarget):
     """Camera recording"""
 
-    def __init__(self, target_identity, size, fps, **kwargs):
-        super(CameraRecord, self).__init__(target_identity, **kwargs)
+    def __init__(self, timestep, target_identity, size, fps, **kwargs):
+        super(CameraRecord, self).__init__(
+            target_identity=target_identity,
+            timestep=timestep,
+            **kwargs,
+        )
         self.width = kwargs.pop('width', 1280)
         self.height = kwargs.pop('height', 720)
-        self.fps = fps
-        self.skips = kwargs.pop('skips', 1)
+        self.skips = kwargs.pop('skips', max(0, int(1//(timestep*fps))-1))
+        self.fps = 1/(self.timestep*(self.skips+1))
         self.data = np.zeros(
             [size, self.height, self.width, 4],
             dtype=np.uint8
         )
-        self.iteration = 0
 
-    def record(self, step):
+    def record(self, iteration):
         """Record camera"""
-        if not step % self.skips:
-            sample = step//self.skips-1
+        if not iteration % (self.skips+1):
+            sample = iteration if not self.skips else iteration//(self.skips+1)
             self.update_yaw()
             self.update_target_pos()
             self.data[sample, :, :] = pybullet.getCameraImage(
@@ -123,7 +131,7 @@ class CameraRecord(CameraTarget):
                     roll=0,
                     upAxisIndex=2
                 ),
-                projectionMatrix = pybullet.computeProjectionMatrixFOV(
+                projectionMatrix=pybullet.computeProjectionMatrixFOV(
                     fov=60,
                     aspect=self.width/self.height,
                     nearVal=0.1,
@@ -132,17 +140,54 @@ class CameraRecord(CameraTarget):
                 renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
                 flags=pybullet.ER_NO_SEGMENTATION_MASK
             )[2]
-            self.iteration += 1
 
-    def save(self, filename='video.avi'):
+    def save(self, filename='video.avi', iteration=None, writer='ffmpeg'):
         """Save recording"""
-        pylog.debug('Recording video to {}'.format(filename))
-        import cv2
-        writer = cv2.VideoWriter(
-            filename,
-            cv2.VideoWriter_fourcc(*'MJPG'),
-            self.fps,
-            (self.width, self.height)
+        data = (
+            self.data[:iteration//(self.skips+1)]
+            if iteration is not None
+            else self.data
         )
-        for image in self.data[:self.iteration]:
-            writer.write(image)
+        ffmpegwriter = manimation.writers[writer]
+        pylog.debug(
+            'Recording video to {} with {} (fps={}, skips={})'.format(
+                filename,
+                writer,
+                self.fps,
+                self.skips,
+            )
+        )
+        metadata = dict(
+            title='FARMS simulation',
+            artist='FARMS',
+            comment='FARMS simulation'
+        )
+        writer = ffmpegwriter(fps=self.fps, metadata=metadata)
+        fig = plt.figure("Recording", figsize=(10, 10*self.height/self.width))
+        fig_ax = plt.gca()
+        ims = None
+        with writer.saving(fig, filename, dpi=300):
+            for frame in tqdm(data):
+                ims = render_matplotlib_image(fig_ax, frame, ims=ims)
+                writer.grab_frame()
+        plt.close(fig)
+
+
+def render_matplotlib_image(fig_ax, img, ims=None, cbar_label='', clim=None):
+    """Render matplotlib image"""
+    if ims is None:
+        ims = plt.imshow(img)
+        fig_ax.get_xaxis().set_visible(False)
+        fig_ax.get_yaxis().set_visible(False)
+        fig_ax.set_aspect(aspect=1)
+        if cbar_label:
+            divider = make_axes_locatable(fig_ax)
+            cax = divider.append_axes("right", size="5%", pad=0.1)
+            cbar = plt.colorbar(ims, cax=cax)
+            cbar.set_label(cbar_label, rotation=90)
+        if clim:
+            plt.clim(clim)
+        plt.tight_layout()
+    else:
+        ims.set_data(img)
+    return ims

@@ -52,17 +52,20 @@ class Interfaces:
         #     timestep=timestep,
         #     motion_filter=1e-1
         # )
-        skips = kwargs.pop('skips', 1)
         self.video = CameraRecord(
+            timestep=simulation_options.timestep,
             target_identity=target_identity,
             size=simulation_options.n_iterations,
-            timestep=simulation_options.timestep,
-            fps=1./(skips*simulation_options.timestep),
+            fps=simulation_options.fps,
             pitch=kwargs.pop('pitch', simulation_options.video_pitch),
             yaw=kwargs.pop('yaw', simulation_options.video_yaw),
-            skips=skips,
-            motion_filter=2*skips*simulation_options.timestep,
-            distance=simulation_options.video_distance
+            yaw_speed=(
+                1000
+                if kwargs.pop('rotating_camera', False)
+                else 0
+            ),
+            motion_filter=kwargs.pop('motion_filter', 0.1),
+            distance=simulation_options.video_distance,
         )
 
     def init_debug(self, animat_options):
