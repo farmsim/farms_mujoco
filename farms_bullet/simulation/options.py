@@ -1,6 +1,5 @@
 """Simulation options"""
 
-import yaml
 from farms_data.options import Options
 from farms_sdf.units import SimulationUnitScaling
 from .parse_args import parse_args
@@ -34,12 +33,8 @@ class SimulationOptions(Options):
         self.video_pitch = kwargs.pop('video_pitch', -45)
         self.video_distance = kwargs.pop('video_distance', 1)
         self.headless = kwargs.pop('headless', False)
-        self.frequency = kwargs.pop('frequency', 1)
-        self.plot = kwargs.pop('plot', True)
-        self.log_path = kwargs.pop('log_path', False)
-        self.log_extension = kwargs.pop('log_extension', 'npy')
-        self.arena = kwargs.pop('arena', 'floor')  # 'water'
         self.gravity = kwargs.pop('gravity', [0, 0, -9.81])
+        assert not kwargs, kwargs
 
     def duration(self):
         """Simulation duraiton"""
@@ -55,64 +50,10 @@ class SimulationOptions(Options):
             n_iterations=kwargs.pop('duration', int(clargs.duration/timestep)),
             n_solver_iters=kwargs.pop('n_solver_iters', clargs.n_solver_iters),
             free_camera=kwargs.pop('free_camera', clargs.free_camera),
-            rotating_camera=kwargs.pop(
-                'rotating_camera',
-                clargs.rotating_camera
-            ),
+            rotating_camera=kwargs.pop('rotating_camera', clargs.rotating_camera),
             top_camera=kwargs.pop('top_camera', clargs.top_camera),
             fast=kwargs.pop('fast', clargs.fast),
             record=kwargs.pop('record', clargs.record),
             headless=kwargs.pop('headless', clargs.headless),
-            plot=kwargs.pop('plot', clargs.plot),
-            log_path=kwargs.pop('log_path', clargs.log_path),
-            log_extension=kwargs.pop('log_extension', clargs.log_extension),
-            **kwargs
+            **kwargs,
         )
-
-    # def frequency(self):
-    #     """Model frequency"""
-    #     return self['frequency']
-
-    # def timestep(self):
-    #     """Simulation timestep"""
-    #     return self['timestep']
-
-    # def duration(self):
-    #     """Simulation duration"""
-    #     return self['duration']
-
-    # def free_camera(self):
-    #     """Use a free camera during simulation"""
-    #     return self['free_camera']
-
-    # def rotating_camera(self):
-    #     """Use a rotating camera during simulation"""
-    #     return self['rotating_camera']
-
-    # def top_camera(self):
-    #     """Use a top view camera during simulation"""
-    #     return self['top_camera']
-
-    # def fast(self):
-    #     """Disable real-time simulation and run as fast as possible"""
-    #     return self['fast']
-
-    # def record(self):
-    #     """Record simulation to video"""
-    #     return self['record']
-
-    # def headless(self):
-    #     """Headless simulation instead of using GUI"""
-    #     return self['headless']
-
-    # def plot(self):
-    #     """Plot at end of experiment for results analysis"""
-    #     return self['plot']
-
-    # def log_path(self):
-    #     """Log at end of experiment for results analysis"""
-    #     return self['log_path']
-
-    # def log_extension(self):
-    #     """Logs files extention"""
-    #     return self['log_extension']

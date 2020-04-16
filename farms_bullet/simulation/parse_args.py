@@ -69,28 +69,6 @@ def parse_args():
         default=False,
         help='Headless mode instead of using GUI'
     )
-    parser.add_argument(
-        '--no_plot',
-        action='store_false',
-        dest='plot',
-        default=True,
-        help='Plot at end of experiment for results analysis'
-    )
-    parser.add_argument(
-        '-l', '--log',
-        type=str,
-        dest='log_path',
-        default=False,
-        help='Log data to path at end of experiment for results analysis'
-    )
-    parser.add_argument(
-        '--log_extension',
-        type=str,
-        dest='log_extension',
-        default='npy',
-        choices=['npy', 'txt', 'csv'],
-        help='Log data to path at end of experiment for results analysis'
-    )
     # return parser.parse_args()
     args, _ = parser.parse_known_args()
     return args
