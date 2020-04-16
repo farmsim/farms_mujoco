@@ -63,6 +63,13 @@ def parse_args():
         help='Record video'
     )
     parser.add_argument(
+        '--fps',
+        type=int,
+        dest='fps',
+        default=30,
+        help='Video recording frames per second'
+    )
+    parser.add_argument(
         '--headless',
         action='store_true',
         dest='headless',
