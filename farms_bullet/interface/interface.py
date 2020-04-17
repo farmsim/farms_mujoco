@@ -39,19 +39,7 @@ class Interfaces:
         )
 
     def init_video(self, target_identity, simulation_options, **kwargs):
-        """Init video"""
-        # Video recording
-        # self.video = CameraRecord(
-        #     target_identity=target_identity,
-        #     size=size,
-        #     fps=kwargs.pop('fps', 40),
-        #     yaw=kwargs.pop('yaw', 0),
-        #     yaw_speed=360/10 if kwargs.pop('rotating_camera', False) else 0,
-        #     pitch=-89 if kwargs.pop('top_camera', False) else -45,
-        #     distance=1,
-        #     timestep=timestep,
-        #     motion_filter=1e-1
-        # )
+        """Initialise video recording"""
         self.video = CameraRecord(
             timestep=simulation_options.timestep,
             target_identity=target_identity,
@@ -64,7 +52,7 @@ class Interfaces:
                 if kwargs.pop('rotating_camera', False)
                 else 0
             ),
-            motion_filter=kwargs.pop('motion_filter', 0.1),
+            motion_filter=kwargs.pop('motion_filter', 1e-1),
             distance=simulation_options.video_distance,
         )
 
@@ -72,9 +60,6 @@ class Interfaces:
         """Initialise debug"""
         # User parameters
         self.user_params = UserParameters(animat_options)
-
-        # # Debug info
-        # test_debug_info()
 
 
 class DebugParameter:
@@ -131,40 +116,16 @@ class ParameterPlay(DebugParameter):
     """Play/pause parameter"""
 
     def __init__(self):
-        super(ParameterPlay, self).__init__('Play', 1, 0, 1)
+        super(ParameterPlay, self).__init__('Play/Pause', 0, 0, -1)
         self.value = True
+        self.previous_value = 0
 
     def update(self):
         """Update"""
-        self.value = self.get_value() > 0.5
-
-
-# class ParameterGait(DebugParameter):
-#     """Gait control"""
-
-#     def __init__(self, gait):
-#         value = 0 if gait == 'standing' else 2 if gait == 'swimming' else 1
-#         super(ParameterGait, self).__init__('Gait', value, 0, 2)
-#         self.value = gait
-#         self.changed = False
-
-#     def update(self):
-#         """Update"""
-#         previous_value = self.value
-#         value = self.get_value()
-#         self.value = (
-#             'standing'
-#             if value < 0.5
-#             else 'walking'
-#             if 0.5 < value < 1.5
-#             else 'swimming'
-#         )
-#         self.changed = (self.value != previous_value)
-#         if self.changed:
-#             pylog.debug('Gait changed ({} > {})'.format(
-#                 previous_value,
-#                 self.value
-#             ))
+        value = self.get_value()
+        if value != self.previous_value:
+            self.value = not self.value
+            self.previous_value = value
 
 
 class UserParameters(dict):
@@ -206,16 +167,6 @@ class UserParameters(dict):
     def zoom(self):
         """Camera zoom"""
         return self['zoom']
-
-    # @property
-    # def gait(self):
-    #     """Gait"""
-    #     return self['gait']
-
-    # @property
-    # def frequency(self):
-    #     """Frequency"""
-    #     return self['frequency']
 
     def body_offset(self):
         """Body offset"""
