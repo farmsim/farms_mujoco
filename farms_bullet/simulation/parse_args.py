@@ -70,6 +70,27 @@ def parse_args():
         help='Video recording frames per second'
     )
     parser.add_argument(
+        '--pitch',
+        type=float,
+        dest='video_pitch',
+        default=-30,
+        help='Camera pitch'
+    )
+    parser.add_argument(
+        '--yaw',
+        type=float,
+        dest='video_yaw',
+        default=0,
+        help='Camera yaw'
+    )
+    parser.add_argument(
+        '--distance',
+        type=float,
+        dest='video_distance',
+        default=1,
+        help='Camera distance'
+    )
+    parser.add_argument(
         '--headless',
         action='store_true',
         dest='headless',

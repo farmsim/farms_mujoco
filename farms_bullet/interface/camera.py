@@ -17,13 +17,13 @@ class Camera:
     def __init__(self, timestep, target_identity=None, **kwargs):
         super(Camera, self).__init__()
         self.target = target_identity
-        cam_info = self.get_camera()
         self.timestep = timestep
-        self.motion_filter = kwargs.pop('motion_filter', 2*timestep)
-        self.yaw = kwargs.pop('yaw', cam_info[8])
+        self.yaw = kwargs.pop('yaw')
+        self.pitch = kwargs.pop('pitch')
+        self.distance = kwargs.pop('distance')
         self.yaw_speed = kwargs.pop('yaw_speed', 0)
-        self.pitch = kwargs.pop('pitch', cam_info[9])
-        self.distance = kwargs.pop('distance', cam_info[10])
+        self.motion_filter = kwargs.pop('motion_filter', 2*timestep)
+        assert not kwargs, kwargs
 
     @staticmethod
     def get_camera():
@@ -135,7 +135,7 @@ class CameraRecord(CameraTarget):
                     fov=60,
                     aspect=self.width/self.height,
                     nearVal=0.1,
-                    farVal=5
+                    farVal=10
                 ),
                 renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
                 flags=pybullet.ER_NO_SEGMENTATION_MASK
@@ -163,10 +163,11 @@ class CameraRecord(CameraTarget):
             comment='FARMS simulation'
         )
         writer = ffmpegwriter(fps=self.fps, metadata=metadata)
-        fig = plt.figure("Recording", figsize=(10, 10*self.height/self.width))
+        size = 10
+        fig = plt.figure("Recording", figsize=(size, size*self.height/self.width))
         fig_ax = plt.gca()
         ims = None
-        with writer.saving(fig, filename, dpi=300):
+        with writer.saving(fig, filename, dpi=self.width/size):
             for frame in tqdm(data):
                 ims = render_matplotlib_image(fig_ax, frame, ims=ims)
                 writer.grab_frame()

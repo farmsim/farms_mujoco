@@ -55,6 +55,7 @@ class Interfaces:
             motion_filter=kwargs.pop('motion_filter', 1e-1),
             distance=simulation_options.video_distance,
         )
+        assert not kwargs, kwargs
 
     def init_debug(self, animat_options):
         """Initialise debug"""

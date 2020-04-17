@@ -56,6 +56,9 @@ class SimulationOptions(Options):
             fast=kwargs.pop('fast', clargs.fast),
             record=kwargs.pop('record', clargs.record),
             fps=kwargs.pop('fps', clargs.fps),
+            video_yaw=kwargs.pop('video_yaw', clargs.video_yaw),
+            video_pitch=kwargs.pop('video_pitch', clargs.video_pitch),
+            video_distance=kwargs.pop('video_distance', clargs.video_distance),
             headless=kwargs.pop('headless', clargs.headless),
             **kwargs,
         )
