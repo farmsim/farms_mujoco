@@ -132,25 +132,11 @@ class ParameterPlay(DebugParameter):
 class UserParameters(dict):
     """Parameters control"""
 
-    def __init__(self, options):
+    def __init__(self):
         super(UserParameters, self).__init__()
-        lim = np.pi/8
         self['play'] = ParameterPlay()
         self['rtl'] = DebugParameter('Real-time limiter', 1, 1e-3, 3)
         self['zoom'] = DebugParameter('Zoom', 1, 0, 1)
-        # self['gait'] = ParameterGait(gait)
-        # self['frequency'] = DebugParameter('Frequency', frequency, 0, 5)
-        self['body_offset'] = DebugParameter('Body offset', 0, -lim, lim)
-        self['drive_speed'] = DebugParameter(
-            'Drive speed',
-            options.control.drives.forward,
-            0.9, 5.1
-        )
-        self['drive_turn'] = DebugParameter(
-            'Drive turn',
-            options.control.drives.turning,
-            -0.2, 0.2
-        )
 
     def update(self):
         """Update parameters"""
@@ -168,15 +154,3 @@ class UserParameters(dict):
     def zoom(self):
         """Camera zoom"""
         return self['zoom']
-
-    def body_offset(self):
-        """Body offset"""
-        return self['body_offset']
-
-    def drive_speed(self):
-        """Drive speed"""
-        return self['drive_speed']
-
-    def drive_turn(self):
-        """Drive turn"""
-        return self['drive_turn']
