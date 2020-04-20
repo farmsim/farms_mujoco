@@ -164,26 +164,26 @@ class Simulation:
                 if pbar is not None:
                     pbar.update(1)
 
-    def pre_step(self, sim_step):
+    def pre_step(self, iteration):
         """Pre-step
 
         Returns bool
 
         """
 
-    def step(self, sim_step):
+    def step(self, iteration):
         """Step function"""
 
-    def control_step(self, sim_step):
+    def control_step(self, iteration):
         """Physics step"""
         control_models(
-            iteration=sim_step,
+            iteration=iteration,
             models=self.models,
             seconds=self.options.units.seconds,
             torques=self.options.units.torques,
         )
 
-    def post_step(self, sim_step):
+    def post_step(self, iteration):
         """Post-step"""
 
     def end(self):

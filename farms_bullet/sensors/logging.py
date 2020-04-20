@@ -535,9 +535,9 @@ class SensorsLogger(dict):
             for sensor in self._sensors.values()
         })
 
-    def update_logs(self, sim_step):
+    def update_logs(self, iteration):
         """Update sensors logs"""
-        self._sensors.update(sim_step)
+        self._sensors.update(iteration)
 
     def plot_all(self, times):
         """Plot all sensors logs"""
