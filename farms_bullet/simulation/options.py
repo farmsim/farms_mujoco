@@ -48,7 +48,7 @@ class SimulationOptions(Options):
         timestep = kwargs.pop('timestep', clargs.timestep)
         return cls(
             timestep=timestep,
-            n_iterations=kwargs.pop('duration', int(clargs.duration/timestep)),
+            n_iterations=kwargs.pop('n_iterations', int(clargs.duration/timestep)),
             n_solver_iters=kwargs.pop('n_solver_iters', clargs.n_solver_iters),
             free_camera=kwargs.pop('free_camera', clargs.free_camera),
             rotating_camera=kwargs.pop('rotating_camera', clargs.rotating_camera),
