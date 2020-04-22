@@ -1,6 +1,6 @@
 """Cython sensors"""
 
-from farms_amphibious.data.array cimport NetworkArray2D, NetworkArray3D
+from farms_amphibious.data.array cimport DoubleArray2D, DoubleArray3D
 
 
 cdef class Sensors(dict):
@@ -8,7 +8,7 @@ cdef class Sensors(dict):
     pass
 
 
-cdef class ContactsSensors(NetworkArray3D):
+cdef class ContactsSensors(DoubleArray3D):
     """Model sensors"""
     cdef public unsigned int [:] animat_ids
     cdef public int [:] animat_links
@@ -28,7 +28,7 @@ cdef class ContactsSensors(NetworkArray3D):
     )
 
 
-cdef class LinksStatesSensor(NetworkArray3D):
+cdef class LinksStatesSensor(DoubleArray3D):
     """Links states sensor"""
 
     cdef public int animat

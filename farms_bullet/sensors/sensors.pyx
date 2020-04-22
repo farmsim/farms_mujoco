@@ -6,7 +6,7 @@ cimport numpy as np
 import pybullet
 
 
-from farms_amphibious.data.array import NetworkArray3D
+from farms_amphibious.data.array import DoubleArray3D
 
 
 class Sensor:
@@ -19,7 +19,7 @@ class Sensor:
         """Update"""
 
 
-cdef class ContactsSensors(NetworkArray3D):
+cdef class ContactsSensors(DoubleArray3D):
     """Model sensors"""
 
     def __init__(self, array, animat_ids, animat_links, newtons=1):
@@ -149,7 +149,7 @@ class ContactSensor(Sensor):
         ) if self._contacts else np.zeros(6)
 
 
-class JointsStatesSensor(NetworkArray3D):
+class JointsStatesSensor(DoubleArray3D):
     """Joint state sensor"""
 
     def __init__(self, array, model_id, joints, units, enable_ft=False):
@@ -193,7 +193,7 @@ class JointsStatesSensor(NetworkArray3D):
         ])
 
 
-cdef class LinksStatesSensor(NetworkArray3D):
+cdef class LinksStatesSensor(DoubleArray3D):
     """Links states sensor
 
     links is an array of size (N, 3) where the 3 values are:
