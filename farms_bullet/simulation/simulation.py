@@ -141,7 +141,7 @@ class Simulation:
                 break
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
-                self.control_step(self.iteration)
+                self.control(self.iteration)
                 pybullet.stepSimulation()
                 self.iteration += 1
                 self.post_step(self.iteration)
@@ -156,7 +156,7 @@ class Simulation:
                 break
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
-                self.control_step(self.iteration)
+                self.control(self.iteration)
                 pybullet.stepSimulation()
                 self.iteration += 1
                 self.post_step(self.iteration)
@@ -174,12 +174,11 @@ class Simulation:
     def step(self, iteration):
         """Step function"""
 
-    def control_step(self, iteration):
+    def control(self, iteration):
         """Physics step"""
         control_models(
             iteration=iteration,
             models=self.models,
-            seconds=self.options.units.seconds,
             torques=self.options.units.torques,
         )
 
