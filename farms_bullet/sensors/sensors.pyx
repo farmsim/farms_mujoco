@@ -6,9 +6,6 @@ cimport numpy as np
 import pybullet
 
 
-from farms_amphibious.data.array import DoubleArray3D
-
-
 class Sensor:
     """Sensor base class for simulation models"""
     def __init__(self, shape):

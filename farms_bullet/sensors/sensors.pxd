@@ -1,6 +1,6 @@
 """Cython sensors"""
 
-from farms_amphibious.data.array cimport DoubleArray2D, DoubleArray3D
+from ..data.array cimport DoubleArray3D
 
 
 cdef class Sensors(dict):
