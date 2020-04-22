@@ -99,7 +99,7 @@ class UserCamera(CameraTarget):
 class CameraRecord(CameraTarget):
     """Camera recording"""
 
-    def __init__(self, timestep, target_identity, size, fps, **kwargs):
+    def __init__(self, timestep, target_identity, n_iterations, fps, **kwargs):
         super(CameraRecord, self).__init__(
             target_identity=target_identity,
             timestep=timestep,
@@ -110,7 +110,7 @@ class CameraRecord(CameraTarget):
         self.skips = kwargs.pop('skips', max(0, int(1//(timestep*fps))-1))
         self.fps = 1/(self.timestep*(self.skips+1))
         self.data = np.zeros(
-            [size, self.height, self.width, 4],
+            [n_iterations//(self.skips+1)+1, self.height, self.width, 3],
             dtype=np.uint8
         )
 
@@ -120,7 +120,7 @@ class CameraRecord(CameraTarget):
             sample = iteration if not self.skips else iteration//(self.skips+1)
             self.update_yaw()
             self.update_target_pos()
-            self.data[sample, :, :] = pybullet.getCameraImage(
+            self.data[sample, :, :, :] = pybullet.getCameraImage(
                 width=self.width,
                 height=self.height,
                 viewMatrix=pybullet.computeViewMatrixFromYawPitchRoll(
@@ -139,7 +139,7 @@ class CameraRecord(CameraTarget):
                 ),
                 renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
                 flags=pybullet.ER_NO_SEGMENTATION_MASK
-            )[2]
+            )[2][:, :, :3]
 
     def save(self, filename='video.avi', iteration=None, writer='ffmpeg'):
         """Save recording"""
@@ -164,7 +164,10 @@ class CameraRecord(CameraTarget):
         )
         writer = ffmpegwriter(fps=self.fps, metadata=metadata)
         size = 10
-        fig = plt.figure("Recording", figsize=(size, size*self.height/self.width))
+        fig = plt.figure(
+            'Recording',
+            figsize=(size, size*self.height/self.width)
+        )
         fig_ax = plt.gca()
         ims = None
         with writer.saving(fig, filename, dpi=self.width/size):

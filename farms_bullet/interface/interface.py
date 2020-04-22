@@ -43,7 +43,7 @@ class Interfaces:
         self.video = CameraRecord(
             timestep=simulation_options.timestep,
             target_identity=target_identity,
-            size=simulation_options.n_iterations,
+            n_iterations=simulation_options.n_iterations,
             fps=simulation_options.fps,
             pitch=kwargs.pop('pitch', simulation_options.video_pitch),
             yaw=kwargs.pop('yaw', simulation_options.video_yaw),
