@@ -160,6 +160,7 @@ class SimulationOptions(Options):
         self.video_pitch = kwargs.pop('video_pitch', -45)
         self.video_distance = kwargs.pop('video_distance', 1)
         self.headless = kwargs.pop('headless', False)
+        self.opengl2 = kwargs.pop('opengl2', False)
         self.gravity = kwargs.pop('gravity', [0, 0, -9.81])
         assert not kwargs, kwargs
 
@@ -186,5 +187,6 @@ class SimulationOptions(Options):
             video_pitch=kwargs.pop('video_pitch', clargs.video_pitch),
             video_distance=kwargs.pop('video_distance', clargs.video_distance),
             headless=kwargs.pop('headless', clargs.headless),
+            opengl2=kwargs.pop('opengl2', clargs.opengl2),
             **kwargs,
         )

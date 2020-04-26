@@ -10,7 +10,7 @@ import pybullet_data
 import farms_pylog as pylog
 
 
-def init_engine(headless=False):
+def init_engine(headless=False, opengl2=False):
     """Initialise engine"""
     pylog.debug('Pybullet version: {}'.format(pybullet.getAPIVersion()))
     background_color = 0.9*np.ones(3)
@@ -22,7 +22,9 @@ def init_engine(headless=False):
             '--background_color_red={}'
             ' --background_color_green={}'
             ' --background_color_blue={}'
-        ).format(*background_color)
+        ).format(*background_color) + (
+            ' --opengl2' if opengl2 else ''
+        )
     )
     pybullet_path = pybullet_data.getDataPath()
     pylog.debug('Adding pybullet data path {}'.format(pybullet_path))

@@ -43,7 +43,7 @@ class Simulation:
 
         # Initialise engine
         pylog.debug('Initialising physics engine')
-        init_engine(self.options.headless)
+        init_engine(self.options.headless, self.options.opengl2)
         if not self.options.headless:
             pylog.debug('Disabling rendering')
             rendering(0)
