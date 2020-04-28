@@ -166,7 +166,7 @@ class SimulationOptions(Options):
 
     def duration(self):
         """Simulation duraiton"""
-        return self.n_iterations * self.timestep
+        return self.n_iterations*self.timestep
 
     @classmethod
     def with_clargs(cls, **kwargs):

@@ -51,6 +51,30 @@ class SimulationModel:
         return pybullet.loadURDF(urdf, **kwargs)
 
 
+class GroundModel(SimulationModel):
+    """DescriptionFormatModel"""
+
+    def __init__(self, position=None, orientation=None):
+        super(GroundModel, self).__init__()
+        self.position = position
+        self.orientation = orientation
+        self.plane = None
+
+    def spawn(self):
+        """Spawn"""
+        self.plane = pybullet.createCollisionShape(pybullet.GEOM_PLANE)
+        options = {}
+        if self.position is not None:
+            options['basePosition'] = self.position
+        if self.orientation is not None:
+            options['baseOrientation'] = self.orientation
+        self._identity = pybullet.createMultiBody(
+            baseMass=0,
+            baseCollisionShapeIndex=self.plane,
+            **options,
+        )
+
+
 class DescriptionFormatModel(SimulationModel):
     """DescriptionFormatModel"""
 

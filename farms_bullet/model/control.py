@@ -66,7 +66,7 @@ class ModelController:
         self.use_position = use_position
         self.use_torque = use_torque
 
-    def step(self):
+    def step(self, iteration, time, timestep):
         """Step"""
 
     def positions(self, iteration):
