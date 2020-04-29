@@ -24,11 +24,14 @@ def viscous_forces(
     )
     use_buoyancy = kwargs.pop('buoyancy', True)
     buoyancy = np.zeros(3)
-    for link_i in links:
+    surface = kwargs.pop('surface', 0)
+    densities = kwargs.pop('densities', np.repeat(0.5, len(links)))
+    heights = kwargs.pop('heights', np.repeat(0.03, len(links)))
+    for link_i, link in enumerate(links):
         ori, lin_velocity, ang_velocity = (
-            data_gps.urdf_orientation(iteration, link_i),
-            data_gps.com_lin_velocity(iteration, link_i),
-            data_gps.com_ang_velocity(iteration, link_i)
+            data_gps.urdf_orientation(iteration, link),
+            data_gps.com_lin_velocity(iteration, link),
+            data_gps.com_ang_velocity(iteration, link)
         )
         if not any(ori):
             continue
@@ -42,62 +45,19 @@ def viscous_forces(
         if use_buoyancy:
             buoyancy = np.dot(
                 link_orientation_inv,
-                [0, 0, 10*masses[link_i]*gravity*(
-                    0.1+data_gps.com_position(iteration, link_i)[2]
-                )]
+                [
+                    0, 0, -masses[link]*gravity/densities[link_i]*min(
+                        (surface-data_gps.com_position(iteration, link)[2])
+                        /heights[link_i],
+                        1,
+                    )
+                ]
             )
-        data_hydrodynamics[iteration, link_i, :3] = (
+        data_hydrodynamics[iteration, link, :3] = (
             np.sign(link_velocity)*force_coefficients*link_velocity**2
             + buoyancy
         )
-        data_hydrodynamics[iteration, link_i, 3:6] = (
-            np.sign(link_angular_velocity)*torque_coefficients*link_angular_velocity**2
-        )
-
-
-def resistive_forces(
-        iteration,
-        data_gps,
-        data_hydrodynamics,
-        links,
-        masses,
-        **kwargs
-):
-    """Resistive swimming"""
-    gravity = kwargs.pop('gravity', -9.81)
-    force_coefficients, torque_coefficients = kwargs.pop(
-        'coefficients',
-        [np.array([-1e-1, -1e0, -1e0]), np.array([-1e-2, -1e-2, -1e-2])]
-    )
-    use_buoyancy = kwargs.pop('buoyancy', True)
-    buoyancy = np.zeros(3)
-    for link_i in links:
-        ori, lin_velocity, ang_velocity = (
-            data_gps.urdf_orientation(iteration, link_i),
-            data_gps.com_lin_velocity(iteration, link_i),
-            data_gps.com_ang_velocity(iteration, link_i)
-        )
-        if not any(ori):
-            continue
-        # Compute velocity in local frame
-        link_orientation_inv = np.array(
-            pybullet.getMatrixFromQuaternion(ori)
-        ).reshape([3, 3]).T
-        link_velocity = np.dot(link_orientation_inv, lin_velocity)
-        link_angular_velocity = np.dot(link_orientation_inv, ang_velocity)
-        # Data
-        if use_buoyancy:
-            buoyancy = np.dot(
-                link_orientation_inv,
-                [0, 0, 10*masses[link_i]*gravity*(
-                    0.1+data_gps.com_position(iteration, link_i)[2]
-                )]
-            )
-        data_hydrodynamics[iteration, link_i, :3] = (
-            np.sign(link_velocity)*force_coefficients*link_velocity**2
-            + buoyancy
-        )
-        data_hydrodynamics[iteration, link_i, 3:6] = (
+        data_hydrodynamics[iteration, link, 3:6] = (
             np.sign(link_angular_velocity)*torque_coefficients*link_angular_velocity**2
         )
 
@@ -120,7 +80,7 @@ def swimming_motion(
                 np.array(data_hydrodynamics[iteration, link_i, :3])
                 *units.newtons
             ),
-            posObj=[0, 0, 0],
+            posObj=[0, 0, 0],  # pybullet.getDynamicsInfo(model, link)[3]
             flags=pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
         )
         pybullet.applyExternalTorque(
