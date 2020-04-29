@@ -8,7 +8,7 @@ import farms_pylog as pylog
 from ..simulation.options import SimulationUnitScaling
 
 
-def viscous_forces(
+def drag_forces(
         iteration,
         data_gps,
         data_hydrodynamics,
@@ -16,7 +16,7 @@ def viscous_forces(
         masses,
         **kwargs
 ):
-    """Viscous swimming"""
+    """Drag swimming"""
     gravity = kwargs.pop('gravity', -9.81)
     force_coefficients, torque_coefficients = kwargs.pop(
         'coefficients',
