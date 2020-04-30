@@ -3,6 +3,8 @@
 
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
+from setuptools import dist
+dist.Distribution().fetch_build_eggs(['Cython>=0.15.1'])
 from Cython.Build import cythonize
 import numpy as np
 
