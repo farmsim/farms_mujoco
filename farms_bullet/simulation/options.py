@@ -162,6 +162,7 @@ class SimulationOptions(Options):
         self.headless = kwargs.pop('headless', False)
         self.opengl2 = kwargs.pop('opengl2', False)
         self.gravity = kwargs.pop('gravity', [0, 0, -9.81])
+        self.play = kwargs.pop('play', True)
         assert not kwargs, kwargs
 
     def duration(self):

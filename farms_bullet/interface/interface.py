@@ -57,10 +57,10 @@ class Interfaces:
         )
         assert not kwargs, kwargs
 
-    def init_debug(self, animat_options):
+    def init_debug(self, simulation_options):
         """Initialise debug"""
         # User parameters
-        self.user_params = UserParameters(animat_options)
+        self.user_params = UserParameters(simulation_options)
 
 
 class DebugParameter:
@@ -116,11 +116,18 @@ class DebugParameter:
 class ParameterPlay(DebugParameter):
     """Play/pause parameter"""
 
-    def __init__(self):
+    def __init__(self, initial_value=True):
         super(ParameterPlay, self).__init__('Play/Pause', 0, 0, -1)
-        self.value = True
+        """
+        self.value = True or False
+        self.previous_value : keeps track of number of times self.value
+                            has been changed up till now
+        self.get_value(): returns the number of times play/plause button
+                            has been pressed
+        """
+        self.value = initial_value
         self.previous_value = 0
-
+    
     def update(self):
         """Update"""
         value = self.get_value()
@@ -132,9 +139,9 @@ class ParameterPlay(DebugParameter):
 class UserParameters(dict):
     """Parameters control"""
 
-    def __init__(self):
+    def __init__(self, options):
         super(UserParameters, self).__init__()
-        self['play'] = ParameterPlay()
+        self['play'] = ParameterPlay(initial_value=options.play)
         self['rtl'] = DebugParameter('Real-time limiter', 1, 1e-3, 3)
         self['zoom'] = DebugParameter('Zoom', 1, 0, 1)
 
