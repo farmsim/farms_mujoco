@@ -32,7 +32,7 @@ def reset_controllers(identity):
     )
 
 
-def control_models(iteration, models, torques, max_torque=100):
+def control_models(iteration, models, torques):
     """Control"""
     for model in models:
         if model.controller is None:
@@ -46,14 +46,18 @@ def control_models(iteration, models, torques, max_torque=100):
                 model.joints_identities(),
                 pybullet.POSITION_CONTROL,
                 targetPositions=positions,
-                forces=np.repeat(max_torque, len(positions))
+                forces=model.controller.max_torques*torques,
             )
         if model.controller.use_torque:
             pybullet.setJointMotorControlArray(
                 model.identity(),
                 model.joints_identities(),
                 pybullet.TORQUE_CONTROL,
-                forces=model.controller.torques(iteration)*torques,
+                forces=np.clip(
+                    model.controller.torques(iteration),
+                    -model.controller.max_torques,
+                    model.controller.max_torques,
+                )*torques,
             )
 
 
