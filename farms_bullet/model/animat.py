@@ -138,12 +138,11 @@ class Animat(SimulationModel):
                 collisionFilterMask=mask
             )
 
-    def set_links_dynamics(self, links, **kwargs):
+    def set_link_dynamics(self, link, **kwargs):
         """Apply motor damping"""
-        for link in links:
-            for key, value in kwargs.items():
-                pybullet.changeDynamics(
-                    bodyUniqueId=self.identity(),
-                    linkIndex=self._links[link],
-                    **{key: value}
-                )
+        for key, value in kwargs.items():
+            pybullet.changeDynamics(
+                bodyUniqueId=self.identity(),
+                linkIndex=self._links[link],
+                **{key: value}
+            )
