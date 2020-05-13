@@ -1,9 +1,8 @@
 """Interface"""
 
-import numpy as np
 import pybullet
-from .camera import UserCamera, CameraRecord
 import farms_pylog as pylog
+from .camera import UserCamera, CameraRecord
 
 
 class Interfaces:
@@ -114,20 +113,21 @@ class DebugParameter:
 
 
 class ParameterPlay(DebugParameter):
-    """Play/pause parameter"""
+    """Play/pause parameter
+
+    self.value:          Boolean
+    self.previous_value: Keeps track of the last measured value
+    self.get_value():    Returns the number of times play/plause button
+                         has been pressed
+    """
 
     def __init__(self, initial_value=True):
-        super(ParameterPlay, self).__init__('Play/Pause', 0, 0, -1)
-        """
-        self.value = True or False
-        self.previous_value : keeps track of number of times self.value
-                            has been changed up till now
-        self.get_value(): returns the number of times play/plause button
-                            has been pressed
-        """
-        self.value = initial_value
         self.previous_value = 0
-    
+        super(ParameterPlay, self).__init__(
+            'Play/Pause', self.previous_value, 0, -1
+        )
+        self.value = initial_value
+
     def update(self):
         """Update"""
         value = self.get_value()
