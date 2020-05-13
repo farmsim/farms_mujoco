@@ -152,6 +152,7 @@ class SimulationOptions(Options):
         self.free_camera = kwargs.pop('free_camera', False)
         self.rotating_camera = kwargs.pop('rotating_camera', False)
         self.top_camera = kwargs.pop('top_camera', False)
+        self.play = kwargs.pop('play', True)
         self.fast = kwargs.pop('fast', False)
         self.record = kwargs.pop('record', False)
         self.fps = kwargs.pop('fps', False)
@@ -180,6 +181,7 @@ class SimulationOptions(Options):
             free_camera=kwargs.pop('free_camera', clargs.free_camera),
             rotating_camera=kwargs.pop('rotating_camera', clargs.rotating_camera),
             top_camera=kwargs.pop('top_camera', clargs.top_camera),
+            play=kwargs.pop('play', not clargs.pause),
             fast=kwargs.pop('fast', clargs.fast),
             record=kwargs.pop('record', clargs.record),
             fps=kwargs.pop('fps', clargs.fps),
