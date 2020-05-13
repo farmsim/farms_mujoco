@@ -49,6 +49,13 @@ def parse_args():
         help='Enable top view camera',
     )
     parser.add_argument(
+        '--pause',
+        action='store_true',
+        dest='pause',
+        default=False,
+        help='Pause simulation at start',
+    )
+    parser.add_argument(
         '--fast',
         action='store_true',
         dest='fast',
