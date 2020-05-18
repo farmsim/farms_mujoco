@@ -2,8 +2,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import deepdish as dd
-from .array import DoubleArray1D
 from .data_cy import (
     SensorsDataCy,
     ContactsArrayCy,
@@ -33,19 +31,43 @@ class SensorsData(SensorsDataCy):
     def from_dict(cls, dictionary):
         """Load data from dictionary"""
         return cls(
-            contacts=ContactsArray(dictionary['contacts']),
-            proprioception=ProprioceptionArray(dictionary['proprioception']),
-            gps=GpsArray(dictionary['gps']),
-            hydrodynamics=HydrodynamicsArray(dictionary['hydrodynamics']),
+            contacts=ContactsArray(
+                array=dictionary['contacts']['array'],
+                names=dictionary['contacts']['names'],
+            ),
+            proprioception=ProprioceptionArray(
+                array=dictionary['proprioception']['array'],
+                names=dictionary['proprioception']['names'],
+            ),
+            gps=GpsArray(
+                array=dictionary['gps']['array'],
+                names=dictionary['gps']['names'],
+            ),
+            hydrodynamics=HydrodynamicsArray(
+                array=dictionary['hydrodynamics']['array'],
+                names=dictionary['hydrodynamics']['names'],
+            ),
         )
 
     def to_dict(self, iteration=None):
         """Convert data to dictionary"""
         return {
-            'contacts': to_array(self.contacts.array, iteration),
-            'proprioception': to_array(self.proprioception.array, iteration),
-            'gps': to_array(self.gps.array, iteration),
-            'hydrodynamics': to_array(self.hydrodynamics.array, iteration),
+            'contacts': {
+                'array': to_array(self.contacts.array, iteration),
+                'names': self.contacts.names,
+            },
+            'proprioception': {
+                'array': to_array(self.proprioception.array, iteration),
+                'names': self.proprioception.names,
+            },
+            'gps': {
+                'array': to_array(self.gps.array, iteration),
+                'names': self.gps.names,
+            },
+            'hydrodynamics': {
+                'array': to_array(self.hydrodynamics.array, iteration),
+                'names': self.hydrodynamics.names,
+            },
         }
 
     def plot(self, times):
@@ -59,16 +81,27 @@ class SensorsData(SensorsDataCy):
 class ContactsArray(ContactsArrayCy):
     """Sensor array"""
 
-    @classmethod
-    def from_parameters(cls, n_iterations, n_contacts):
-        """From parameters"""
-        return cls(np.zeros([n_iterations, n_contacts, 9]))
+    def __init__(self, array, names):
+        super(ContactsArray, self).__init__(array)
+        self.names = names
 
     @classmethod
-    def from_size(cls, n_contacts, n_iterations):
+    def from_names(cls, names, n_iterations):
+        """From names"""
+        n_sensors = len(names)
+        array = np.zeros([n_iterations, n_sensors, 9], dtype=NPDTYPE)
+        return cls(array, names)
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_contacts, names):
+        """From parameters"""
+        return cls(np.zeros([n_iterations, n_contacts, 9]), names)
+
+    @classmethod
+    def from_size(cls, n_contacts, n_iterations, names):
         """From size"""
         contacts = np.zeros([n_iterations, n_contacts, 9], dtype=NPDTYPE)
-        return cls(contacts)
+        return cls(contacts, names)
 
     def reaction(self, iteration, sensor_i):
         """Reaction force"""
@@ -166,16 +199,27 @@ class ContactsArray(ContactsArrayCy):
 class ProprioceptionArray(ProprioceptionArrayCy):
     """Proprioception array"""
 
-    @classmethod
-    def from_size(cls, n_joints, n_iterations):
-        """From size"""
-        proprioception = np.zeros([n_iterations, n_joints, 12], dtype=NPDTYPE)
-        return cls(proprioception)
+    def __init__(self, array, names):
+        super(ProprioceptionArray, self).__init__(array)
+        self.names = names
 
     @classmethod
-    def from_parameters(cls, n_iterations, n_joints):
+    def from_names(cls, names, n_iterations):
+        """From names"""
+        n_sensors = len(names)
+        array = np.zeros([n_iterations, n_sensors, 12], dtype=NPDTYPE)
+        return cls(array, names)
+
+    @classmethod
+    def from_size(cls, n_joints, n_iterations, names):
+        """From size"""
+        proprioception = np.zeros([n_iterations, n_joints, 12], dtype=NPDTYPE)
+        return cls(proprioception, names)
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_joints, names):
         """From parameters"""
-        return cls(np.zeros([n_iterations, n_joints, 12]))
+        return cls(np.zeros([n_iterations, n_joints, 12]), names)
 
     def position(self, iteration, joint_i):
         """Joint position"""
@@ -378,16 +422,27 @@ class ProprioceptionArray(ProprioceptionArrayCy):
 class GpsArray(GpsArrayCy):
     """Gps array"""
 
-    @classmethod
-    def from_size(cls, n_links, n_iterations):
-        """From size"""
-        gps = np.zeros([n_iterations, n_links, 20], dtype=NPDTYPE)
-        return cls(gps)
+    def __init__(self, array, names):
+        super(GpsArray, self).__init__(array)
+        self.names = names
 
     @classmethod
-    def from_parameters(cls, n_iterations, n_links):
+    def from_names(cls, names, n_iterations):
+        """From names"""
+        n_sensors = len(names)
+        array = np.zeros([n_iterations, n_sensors, 20], dtype=NPDTYPE)
+        return cls(array, names)
+
+    @classmethod
+    def from_size(cls, n_links, n_iterations, names):
+        """From size"""
+        gps = np.zeros([n_iterations, n_links, 20], dtype=NPDTYPE)
+        return cls(gps, names)
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_links, names):
         """From parameters"""
-        return cls(np.zeros([n_iterations, n_links, 20]))
+        return cls(np.zeros([n_iterations, n_links, 20]), names)
 
     def com_position(self, iteration, link_i):
         """CoM position of a link"""
@@ -461,16 +516,27 @@ class GpsArray(GpsArrayCy):
 class HydrodynamicsArray(HydrodynamicsArrayCy):
     """Hydrodynamics array"""
 
-    @classmethod
-    def from_size(cls, n_links, n_iterations):
-        """From size"""
-        hydrodynamics = np.zeros([n_iterations, n_links, 6], dtype=NPDTYPE)
-        return cls(hydrodynamics)
+    def __init__(self, array, names):
+        super(HydrodynamicsArray, self).__init__(array)
+        self.names = names
 
     @classmethod
-    def from_parameters(cls, n_iterations, n_links):
+    def from_names(cls, names, n_iterations):
+        """From names"""
+        n_sensors = len(names)
+        array = np.zeros([n_iterations, n_sensors, 6], dtype=NPDTYPE)
+        return cls(array, names)
+
+    @classmethod
+    def from_size(cls, n_links, n_iterations, names):
+        """From size"""
+        hydrodynamics = np.zeros([n_iterations, n_links, 6], dtype=NPDTYPE)
+        return cls(hydrodynamics, names)
+
+    @classmethod
+    def from_parameters(cls, n_iterations, n_links, names):
         """From parameters"""
-        return cls(np.zeros([n_iterations, n_links, 6]))
+        return cls(np.zeros([n_iterations, n_links, 6]), names)
 
     def forces(self):
         """Forces"""
