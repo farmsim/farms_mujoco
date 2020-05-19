@@ -146,3 +146,12 @@ class Animat(SimulationModel):
                 linkIndex=self._links[link],
                 **{key: value}
             )
+
+    def set_joint_dynamics(self, joint, **kwargs):
+        """Apply motor damping"""
+        for key, value in kwargs.items():
+            pybullet.changeDynamics(
+                bodyUniqueId=self.identity(),
+                linkIndex=self._joints[joint],
+                **{key: value}
+            )
