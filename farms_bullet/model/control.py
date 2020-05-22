@@ -1,7 +1,15 @@
 """Control"""
 
+from enum import IntEnum
 import pybullet
 import numpy as np
+
+
+class ControlType(IntEnum):
+    """Control type"""
+    POSITION = 0
+    VELOCITY = 1
+    TORQUE = 2
 
 
 def reset_controllers(identity):
@@ -39,24 +47,35 @@ def control_models(iteration, models, torques):
             continue
         if iteration == 0:
             reset_controllers(model.identity())
-        if model.controller.use_position:
-            positions = model.controller.positions(iteration)
+        controller = model.controller
+        if controller.joints[ControlType.POSITION]:
+            positions = controller.positions(iteration)
             pybullet.setJointMotorControlArray(
-                model.identity(),
-                model.joints_identities(),
-                pybullet.POSITION_CONTROL,
-                targetPositions=positions,
-                forces=model.controller.max_torques*torques,
+                bodyUniqueId=model.identity(),
+                jointIndices=[
+                    model._joints[joint]
+                    for joint in controller.joints[ControlType.POSITION]
+                ],
+                controlMode=pybullet.POSITION_CONTROL,
+                targetPositions=[
+                    positions[joint]
+                    for joint in controller.joints[ControlType.POSITION]
+                ],
+                forces=controller.max_torques[ControlType.POSITION]*torques,
             )
-        if model.controller.use_torque:
+        if controller.joints[ControlType.TORQUE]:
+            print(controller.joints_torque)
             pybullet.setJointMotorControlArray(
-                model.identity(),
-                model.joints_identities(),
-                pybullet.TORQUE_CONTROL,
+                bodyUniqueId=model.identity(),
+                jointIndices=[
+                    model._joints[joint]
+                    for joint in controller.joints[ControlType.TORQUE]
+                ],
+                controlMode=pybullet.TORQUE_CONTROL,
                 forces=np.clip(
-                    model.controller.torques(iteration),
-                    -model.controller.max_torques,
-                    model.controller.max_torques,
+                    controller.torques(iteration),
+                    -controller.max_torques[ControlType.TORQUE],
+                    controller.max_torques[ControlType.TORQUE],
                 )*torques,
             )
 
@@ -64,11 +83,32 @@ def control_models(iteration, models, torques):
 class ModelController:
     """ModelController"""
 
-    def __init__(self, joints, use_position, use_torque):
+    def __init__(self, joints, control_types, max_torques):
         super(ModelController, self).__init__()
-        self.joints = joints  # List of joint names
-        self.use_position = use_position
-        self.use_torque = use_torque
+        self.joints = [
+            [
+                joint
+                for joint in joints
+                if control_types[joint] == control_type
+            ]
+            for control_type in [
+                ControlType.POSITION,
+                ControlType.VELOCITY,
+                ControlType.TORQUE
+            ]
+        ]
+        self.max_torques = [
+            np.array([
+                max_torques[joint]
+                for joint in joints
+                if control_types[joint] == control_type
+            ])
+            for control_type in [
+                ControlType.POSITION,
+                ControlType.VELOCITY,
+                ControlType.TORQUE
+            ]
+        ]
 
     def step(self, iteration, time, timestep):
         """Step"""
@@ -76,14 +116,23 @@ class ModelController:
     def positions(self, iteration):
         """Positions"""
         assert iteration >= 0
-        return np.zeros_like(self.joints)
+        return {
+            'joint_{}'.format(joint_i): 0
+            for joints in self.joints
+        }
 
     def velocities(self, iteration):
         """Velocities"""
         assert iteration >= 0
-        return np.zeros_like(self.joints)
+        return {
+            'joint_{}'.format(joint_i): 0
+            for joints in self.joints
+        }
 
     def torques(self, iteration):
         """Torques"""
         assert iteration >= 0
-        return np.zeros_like(self.joints)
+        return {
+            'joint_{}'.format(joint_i): 0
+            for joints in self.joints
+        }
