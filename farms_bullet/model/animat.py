@@ -124,10 +124,6 @@ class Animat(SimulationModel):
             for link in self._links
         ])
 
-    def get_position(self, link):
-        """Get position"""
-        return pybullet.getLinkState(self.identity(), link)[0]
-
     def set_collisions(self, links, group=0, mask=0):
         """Activate/Deactivate leg collisions"""
         for link in links:
