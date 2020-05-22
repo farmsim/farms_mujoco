@@ -34,4 +34,6 @@ cdef class LinksStatesSensor(DoubleArray3D):
     cdef public int animat
     cdef public object links
     cdef public object units
+    cpdef public object get_base_states(self)
+    cpdef public object get_children_states(self)
     cpdef public void collect(self, unsigned int iteration, object links)
