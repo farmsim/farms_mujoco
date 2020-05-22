@@ -211,6 +211,43 @@ cdef class LinksStatesSensor(DoubleArray3D):
         """Update sensor"""
         self.collect(iteration, self.links)
 
+    cpdef object get_base_states(self):
+        """Get link states"""
+        base_info = pybullet.getBasePositionAndOrientation(self.animat)
+        pos_com = base_info[0]
+        ori_com = base_info[1]
+        transform_loc = (
+            pybullet.getDynamicsInfo(self.animat, -1)[3:5]
+        )
+        transform_inv = pybullet.invertTransform(
+            position=transform_loc[0],
+            orientation=transform_loc[1],
+        )
+        transform_urdf = pybullet.multiplyTransforms(
+            pos_com,
+            ori_com,
+            transform_inv[0],
+            transform_inv[1],
+        )
+        base_velocity = pybullet.getBaseVelocity(self.animat)
+        return (
+            pos_com,
+            ori_com,
+            transform_urdf[0],
+            transform_urdf[1],
+            base_velocity[0],
+            base_velocity[1],
+        )
+
+    cpdef object get_children_states(self):
+        """Get link states"""
+        return pybullet.getLinkStates(
+            self.animat,
+            self.links,
+            computeLinkVelocity=1,
+            computeForwardKinematics=1
+        )
+
     cpdef void collect(self, unsigned int iteration, object links):
         """Collect gps data"""
         cdef int link_id
@@ -224,39 +261,21 @@ cdef class LinksStatesSensor(DoubleArray3D):
         cdef double imeters = 1./self.units.meters
         cdef double ivelocity = 1./self.units.velocity
         cdef double seconds = self.units.seconds
+        states = self.get_children_states()
         for link_i, link_id in enumerate(links):
             # Collect data
             if link_id == -1:
                 # Base link
-                base_info = pybullet.getBasePositionAndOrientation(self.animat)
-                pos_com = base_info[0]
-                ori_com = base_info[1]
-                transform_loc = (
-                    pybullet.getDynamicsInfo(self.animat, link_id)[3:5]
-                )
-                transform_inv = pybullet.invertTransform(
-                    position=transform_loc[0],
-                    orientation=transform_loc[1]
-                )
-                transform_urdf = pybullet.multiplyTransforms(
-                    pos_com,
-                    ori_com,
-                    transform_inv[0],
-                    transform_inv[1]
-                )
-                pos_urdf = transform_urdf[0]
-                ori_urdf = transform_urdf[1]
-                base_velocity = pybullet.getBaseVelocity(self.animat)
-                lin_velocity = base_velocity[0]
-                ang_velocity = base_velocity[1]
+                link_state = self.get_base_states()
+                pos_com = link_state[0]
+                ori_com = link_state[1]
+                pos_urdf = link_state[2]
+                ori_urdf = link_state[3]
+                lin_velocity = link_state[4]
+                ang_velocity = link_state[5]
             else:
                 # Children links
-                link_state = pybullet.getLinkState(
-                    self.animat,
-                    link_id,
-                    computeLinkVelocity=1,
-                    computeForwardKinematics=1
-                )
+                link_state = states[link_i]
                 pos_com = link_state[0]  # Position of CoM
                 ori_com = link_state[1]  # Orientation of CoM
                 pos_urdf = link_state[4]  # Position of URDF frame
