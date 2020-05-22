@@ -155,7 +155,11 @@ class SimulationModels(SimulationModel):
         super(SimulationModels, self).__init__()
         self._models = models
 
+    def __iter__(self):
+        return iter(self._models)
+
     def __getitem__(self, key):
+        assert key < len(self._models)
         return self._models[key]
 
     def spawn(self):
