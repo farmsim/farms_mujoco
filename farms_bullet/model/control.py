@@ -49,7 +49,7 @@ def control_models(iteration, models, torques):
             reset_controllers(model.identity())
         controller = model.controller
         if controller.joints[ControlType.POSITION]:
-            positions = controller.positions(iteration)
+            joints_positions = controller.positions(iteration)
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
@@ -58,13 +58,13 @@ def control_models(iteration, models, torques):
                 ],
                 controlMode=pybullet.POSITION_CONTROL,
                 targetPositions=[
-                    positions[joint]
+                    joints_positions[joint]
                     for joint in controller.joints[ControlType.POSITION]
                 ],
                 forces=controller.max_torques[ControlType.POSITION]*torques,
             )
         if controller.joints[ControlType.TORQUE]:
-            print(controller.joints_torque)
+            joints_torques = controller.torques(iteration)
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
@@ -73,7 +73,10 @@ def control_models(iteration, models, torques):
                 ],
                 controlMode=pybullet.TORQUE_CONTROL,
                 forces=np.clip(
-                    controller.torques(iteration),
+                    [
+                        joints_torques[joint]
+                        for joint in controller.joints[ControlType.TORQUE]
+                    ],
                     -controller.max_torques[ControlType.TORQUE],
                     controller.max_torques[ControlType.TORQUE],
                 )*torques,
