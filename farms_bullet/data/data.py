@@ -31,43 +31,27 @@ class SensorsData(SensorsDataCy):
     def from_dict(cls, dictionary):
         """Load data from dictionary"""
         return cls(
-            contacts=ContactsArray(
-                array=dictionary['contacts']['array'],
-                names=dictionary['contacts']['names'],
+            contacts=ContactsArray.from_dict(
+                dictionary['contacts']
             ),
-            proprioception=ProprioceptionArray(
-                array=dictionary['proprioception']['array'],
-                names=dictionary['proprioception']['names'],
+            proprioception=ProprioceptionArray.from_dict(
+                dictionary['proprioception']
             ),
-            gps=GpsArray(
-                array=dictionary['gps']['array'],
-                names=dictionary['gps']['names'],
+            gps=GpsArray.from_dict(
+                dictionary['gps']
             ),
-            hydrodynamics=HydrodynamicsArray(
-                array=dictionary['hydrodynamics']['array'],
-                names=dictionary['hydrodynamics']['names'],
+            hydrodynamics=HydrodynamicsArray.from_dict(
+                dictionary['hydrodynamics']
             ),
         )
 
     def to_dict(self, iteration=None):
         """Convert data to dictionary"""
         return {
-            'contacts': {
-                'array': to_array(self.contacts.array, iteration),
-                'names': self.contacts.names,
-            },
-            'proprioception': {
-                'array': to_array(self.proprioception.array, iteration),
-                'names': self.proprioception.names,
-            },
-            'gps': {
-                'array': to_array(self.gps.array, iteration),
-                'names': self.gps.names,
-            },
-            'hydrodynamics': {
-                'array': to_array(self.hydrodynamics.array, iteration),
-                'names': self.hydrodynamics.names,
-            },
+            'contacts': self.contacts.to_dict(iteration),
+            'proprioception': self.proprioception.to_dict(iteration),
+            'gps': self.gps.to_dict(iteration),
+            'hydrodynamics': self.hydrodynamics.to_dict(iteration),
         }
 
     def plot(self, times):
@@ -78,12 +62,31 @@ class SensorsData(SensorsDataCy):
         self.hydrodynamics.plot(times)
 
 
-class ContactsArray(ContactsArrayCy):
-    """Sensor array"""
+class SensorData:
+    """SensorData"""
 
     def __init__(self, array, names):
-        super(ContactsArray, self).__init__(array)
+        super(SensorData, self).__init__(array)
         self.names = names
+
+    @classmethod
+    def from_dict(cls, dictionary):
+        """Load data from dictionary"""
+        return cls(
+            array=dictionary['array'],
+            names=dictionary['names'],
+        )
+
+    def to_dict(self, iteration=None):
+        """Convert data to dictionary"""
+        return {
+            'array': to_array(self.array, iteration),
+            'names': self.names,
+        }
+
+
+class ContactsArray(SensorData, ContactsArrayCy):
+    """Sensor array"""
 
     @classmethod
     def from_names(cls, names, n_iterations):
@@ -196,12 +199,8 @@ class ContactsArray(ContactsArrayCy):
         plt.grid(True)
 
 
-class ProprioceptionArray(ProprioceptionArrayCy):
+class ProprioceptionArray(SensorData, ProprioceptionArrayCy):
     """Proprioception array"""
-
-    def __init__(self, array, names):
-        super(ProprioceptionArray, self).__init__(array)
-        self.names = names
 
     @classmethod
     def from_names(cls, names, n_iterations):
@@ -419,12 +418,8 @@ class ProprioceptionArray(ProprioceptionArrayCy):
         plt.grid(True)
 
 
-class GpsArray(GpsArrayCy):
+class GpsArray(SensorData, GpsArrayCy):
     """Gps array"""
-
-    def __init__(self, array, names):
-        super(GpsArray, self).__init__(array)
-        self.names = names
 
     @classmethod
     def from_names(cls, names, n_iterations):
@@ -513,12 +508,8 @@ class GpsArray(GpsArrayCy):
         plt.grid(True)
 
 
-class HydrodynamicsArray(HydrodynamicsArrayCy):
+class HydrodynamicsArray(SensorData, HydrodynamicsArrayCy):
     """Hydrodynamics array"""
-
-    def __init__(self, array, names):
-        super(HydrodynamicsArray, self).__init__(array)
-        self.names = names
 
     @classmethod
     def from_names(cls, names, n_iterations):
