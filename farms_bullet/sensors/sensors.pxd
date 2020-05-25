@@ -16,17 +16,6 @@ cdef class ContactsSensors(DoubleArray3D):
     cdef public double inewtons
     cpdef tuple get_contacts(self, unsigned int animat_id, int animat_link)
     cpdef void update(self, unsigned int iteration)
-    # cdef public void _set_contact_forces(
-    #     self,
-    #     unsigned int iteration,
-    #     unsigned int sensor,
-    #     double[:] contact
-    # )
-    # cdef public void _set_total_force(
-    #     self,
-    #     unsigned int iteration,
-    #     unsigned int sensor
-    # )
 
 
 cdef class JointsStatesSensor(DoubleArray3D):
@@ -45,7 +34,9 @@ cdef class LinksStatesSensor(DoubleArray3D):
 
     cdef public int animat
     cdef public object links
-    cdef public object units
-    cpdef public object get_base_link_state(self)
-    cpdef public object get_children_links_states(self)
-    cpdef public void collect(self, unsigned int iteration, object links)
+    cdef public double imeters
+    cdef public double ivelocity
+    cdef public double seconds
+    cpdef public tuple get_base_link_state(self)
+    cpdef public tuple get_children_links_states(self)
+    cpdef public void update(self, unsigned int iteration)
