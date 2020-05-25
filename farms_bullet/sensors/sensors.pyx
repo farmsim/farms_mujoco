@@ -22,27 +22,27 @@ cdef class Sensors(dict):
 cdef class ContactsSensors(DoubleArray3D):
     """Model sensors"""
 
-    def __init__(self, array, animat_ids, animat_links, newtons=1):
+    def __init__(self, array, model_ids, model_links, newtons=1):
         super(ContactsSensors, self).__init__(array)
-        self.animat_ids = np.array(animat_ids, dtype=np.uintc)
-        self.animat_links = np.array(animat_links, dtype=np.intc)
+        self.model_ids = np.array(model_ids, dtype=np.uintc)
+        self.model_links = np.array(model_links, dtype=np.intc)
         self.inewtons = 1./newtons
 
-    cpdef tuple get_contacts(self, unsigned int animat_id, int animat_link):
+    cpdef tuple get_contacts(self, unsigned int model_id, int model_link):
         """Get contacts"""
         return pybullet.getContactPoints(
-            bodyA=animat_id,
-            linkIndexA=animat_link,
+            bodyA=model_id,
+            linkIndexA=model_link,
         )
 
     cpdef void update(self, unsigned int iteration):
         """Update sensors"""
-        cdef int animat_link
-        cdef unsigned int sensor_i, animat_id
+        cdef int model_link
+        cdef unsigned int sensor_i, model_id
         cdef double rx, ry, rz, fx, fy, fz
         cdef tuple contact
-        for sensor_i, (animat_id, animat_link) in enumerate(
-                zip(self.animat_ids, self.animat_links)
+        for sensor_i, (model_id, model_link) in enumerate(
+                zip(self.model_ids, self.model_links)
         ):
             rx = 0
             ry = 0
@@ -50,7 +50,7 @@ cdef class ContactsSensors(DoubleArray3D):
             fx = 0
             fy = 0
             fz = 0
-            for contact in self.get_contacts(animat_id, animat_link):
+            for contact in self.get_contacts(model_id, model_link):
                 # Normal reaction
                 rx += contact[9]*contact[7][0]*self.inewtons
                 ry += contact[9]*contact[7][1]*self.inewtons
@@ -122,13 +122,13 @@ cdef class LinksStatesSensor(DoubleArray3D):
     [
         link_name,  # Name of the link
         link_i,  # Index in table
-        link_id  # Index in animat
+        link_id  # Index in model
     ]
     """
 
-    def __init__(self, array, animat_id, links, units):
+    def __init__(self, array, model_id, links, units):
         super(LinksStatesSensor, self).__init__(array)
-        self.animat = animat_id
+        self.model = model_id
         self.links = links
         self.imeters = 1./units.meters
         self.ivelocity = 1./units.velocity
@@ -138,11 +138,11 @@ cdef class LinksStatesSensor(DoubleArray3D):
         """Get link states"""
         cdef tuple pos_com, ori_com, base_velocity
         cdef tuple transform_loc, transform_inv, transform_urdf
-        base_info = pybullet.getBasePositionAndOrientation(self.animat)
+        base_info = pybullet.getBasePositionAndOrientation(self.model)
         pos_com = base_info[0]
         ori_com = base_info[1]
         transform_loc = (
-            pybullet.getDynamicsInfo(self.animat, -1)[3:5]
+            pybullet.getDynamicsInfo(self.model, -1)[3:5]
         )
         transform_inv = pybullet.invertTransform(
             position=transform_loc[0],
@@ -154,7 +154,7 @@ cdef class LinksStatesSensor(DoubleArray3D):
             transform_inv[0],
             transform_inv[1],
         )
-        base_velocity = pybullet.getBaseVelocity(self.animat)
+        base_velocity = pybullet.getBaseVelocity(self.model)
         return (
             pos_com,
             ori_com,
@@ -167,7 +167,7 @@ cdef class LinksStatesSensor(DoubleArray3D):
     cpdef tuple get_children_links_states(self):
         """Get link states"""
         return pybullet.getLinkStates(
-            self.animat,
+            self.model,
             self.links,
             computeLinkVelocity=1,
             computeForwardKinematics=1
