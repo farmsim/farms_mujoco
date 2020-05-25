@@ -25,6 +25,28 @@ cdef enum:
     CONTACT_TOTAL_Y = 7
     CONTACT_TOTAL_Z = 8
 
+    # Proprioception
+    PROPRIOCEPTION_POSITION = 0
+    PROPRIOCEPTION_VELOCITY = 1
+    PROPRIOCEPTION_FORCE_X = 2
+    PROPRIOCEPTION_FORCE_Y = 3
+    PROPRIOCEPTION_FORCE_Z = 4
+    PROPRIOCEPTION_TORQUE_X = 5
+    PROPRIOCEPTION_TORQUE_Y = 6
+    PROPRIOCEPTION_TORQUE_Z = 7
+    PROPRIOCEPTION_TORQUE = 8
+    PROPRIOCEPTION_TORQUE_ACTIVE = 9
+    PROPRIOCEPTION_TORQUE_STIFFNESS = 10
+    PROPRIOCEPTION_TORQUE_DAMPING = 11
+
+    # GPS
+    GPS_POSITION_X = 0
+    GPS_POSITION_Y = 1
+    GPS_POSITION_Z = 2
+    GPS_VELOCITY_X = 3
+    GPS_VELOCITY_Y = 4
+    GPS_VELOCITY_Z = 5
+
 
 cdef class ContactsArrayCy(DoubleArray3D):
     """Sensor array"""
@@ -87,75 +109,75 @@ cdef class ProprioceptionArrayCy(DoubleArray3D):
 
     cdef inline DTYPE position_cy(self, unsigned int iteration, unsigned int joint_i):
         """Joint position"""
-        return self.array[iteration, joint_i, 0]
+        return self.array[iteration, joint_i, PROPRIOCEPTION_POSITION]
 
     cdef inline DTYPEv1 positions_cy(self, unsigned int iteration):
         """Joints positions"""
-        return self.array[iteration, :, 0]
+        return self.array[iteration, :, PROPRIOCEPTION_POSITION]
 
     cdef inline DTYPEv2 positions_all_cy(self):
         """Joints positions"""
-        return self.array[:, :, 0]
+        return self.array[:, :, PROPRIOCEPTION_POSITION]
 
     cdef inline DTYPE velocity_cy(self, unsigned int iteration, unsigned int joint_i):
         """Joint velocity"""
-        return self.array[iteration, joint_i, 1]
+        return self.array[iteration, joint_i, PROPRIOCEPTION_VELOCITY]
 
     cdef inline DTYPEv1 velocities_cy(self, unsigned int iteration):
         """Joints velocities"""
-        return self.array[iteration, :, 1]
+        return self.array[iteration, :, PROPRIOCEPTION_VELOCITY]
 
     cdef inline DTYPEv2 velocities_all_cy(self):
         """Joints velocities"""
-        return self.array[:, :, 1]
-
-    cdef inline DTYPEv1 force_cy(self, unsigned int iteration, unsigned int joint_i):
-        """Joint force"""
-        return self.array[iteration, joint_i, 2:5]
-
-    cdef inline DTYPEv3 forces_all_cy(self):
-        """Joints forces"""
-        return self.array[:, :, 2:5]
-
-    cdef inline DTYPEv1 torque_cy(self, unsigned int iteration, unsigned int joint_i):
-        """Joint torque"""
-        return self.array[iteration, joint_i, 5:8]
-
-    cdef inline DTYPEv3 torques_all_cy(self):
-        """Joints torques"""
-        return self.array[:, :, 5:8]
+        return self.array[:, :, PROPRIOCEPTION_VELOCITY]
 
     cdef inline DTYPE motor_torque_cy(self, unsigned int iteration, unsigned int joint_i):
         """Joint velocity"""
-        return self.array[iteration, joint_i, 8]
+        return self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE]
 
     cdef inline DTYPEv2 motor_torques_cy(self):
         """Joint velocity"""
-        return self.array[:, :, 8]
+        return self.array[:, :, PROPRIOCEPTION_TORQUE]
+
+    cdef inline DTYPEv1 force_cy(self, unsigned int iteration, unsigned int joint_i):
+        """Joint force"""
+        return self.array[iteration, joint_i, PROPRIOCEPTION_FORCE_X:PROPRIOCEPTION_FORCE_Z+1]
+
+    cdef inline DTYPEv3 forces_all_cy(self):
+        """Joints forces"""
+        return self.array[:, :, PROPRIOCEPTION_FORCE_X:PROPRIOCEPTION_FORCE_Z+1]
+
+    cdef inline DTYPEv1 torque_cy(self, unsigned int iteration, unsigned int joint_i):
+        """Joint torque"""
+        return self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE_X:PROPRIOCEPTION_TORQUE_Z+1]
+
+    cdef inline DTYPEv3 torques_all_cy(self):
+        """Joints torques"""
+        return self.array[:, :, PROPRIOCEPTION_TORQUE_X:PROPRIOCEPTION_TORQUE_Z+1]
 
     cdef inline DTYPE active_cy(self, unsigned int iteration, unsigned int joint_i):
         """Active torque"""
-        return self.array[iteration, joint_i, 9]
+        return self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE_ACTIVE]
 
     cdef inline DTYPEv2 active_torques_cy(self):
         """Active torques"""
-        return self.array[:, :, 9]
+        return self.array[:, :, PROPRIOCEPTION_TORQUE_ACTIVE]
 
     cdef inline DTYPE spring_cy(self, unsigned int iteration, unsigned int joint_i):
         """Passive spring torque"""
-        return self.array[iteration, joint_i, 10]
+        return self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE_STIFFNESS]
 
     cdef inline DTYPEv2 spring_torques_cy(self):
         """Spring torques"""
-        return self.array[:, :, 10]
+        return self.array[:, :, PROPRIOCEPTION_TORQUE_STIFFNESS]
 
     cdef inline DTYPE damping_cy(self, unsigned int iteration, unsigned int joint_i):
         """passive damping torque"""
-        return self.array[iteration, joint_i, 11]
+        return self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE_DAMPING]
 
     cdef inline DTYPEv2 damping_torques_cy(self):
         """Damping torques"""
-        return self.array[:, :, 11]
+        return self.array[:, :, PROPRIOCEPTION_TORQUE_DAMPING]
 
 
 cdef class GpsArrayCy(DoubleArray3D):
