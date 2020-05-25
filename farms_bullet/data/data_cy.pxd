@@ -12,6 +12,20 @@ cdef class SensorsDataCy:
     cdef public HydrodynamicsArrayCy hydrodynamics
 
 
+cdef enum:
+
+    # Contacts
+    CONTACT_REACTION_X = 0
+    CONTACT_REACTION_Y = 1
+    CONTACT_REACTION_Z = 2
+    CONTACT_FRICTION_X = 3
+    CONTACT_FRICTION_Y = 4
+    CONTACT_FRICTION_Z = 5
+    CONTACT_TOTAL_X = 6
+    CONTACT_TOTAL_Y = 7
+    CONTACT_TOTAL_Z = 8
+
+
 cdef class ContactsArrayCy(DoubleArray3D):
     """Sensor array"""
 
@@ -21,51 +35,51 @@ cdef class ContactsArrayCy(DoubleArray3D):
 
     cdef inline DTYPEv1 c_reaction(self, unsigned iteration, unsigned int index) nogil:
         """Reaction"""
-        return self.array[iteration, index, 0:3]
+        return self.array[iteration, index, CONTACT_REACTION_X:CONTACT_REACTION_Z+1]
 
     cdef inline DTYPE c_reaction_x(self, unsigned iteration, unsigned int index) nogil:
         """Reaction x"""
-        return self.array[iteration, index, 0]
+        return self.array[iteration, index, CONTACT_REACTION_X]
 
     cdef inline DTYPE c_reaction_y(self, unsigned iteration, unsigned int index) nogil:
         """Reaction y"""
-        return self.array[iteration, index, 1]
+        return self.array[iteration, index, CONTACT_REACTION_Y]
 
     cdef inline DTYPE c_reaction_z(self, unsigned iteration, unsigned int index) nogil:
         """Reaction z"""
-        return self.array[iteration, index, 2]
+        return self.array[iteration, index, CONTACT_REACTION_Z]
 
     cdef inline DTYPEv1 c_friction(self, unsigned iteration, unsigned int index) nogil:
         """Friction"""
-        return self.array[iteration, index, 3:6]
+        return self.array[iteration, index, CONTACT_FRICTION_X:CONTACT_FRICTION_Z+1]
 
     cdef inline DTYPE c_friction_x(self, unsigned iteration, unsigned int index) nogil:
         """Friction x"""
-        return self.array[iteration, index, 3]
+        return self.array[iteration, index, CONTACT_FRICTION_X]
 
     cdef inline DTYPE c_friction_y(self, unsigned iteration, unsigned int index) nogil:
         """Friction y"""
-        return self.array[iteration, index, 4]
+        return self.array[iteration, index, CONTACT_FRICTION_Y]
 
     cdef inline DTYPE c_friction_z(self, unsigned iteration, unsigned int index) nogil:
         """Friction z"""
-        return self.array[iteration, index, 5]
+        return self.array[iteration, index, CONTACT_FRICTION_Z]
 
     cdef inline DTYPEv1 c_total(self, unsigned iteration, unsigned int index) nogil:
         """Total"""
-        return self.array[iteration, index, 6:9]
+        return self.array[iteration, index, CONTACT_TOTAL_X:CONTACT_TOTAL_Z+1]
 
     cdef inline DTYPE c_total_x(self, unsigned iteration, unsigned int index) nogil:
         """Total x"""
-        return self.array[iteration, index, 6]
+        return self.array[iteration, index, CONTACT_TOTAL_X]
 
     cdef inline DTYPE c_total_y(self, unsigned iteration, unsigned int index) nogil:
         """Total y"""
-        return self.array[iteration, index, 7]
+        return self.array[iteration, index, CONTACT_TOTAL_Y]
 
     cdef inline DTYPE c_total_z(self, unsigned iteration, unsigned int index) nogil:
         """Total z"""
-        return self.array[iteration, index, 8]
+        return self.array[iteration, index, CONTACT_TOTAL_Z]
 
 
 cdef class ProprioceptionArrayCy(DoubleArray3D):
