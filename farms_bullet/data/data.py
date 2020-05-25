@@ -48,10 +48,13 @@ class SensorsData(SensorsDataCy):
     def to_dict(self, iteration=None):
         """Convert data to dictionary"""
         return {
-            'contacts': self.contacts.to_dict(iteration),
-            'proprioception': self.proprioception.to_dict(iteration),
-            'gps': self.gps.to_dict(iteration),
-            'hydrodynamics': self.hydrodynamics.to_dict(iteration),
+            name: data.to_dict(iteration)
+            for name, data in [
+                ['contacts', self.contacts],
+                ['proprioception', self.proprioception],
+                ['gps', self.gps],
+                ['hydrodynamics', self.hydrodynamics],
+            ]
         }
 
     def plot(self, times):
