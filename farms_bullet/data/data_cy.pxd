@@ -1,7 +1,7 @@
 """Animat data"""
 
 include 'types.pxd'
-include 'convention.pxd'
+include 'sensor_convention.pxd'
 from .array cimport DoubleArray3D
 
 
