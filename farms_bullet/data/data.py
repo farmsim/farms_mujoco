@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from .array import DoubleArray3D
 from .data_cy import (
     SensorsDataCy,
     ContactsArrayCy,
@@ -65,7 +66,7 @@ class SensorsData(SensorsDataCy):
         self.hydrodynamics.plot(times)
 
 
-class SensorData:
+class SensorData(DoubleArray3D):
     """SensorData"""
 
     def __init__(self, array, names):
