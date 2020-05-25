@@ -108,6 +108,10 @@ cdef class JointsStatesSensor(DoubleArray3D):
                     joint
                 )
 
+    cpdef tuple get_joints_states(self):
+        """Get joints states"""
+        return pybullet.getJointStates(self.model_id, self.joints_map)
+
     cpdef void update(self, unsigned int iteration):
         """Update sensor"""
         cdef unsigned int joint_i
@@ -115,9 +119,7 @@ cdef class JointsStatesSensor(DoubleArray3D):
         for (
                 joint_i,
                 (position, velocity, (fx, fy, fz, tx, ty, tz), torque),
-        ) in enumerate(
-                pybullet.getJointStates(self.model_id, self.joints_map)
-        ):
+        ) in enumerate(self.get_joints_states()):
             # Position
             self.array[iteration, joint_i, JOINT_POSITION] = position
             # Velocity
@@ -155,7 +157,7 @@ cdef class LinksStatesSensor(DoubleArray3D):
         """Update sensor"""
         self.collect(iteration, self.links)
 
-    cpdef object get_base_states(self):
+    cpdef object get_base_link_state(self):
         """Get link states"""
         base_info = pybullet.getBasePositionAndOrientation(self.animat)
         pos_com = base_info[0]
@@ -183,7 +185,7 @@ cdef class LinksStatesSensor(DoubleArray3D):
             base_velocity[1],
         )
 
-    cpdef object get_children_states(self):
+    cpdef object get_children_links_states(self):
         """Get link states"""
         return pybullet.getLinkStates(
             self.animat,
@@ -205,12 +207,12 @@ cdef class LinksStatesSensor(DoubleArray3D):
         cdef double imeters = 1./self.units.meters
         cdef double ivelocity = 1./self.units.velocity
         cdef double seconds = self.units.seconds
-        states = self.get_children_states()
+        states = self.get_children_links_states()
         for link_i, link_id in enumerate(links):
             # Collect data
             if link_id == -1:
                 # Base link
-                link_state = self.get_base_states()
+                link_state = self.get_base_link_state()
                 pos_com = link_state[0]
                 ori_com = link_state[1]
                 pos_urdf = link_state[2]

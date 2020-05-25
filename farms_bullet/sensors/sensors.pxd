@@ -36,6 +36,7 @@ cdef class JointsStatesSensor(DoubleArray3D):
     cdef public double seconds
     cdef public double inewtons
     cdef public double itorques
+    cpdef public tuple get_joints_states(self)
     cpdef public void update(self, unsigned int iteration)
 
 
@@ -45,6 +46,6 @@ cdef class LinksStatesSensor(DoubleArray3D):
     cdef public int animat
     cdef public object links
     cdef public object units
-    cpdef public object get_base_states(self)
-    cpdef public object get_children_states(self)
+    cpdef public object get_base_link_state(self)
+    cpdef public object get_children_links_states(self)
     cpdef public void collect(self, unsigned int iteration, object links)
