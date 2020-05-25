@@ -174,19 +174,19 @@ cdef class JointsStatesSensor(DoubleArray3D):
                 pybullet.getJointStates(self.model_id, self.joints_map)
         ):
             # Position
-            self.array[iteration, joint_i, PROPRIOCEPTION_POSITION] = position
+            self.array[iteration, joint_i, JOINT_POSITION] = position
             # Velocity
-            self.array[iteration, joint_i, PROPRIOCEPTION_VELOCITY] = velocity*self.seconds
+            self.array[iteration, joint_i, JOINT_VELOCITY] = velocity*self.seconds
             # Forces
-            self.array[iteration, joint_i, PROPRIOCEPTION_FORCE_X] = fx*self.inewtons
-            self.array[iteration, joint_i, PROPRIOCEPTION_FORCE_Y] = fy*self.inewtons
-            self.array[iteration, joint_i, PROPRIOCEPTION_FORCE_Z] = fz*self.inewtons
+            self.array[iteration, joint_i, JOINT_FORCE_X] = fx*self.inewtons
+            self.array[iteration, joint_i, JOINT_FORCE_Y] = fy*self.inewtons
+            self.array[iteration, joint_i, JOINT_FORCE_Z] = fz*self.inewtons
             # Torques
-            self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE_X] = tx*self.itorques
-            self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE_X] = ty*self.itorques
-            self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE_Z] = tz*self.itorques
+            self.array[iteration, joint_i, JOINT_TORQUE_X] = tx*self.itorques
+            self.array[iteration, joint_i, JOINT_TORQUE_X] = ty*self.itorques
+            self.array[iteration, joint_i, JOINT_TORQUE_Z] = tz*self.itorques
             # Motor torque
-            self.array[iteration, joint_i, PROPRIOCEPTION_TORQUE] = torque*self.itorques
+            self.array[iteration, joint_i, JOINT_TORQUE] = torque*self.itorques
 
 
 cdef class LinksStatesSensor(DoubleArray3D):
