@@ -150,35 +150,35 @@ cdef class GpsArrayCy(DoubleArray3D):
 
     cdef inline DTYPEv1 com_position_cy(self, unsigned int iteration, unsigned int link_i):
         """CoM position of a link"""
-        return self.array[iteration, link_i, GPS_COM_POSITION_X:GPS_COM_POSITION_Z+1]
+        return self.array[iteration, link_i, LINK_COM_POSITION_X:LINK_COM_POSITION_Z+1]
 
     cdef inline DTYPEv1 com_orientation_cy(self, unsigned int iteration, unsigned int link_i):
         """CoM orientation of a link"""
-        return self.array[iteration, link_i, GPS_COM_ORIENTATION_X:GPS_COM_ORIENTATION_W+1]
+        return self.array[iteration, link_i, LINK_COM_ORIENTATION_X:LINK_COM_ORIENTATION_W+1]
 
     cdef inline DTYPEv1 urdf_position_cy(self, unsigned int iteration, unsigned int link_i):
         """URDF position of a link"""
-        return self.array[iteration, link_i, GPS_URDF_POSITION_X:GPS_URDF_POSITION_Z+1]
+        return self.array[iteration, link_i, LINK_URDF_POSITION_X:LINK_URDF_POSITION_Z+1]
 
     cdef inline DTYPEv3 urdf_positions_cy(self):
         """URDF position of a link"""
-        return self.array[:, :, GPS_URDF_POSITION_X:GPS_URDF_POSITION_Z+1]
+        return self.array[:, :, LINK_URDF_POSITION_X:LINK_URDF_POSITION_Z+1]
 
     cdef inline DTYPEv1 urdf_orientation_cy(self, unsigned int iteration, unsigned int link_i):
         """URDF orientation of a link"""
-        return self.array[iteration, link_i, GPS_URDF_ORIENTATION_X:GPS_URDF_ORIENTATION_W+1]
+        return self.array[iteration, link_i, LINK_URDF_ORIENTATION_X:LINK_URDF_ORIENTATION_W+1]
 
     cdef inline DTYPEv1 com_lin_velocity_cy(self, unsigned int iteration, unsigned int link_i):
         """CoM linear velocity of a link"""
-        return self.array[iteration, link_i, GPS_COM_VELOCITY_LIN_X:GPS_COM_VELOCITY_LIN_Z+1]
+        return self.array[iteration, link_i, LINK_COM_VELOCITY_LIN_X:LINK_COM_VELOCITY_LIN_Z+1]
 
     cdef inline DTYPEv3 com_lin_velocities_cy(self):
         """CoM linear velocities"""
-        return self.array[:, :, GPS_COM_VELOCITY_LIN_X:GPS_COM_VELOCITY_LIN_Z+1]
+        return self.array[:, :, LINK_COM_VELOCITY_LIN_X:LINK_COM_VELOCITY_LIN_Z+1]
 
     cdef inline DTYPEv1 com_ang_velocity_cy(self, unsigned int iteration, unsigned int link_i):
         """CoM angular velocity of a link"""
-        return self.array[iteration, link_i, GPS_COM_VELOCITY_ANG_X:GPS_COM_VELOCITY_ANG_Z+1]
+        return self.array[iteration, link_i, LINK_COM_VELOCITY_ANG_X:LINK_COM_VELOCITY_ANG_Z+1]
 
 
 cdef class HydrodynamicsArrayCy(DoubleArray3D):

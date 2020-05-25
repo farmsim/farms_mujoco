@@ -482,7 +482,7 @@ class GpsArray(SensorData, GpsArrayCy):
 
     def plot_base_position(self, times, xaxis=0, yaxis=1):
         """Plot"""
-        plt.figure('GPS position')
+        plt.figure('Links position')
         for link_i in range(self.size(1)):
             data = np.asarray(self.urdf_positions())[:len(times), link_i]
             plt.plot(
@@ -498,7 +498,7 @@ class GpsArray(SensorData, GpsArrayCy):
 
     def plot_base_velocity(self, times):
         """Plot"""
-        plt.figure('GPS velocities')
+        plt.figure('Links velocities')
         for link_i in range(self.size(1)):
             data = np.asarray(self.com_lin_velocities())[:len(times), link_i]
             plt.plot(
