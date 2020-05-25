@@ -28,6 +28,16 @@ cdef class ContactsSensors(DoubleArray3D):
     )
 
 
+cdef class JointsStatesSensor(DoubleArray3D):
+    """Joint state sensor"""
+    cdef public unsigned int model_id
+    cdef public list joints_map
+    cdef public double seconds
+    cdef public double inewtons
+    cdef public double itorques
+    cpdef public void update(self, unsigned int iteration)
+
+
 cdef class LinksStatesSensor(DoubleArray3D):
     """Links states sensor"""
 

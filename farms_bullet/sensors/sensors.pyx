@@ -146,48 +146,47 @@ class ContactSensor(Sensor):
         ) if self._contacts else np.zeros(6)
 
 
-class JointsStatesSensor(DoubleArray3D):
+cdef class JointsStatesSensor(DoubleArray3D):
     """Joint state sensor"""
 
-    def __init__(self, array, model_id, joints, units, enable_ft=False):
+    def __init__(self, array, model_id, joints, units, enable_ft=True):
         super(JointsStatesSensor, self).__init__(array)
-        self._model_id = model_id
+        self.model_id = model_id
         self.joints_map = joints
-        self._enable_ft = enable_ft
-        self.units = units
-        if self._enable_ft:
+        self.seconds = units.seconds
+        self.inewtons = 1./units.newtons
+        self.itorques = 1./units.torques
+        if enable_ft:
             for joint in self.joints_map:
                 pybullet.enableJointForceTorqueSensor(
-                    self._model_id,
+                    self.model_id,
                     joint
                 )
 
-    def update(self, iteration):
+    cpdef void update(self, unsigned int iteration):
         """Update sensor"""
-        seconds = self.units.seconds
-        inewtons = 1./self.units.newtons
-        itorques = 1./self.units.torques
-        self.array[iteration, :, :9] = np.array([
-            (
-                # Position
-                state[0],
-                # Velocity
-                state[1]*seconds,
-                # Forces
-                state[2][0]*inewtons,
-                state[2][1]*inewtons,
-                state[2][2]*inewtons,
-                # Torques
-                state[2][3]*itorques,
-                state[2][4]*itorques,
-                state[2][5]*itorques,
-                # Motor torque
-                state[3]*itorques
-            )
-            for joint_i, state in enumerate(
-                pybullet.getJointStates(self._model_id, self.joints_map)
-            )
-        ])
+        cdef unsigned int joint_i
+        cdef double position, velocity, torque, fx, fy, fz, tx, ty, tz
+        for (
+                joint_i,
+                (position, velocity, (fx, fy, fz, tx, ty, tz), torque),
+        ) in enumerate(
+                pybullet.getJointStates(self.model_id, self.joints_map)
+        ):
+            # Position
+            self.array[iteration, joint_i, 0] = position
+            # Velocity
+            self.array[iteration, joint_i, 1] = velocity*self.seconds
+            # Forces
+            self.array[iteration, joint_i, 2] = fx*self.inewtons
+            self.array[iteration, joint_i, 3] = fy*self.inewtons
+            self.array[iteration, joint_i, 4] = fz*self.inewtons
+            # Torques
+            self.array[iteration, joint_i, 5] = tx*self.itorques
+            self.array[iteration, joint_i, 6] = ty*self.itorques
+            self.array[iteration, joint_i, 7] = tz*self.itorques
+            # Motor torque
+            self.array[iteration, joint_i, 8] = torque*self.itorques
 
 
 cdef class LinksStatesSensor(DoubleArray3D):
