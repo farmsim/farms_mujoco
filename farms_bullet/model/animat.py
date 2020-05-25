@@ -24,8 +24,8 @@ class Animat(SimulationModel):
     def __init__(self, identity=None, options=None):
         super(Animat, self).__init__(identity=identity)
         self.options = options
-        self._links = {}
-        self._joints = {}
+        self.links_map = {}
+        self.joints_map = {}
         self.sensors = {}
         self.data = None
 
@@ -71,7 +71,7 @@ class Animat(SimulationModel):
         pylog.debug('Links ids:\n{}'.format(
             '\n'.join([
                 '  {}: {}'.format(name, identity)
-                for name, identity in self._links.items()
+                for name, identity in self.links_map.items()
             ])
         ))
         pylog.debug('Joints ids:\n{}'.format(
@@ -86,13 +86,13 @@ class Animat(SimulationModel):
                         )[2]
                     )
                 )
-                for name, identity in self._joints.items()
+                for name, identity in self.joints_map.items()
             ])
         ))
 
     def print_dynamics_info(self, links=None):
         """Print dynamics info"""
-        links = links if links is not None else self._links
+        links = links if links is not None else self.links_map
         pylog.debug('Dynamics:')
         for link in links:
             dynamics_msg = (
@@ -112,7 +112,7 @@ class Animat(SimulationModel):
                 link,
                 dynamics_msg.format(*pybullet.getDynamicsInfo(
                     self.identity(),
-                    self._links[link]
+                    self.links_map[link]
                 ))
             ))
         pylog.debug('Model mass: {} [kg]'.format(self.mass()))
@@ -120,8 +120,8 @@ class Animat(SimulationModel):
     def total_mass(self):
         """Print dynamics"""
         return np.sum([
-            pybullet.getDynamicsInfo(self.identity(), self._links[link])[0]
-            for link in self._links
+            pybullet.getDynamicsInfo(self.identity(), self.links_map[link])[0]
+            for link in self.links_map
         ])
 
     def set_collisions(self, links, group=0, mask=0):
@@ -129,7 +129,7 @@ class Animat(SimulationModel):
         for link in links:
             pybullet.setCollisionFilterGroupMask(
                 bodyUniqueId=self._identity,
-                linkIndexA=self._links[link],
+                linkIndexA=self.links_map[link],
                 collisionFilterGroup=group,
                 collisionFilterMask=mask
             )
@@ -139,7 +139,7 @@ class Animat(SimulationModel):
         for key, value in kwargs.items():
             pybullet.changeDynamics(
                 bodyUniqueId=self.identity(),
-                linkIndex=self._links[link],
+                linkIndex=self.links_map[link],
                 **{key: value}
             )
 
@@ -148,6 +148,6 @@ class Animat(SimulationModel):
         for key, value in kwargs.items():
             pybullet.changeDynamics(
                 bodyUniqueId=self.identity(),
-                linkIndex=self._joints[joint],
+                linkIndex=self.joints_map[joint],
                 **{key: value}
             )

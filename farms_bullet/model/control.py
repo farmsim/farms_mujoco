@@ -53,7 +53,7 @@ def control_models(iteration, models, torques):
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
-                    model._joints[joint]
+                    model.joints_map[joint]
                     for joint in controller.joints[ControlType.POSITION]
                 ],
                 controlMode=pybullet.POSITION_CONTROL,
@@ -68,7 +68,7 @@ def control_models(iteration, models, torques):
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
-                    model._joints[joint]
+                    model.joints_map[joint]
                     for joint in controller.joints[ControlType.TORQUE]
                 ],
                 controlMode=pybullet.TORQUE_CONTROL,

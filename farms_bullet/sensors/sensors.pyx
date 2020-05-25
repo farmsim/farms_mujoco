@@ -152,11 +152,11 @@ class JointsStatesSensor(DoubleArray3D):
     def __init__(self, array, model_id, joints, units, enable_ft=False):
         super(JointsStatesSensor, self).__init__(array)
         self._model_id = model_id
-        self._joints = joints
+        self.joints_map = joints
         self._enable_ft = enable_ft
         self.units = units
         if self._enable_ft:
-            for joint in self._joints:
+            for joint in self.joints_map:
                 pybullet.enableJointForceTorqueSensor(
                     self._model_id,
                     joint
@@ -185,7 +185,7 @@ class JointsStatesSensor(DoubleArray3D):
                 state[3]*itorques
             )
             for joint_i, state in enumerate(
-                pybullet.getJointStates(self._model_id, self._joints)
+                pybullet.getJointStates(self._model_id, self.joints_map)
             )
         ])
 
