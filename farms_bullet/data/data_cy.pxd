@@ -61,6 +61,13 @@ cdef enum:
     GPS_COM_VELOCITY_ANG_Y = 18
     GPS_COM_VELOCITY_ANG_Z = 19
 
+    # Hydrodynamics
+    HYDRODYNAMICS_FORCE_X = 0
+    HYDRODYNAMICS_FORCE_Y = 1
+    HYDRODYNAMICS_FORCE_Z = 2
+    HYDRODYNAMICS_TORQUE_X = 3
+    HYDRODYNAMICS_TORQUE_Y = 4
+    HYDRODYNAMICS_TORQUE_Z = 5
 
 
 cdef class ContactsArrayCy(DoubleArray3D):
@@ -236,24 +243,24 @@ cdef class HydrodynamicsArrayCy(DoubleArray3D):
 
     cdef inline DTYPE c_force_x(self, unsigned iteration, unsigned int index) nogil:
         """Force x"""
-        return self.array[iteration, index, 0]
+        return self.array[iteration, index, HYDRODYNAMICS_FORCE_X]
 
     cdef inline DTYPE c_force_y(self, unsigned iteration, unsigned int index) nogil:
         """Force y"""
-        return self.array[iteration, index, 1]
+        return self.array[iteration, index, HYDRODYNAMICS_FORCE_Y]
 
     cdef inline DTYPE c_force_z(self, unsigned iteration, unsigned int index) nogil:
         """Force z"""
-        return self.array[iteration, index, 2]
+        return self.array[iteration, index, HYDRODYNAMICS_FORCE_Z]
 
     cdef inline DTYPE c_torque_x(self, unsigned iteration, unsigned int index) nogil:
         """Torque x"""
-        return self.array[iteration, index, 0]
+        return self.array[iteration, index, HYDRODYNAMICS_TORQUE_X]
 
     cdef inline DTYPE c_torque_y(self, unsigned iteration, unsigned int index) nogil:
         """Torque y"""
-        return self.array[iteration, index, 1]
+        return self.array[iteration, index, HYDRODYNAMICS_TORQUE_Y]
 
     cdef inline DTYPE c_torque_z(self, unsigned iteration, unsigned int index) nogil:
         """Torque z"""
-        return self.array[iteration, index, 2]
+        return self.array[iteration, index, HYDRODYNAMICS_TORQUE_Z]
