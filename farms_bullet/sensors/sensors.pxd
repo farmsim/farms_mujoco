@@ -1,5 +1,6 @@
 """Cython sensors"""
 
+include '../data/convention.pxd'
 from ..data.array cimport DoubleArray3D
 
 
