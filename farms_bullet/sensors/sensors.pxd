@@ -14,19 +14,19 @@ cdef class ContactsSensors(DoubleArray3D):
     cdef public unsigned int [:] animat_ids
     cdef public int [:] animat_links
     cdef public double inewtons
-    cdef public unsigned int n_sensors
-    cdef public list _contacts
-    cdef public void _set_contact_forces(
-        self,
-        unsigned int iteration,
-        unsigned int sensor,
-        double[:] contact
-    )
-    cdef public void _set_total_force(
-        self,
-        unsigned int iteration,
-        unsigned int sensor
-    )
+    cpdef tuple get_contacts(self, unsigned int animat_id, int animat_link)
+    cpdef void update(self, unsigned int iteration)
+    # cdef public void _set_contact_forces(
+    #     self,
+    #     unsigned int iteration,
+    #     unsigned int sensor,
+    #     double[:] contact
+    # )
+    # cdef public void _set_total_force(
+    #     self,
+    #     unsigned int iteration,
+    #     unsigned int sensor
+    # )
 
 
 cdef class JointsStatesSensor(DoubleArray3D):

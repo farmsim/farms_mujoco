@@ -26,69 +26,47 @@ cdef class ContactsSensors(DoubleArray3D):
         super(ContactsSensors, self).__init__(array)
         self.animat_ids = np.array(animat_ids, dtype=np.uintc)
         self.animat_links = np.array(animat_links, dtype=np.intc)
-        self.n_sensors = len(animat_links)
-        self._contacts = [None for _ in range(self.n_sensors)]
         self.inewtons = 1./newtons
 
-    def update(self, iteration):
+    cpdef tuple get_contacts(self, unsigned int animat_id, int animat_link):
+        """Get contacts"""
+        return pybullet.getContactPoints(
+            bodyA=animat_id,
+            linkIndexA=animat_link,
+        )
+
+    cpdef void update(self, unsigned int iteration):
         """Update sensors"""
-        cdef unsigned int sensor
-        for sensor in range(self.n_sensors):
-            self._contacts[sensor] = pybullet.getContactPoints(
-                bodyA=self.animat_ids[sensor],
-                linkIndexA=self.animat_links[sensor]
-            )
-            if self._contacts[sensor]:
-                self._set_contact_forces(
-                    iteration,
-                    sensor,
-                    np.sum(
-                        [
-                            [
-                                # Collision normal reaction
-                                contact[9]*contact[7][0]*self.inewtons,
-                                contact[9]*contact[7][1]*self.inewtons,
-                                contact[9]*contact[7][2]*self.inewtons,
-                                # Lateral friction dir 1
-                                # + Lateral friction dir 2
-                                contact[10]*contact[11][0]*self.inewtons
-                                + contact[12]*contact[13][0]*self.inewtons,
-                                contact[10]*contact[11][1]*self.inewtons
-                                + contact[12]*contact[13][1]*self.inewtons,
-                                contact[10]*contact[11][2]*self.inewtons
-                                + contact[12]*contact[13][2]*self.inewtons
-                            ]
-                            for contact in self._contacts[sensor]
-                        ],
-                        axis=0,
-                        dtype=np.float64
-                    )
-                )
-
-    cdef void _set_contact_forces(
-        self,
-        unsigned int iteration,
-        unsigned int sensor,
-        double[:] contact
-    ):
-        """Set force"""
-        cdef unsigned int dim
-        for i in range(6):
-            self.array[iteration, sensor, i] = contact[i]
-        self._set_total_force(iteration, sensor)
-
-    cdef void _set_total_force(
-        self,
-        unsigned int iteration,
-        unsigned int sensor
-    ):
-        """Set toral force"""
-        cdef unsigned int dim
-        for dim in range(3):
-            self.array[iteration, sensor, 6+dim] = (
-                self.array[iteration, sensor, dim]
-                + self.array[iteration, sensor, 3+dim]
-            )
+        cdef int animat_link
+        cdef unsigned int sensor_i, animat_id
+        cdef double rx, ry, rz, fx, fy, fz
+        cdef tuple contact
+        for sensor_i, (animat_id, animat_link) in enumerate(
+                zip(self.animat_ids, self.animat_links)
+        ):
+            rx = 0
+            ry = 0
+            rz = 0
+            fx = 0
+            fy = 0
+            fz = 0
+            for contact in self.get_contacts(animat_id, animat_link):
+                rx += contact[9]*contact[7][0]*self.inewtons
+                ry += contact[9]*contact[7][1]*self.inewtons
+                rz += contact[9]*contact[7][2]*self.inewtons
+                # Lateral friction dir 1 + Lateral friction dir 2
+                fx += (contact[10]*contact[11][0] + contact[12]*contact[13][0])*self.inewtons
+                fy += (contact[10]*contact[11][1] + contact[12]*contact[13][1])*self.inewtons
+                fz += (contact[10]*contact[11][2] + contact[12]*contact[13][2])*self.inewtons
+            self.array[iteration, sensor_i, 0] = rx
+            self.array[iteration, sensor_i, 1] = ry
+            self.array[iteration, sensor_i, 2] = rz
+            self.array[iteration, sensor_i, 3] = fx
+            self.array[iteration, sensor_i, 4] = fy
+            self.array[iteration, sensor_i, 5] = fz
+            self.array[iteration, sensor_i, 6] = rx + fx
+            self.array[iteration, sensor_i, 7] = ry + fy
+            self.array[iteration, sensor_i, 8] = rz + fz
 
 
 cdef class JointsStatesSensor(DoubleArray3D):
