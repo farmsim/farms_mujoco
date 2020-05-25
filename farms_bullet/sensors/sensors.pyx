@@ -227,28 +227,28 @@ cdef class LinksStatesSensor(DoubleArray3D):
                 lin_velocity = link_state[6]  # Velocity of CoM
                 ang_velocity = link_state[7]  # Angular velocity of CoM
             # Position of CoM
-            self.array[iteration, link_i, 0] = pos_com[0]*imeters
-            self.array[iteration, link_i, 1] = pos_com[1]*imeters
-            self.array[iteration, link_i, 2] = pos_com[2]*imeters
+            self.array[iteration, link_i, LINK_COM_POSITION_X] = pos_com[0]*imeters
+            self.array[iteration, link_i, LINK_COM_POSITION_Y] = pos_com[1]*imeters
+            self.array[iteration, link_i, LINK_COM_POSITION_Z] = pos_com[2]*imeters
             # Orientation of CoM
-            self.array[iteration, link_i, 3] = ori_com[0]
-            self.array[iteration, link_i, 4] = ori_com[1]
-            self.array[iteration, link_i, 5] = ori_com[2]
-            self.array[iteration, link_i, 6] = ori_com[3]
+            self.array[iteration, link_i, LINK_COM_ORIENTATION_X] = ori_com[0]
+            self.array[iteration, link_i, LINK_COM_ORIENTATION_Y] = ori_com[1]
+            self.array[iteration, link_i, LINK_COM_ORIENTATION_Z] = ori_com[2]
+            self.array[iteration, link_i, LINK_COM_ORIENTATION_W] = ori_com[3]
             # Position of URDF frame
-            self.array[iteration, link_i, 7] = pos_urdf[0]*imeters
-            self.array[iteration, link_i, 8] = pos_urdf[1]*imeters
-            self.array[iteration, link_i, 9] = pos_urdf[2]*imeters
+            self.array[iteration, link_i, LINK_URDF_POSITION_X] = pos_urdf[0]*imeters
+            self.array[iteration, link_i, LINK_URDF_POSITION_Y] = pos_urdf[1]*imeters
+            self.array[iteration, link_i, LINK_URDF_POSITION_Z] = pos_urdf[2]*imeters
             # Orientation of URDF frame
-            self.array[iteration, link_i, 10] = ori_urdf[0]
-            self.array[iteration, link_i, 11] = ori_urdf[1]
-            self.array[iteration, link_i, 12] = ori_urdf[2]
-            self.array[iteration, link_i, 13] = ori_urdf[3]
+            self.array[iteration, link_i, LINK_URDF_ORIENTATION_X] = ori_urdf[0]
+            self.array[iteration, link_i, LINK_URDF_ORIENTATION_Y] = ori_urdf[1]
+            self.array[iteration, link_i, LINK_URDF_ORIENTATION_Z] = ori_urdf[2]
+            self.array[iteration, link_i, LINK_URDF_ORIENTATION_W] = ori_urdf[3]
             # Velocity of CoM
-            self.array[iteration, link_i, 14] = lin_velocity[0]*ivelocity
-            self.array[iteration, link_i, 15] = lin_velocity[1]*ivelocity
-            self.array[iteration, link_i, 16] = lin_velocity[2]*ivelocity
+            self.array[iteration, link_i, LINK_COM_VELOCITY_LIN_X] = lin_velocity[0]*ivelocity
+            self.array[iteration, link_i, LINK_COM_VELOCITY_LIN_Y] = lin_velocity[1]*ivelocity
+            self.array[iteration, link_i, LINK_COM_VELOCITY_LIN_Z] = lin_velocity[2]*ivelocity
             # Angular velocity of CoM
-            self.array[iteration, link_i, 17] = ang_velocity[0]*seconds
-            self.array[iteration, link_i, 18] = ang_velocity[1]*seconds
-            self.array[iteration, link_i, 19] = ang_velocity[2]*seconds
+            self.array[iteration, link_i, LINK_COM_VELOCITY_ANG_X] = ang_velocity[0]*seconds
+            self.array[iteration, link_i, LINK_COM_VELOCITY_ANG_Y] = ang_velocity[1]*seconds
+            self.array[iteration, link_i, LINK_COM_VELOCITY_ANG_Z] = ang_velocity[2]*seconds
