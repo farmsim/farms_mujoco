@@ -25,6 +25,29 @@ def to_array(array, iteration=None):
     return array
 
 
+class SensorData(DoubleArray3D):
+    """SensorData"""
+
+    def __init__(self, array, names):
+        super(SensorData, self).__init__(array)
+        self.names = names
+
+    @classmethod
+    def from_dict(cls, dictionary):
+        """Load data from dictionary"""
+        return cls(
+            array=dictionary['array'],
+            names=dictionary['names'],
+        )
+
+    def to_dict(self, iteration=None):
+        """Convert data to dictionary"""
+        return {
+            'array': to_array(self.array, iteration),
+            'names': self.names,
+        }
+
+
 class SensorsData(SensorsDataCy):
     """SensorsData"""
 
@@ -64,29 +87,6 @@ class SensorsData(SensorsDataCy):
         self.proprioception.plot(times)
         self.gps.plot(times)
         self.hydrodynamics.plot(times)
-
-
-class SensorData(DoubleArray3D):
-    """SensorData"""
-
-    def __init__(self, array, names):
-        super(SensorData, self).__init__(array)
-        self.names = names
-
-    @classmethod
-    def from_dict(cls, dictionary):
-        """Load data from dictionary"""
-        return cls(
-            array=dictionary['array'],
-            names=dictionary['names'],
-        )
-
-    def to_dict(self, iteration=None):
-        """Convert data to dictionary"""
-        return {
-            'array': to_array(self.array, iteration),
-            'names': self.names,
-        }
 
 
 class ContactsArray(SensorData, ContactsArrayCy):
