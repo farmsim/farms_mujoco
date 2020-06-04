@@ -22,10 +22,11 @@ cdef class Sensors(dict):
 cdef class ContactsSensors(DoubleArray3D):
     """Model sensors"""
 
-    def __init__(self, array, model_ids, model_links, newtons=1):
+    def __init__(self, array, model_ids, model_links, meters=1, newtons=1):
         super(ContactsSensors, self).__init__(array)
         self.model_ids = np.array(model_ids, dtype=np.uintc)
         self.model_links = np.array(model_links, dtype=np.intc)
+        self.imeters = 1./meters
         self.inewtons = 1./newtons
 
     cpdef tuple get_contacts(self, unsigned int model_id, int model_link):
@@ -39,35 +40,55 @@ cdef class ContactsSensors(DoubleArray3D):
         """Update sensors"""
         cdef int model_link
         cdef unsigned int sensor_i, model_id
-        cdef double rx, ry, rz, fx, fy, fz
+        cdef double rx, ry, rz, fx, fy, fz, px, py, pz
+        cdef double rx_tot, ry_tot, rz_tot, fx_tot, fy_tot, fz_tot
         cdef tuple contact
         for sensor_i, (model_id, model_link) in enumerate(
                 zip(self.model_ids, self.model_links)
         ):
-            rx = 0
-            ry = 0
-            rz = 0
-            fx = 0
-            fy = 0
-            fz = 0
+            px = 0
+            py = 0
+            pz = 0
+            rx_tot = 0
+            ry_tot = 0
+            rz_tot = 0
+            fx_tot = 0
+            fy_tot = 0
+            fz_tot = 0
             for contact in self.get_contacts(model_id, model_link):
                 # Normal reaction
-                rx += contact[9]*contact[7][0]*self.inewtons
-                ry += contact[9]*contact[7][1]*self.inewtons
-                rz += contact[9]*contact[7][2]*self.inewtons
+                rx = contact[9]*contact[7][0]*self.inewtons
+                ry = contact[9]*contact[7][1]*self.inewtons
+                rz = contact[9]*contact[7][2]*self.inewtons
+                rx_tot += rx
+                ry_tot += ry
+                rz_tot += rz
                 # Lateral friction dir 1 + Lateral friction dir 2
-                fx += (contact[10]*contact[11][0] + contact[12]*contact[13][0])*self.inewtons
-                fy += (contact[10]*contact[11][1] + contact[12]*contact[13][1])*self.inewtons
-                fz += (contact[10]*contact[11][2] + contact[12]*contact[13][2])*self.inewtons
-            self.array[iteration, sensor_i, CONTACT_REACTION_X] = rx
-            self.array[iteration, sensor_i, CONTACT_REACTION_Y] = ry
-            self.array[iteration, sensor_i, CONTACT_REACTION_Z] = rz
-            self.array[iteration, sensor_i, CONTACT_FRICTION_X] = fx
-            self.array[iteration, sensor_i, CONTACT_FRICTION_Y] = fy
-            self.array[iteration, sensor_i, CONTACT_FRICTION_Z] = fz
-            self.array[iteration, sensor_i, CONTACT_TOTAL_X] = rx + fx
-            self.array[iteration, sensor_i, CONTACT_TOTAL_Y] = ry + fy
-            self.array[iteration, sensor_i, CONTACT_TOTAL_Z] = rz + fz
+                fx = (contact[10]*contact[11][0] + contact[12]*contact[13][0])*self.inewtons
+                fy = (contact[10]*contact[11][1] + contact[12]*contact[13][1])*self.inewtons
+                fz = (contact[10]*contact[11][2] + contact[12]*contact[13][2])*self.inewtons
+                fx_tot += fx
+                fy_tot += fy
+                fz_tot += fz
+                # Position
+                px += (rx+fx)*contact[5][0]*self.imeters
+                py += (ry+fy)*contact[5][1]*self.imeters
+                pz += (rz+fz)*contact[5][2]*self.imeters
+            self.array[iteration, sensor_i, CONTACT_REACTION_X] = rx_tot
+            self.array[iteration, sensor_i, CONTACT_REACTION_Y] = ry_tot
+            self.array[iteration, sensor_i, CONTACT_REACTION_Z] = rz_tot
+            self.array[iteration, sensor_i, CONTACT_FRICTION_X] = fx_tot
+            self.array[iteration, sensor_i, CONTACT_FRICTION_Y] = fy_tot
+            self.array[iteration, sensor_i, CONTACT_FRICTION_Z] = fz_tot
+            self.array[iteration, sensor_i, CONTACT_TOTAL_X] = rx_tot + fx_tot
+            self.array[iteration, sensor_i, CONTACT_TOTAL_Y] = ry_tot + fy_tot
+            self.array[iteration, sensor_i, CONTACT_TOTAL_Z] = rz_tot + fz_tot
+            if self.array[iteration, sensor_i, CONTACT_TOTAL_X] != 0:
+                self.array[iteration, sensor_i, CONTACT_POSITION_X] = px/(rx_tot + fx_tot)
+            if self.array[iteration, sensor_i, CONTACT_TOTAL_Y] != 0:
+                self.array[iteration, sensor_i, CONTACT_POSITION_Y] = py/(ry_tot + fy_tot)
+            if self.array[iteration, sensor_i, CONTACT_TOTAL_Z] != 0:
+                self.array[iteration, sensor_i, CONTACT_POSITION_Z] = pz/(rz_tot + fz_tot)
 
 
 cdef class JointsStatesSensor(DoubleArray3D):

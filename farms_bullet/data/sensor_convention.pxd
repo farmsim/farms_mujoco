@@ -12,6 +12,9 @@ cdef enum:
     CONTACT_TOTAL_X = 6
     CONTACT_TOTAL_Y = 7
     CONTACT_TOTAL_Z = 8
+    CONTACT_POSITION_X = 9
+    CONTACT_POSITION_Y = 10
+    CONTACT_POSITION_Z = 11
 
     # Proprioception
     JOINT_POSITION = 0

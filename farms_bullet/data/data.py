@@ -96,18 +96,18 @@ class ContactsArray(SensorData, ContactsArrayCy):
     def from_names(cls, names, n_iterations):
         """From names"""
         n_sensors = len(names)
-        array = np.zeros([n_iterations, n_sensors, 9], dtype=NPDTYPE)
+        array = np.zeros([n_iterations, n_sensors, 12], dtype=NPDTYPE)
         return cls(array, names)
 
     @classmethod
     def from_parameters(cls, n_iterations, n_contacts, names):
         """From parameters"""
-        return cls(np.zeros([n_iterations, n_contacts, 9]), names)
+        return cls(np.zeros([n_iterations, n_contacts, 12]), names)
 
     @classmethod
     def from_size(cls, n_contacts, n_iterations, names):
         """From size"""
-        contacts = np.zeros([n_iterations, n_contacts, 9], dtype=NPDTYPE)
+        contacts = np.zeros([n_iterations, n_contacts, 12], dtype=NPDTYPE)
         return cls(contacts, names)
 
     def reaction(self, iteration, sensor_i):
@@ -133,6 +133,14 @@ class ContactsArray(SensorData, ContactsArrayCy):
     def total_all(self, sensor_i):
         """Total force"""
         return self.array[:, sensor_i, 6:9]
+
+    def position(self, iteration, sensor_i):
+        """Position"""
+        return self.array[iteration, sensor_i, 9:12]
+
+    def position_all(self, sensor_i):
+        """Positions"""
+        return self.array[:, sensor_i, 9:12]
 
     def plot(self, times):
         """Plot"""
@@ -462,6 +470,10 @@ class GpsArray(SensorData, GpsArrayCy):
     def urdf_orientation(self, iteration, link_i):
         """URDF orientation of a link"""
         return self.array[iteration, link_i, 10:14]
+
+    def urdf_orientations(self):
+        """URDF orientation of a link"""
+        return self.array[:, :, 10:14]
 
     def com_lin_velocity(self, iteration, link_i):
         """CoM linear velocity of a link"""
