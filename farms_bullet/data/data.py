@@ -96,18 +96,18 @@ class ContactsArray(SensorData, ContactsArrayCy):
     def from_names(cls, names, n_iterations):
         """From names"""
         n_sensors = len(names)
-        array = np.zeros([n_iterations, n_sensors, 9], dtype=NPDTYPE)
+        array = np.zeros([n_iterations, n_sensors, 12], dtype=NPDTYPE)
         return cls(array, names)
 
     @classmethod
     def from_parameters(cls, n_iterations, n_contacts, names):
         """From parameters"""
-        return cls(np.zeros([n_iterations, n_contacts, 9]), names)
+        return cls(np.zeros([n_iterations, n_contacts, 12]), names)
 
     @classmethod
     def from_size(cls, n_contacts, n_iterations, names):
         """From size"""
-        contacts = np.zeros([n_iterations, n_contacts, 9], dtype=NPDTYPE)
+        contacts = np.zeros([n_iterations, n_contacts, 12], dtype=NPDTYPE)
         return cls(contacts, names)
 
     def reaction(self, iteration, sensor_i):
@@ -134,9 +134,18 @@ class ContactsArray(SensorData, ContactsArrayCy):
         """Total force"""
         return self.array[:, sensor_i, 6:9]
 
+    def position(self, iteration, sensor_i):
+        """Position"""
+        return self.array[iteration, sensor_i, 9:12]
+
+    def position_all(self, sensor_i):
+        """Positions"""
+        return self.array[:, sensor_i, 9:12]
+
     def plot(self, times):
         """Plot"""
         self.plot_ground_reaction_forces(times)
+        self.plot_ground_reaction_forces_all(times)
         self.plot_friction_forces(times)
         for ori in range(3):
             self.plot_friction_forces_ori(times, ori=ori)
@@ -152,6 +161,18 @@ class ContactsArray(SensorData, ContactsArrayCy):
                 np.linalg.norm(data, axis=-1)[:len(times)],
                 label='Leg_{}'.format(sensor_i)
             )
+        plt.legend()
+        plt.xlabel('Times [s]')
+        plt.ylabel('Forces [N]')
+        plt.grid(True)
+
+    def plot_ground_reaction_forces_all(self, times):
+        """Plot ground reaction forces"""
+        axis = ['x', 'y', 'z']
+        for sensor_i, name in enumerate(self.names):
+            data = np.asarray(self.reaction_all(sensor_i))
+            plt.figure('Ground reaction forces {}'.format(name))
+            plt.plot(times, data[:len(times)], label=axis[sensor_i])
         plt.legend()
         plt.xlabel('Times [s]')
         plt.ylabel('Forces [N]')
@@ -463,6 +484,10 @@ class GpsArray(SensorData, GpsArrayCy):
         """URDF orientation of a link"""
         return self.array[iteration, link_i, 10:14]
 
+    def urdf_orientations(self):
+        """URDF orientation of a link"""
+        return self.array[:, :, 10:14]
+
     def com_lin_velocity(self, iteration, link_i):
         """CoM linear velocity of a link"""
         return self.array[iteration, link_i, 14:17]
@@ -533,9 +558,17 @@ class HydrodynamicsArray(SensorData, HydrodynamicsArrayCy):
         """From parameters"""
         return cls(np.zeros([n_iterations, n_links, 6]), names)
 
+    def force(self, iteration, sensor_i):
+        """Force"""
+        return self.array[iteration, sensor_i, 0:3]
+
     def forces(self):
         """Forces"""
         return self.array[:, :, 0:3]
+
+    def torque(self, iteration, sensor_i):
+        """Torque"""
+        return self.array[iteration, sensor_i, 3:6]
 
     def torques(self):
         """Torques"""

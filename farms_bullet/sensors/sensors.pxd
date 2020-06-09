@@ -13,6 +13,7 @@ cdef class ContactsSensors(DoubleArray3D):
     """Model sensors"""
     cdef public unsigned int [:] model_ids
     cdef public int [:] model_links
+    cdef public double imeters
     cdef public double inewtons
     cpdef tuple get_contacts(self, unsigned int model_id, int model_link)
     cpdef void update(self, unsigned int iteration)
