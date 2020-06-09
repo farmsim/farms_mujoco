@@ -566,6 +566,10 @@ class HydrodynamicsArray(SensorData, HydrodynamicsArrayCy):
         """Forces"""
         return self.array[:, :, 0:3]
 
+    def set_force(self, iteration, sensor_i, force):
+        """Set force"""
+        self.array[iteration, sensor_i, 0:3] = force
+
     def torque(self, iteration, sensor_i):
         """Torque"""
         return self.array[iteration, sensor_i, 3:6]
@@ -573,6 +577,10 @@ class HydrodynamicsArray(SensorData, HydrodynamicsArrayCy):
     def torques(self):
         """Torques"""
         return self.array[:, :, 3:6]
+
+    def set_torque(self, iteration, sensor_i, torque):
+        """Set torque"""
+        self.array[iteration, sensor_i, 3:6] = torque
 
     def plot(self, times):
         """Plot"""
