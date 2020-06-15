@@ -172,7 +172,12 @@ class ContactsArray(SensorData, ContactsArrayCy):
         for sensor_i, name in enumerate(self.names):
             data = np.asarray(self.reaction_all(sensor_i))
             plt.figure('Ground reaction forces {}'.format(name))
-            plt.plot(times, data[:len(times)], label=axis[sensor_i])
+            for direction_i, direction in enumerate(['x', 'y', 'z']):
+                plt.plot(
+                    times,
+                    data[:len(times), direction_i],
+                    label='{}_{}'.format(name, direction)
+                )
         plt.legend()
         plt.xlabel('Times [s]')
         plt.ylabel('Forces [N]')
