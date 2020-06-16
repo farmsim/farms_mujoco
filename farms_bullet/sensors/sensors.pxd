@@ -1,7 +1,7 @@
 """Cython sensors"""
 
-include '../data/sensor_convention.pxd'
-from ..data.array cimport DoubleArray3D
+include 'sensor_convention.pxd'
+from farms_data.sensors.array cimport DoubleArray3D
 
 
 cdef class Sensors(dict):

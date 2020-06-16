@@ -4,11 +4,18 @@
 from setuptools import setup, find_packages
 from setuptools.extension import Extension
 from setuptools import dist
-dist.Distribution().fetch_build_eggs(['Cython>=0.15.1'])
-from Cython.Build import cythonize
+
+dist.Distribution().fetch_build_eggs(['numpy'])
 import numpy as np
 
+dist.Distribution().fetch_build_eggs(['Cython>=0.15.1'])
+from Cython.Build import cythonize
+
+dist.Distribution().fetch_build_eggs(['farms_data'])
+from farms_data import get_include_paths
+
 DEBUG = False
+
 
 setup(
     name='farms_bullet',
@@ -28,12 +35,9 @@ setup(
                 extra_compile_args=['-O3'],  # , '-fopenmp'
                 extra_link_args=['-O3']  # , '-fopenmp'
             )
-            for folder in [
-                'data',
-                'sensors'
-            ]
+            for folder in ['sensors']
         ],
-        include_path=[np.get_include()],
+        include_path=[np.get_include()] + get_include_paths(),
         compiler_directives={
             'embedsignature': True,
             'cdivision': True,
