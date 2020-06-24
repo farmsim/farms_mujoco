@@ -43,11 +43,13 @@ class SimulationModel:
     @staticmethod
     def from_sdf(sdf, **kwargs):
         """Model from SDF"""
+        assert os.path.isfile(sdf), '{} does not exist'.format(sdf)
         return pybullet.loadSDF(sdf, **kwargs)[0]
 
     @staticmethod
     def from_urdf(urdf, **kwargs):
         """Model from SDF"""
+        assert os.path.isfile(urdf), '{} does not exist'.format(urdf)
         return pybullet.loadURDF(urdf, **kwargs)
 
 
