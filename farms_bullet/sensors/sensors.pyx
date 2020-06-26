@@ -57,16 +57,16 @@ cdef class ContactsSensors(DoubleArray3D):
             fz_tot = 0
             for contact in self.get_contacts(model_id, model_link):
                 # Normal reaction
-                rx = -contact[9]*contact[7][0]*self.inewtons
-                ry = -contact[9]*contact[7][1]*self.inewtons
-                rz = -contact[9]*contact[7][2]*self.inewtons
+                rx = contact[9]*contact[7][0]*self.inewtons
+                ry = contact[9]*contact[7][1]*self.inewtons
+                rz = contact[9]*contact[7][2]*self.inewtons
                 rx_tot += rx
                 ry_tot += ry
                 rz_tot += rz
                 # Lateral friction dir 1 + Lateral friction dir 2
-                fx = -(contact[10]*contact[11][0] + contact[12]*contact[13][0])*self.inewtons
-                fy = -(contact[10]*contact[11][1] + contact[12]*contact[13][1])*self.inewtons
-                fz = -(contact[10]*contact[11][2] + contact[12]*contact[13][2])*self.inewtons
+                fx = (contact[10]*contact[11][0] + contact[12]*contact[13][0])*self.inewtons
+                fy = (contact[10]*contact[11][1] + contact[12]*contact[13][1])*self.inewtons
+                fz = (contact[10]*contact[11][2] + contact[12]*contact[13][2])*self.inewtons
                 fx_tot += fx
                 fy_tot += fy
                 fz_tot += fz
