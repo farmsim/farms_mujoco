@@ -12,6 +12,23 @@ class SpawnLoader(IntEnum):
     PYBULLET = 1
 
 
+class JointOptions(Options):
+    """Joint options
+
+    The Pybullet dynamics represent the input arguments called with
+    pybullet.changeDynamics(...). The appropriate link is called for it.
+    """
+
+    def __init__(self, **kwargs):
+        super(JointOptions, self).__init__()
+        self.name = kwargs.pop('name')
+        self.initial_position = kwargs.pop('initial_position')
+        self.initial_velocity = kwargs.pop('initial_velocity')
+        self.pybullet_dynamics = kwargs.pop('pybullet_dynamics', {})
+        if kwargs:
+            raise Exception('Unknown kwargs: {}'.format(kwargs))
+
+
 class SpawnOptions(Options):
     """Spawn options"""
 
