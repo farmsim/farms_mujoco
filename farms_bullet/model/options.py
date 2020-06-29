@@ -12,6 +12,36 @@ class SpawnLoader(IntEnum):
     PYBULLET = 1
 
 
+class SpawnOptions(Options):
+    """Spawn options"""
+
+    def __init__(self, **kwargs):
+        super(SpawnOptions, self).__init__()
+        self.loader = kwargs.pop('loader')
+        self.position = kwargs.pop('position')
+        self.orientation = kwargs.pop('orientation')
+        self.velocity_lin = kwargs.pop('velocity_lin')
+        self.velocity_ang = kwargs.pop('velocity_ang')
+        if kwargs:
+            raise Exception('Unknown kwargs: {}'.format(kwargs))
+
+    @classmethod
+    def from_options(cls, kwargs):
+        """From options"""
+        options = {}
+        # Loader
+        options['loader'] = kwargs.pop('spawn_loader', SpawnLoader.PYBULLET)
+        # Position in [m]
+        options['position'] = kwargs.pop('spawn_position', [0, 0, 0.1])
+        # Orientation in [rad] (Euler angles)
+        options['orientation'] = kwargs.pop('spawn_orientation', [0, 0, 0])
+        # Linear velocity in [m/s]
+        options['velocity_lin'] = kwargs.pop('spawn_velocity_lin', [0, 0, 0])
+        # Angular velocity in [rad/s] (Euler angles)
+        options['velocity_ang'] = kwargs.pop('spawn_velocity_ang', [0, 0, 0])
+        return cls(**options)
+
+
 class ControlOptions(Options):
     """Control options"""
 
