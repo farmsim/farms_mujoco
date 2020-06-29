@@ -11,6 +11,28 @@ class SpawnLoader(IntEnum):
     PYBULLET = 1
 
 
+class ModelOptions(Options):
+    """Simulation options"""
+
+    def __init__(self, spawn, morphology, control):
+        super(ModelOptions, self).__init__()
+        self.spawn = (
+            spawn
+            if isinstance(spawn, SpawnOptions)
+            else SpawnOptions(**spawn)
+        )
+        self.morphology = (
+            morphology
+            if isinstance(morphology, MorphologyOptions)
+            else MorphologyOptions(**morphology)
+        )
+        self.control = (
+            control
+            if isinstance(control, ControlOptions)
+            else ControlOptions(**control)
+        )
+
+
 class MorphologyOptions(Options):
     """ morphology options"""
 
