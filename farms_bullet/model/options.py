@@ -3,13 +3,50 @@
 
 from enum import IntEnum
 from farms_data.options import Options
-# from farms_bullet.model.control import ControlType
 
 
 class SpawnLoader(IntEnum):
     """Spawn loader"""
     FARMS = 0
     PYBULLET = 1
+
+
+class MorphologyOptions(Options):
+    """ morphology options"""
+
+    def __init__(self, **kwargs):
+        super(MorphologyOptions, self).__init__()
+        links = kwargs.pop('links')
+        self.links = (
+            links
+            if all([isinstance(link, LinkOptions) for link in links])
+            else [LinkOptions(**link) for link in kwargs.pop('links')]
+        )
+        self.self_collisions = kwargs.pop('self_collisions')
+        joints = kwargs.pop('joints')
+        self.joints = (
+            joints
+            if all([isinstance(joint, JointOptions) for joint in joints])
+            else [JointOptions(**joint) for joint in joints]
+        )
+        if kwargs:
+            raise Exception('Unknown kwargs: {}'.format(kwargs))
+
+    def links_names(self):
+        """Links names"""
+        return [link.name for link in self.links]
+
+    def joints_names(self):
+        """Joints names"""
+        return [joint.name for joint in self.joints]
+
+    def n_joints(self):
+        """Number of joints"""
+        return len(self.joints)
+
+    def n_links(self):
+        """Number of links"""
+        return len(self.links)
 
 
 class LinkOptions(Options):
@@ -90,14 +127,8 @@ class ControlOptions(Options):
         joints = kwargs.pop('joints')
         self.joints = (
             joints
-            if all([
-                isinstance(joint, JointControlOptions)
-                for joint in joints
-            ])
-            else [
-                JointControlOptions(**joint)
-                for joint in joints
-            ]
+            if all([isinstance(joint, JointControlOptions) for joint in joints])
+            else [JointControlOptions(**joint) for joint in joints]
         )
         if kwargs:
             raise Exception('Unknown kwargs: {}'.format(kwargs))
