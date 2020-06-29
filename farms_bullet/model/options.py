@@ -1,6 +1,27 @@
 """Animat options"""
 
+
+from enum import IntEnum
 from farms_data.options import Options
+# from farms_bullet.model.control import ControlType
+
+
+class SpawnLoader(IntEnum):
+    """Spawn loader"""
+    FARMS = 0
+    PYBULLET = 1
+
+
+class JointControlOptions(Options):
+    """ joint options"""
+
+    def __init__(self, **kwargs):
+        super(JointControlOptions, self).__init__()
+        self.joint = kwargs.pop('joint')
+        self.control_type = kwargs.pop('control_type')
+        self.max_torque = kwargs.pop('max_torque')
+        if kwargs:
+            raise Exception('Unknown kwargs: {}'.format(kwargs))
 
 
 class SensorsOptions(Options):
