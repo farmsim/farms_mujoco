@@ -12,8 +12,55 @@ class SpawnLoader(IntEnum):
     PYBULLET = 1
 
 
+class ControlOptions(Options):
+    """Control options"""
+
+    def __init__(self, **kwargs):
+        super(ControlOptions, self).__init__()
+        sensors = kwargs.pop('sensors')
+        self.sensors = (
+            sensors
+            if isinstance(sensors, SensorsOptions)
+            else SensorsOptions(**kwargs.pop('sensors'))
+        )
+        joints = kwargs.pop('joints')
+        self.joints = (
+            joints
+            if all([
+                isinstance(joint, JointControlOptions)
+                for joint in joints
+            ])
+            else [
+                JointControlOptions(**joint)
+                for joint in joints
+            ]
+        )
+        if kwargs:
+            raise Exception('Unknown kwargs: {}'.format(kwargs))
+
+    @staticmethod
+    def options_from_kwargs(kwargs):
+        """Options from kwargs"""
+        options = {}
+        options['sensors'] = kwargs.pop(
+            'sensors',
+            SensorsOptions.from_options(kwargs).to_dict()
+        )
+        options['joints'] = kwargs.pop('joints', [])
+        return options
+
+    @classmethod
+    def from_options(cls, kwargs):
+        """From options"""
+        return cls(**cls.options_from_kwargs(kwargs))
+
+    def joints_max_torque(self):
+        """Joints max torques"""
+        return [joint.max_torque for joint in self.joints]
+
+
 class JointControlOptions(Options):
-    """ joint options"""
+    """Joint options"""
 
     def __init__(self, **kwargs):
         super(JointControlOptions, self).__init__()
