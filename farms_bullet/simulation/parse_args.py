@@ -6,6 +6,7 @@ import argparse
 def parse_args():
     """ Parse arguments """
     parser = argparse.ArgumentParser(description='Salamander simulation')
+
     # Simulation
     parser.add_argument(
         '--timestep',
@@ -42,6 +43,7 @@ def parse_args():
         default=False,
         help='Headless mode instead of using GUI',
     )
+
     # Camera
     parser.add_argument(
         '-f', '--free_camera',
@@ -64,6 +66,7 @@ def parse_args():
         default=False,
         help='Enable top view camera',
     )
+
     # Video recording
     parser.add_argument(
         '--record',
@@ -100,6 +103,7 @@ def parse_args():
         default=1,
         help='Camera distance',
     )
+
     # Pybullet
     parser.add_argument(
         '--n_solver_iters',
@@ -115,6 +119,7 @@ def parse_args():
         default=False,
         help='Run simulation with OpenGL 2 instead of 3',
     )
+
     # return parser.parse_args()
     args, _ = parser.parse_known_args()
     return args

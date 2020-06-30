@@ -45,6 +45,12 @@ class SimulationOptions(Options):
         self.gravity = kwargs.pop('gravity', [0, 0, -9.81])
         self.opengl2 = kwargs.pop('opengl2', False)
         self.n_solver_iters = kwargs.pop('n_solver_iters', 50)
+        self.erp = kwargs.pop('erp', 1e-2)
+        self.contact_erp = kwargs.pop('contact_erp', 0)
+        self.friction_erp = kwargs.pop('friction_erp', 0)
+        self.num_sub_steps = kwargs.pop('num_sub_steps', 0)
+        self.max_num_cmd_per_1ms = kwargs.pop('max_num_cmd_per_1ms', int(1e8))
+        self.residual_threshold = kwargs.pop('residual_threshold', 0)
         assert not kwargs, kwargs
 
     def duration(self):
