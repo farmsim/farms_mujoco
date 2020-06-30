@@ -85,5 +85,17 @@ class SimulationOptions(Options):
             # Pybullet
             opengl2=kwargs.pop('opengl2', clargs.opengl2),
             n_solver_iters=kwargs.pop('n_solver_iters', clargs.n_solver_iters),
+            erp=kwargs.pop('erp', clargs.erp),
+            contact_erp=kwargs.pop('contact_erp', clargs.contact_erp),
+            friction_erp=kwargs.pop('friction_erp', clargs.friction_erp),
+            num_sub_steps=kwargs.pop('num_sub_steps', clargs.num_sub_steps),
+            max_num_cmd_per_1ms=kwargs.pop(
+                'max_num_cmd_per_1ms',
+                clargs.max_num_cmd_per_1ms
+            ),
+            residual_threshold=kwargs.pop(
+                'residual_threshold',
+                clargs.residual_threshold
+            ),
             **kwargs,
         )

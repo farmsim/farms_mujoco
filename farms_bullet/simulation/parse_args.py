@@ -119,6 +119,48 @@ def parse_args():
         default=False,
         help='Run simulation with OpenGL 2 instead of 3',
     )
+    parser.add_argument(
+        '--erp',
+        type=float,
+        dest='erp',
+        default=1e-2,
+        help='Pybullet ERP',
+    )
+    parser.add_argument(
+        '--contact_erp',
+        type=float,
+        dest='contact_erp',
+        default=0,
+        help='Pybullet contact ERP',
+    )
+    parser.add_argument(
+        '--friction_erp',
+        type=float,
+        dest='friction_erp',
+        default=0,
+        help='Pybullet friction ERP',
+    )
+    parser.add_argument(
+        '--num_sub_steps',
+        type=int,
+        dest='num_sub_steps',
+        default=0,
+        help='Pybullet number of sub-steps',
+    )
+    parser.add_argument(
+        '--max_num_cmd_per_1ms',
+        type=int,
+        dest='max_num_cmd_per_1ms',
+        default=int(1e9),
+        help='Pybullet maximum number of commands per millisecond',
+    )
+    parser.add_argument(
+        '--residual_threshold',
+        type=float,
+        dest='residual_threshold',
+        default=int(1e9),
+        help='Pybullet solver residual threshold',
+    )
 
     # return parser.parse_args()
     args, _ = parser.parse_known_args()
