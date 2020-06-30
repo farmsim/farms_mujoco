@@ -94,7 +94,7 @@ class Simulation:
             frictionERP=self.options.friction_erp,
             numSubSteps=self.options.num_sub_steps,
             maxNumCmdPer1ms=self.options.max_num_cmd_per_1ms,
-            solverResidualThreshold=0,
+            solverResidualThreshold=self.options.residual_threshold,
             # solverResidualThreshold=1e-12,
             # restitutionVelocityThreshold=1e-3,
             # useSplitImpulse=False,
