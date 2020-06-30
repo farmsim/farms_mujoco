@@ -23,7 +23,7 @@ class SimulationOptions(Options):
 
         # Simulation
         self.timestep = kwargs.pop('timestep', 1e-3)
-        self.n_iterations = kwargs.pop('n_iterations', 100)
+        self.n_iterations = kwargs.pop('n_iterations', 1000)
         self.play = kwargs.pop('play', True)
         self.fast = kwargs.pop('fast', False)
         self.headless = kwargs.pop('headless', False)
