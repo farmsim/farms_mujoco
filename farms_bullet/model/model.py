@@ -18,6 +18,14 @@ class SimulationModel:
         """Model identity"""
         return self._identity
 
+    def links_identities(self):
+        """Joints"""
+        return np.arange(-1, pybullet.getNumJoints(self._identity), dtype=int)
+
+    def joints_identities(self):
+        """Joints"""
+        return np.arange(pybullet.getNumJoints(self._identity), dtype=int)
+
     def spawn(self):
         """Spawn"""
 
