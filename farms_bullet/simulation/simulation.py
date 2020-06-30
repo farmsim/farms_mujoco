@@ -178,6 +178,7 @@ class Simulation:
         """Physics step"""
         control_models(
             iteration=iteration,
+            timestep=self.options.timestep,
             models=self.models,
             torques=self.options.units.torques,
         )
