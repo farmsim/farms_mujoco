@@ -50,7 +50,7 @@ class SimulationOptions(Options):
         self.friction_erp = kwargs.pop('friction_erp', 0)
         self.num_sub_steps = kwargs.pop('num_sub_steps', 0)
         self.max_num_cmd_per_1ms = kwargs.pop('max_num_cmd_per_1ms', int(1e8))
-        self.residual_threshold = kwargs.pop('residual_threshold', 0)
+        self.residual_threshold = kwargs.pop('residual_threshold', 1e-6)
         assert not kwargs, kwargs
 
     def duration(self):

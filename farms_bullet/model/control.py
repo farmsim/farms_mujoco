@@ -40,7 +40,7 @@ def reset_controllers(identity):
     )
 
 
-def control_models(iteration, timestep, models, torques):
+def control_models(iteration, time, timestep, models, torques):
     """Control"""
     for model in models:
         if model.controller is None:
@@ -49,7 +49,7 @@ def control_models(iteration, timestep, models, torques):
             reset_controllers(model.identity())
         controller = model.controller
         if controller.joints[ControlType.POSITION]:
-            joints_positions = controller.positions(iteration, timestep)
+            joints_positions = controller.positions(iteration, time, timestep)
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
@@ -64,7 +64,7 @@ def control_models(iteration, timestep, models, torques):
                 forces=controller.max_torques[ControlType.POSITION]*torques,
             )
         if controller.joints[ControlType.TORQUE]:
-            joints_torques = controller.torques(iteration, timestep)
+            joints_torques = controller.torques(iteration, time, timestep)
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
@@ -116,7 +116,7 @@ class ModelController:
     def step(self, iteration, time, timestep):
         """Step"""
 
-    def positions(self, iteration):
+    def positions(self, iteration, time, timestep):
         """Positions"""
         assert iteration >= 0
         return {
@@ -124,7 +124,7 @@ class ModelController:
             for joints in self.joints
         }
 
-    def velocities(self, iteration):
+    def velocities(self, iteration, time, timestep):
         """Velocities"""
         assert iteration >= 0
         return {
@@ -132,7 +132,7 @@ class ModelController:
             for joints in self.joints
         }
 
-    def torques(self, iteration):
+    def torques(self, iteration, time, timestep):
         """Torques"""
         assert iteration >= 0
         return {
