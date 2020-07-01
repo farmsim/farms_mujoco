@@ -158,7 +158,7 @@ def parse_args():
         '--residual_threshold',
         type=float,
         dest='residual_threshold',
-        default=0,
+        default=1e-6,
         help='Pybullet solver residual threshold',
     )
 
