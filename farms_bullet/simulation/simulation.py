@@ -1,10 +1,10 @@
 """Simulation"""
 
+import os
 import pybullet
 from tqdm import tqdm
-
+import numpy as np
 import farms_pylog as pylog
-
 from ..model.control import control_models
 from .simulator import init_engine
 from .render import rendering
@@ -35,7 +35,7 @@ class Simulation:
 
     """
 
-    def __init__(self, models, options):
+    def __init__(self, models, options, interface=None):
         super(Simulation, self).__init__()
 
         self.models = models
@@ -61,7 +61,7 @@ class Simulation:
         self.simulation_state = None
 
         # Interface
-        self.interface = None
+        self.interface = interface
 
         if not self.options.headless:
             pylog.debug('Reactivating rendering')
@@ -164,12 +164,14 @@ class Simulation:
                 if pbar is not None:
                     pbar.update(1)
 
-    def pre_step(self, iteration):
+    @staticmethod
+    def pre_step(_iteration):
         """Pre-step
 
         Returns bool
 
         """
+        return True
 
     def step(self, iteration):
         """Step function"""
@@ -187,7 +189,62 @@ class Simulation:
     def post_step(self, iteration):
         """Post-step"""
 
-    def end(self):
+    @staticmethod
+    def end():
         """Terminate simulation"""
         # Disconnect from simulation
         pybullet.disconnect()
+
+
+class AnimatSimulation(Simulation):
+    """Animat simulation"""
+
+    def animat(self):
+        """Salamander animat"""
+        return self.models[0]
+
+    def postprocess(
+            self,
+            iteration,
+            log_path='',
+            plot=False,
+            video='',
+            **kwargs
+    ):
+        """Plot after simulation"""
+        times = np.arange(
+            0,
+            self.options.timestep*self.options.n_iterations,
+            self.options.timestep
+        )[:iteration]
+
+        # Log
+        if log_path:
+            pylog.info('Saving data to {}'.format(log_path))
+            self.animat().data.to_file(
+                os.path.join(
+                    log_path,
+                    'simulation.hdf5'
+                ),
+                iteration,
+            )
+            self.options.save(os.path.join(
+                log_path,
+                'simulation_options.yaml'
+            ))
+            self.animat().options.save(os.path.join(
+                log_path,
+                'animat_options.yaml'
+            ))
+
+        # Plot
+        if plot:
+            self.animat().data.plot(times)
+
+        # Record video
+        if video:
+            self.interface.video.save(
+                video,
+                iteration=iteration,
+                writer=kwargs.pop('writer', 'ffmpeg')
+            )
