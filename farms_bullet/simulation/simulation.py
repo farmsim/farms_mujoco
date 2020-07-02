@@ -7,7 +7,7 @@ from tqdm import tqdm
 import numpy as np
 import farms_pylog as pylog
 from ..model.control import control_models
-from ..interface.interface import Interfaces, UserParameters
+from ..interface.interface import Interfaces
 from .simulator import init_engine, real_time_handing
 from .render import rendering
 
@@ -278,6 +278,11 @@ class AnimatSimulation(Simulation):
         # Camera
         if not self.options.headless:
             self.interface.camera.update()
+            # Camera zoom
+            if self.interface.user_params.zoom().changed:
+                self.interface.camera.set_zoom(
+                    self.interface.user_params.zoom().value
+                )
         if self.options.record:
             self.interface.video.record(iteration)
 
@@ -294,14 +299,6 @@ class AnimatSimulation(Simulation):
                     rtl=self.interface.user_params.rtl().value
                 )
             self.tic_rt[0] = time.time()
-
-    def animat_interface(self, _iteration):
-        """Animat interface"""
-        # Camera zoom
-        if self.interface.user_params.zoom().changed:
-            self.interface.camera.set_zoom(
-                self.interface.user_params.zoom().value
-            )
 
     def postprocess(
             self,
