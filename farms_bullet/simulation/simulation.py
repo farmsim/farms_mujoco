@@ -244,7 +244,7 @@ class AnimatSimulation(Simulation):
             )
 
         # Real-time handling
-        self.tic_rt = np.zeros(2)
+        self.tic_rt = np.zeros(3)
 
         # Simulation state
         self.simulation_state = None
@@ -288,7 +288,6 @@ class AnimatSimulation(Simulation):
 
         # Real-time
         if not self.options.headless:
-            self.tic_rt[1] = time.time()
             if (
                     not self.options.fast
                     and self.interface.user_params.rtl().value < 2.99
@@ -298,7 +297,6 @@ class AnimatSimulation(Simulation):
                     self.tic_rt,
                     rtl=self.interface.user_params.rtl().value
                 )
-            self.tic_rt[0] = time.time()
 
     def postprocess(
             self,

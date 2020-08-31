@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Setup script """
+"""Setup script"""
 
 from setuptools import setup, find_packages
 from setuptools.extension import Extension

@@ -33,11 +33,16 @@ def init_engine(headless=False, opengl2=False):
 
 def real_time_handing(timestep, tic_rt, rtl=1.0, verbose=False, **kwargs):
     """Real-time handling"""
-    sleep_rtl = timestep/rtl - (tic_rt[1] - tic_rt[0])
-    if sleep_rtl > 1e-3:
-        time.sleep(sleep_rtl)
+    tic_rt[1] = time.time()
+    tic_rt[2] += timestep/rtl - (tic_rt[1] - tic_rt[0])
     rtf = timestep / (tic_rt[1] - tic_rt[0])
-    if rtf < 0.5 and verbose:
+    if tic_rt[2] > 1e-2:
+        time.sleep(tic_rt[2])
+        tic_rt[2] = 0
+    elif tic_rt[2] < 0:
+        tic_rt[2] = 0
+    tic_rt[0] = time.time()
+    if rtf < 0.1 and verbose:
         pylog.debug('Significantly slower than real-time: {} %'.format(100*rtf))
         time_plugin = kwargs.pop('time_plugin', False)
         time_control = kwargs.pop('time_control', False)

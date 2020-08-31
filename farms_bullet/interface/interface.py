@@ -108,7 +108,7 @@ class DebugParameter:
         """Update"""
         previous_value = self.value
         self.value = self.get_value()
-        self.changed = (self.value != previous_value)
+        self.changed = abs(self.value - previous_value) > 1e-2
         if self.changed:
             pylog.debug('{} changed ({} -> {})'.format(
                 self.name,
