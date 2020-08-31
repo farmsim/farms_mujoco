@@ -3,7 +3,6 @@
 import os
 import numpy as np
 import pybullet
-import farms_pylog as pylog
 
 
 class SimulationModel:
@@ -18,6 +17,14 @@ class SimulationModel:
     def identity(self):
         """Model identity"""
         return self._identity
+
+    def links_identities(self):
+        """Joints"""
+        return np.arange(-1, pybullet.getNumJoints(self._identity), dtype=int)
+
+    def joints_identities(self):
+        """Joints"""
+        return np.arange(pybullet.getNumJoints(self._identity), dtype=int)
 
     def spawn(self):
         """Spawn"""
@@ -43,11 +50,13 @@ class SimulationModel:
     @staticmethod
     def from_sdf(sdf, **kwargs):
         """Model from SDF"""
+        assert os.path.isfile(sdf), '{} does not exist'.format(sdf)
         return pybullet.loadSDF(sdf, **kwargs)[0]
 
     @staticmethod
     def from_urdf(urdf, **kwargs):
         """Model from SDF"""
+        assert os.path.isfile(urdf), '{} does not exist'.format(urdf)
         return pybullet.loadURDF(urdf, **kwargs)
 
 
@@ -155,7 +164,11 @@ class SimulationModels(SimulationModel):
         super(SimulationModels, self).__init__()
         self._models = models
 
+    def __iter__(self):
+        return iter(self._models)
+
     def __getitem__(self, key):
+        assert key < len(self._models)
         return self._models[key]
 
     def spawn(self):

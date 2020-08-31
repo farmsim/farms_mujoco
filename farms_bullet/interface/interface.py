@@ -1,9 +1,8 @@
 """Interface"""
 
-import numpy as np
 import pybullet
-from .camera import UserCamera, CameraRecord
 import farms_pylog as pylog
+from .camera import UserCamera, CameraRecord
 
 
 class Interfaces:
@@ -57,10 +56,12 @@ class Interfaces:
         )
         assert not kwargs, kwargs
 
-    def init_debug(self, animat_options):
+    def init_debug(self, simulation_options):
         """Initialise debug"""
         # User parameters
-        self.user_params = UserParameters(animat_options)
+        if self.user_params is None:
+            self.user_params = UserParameters(simulation_options)
+        self.user_params.init()
 
 
 class DebugParameter:
@@ -74,6 +75,9 @@ class DebugParameter:
         self.val_max = val_max
         self._handler = None
         self.changed = False
+
+    def init(self):
+        """Initialise"""
         self.add(self.value)
 
     def add(self, value):
@@ -114,12 +118,20 @@ class DebugParameter:
 
 
 class ParameterPlay(DebugParameter):
-    """Play/pause parameter"""
+    """Play/pause parameter
 
-    def __init__(self):
-        super(ParameterPlay, self).__init__('Play/Pause', 0, 0, -1)
-        self.value = True
-        self.previous_value = 0
+    self.value:          Boolean
+    self.previous_value: Keeps track of the last measured value
+    self.get_value():    Returns the number of times play/plause button
+                         has been pressed
+    """
+
+    def __init__(self, initial_value=True):
+        self.previous_value = initial_value
+        super(ParameterPlay, self).__init__(
+            'Play/Pause', self.previous_value, 0, -1
+        )
+        self.value = initial_value
 
     def update(self):
         """Update"""
@@ -132,11 +144,17 @@ class ParameterPlay(DebugParameter):
 class UserParameters(dict):
     """Parameters control"""
 
-    def __init__(self):
+    def __init__(self, options):
         super(UserParameters, self).__init__()
-        self['play'] = ParameterPlay()
+        self['play'] = ParameterPlay(initial_value=options.play)
         self['rtl'] = DebugParameter('Real-time limiter', 1, 1e-3, 3)
         self['zoom'] = DebugParameter('Zoom', 1, 0, 1)
+
+    def init(self):
+        """Intialise"""
+        self['play'].init()
+        self['rtl'].init()
+        self['zoom'].init()
 
     def update(self):
         """Update parameters"""

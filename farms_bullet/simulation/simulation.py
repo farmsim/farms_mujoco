@@ -1,12 +1,14 @@
 """Simulation"""
 
+import os
+import time
 import pybullet
 from tqdm import tqdm
-
+import numpy as np
 import farms_pylog as pylog
-
 from ..model.control import control_models
-from .simulator import init_engine
+from ..interface.interface import Interfaces
+from .simulator import init_engine, real_time_handing
 from .render import rendering
 
 
@@ -35,7 +37,7 @@ class Simulation:
 
     """
 
-    def __init__(self, models, options):
+    def __init__(self, models, options, interface=None):
         super(Simulation, self).__init__()
 
         self.models = models
@@ -61,7 +63,15 @@ class Simulation:
         self.simulation_state = None
 
         # Interface
-        self.interface = None
+        self.interface = (
+            interface
+            if interface is not None and not self.options.headless
+            else Interfaces()
+            if not self.options.headless
+            else None
+        )
+        if not self.options.headless:
+            self.interface.init_debug(self.options)
 
         if not self.options.headless:
             pylog.debug('Reactivating rendering')
@@ -89,12 +99,12 @@ class Simulation:
         pybullet.setPhysicsEngineParameter(
             fixedTimeStep=self.options.timestep*self.options.units.seconds,
             numSolverIterations=self.options.n_solver_iters,
-            erp=1e-2,
-            contactERP=0,
-            frictionERP=0,
-            numSubSteps=0,
-            maxNumCmdPer1ms=int(1e8),
-            solverResidualThreshold=0,
+            erp=self.options.erp,
+            contactERP=self.options.contact_erp,
+            frictionERP=self.options.friction_erp,
+            numSubSteps=self.options.num_sub_steps,
+            maxNumCmdPer1ms=self.options.max_num_cmd_per_1ms,
+            solverResidualThreshold=self.options.residual_threshold,
             # solverResidualThreshold=1e-12,
             # restitutionVelocityThreshold=1e-3,
             # useSplitImpulse=False,
@@ -164,12 +174,14 @@ class Simulation:
                 if pbar is not None:
                     pbar.update(1)
 
-    def pre_step(self, iteration):
+    @staticmethod
+    def pre_step(_iteration):
         """Pre-step
 
         Returns bool
 
         """
+        return True
 
     def step(self, iteration):
         """Step function"""
@@ -178,6 +190,8 @@ class Simulation:
         """Physics step"""
         control_models(
             iteration=iteration,
+            time=self.options.timestep*iteration,
+            timestep=self.options.timestep,
             models=self.models,
             torques=self.options.units.torques,
         )
@@ -185,7 +199,141 @@ class Simulation:
     def post_step(self, iteration):
         """Post-step"""
 
-    def end(self):
+    @staticmethod
+    def end():
         """Terminate simulation"""
         # Disconnect from simulation
         pybullet.disconnect()
+
+
+class AnimatSimulation(Simulation):
+    """Animat simulation"""
+
+    def __init__(self, **kwargs):
+        super(AnimatSimulation, self).__init__(**kwargs)
+        animat = self.animat()
+
+        # Interface
+        if not self.options.headless:
+            self.interface.init_camera(
+                target_identity=(
+                    animat.identity()
+                    if not self.options.free_camera
+                    else None
+                ),
+                timestep=self.options.timestep,
+                rotating_camera=self.options.rotating_camera,
+                top_camera=self.options.top_camera,
+                pitch=self.options.video_pitch,
+                yaw=self.options.video_yaw,
+            )
+
+        if self.options.record:
+            skips = int(2e-2/self.options.timestep)  # 50 fps
+            self.interface.init_video(
+                target_identity=animat.identity(),
+                simulation_options=self.options,
+                # fps=1./(skips*self.options.timestep),
+                pitch=self.options.video_pitch,
+                yaw=self.options.video_yaw,
+                # skips=skips,
+                motion_filter=10*skips*self.options.timestep,
+                # distance=1,
+                rotating_camera=self.options.rotating_camera,
+                # top_camera=self.options.top_camera
+            )
+
+        # Real-time handling
+        self.tic_rt = np.zeros(2)
+
+        # Simulation state
+        self.simulation_state = None
+        self.save()
+
+    def animat(self):
+        """Salamander animat"""
+        return self.models[0]
+
+    def pre_step(self, iteration):
+        """New step"""
+        play = True
+        # if not(iteration % 10000) and iteration > 0:
+        #     pybullet.restoreState(self.simulation_state)
+        #     state = self.animat().data.state
+        #     state.array[self.animat().data.iteration] = (
+        #         state.default_initial_state()
+        #     )
+        if not self.options.headless:
+            play = self.interface.user_params.play().value
+            if not iteration % int(0.1/self.options.timestep):
+                self.interface.user_params.update()
+            if not play:
+                time.sleep(0.1)
+                self.interface.user_params.update()
+        return play
+
+    def post_step(self, iteration):
+        """Post step"""
+
+        # Camera
+        if not self.options.headless:
+            self.interface.camera.update()
+            # Camera zoom
+            if self.interface.user_params.zoom().changed:
+                self.interface.camera.set_zoom(
+                    self.interface.user_params.zoom().value
+                )
+        if self.options.record:
+            self.interface.video.record(iteration)
+
+        # Real-time
+        if not self.options.headless:
+            self.tic_rt[1] = time.time()
+            if (
+                    not self.options.fast
+                    and self.interface.user_params.rtl().value < 2.99
+            ):
+                real_time_handing(
+                    self.options.timestep,
+                    self.tic_rt,
+                    rtl=self.interface.user_params.rtl().value
+                )
+            self.tic_rt[0] = time.time()
+
+    def postprocess(
+            self,
+            iteration,
+            log_path='',
+            plot=False,
+            video='',
+            **kwargs
+    ):
+        """Plot after simulation"""
+        animat = self.animat()
+        times = np.arange(
+            0,
+            self.options.timestep*self.options.n_iterations,
+            self.options.timestep
+        )[:iteration]
+
+        # Log
+        if log_path:
+            pylog.info('Saving data to {}'.format(log_path))
+            animat.data.to_file(
+                os.path.join(log_path, 'simulation.hdf5'),
+                iteration,
+            )
+            self.options.save(os.path.join(log_path, 'simulation_options.yaml'))
+            animat.options.save(os.path.join(log_path, 'animat_options.yaml'))
+
+        # Plot
+        if plot:
+            animat.data.plot(times)
+
+        # Record video
+        if video:
+            self.interface.video.save(
+                video,
+                iteration=iteration,
+                writer=kwargs.pop('writer', 'ffmpeg')
+            )

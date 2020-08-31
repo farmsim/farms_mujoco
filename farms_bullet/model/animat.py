@@ -3,7 +3,16 @@
 import numpy as np
 import pybullet
 import farms_pylog as pylog
+from ..utils.sdf import load_sdf, load_sdf_pybullet
+from ..sensors.sensors import (
+    Sensors,
+    LinksStatesSensor,
+    JointsStatesSensor,
+    ContactsSensors,
+)
+from .options import SpawnLoader
 from .model import SimulationModel
+
 
 
 def joint_type_str(joint_type):
@@ -18,28 +27,237 @@ def joint_type_str(joint_type):
     )
 
 
+def initial_pose(identity, joints, joints_options, spawn_options, units):
+    """Initial pose"""
+    spawn_orientation = pybullet.getQuaternionFromEuler(
+        spawn_options.orientation
+    )
+    pos_offset = np.array(pybullet.multiplyTransforms(
+        [0, 0, 0],
+        spawn_orientation,
+        *pybullet.getDynamicsInfo(identity, -1)[3:5],
+    )[0])
+    pybullet.resetBasePositionAndOrientation(
+        identity,
+        np.array(spawn_options.position)+pos_offset,
+        spawn_orientation,
+    )
+    pybullet.resetBaseVelocity(
+        objectUniqueId=identity,
+        linearVelocity=np.array(spawn_options.velocity_lin)*units.velocity,
+        angularVelocity=np.array(spawn_options.velocity_ang)/units.seconds
+    )
+    for joint, info in zip(joints, joints_options):
+        pybullet.resetJointState(
+            bodyUniqueId=identity,
+            jointIndex=joint,
+            targetValue=info.initial_position,
+            targetVelocity=info.initial_velocity/units.seconds,
+        )
+
+
 class Animat(SimulationModel):
     """Animat"""
 
-    def __init__(self, identity=None, options=None):
+    def __init__(
+            self, identity=None, sdf=None,
+            options=None, data=None, units=None
+    ):
         super(Animat, self).__init__(identity=identity)
+        self.sdf = sdf
         self.options = options
-        self._links = {}
-        self._joints = {}
-        self.sensors = {}
-        self.data = None
+        self.links_map = {}
+        self.joints_map = {}
+        self.masses = {}
+        self.sensors = Sensors()
+        self.data = data
+        self.units = units
 
     def n_joints(self):
         """Get number of joints"""
         return pybullet.getNumJoints(self._identity)
 
     def links_identities(self):
-        """Joints"""
-        return np.arange(-1, pybullet.getNumJoints(self._identity), dtype=int)
+        """Links"""
+        return [
+            self.links_map[link]
+            for link in self.options.morphology.links_names()
+        ]
 
     def joints_identities(self):
         """Joints"""
-        return np.arange(pybullet.getNumJoints(self._identity), dtype=int)
+        return [
+            self.joints_map[joint]
+            for joint in self.options.morphology.joints_names()
+        ]
+
+    def spawn(self):
+        """Spawn amphibious"""
+        # Spawn
+        use_pybullet_loader = self.options.spawn.loader == SpawnLoader.PYBULLET
+        self.spawn_sdf(original=use_pybullet_loader)
+
+        # Sensors
+        if self.data:
+            self.add_sensors()
+
+        # Body properties
+        self.set_body_properties()
+
+    def spawn_sdf(self, verbose=False, original=False):
+        """Spawn sdf"""
+        if verbose:
+            pylog.debug(self.sdf)
+        if original:
+            self._identity, self.links_map, self.joints_map = load_sdf_pybullet(
+                sdf_path=self.sdf,
+                morphology_links=self.options.morphology.links_names(),
+            )
+        else:
+            self._identity, self.links_map, self.joints_map = load_sdf(
+                sdf_path=self.sdf,
+                force_concave=False,
+                reset_control=False,
+                verbose=True,
+                links_options=self.options.morphology.links,
+            )
+        initial_pose(
+            identity=self._identity,
+            joints=self.joints_identities(),
+            joints_options=self.options.morphology.joints,
+            spawn_options=self.options.spawn,
+            units=self.units,
+        )
+        if verbose:
+            self.print_information()
+
+    def add_sensors(self):
+        """Add sensors"""
+        # Links
+        if self.options.control.sensors.gps:
+            self.sensors.add({
+                'gps': LinksStatesSensor(
+                    array=self.data.sensors.gps.array,
+                    model_id=self.identity(),
+                    links=[
+                        self.links_map[link]
+                        for link in self.options.control.sensors.gps
+                    ],
+                    units=self.units
+                )
+            })
+
+        # Joints
+        if self.options.control.sensors.joints:
+            self.sensors.add({
+                'joints': JointsStatesSensor(
+                    array=self.data.sensors.proprioception.array,
+                    model_id=self._identity,
+                    joints=[
+                        self.joints_map[joint]
+                        for joint in self.options.control.sensors.joints
+                    ],
+                    units=self.units,
+                    enable_ft=True
+                )
+            })
+
+        # Contacts
+        if self.options.control.sensors.contacts:
+            self.sensors.add({
+                'contacts': ContactsSensors(
+                    array=self.data.sensors.contacts.array,
+                    model_ids=[
+                        self._identity
+                        for _ in self.options.control.sensors.contacts
+                    ],
+                    model_links=[
+                        self.links_map[foot]
+                        for foot in self.options.control.sensors.contacts
+                    ],
+                    meters=self.units.meters,
+                    newtons=self.units.newtons,
+                )
+            })
+
+    def set_body_properties(self, verbose=False):
+        """Set body properties"""
+        # Masses
+        for link in self.options.morphology.links:
+            self.masses[link.name] = pybullet.getDynamicsInfo(
+                self.identity(),
+                self.links_map[link.name],
+            )[0]
+        if self.data is not None:
+            gps = self.data.sensors.gps
+            gps.masses = [0 for _ in gps.names]
+            for link in self.options.morphology.links:
+                if link.name in gps.names:
+                    index = gps.names.index(link.name)
+                    gps.masses[index] = self.masses[link.name]
+        if verbose:
+            pylog.debug('Body mass: {} [kg]'.format(np.sum(self.masses.values())))
+
+        # Deactivate collisions
+        self.set_collisions(
+            [
+                link.name
+                for link in self.options.morphology.links
+                if not link.collisions
+            ],
+            group=0,
+            mask=0,
+        )
+        # Remove self collisions
+        for link0 in self.options.morphology.links:
+            for link1 in self.options.morphology.links:
+                pybullet.setCollisionFilterPair(
+                    bodyUniqueIdA=self.identity(),
+                    bodyUniqueIdB=self.identity(),
+                    linkIndexA=self.links_map[link0.name],
+                    linkIndexB=self.links_map[link1.name],
+                    enableCollision=0,
+                )
+        # Include user-defined self-collisions
+        for link0, link1 in self.options.morphology.self_collisions:
+            pybullet.setCollisionFilterPair(
+                bodyUniqueIdA=self.identity(),
+                bodyUniqueIdB=self.identity(),
+                linkIndexA=self.links_map[link0],
+                linkIndexB=self.links_map[link1],
+                enableCollision=1,
+            )
+
+        # Default dynamics
+        for link in self.links_map:
+
+            # Default friction
+            self.set_link_dynamics(
+                link,
+                lateralFriction=0,
+                spinningFriction=0,
+                rollingFriction=0,
+            )
+
+            # Default damping
+            self.set_link_dynamics(
+                link,
+                linearDamping=0,
+                angularDamping=0,
+                jointDamping=0,
+            )
+
+        # Model options dynamics
+        for link in self.options.morphology.links:
+            self.set_link_dynamics(
+                link.name,
+                **link.pybullet_dynamics,
+            )
+        for joint in self.options.morphology.joints:
+            self.set_joint_dynamics(
+                joint.name,
+                **joint.pybullet_dynamics,
+            )
 
     @staticmethod
     def get_parent_links_info(identity, base_link='base_link'):
@@ -71,7 +289,7 @@ class Animat(SimulationModel):
         pylog.debug('Links ids:\n{}'.format(
             '\n'.join([
                 '  {}: {}'.format(name, identity)
-                for name, identity in self._links.items()
+                for name, identity in self.links_map.items()
             ])
         ))
         pylog.debug('Joints ids:\n{}'.format(
@@ -86,13 +304,13 @@ class Animat(SimulationModel):
                         )[2]
                     )
                 )
-                for name, identity in self._joints.items()
+                for name, identity in self.joints_map.items()
             ])
         ))
 
     def print_dynamics_info(self, links=None):
         """Print dynamics info"""
-        links = links if links is not None else self._links
+        links = links if links is not None else self.links_map
         pylog.debug('Dynamics:')
         for link in links:
             dynamics_msg = (
@@ -112,7 +330,7 @@ class Animat(SimulationModel):
                 link,
                 dynamics_msg.format(*pybullet.getDynamicsInfo(
                     self.identity(),
-                    self._links[link]
+                    self.links_map[link]
                 ))
             ))
         pylog.debug('Model mass: {} [kg]'.format(self.mass()))
@@ -120,30 +338,34 @@ class Animat(SimulationModel):
     def total_mass(self):
         """Print dynamics"""
         return np.sum([
-            pybullet.getDynamicsInfo(self.identity(), self._links[link])[0]
-            for link in self._links
+            pybullet.getDynamicsInfo(self.identity(), self.links_map[link])[0]
+            for link in self.links_map
         ])
-
-    def get_position(self, link):
-        """Get position"""
-        return pybullet.getLinkState(self.identity(), link)[0]
 
     def set_collisions(self, links, group=0, mask=0):
         """Activate/Deactivate leg collisions"""
         for link in links:
             pybullet.setCollisionFilterGroupMask(
                 bodyUniqueId=self._identity,
-                linkIndexA=self._links[link],
+                linkIndexA=self.links_map[link],
                 collisionFilterGroup=group,
                 collisionFilterMask=mask
             )
 
-    def set_links_dynamics(self, links, **kwargs):
+    def set_link_dynamics(self, link, **kwargs):
         """Apply motor damping"""
-        for link in links:
-            for key, value in kwargs.items():
-                pybullet.changeDynamics(
-                    bodyUniqueId=self.identity(),
-                    linkIndex=self._links[link],
-                    **{key: value}
-                )
+        for key, value in kwargs.items():
+            pybullet.changeDynamics(
+                bodyUniqueId=self.identity(),
+                linkIndex=self.links_map[link],
+                **{key: value}
+            )
+
+    def set_joint_dynamics(self, joint, **kwargs):
+        """Apply motor damping"""
+        for key, value in kwargs.items():
+            pybullet.changeDynamics(
+                bodyUniqueId=self.identity(),
+                linkIndex=self.joints_map[joint],
+                **{key: value}
+            )

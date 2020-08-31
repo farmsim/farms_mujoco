@@ -31,16 +31,13 @@ def init_engine(headless=False, opengl2=False):
     pybullet.setAdditionalSearchPath(pybullet_path)
 
 
-def real_time_handing(timestep, tic_rt, rtl=1.0, **kwargs):
+def real_time_handing(timestep, tic_rt, rtl=1.0, verbose=False, **kwargs):
     """Real-time handling"""
     sleep_rtl = timestep/rtl - (tic_rt[1] - tic_rt[0])
+    if sleep_rtl > 1e-3:
+        time.sleep(sleep_rtl)
     rtf = timestep / (tic_rt[1] - tic_rt[0])
-    tic = time.time()
-    sleep_rtl = np.clip(sleep_rtl, a_min=0, a_max=1)
-    if sleep_rtl > 0:
-        while time.time() - tic < sleep_rtl:
-            time.sleep(0.1*sleep_rtl)
-    if rtf < 0.5:
+    if rtf < 0.5 and verbose:
         pylog.debug('Significantly slower than real-time: {} %'.format(100*rtf))
         time_plugin = kwargs.pop('time_plugin', False)
         time_control = kwargs.pop('time_control', False)
