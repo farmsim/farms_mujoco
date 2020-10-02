@@ -72,6 +72,7 @@ def drag_forces(
     links_swimming = [
         links_map[data_gps.names[sensor_i]]
         for sensor_i in sensors
+        if data_gps.names[sensor_i] in links_map
     ]
     for sensor_i, link, position in zip(sensors, links_swimming, positions):
         (
@@ -82,7 +83,8 @@ def drag_forces(
         ) = link_swimming_info(
             data_gps=data_gps,
             iteration=iteration,
-            sensor_i=sensor_i,
+            # sensor_i=sensor_i,
+            sensor_i=data_gps.names.index(link.name),
         )
 
         # Buoyancy forces
@@ -95,7 +97,7 @@ def drag_forces(
             gravity,
         ) if use_buoyancy else np.zeros(3)
 
-        # Drag forces
+        # Drag forces in inertial frame
         hydro_i = data_hydrodynamics.names.index(link.name)
         coefficients = np.array(link.drag_coefficients)
         data_hydrodynamics.set_force(
