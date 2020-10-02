@@ -29,10 +29,7 @@ def rot_matrix(rot):
 
 def rot_invert(rot):
     """Invert rot"""
-    return pybullet.invertTransform(
-        [0, 0, 0],
-        rot,
-    )[1]
+    return pybullet.invertTransform([0, 0, 0], rot)[1]
 
 
 def rot_mult(rot0, rot1):
@@ -209,6 +206,18 @@ def load_sdf(
                 link_name = '{}_dummy_{}'.format(link.name, i-1)
                 link_index[link_name] = link_i
                 links_names.append(link_name)
+                assert link.name in parenting, (
+                    'Link {} is not in parenting {}'.format(
+                        link.name,
+                        parenting,
+                    )
+                )
+                assert parenting[link.name] in link_index, (
+                    'Link {} is not in link_index {}'.format(
+                        parenting[link.name],
+                        link_index,
+                    )
+                )
                 parenting[link_name] = link_index[parenting[link.name]]
                 link_pos.append([0, 0, 0])
                 link_ori.append([0, 0, 0])
@@ -227,8 +236,16 @@ def load_sdf(
                 links_names.append(link.name)
                 link_pos.append(link.pose[:3])
                 link_ori.append(link.pose[3:])
-                link_masses.append(link.inertial.mass)
-                link_com.append(link.inertial.pose[:3])
+                link_masses.append(
+                    link.inertial.mass
+                    if link.inertial
+                    else 0
+                )
+                link_com.append(
+                    link.inertial.pose[:3]
+                    if link.inertial
+                    else np.zeros(3)
+                )
                 # link_com.append([0, 0, 0])
                 # Joint information
                 if joint is None:
@@ -255,9 +272,25 @@ def load_sdf(
     visuals = rearange_base_link_list(visuals, base_link_index)
     collisions = rearange_base_link_list(collisions, base_link_index)
     link_index = rearange_base_link_dict(link_index, base_link_index)
+
+    for name in links_names[1:]:
+        assert name in parenting, (
+            'Link \'{}\' not in {}'.format(
+                name,
+                parenting,
+            )
+        )
+        assert parenting[name] in link_index, (
+            'Link \'{}\' (Parent of \'{}\') not in {}\n\nParenting:\n{}'.format(
+                parenting[name],
+                name,
+                link_index,
+                parenting,
+            )
+        )
     link_parent_indices = [
         link_index[parenting[name]]
-        for link_i, name in enumerate(links_names[1:])
+        for name in links_names[1:]
     ]
 
     if links_options:
