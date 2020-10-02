@@ -86,10 +86,12 @@ class Animat(SimulationModel):
 
     def joints_identities(self):
         """Joints"""
-        return [
-            self.joints_map[joint]
-            for joint in self.options.morphology.joints_names()
-        ]
+        names = self.options.morphology.joints_names()
+        for joint in names:
+            assert joint in self.joints_map, (
+                'Joint {} not in {}'.format(joint, self.joints_map.keys())
+            )
+        return [self.joints_map[joint] for joint in names]
 
     def spawn(self):
         """Spawn amphibious"""
