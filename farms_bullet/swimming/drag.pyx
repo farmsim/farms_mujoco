@@ -1,9 +1,72 @@
 """Drag forces"""
 
-from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy
+from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, GpsArrayCy
 
 import pybullet
 import numpy as np
+
+
+cpdef link_swimming_info(GpsArrayCy data_gps, iteration, sensor_i):
+    """Link swimming information
+
+    Times:
+    - 10.369 [s]
+    - 9.403 [s]
+    - 8.972 [s]
+    - 7.815 [s]
+    - 7.204 [s]
+    - 4.507 [s]
+    - 4.304 [s]
+    """
+
+    # Declarations
+    zeros = [0, 0, 0]
+    quat_unit = [0, 0, 0, 1]
+
+    # Orientations
+    ori_urdf = np.array(
+        data_gps.urdf_orientation_cy(iteration, sensor_i),
+        copy=False,
+    ).tolist()
+    ori_com = np.array(
+        data_gps.com_orientation_cy(iteration, sensor_i),
+        copy=False,
+    ).tolist()
+    global2com = pybullet.invertTransform(zeros, ori_com)
+    # urdf2global = (zeros, ori_urdf)
+
+    # Velocities in global frame
+    lin_velocity = np.array(
+        data_gps.com_lin_velocity_cy(iteration, sensor_i),
+        copy=False,
+    ).tolist()
+    ang_velocity = np.array(
+        data_gps.com_ang_velocity_cy(iteration, sensor_i),
+        copy=False,
+    ).tolist()
+
+    # Compute velocity in CoM frame
+    link_velocity = np.array(pybullet.multiplyTransforms(
+        *global2com,
+        lin_velocity,
+        quat_unit,
+    )[0])
+    link_angular_velocity = np.array(pybullet.multiplyTransforms(
+        *global2com,
+        ang_velocity,
+        quat_unit,
+    )[0])
+    urdf2com = pybullet.multiplyTransforms(
+        *global2com,
+        zeros,  # *urdf2global,
+        ori_urdf,  # *urdf2global,
+    )
+    return (
+        link_velocity,
+        link_angular_velocity,
+        global2com,
+        urdf2com,
+    )
 
 
 cpdef swimming_motion(

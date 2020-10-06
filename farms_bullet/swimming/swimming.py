@@ -5,42 +5,7 @@ import pybullet
 
 import farms_pylog as pylog
 
-
-def link_swimming_info(data_gps, iteration, sensor_i):
-    """Link swimming information"""
-
-    # Orientations
-    ori_urdf = data_gps.urdf_orientation(iteration, sensor_i)
-    urdf2global = [0, 0, 0], ori_urdf
-    ori_com = data_gps.com_orientation(iteration, sensor_i)
-    global2com = pybullet.invertTransform([0, 0, 0], ori_com)
-
-    # Velocities in global frame
-    lin_velocity = data_gps.com_lin_velocity(iteration, sensor_i)
-    ang_velocity = data_gps.com_ang_velocity(iteration, sensor_i)
-
-    # Compute velocity in CoM frame
-    link_velocity = np.array(pybullet.multiplyTransforms(
-        *global2com,
-        lin_velocity,
-        [0, 0, 0, 1],
-    )[0])
-    link_angular_velocity = np.array(pybullet.multiplyTransforms(
-        *global2com,
-        ang_velocity,
-        [0, 0, 0, 1],
-    )[0])
-    urdf2com = pybullet.multiplyTransforms(
-        *global2com,
-        *urdf2global,
-    )
-    return (
-        link_velocity,
-        link_angular_velocity,
-        global2com,
-        urdf2com,
-    )
-
+from .drag import link_swimming_info
 
 def compute_buoyancy(link, position, global2com, mass, surface, gravity):
     """Compute buoyancy"""
