@@ -132,43 +132,6 @@ def drag_forces(
     return links_swimming
 
 
-def swimming_motion(
-        iteration,
-        data_hydrodynamics,
-        model,
-        links,
-        links_map,
-        link_frame,
-        units,
-        pos=np.zeros(3)
-):
-    """Swimming motion"""
-    newtons = float(units.newtons)
-    torques = float(units.torques)
-    flags = pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
-    for link in links:
-        # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
-        sensor_i = data_hydrodynamics.names.index(link.name)
-        link_id = links_map[link.name]
-        hydro = np.array(
-            data_hydrodynamics.array[iteration, sensor_i],
-            copy=False,
-        )
-        pybullet.applyExternalForce(
-            model,
-            link_id,
-            forceObj=hydro[:3]*newtons,
-            posObj=pos,  # pybullet.getDynamicsInfo(model, link)[3]
-            flags=flags,
-        )
-        pybullet.applyExternalTorque(
-            model,
-            link_id,
-            torqueObj=hydro[3:]*torques,
-            flags=flags,
-        )
-
-
 def swimming_debug(iteration, data_gps, links):
     """Swimming debug"""
     for link in links:
