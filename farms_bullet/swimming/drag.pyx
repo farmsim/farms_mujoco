@@ -6,6 +6,32 @@ import pybullet
 import numpy as np
 
 
+cpdef compute_force_torque(link_velocity, link_angular_velocity, coefficients, urdf2com, buoyancy):
+    """Compute force and torque
+
+    Times:
+    - 3.533 [s]
+    - 3.243 [s]
+    """
+    return (
+        np.sign(link_velocity)
+        *np.array(pybullet.multiplyTransforms(
+            coefficients[0],
+            [0, 0, 0, 1],
+            *urdf2com,
+        )[0])
+        *link_velocity**2
+        + buoyancy,
+        np.sign(link_angular_velocity)
+        *np.array(pybullet.multiplyTransforms(
+            coefficients[1],
+            [0, 0, 0, 1],
+            *urdf2com,
+        )[0])
+        *link_angular_velocity**2
+    )
+
+
 cpdef link_swimming_info(GpsArrayCy data_gps, iteration, sensor_i):
     """Link swimming information
 

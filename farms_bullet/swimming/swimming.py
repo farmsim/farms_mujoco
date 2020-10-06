@@ -5,7 +5,8 @@ import pybullet
 
 import farms_pylog as pylog
 
-from .drag import link_swimming_info
+from .drag import link_swimming_info, compute_force_torque
+
 
 def compute_buoyancy(link, position, global2com, mass, surface, gravity):
     """Compute buoyancy"""
@@ -16,27 +17,6 @@ def compute_buoyancy(link, position, global2com, mass, surface, gravity):
         )],
         [0, 0, 0, 1],
     )[0]) if mass > 0 else np.zeros(3)
-
-
-def compute_force_torque(link_velocity, link_angular_velocity, coefficients, urdf2com, buoyancy):
-    """Compute force and torque"""
-    return (
-        np.sign(link_velocity)
-        *np.array(pybullet.multiplyTransforms(
-            coefficients[0],
-            [0, 0, 0, 1],
-            *urdf2com,
-        )[0])
-        *link_velocity**2
-        + buoyancy,
-        np.sign(link_angular_velocity)
-        *np.array(pybullet.multiplyTransforms(
-            coefficients[1],
-            [0, 0, 0, 1],
-            *urdf2com,
-        )[0])
-        *link_angular_velocity**2
-    )
 
 
 def drag_forces(
