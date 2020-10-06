@@ -53,6 +53,27 @@ def compute_buoyancy(link, position, global2com, mass, surface, gravity):
     )[0]) if mass > 0 else np.zeros(3)
 
 
+def compute_force_torque(link_velocity, link_angular_velocity, coefficients, urdf2com, buoyancy):
+    """Compute force and torque"""
+    return (
+        np.sign(link_velocity)
+        *np.array(pybullet.multiplyTransforms(
+            coefficients[0],
+            [0, 0, 0, 1],
+            *urdf2com,
+        )[0])
+        *link_velocity**2
+        + buoyancy,
+        np.sign(link_angular_velocity)
+        *np.array(pybullet.multiplyTransforms(
+            coefficients[1],
+            [0, 0, 0, 1],
+            *urdf2com,
+        )[0])
+        *link_angular_velocity**2
+    )
+
+
 def drag_forces(
         iteration,
         data_gps,
@@ -98,35 +119,16 @@ def drag_forces(
         ) if use_buoyancy else np.zeros(3)
 
         # Drag forces in inertial frame
+        force, torque = compute_force_torque(
+            link_velocity=link_velocity,
+            link_angular_velocity=link_angular_velocity,
+            coefficients=np.array(link.drag_coefficients),
+            urdf2com=urdf2com,
+            buoyancy=buoyancy,
+        )
         hydro_i = data_hydrodynamics.names.index(link.name)
-        coefficients = np.array(link.drag_coefficients)
-        data_hydrodynamics.set_force(
-            iteration,
-            hydro_i,
-            (
-                np.sign(link_velocity)
-                *np.array(pybullet.multiplyTransforms(
-                    coefficients[0],
-                    [0, 0, 0, 1],
-                    *urdf2com,
-                )[0])
-                *link_velocity**2
-                + buoyancy
-            )
-        )
-        data_hydrodynamics.set_torque(
-            iteration,
-            hydro_i,
-            (
-                np.sign(link_angular_velocity)
-                *np.array(pybullet.multiplyTransforms(
-                    coefficients[1],
-                    [0, 0, 0, 1],
-                    *urdf2com,
-                )[0])
-                *link_angular_velocity**2
-            )
-        )
+        data_hydrodynamics.set_force(iteration, hydro_i, force)
+        data_hydrodynamics.set_torque(iteration, hydro_i, torque)
     return links_swimming
 
 
@@ -138,29 +140,32 @@ def swimming_motion(
         links_map,
         link_frame,
         units,
+        pos=np.zeros(3)
 ):
     """Swimming motion"""
+    newtons = float(units.newtons)
+    torques = float(units.torques)
+    flags = pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
     for link in links:
         # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
         sensor_i = data_hydrodynamics.names.index(link.name)
+        link_id = links_map[link.name]
+        hydro = np.array(
+            data_hydrodynamics.array[iteration, sensor_i],
+            copy=False,
+        )
         pybullet.applyExternalForce(
             model,
-            links_map[link.name],
-            forceObj=(
-                np.array(data_hydrodynamics.array[iteration, sensor_i, :3])
-                *units.newtons
-            ),
-            posObj=[0, 0, 0],  # pybullet.getDynamicsInfo(model, link)[3]
-            flags=pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
+            link_id,
+            forceObj=hydro[:3]*newtons,
+            posObj=pos,  # pybullet.getDynamicsInfo(model, link)[3]
+            flags=flags,
         )
         pybullet.applyExternalTorque(
             model,
-            links_map[link.name],
-            torqueObj=(
-                np.array(data_hydrodynamics.array[iteration, sensor_i, 3:6])
-                *units.torques
-            ),
-            flags=pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
+            link_id,
+            torqueObj=hydro[3:]*torques,
+            flags=flags,
         )
 
 
