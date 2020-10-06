@@ -4,9 +4,21 @@ from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, GpsArrayCy
 
 import pybullet
 import numpy as np
+cimport numpy as np
 
 
-cpdef compute_force_torque(link_velocity, link_angular_velocity, coefficients, urdf2com, buoyancy):
+cdef np.ndarray compute_buoyancy(link, position, global2com, mass, surface, gravity):
+    """Compute buoyancy"""
+    return np.array(pybullet.multiplyTransforms(
+        *global2com,
+        [0, 0, -1000*mass*gravity/link.density*min(
+            max(surface-position, 0)/link.height, 1
+        )],
+        [0, 0, 0, 1],
+    )[0]) if mass > 0 else np.zeros(3)
+
+
+cdef compute_force_torque(link_velocity, link_angular_velocity, coefficients, urdf2com, buoyancy):
     """Compute force and torque
 
     Times:
@@ -32,7 +44,7 @@ cpdef compute_force_torque(link_velocity, link_angular_velocity, coefficients, u
     )
 
 
-cpdef link_swimming_info(GpsArrayCy data_gps, iteration, sensor_i):
+cdef link_swimming_info(GpsArrayCy data_gps, iteration, sensor_i):
     """Link swimming information
 
     Times:
@@ -95,7 +107,75 @@ cpdef link_swimming_info(GpsArrayCy data_gps, iteration, sensor_i):
     )
 
 
-cpdef swimming_motion(
+cpdef list drag_forces(
+        iteration,
+        data_gps,
+        data_hydrodynamics,
+        links,
+        masses,
+        gravity,
+        use_buoyancy,
+        surface,
+):
+    """Drag swimming
+
+    Times:
+    - 14.967 [s]
+    - 13.877 [s]
+    -  [s]
+    -  [s]
+    -  [s]
+    -  [s]
+    """
+    cdef np.ndarray force, torque, buoyancy
+    cdef np.ndarray positions = np.array(data_gps.array[iteration, :, 2], copy=False)
+    cdef np.ndarray sensors = np.argwhere(positions < surface)[:, 0]
+    if not sensors.shape[0]:
+        return []
+    links_map = {link.name: link for link in links}
+    links_swimming = [
+        links_map[data_gps.names[sensor_i]]
+        for sensor_i in sensors
+        if data_gps.names[sensor_i] in links_map
+    ]
+    for sensor_i, link, position in zip(sensors, links_swimming, positions):
+        (
+            link_velocity,
+            link_angular_velocity,
+            global2com,
+            urdf2com,
+        ) = link_swimming_info(
+            data_gps=data_gps,
+            iteration=iteration,
+            # sensor_i=sensor_i,
+            sensor_i=data_gps.names.index(link.name),
+        )
+
+        # Buoyancy forces
+        buoyancy = compute_buoyancy(
+            link,
+            position,
+            global2com,
+            masses[link.name],
+            surface,
+            gravity,
+        ) if use_buoyancy else np.zeros(3)
+
+        # Drag forces in inertial frame
+        force, torque = compute_force_torque(
+            link_velocity=link_velocity,
+            link_angular_velocity=link_angular_velocity,
+            coefficients=np.array(link.drag_coefficients),
+            urdf2com=urdf2com,
+            buoyancy=buoyancy,
+        )
+        hydro_i = data_hydrodynamics.names.index(link.name)
+        data_hydrodynamics.set_force(iteration, hydro_i, force)
+        data_hydrodynamics.set_torque(iteration, hydro_i, torque)
+    return links_swimming
+
+
+cpdef void swimming_motion(
         unsigned int iteration,
         HydrodynamicsArrayCy data_hydrodynamics,
         int model,
