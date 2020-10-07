@@ -5,10 +5,9 @@ import numpy as np
 cimport numpy as np
 
 from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, GpsArrayCy
-import farms_pylog as pylog
 
 
-cdef np.ndarray compute_buoyancy(link, position, global2com, mass, surface, gravity):
+cdef np.ndarray compute_buoyancy(link, np.ndarray position, global2com, double mass, double surface, double gravity):
     """Compute buoyancy"""
     return np.array(pybullet.multiplyTransforms(
         *global2com,
@@ -19,14 +18,14 @@ cdef np.ndarray compute_buoyancy(link, position, global2com, mass, surface, grav
     )[0]) if mass > 0 else np.zeros(3)
 
 
-cdef compute_force_torque(link_velocity, link_angular_velocity, coefficients, urdf2com, buoyancy):
+cdef void compute_force(np.ndarray force, np.ndarray link_velocity, np.ndarray coefficients, urdf2com, np.ndarray buoyancy):
     """Compute force and torque
 
     Times:
     - 3.533 [s]
     - 3.243 [s]
     """
-    return (
+    force[:] = (
         np.sign(link_velocity)
         *np.array(pybullet.multiplyTransforms(
             coefficients[0],
@@ -34,7 +33,18 @@ cdef compute_force_torque(link_velocity, link_angular_velocity, coefficients, ur
             *urdf2com,
         )[0])
         *link_velocity**2
-        + buoyancy,
+        + buoyancy
+    )
+
+
+cdef void compute_torque(np.ndarray torque, np.ndarray link_angular_velocity, np.ndarray coefficients, urdf2com):
+    """Compute force and torque
+
+    Times:
+    - 3.533 [s]
+    - 3.243 [s]
+    """
+    torque[:] = (
         np.sign(link_angular_velocity)
         *np.array(pybullet.multiplyTransforms(
             coefficients[1],
@@ -45,7 +55,7 @@ cdef compute_force_torque(link_velocity, link_angular_velocity, coefficients, ur
     )
 
 
-cdef link_swimming_info(GpsArrayCy data_gps, iteration, sensor_i):
+cdef link_swimming_info(GpsArrayCy data_gps, unsigned int iteration, int sensor_i):
     """Link swimming information
 
     Times:
@@ -109,14 +119,14 @@ cdef link_swimming_info(GpsArrayCy data_gps, iteration, sensor_i):
 
 
 cpdef list drag_forces(
-        iteration,
-        data_gps,
-        data_hydrodynamics,
+        unsigned int iteration,
+        GpsArrayCy data_gps,
+        HydrodynamicsArrayCy data_hydrodynamics,
         links,
         masses,
-        gravity,
+        double gravity,
         use_buoyancy,
-        surface,
+        double surface,
 ):
     """Drag swimming
 
@@ -128,7 +138,10 @@ cpdef list drag_forces(
     -  [s]
     -  [s]
     """
-    cdef np.ndarray force, torque, buoyancy
+    cdef unsigned int i, hydro_i
+    cdef np.ndarray force = np.zeros(3)
+    cdef np.ndarray torque = np.zeros(3)
+    cdef np.ndarray coefficients, buoyancy
     cdef np.ndarray positions = np.array(data_gps.array[iteration, :, 2], copy=False)
     cdef np.ndarray sensors = np.argwhere(positions < surface)[:, 0]
     if not sensors.shape[0]:
@@ -163,12 +176,19 @@ cpdef list drag_forces(
         ) if use_buoyancy else np.zeros(3)
 
         # Drag forces in inertial frame
-        force, torque = compute_force_torque(
+        coefficients = np.array(link.drag_coefficients)
+        compute_force(
+            force,
             link_velocity=link_velocity,
-            link_angular_velocity=link_angular_velocity,
-            coefficients=np.array(link.drag_coefficients),
+            coefficients=coefficients,
             urdf2com=urdf2com,
             buoyancy=buoyancy,
+        )
+        compute_torque(
+            torque,
+            link_angular_velocity=link_angular_velocity,
+            coefficients=coefficients,
+            urdf2com=urdf2com,
         )
         hydro_i = data_hydrodynamics.names.index(link.name)
         data_hydrodynamics.set_force(iteration, hydro_i, force)
@@ -237,7 +257,6 @@ cpdef swimming_debug(iteration, data_gps, links):
         offset_x = np.dot(ori_joint, np.array([axis, 0, 0]))
         offset_y = np.dot(ori_joint, np.array([0, axis, 0]))
         offset_z = np.dot(ori_joint, np.array([0, 0, axis]))
-        pylog.debug('SPH position: {}'.format(np.array(joint)))
         for i, offset in enumerate([offset_x, offset_y, offset_z]):
             color = np.zeros(3)
             color[i] = 1
