@@ -191,8 +191,9 @@ cpdef list drag_forces(
             urdf2com=urdf2com,
         )
         hydro_i = data_hydrodynamics.names.index(link.name)
-        data_hydrodynamics.set_force(iteration, hydro_i, force)
-        data_hydrodynamics.set_torque(iteration, hydro_i, torque)
+        for i in range(3):
+            data_hydrodynamics.array[iteration, hydro_i, i] = force[i]
+            data_hydrodynamics.array[iteration, hydro_i, i+3] = torque[i]
     return links_swimming
 
 
