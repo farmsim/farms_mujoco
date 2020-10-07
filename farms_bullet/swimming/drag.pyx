@@ -226,6 +226,36 @@ cdef void matrix_dot_matrix(
                 out[i, j] += matrix[i, k]*matrix2[k, j]
 
 
+cdef void quat_mult(
+    DTYPEv1 q0,
+    DTYPEv1 q1,
+    DTYPEv1 out,
+) nogil:
+    """Quaternion multiplication"""
+    out[0] = q0[3]*q1[0] + q0[0]*q1[3] + q0[1]*q1[2] - q0[2]*q1[1]  # x
+    out[1] = q0[3]*q1[1] - q0[0]*q1[2] + q0[1]*q1[3] + q0[2]*q1[0]  # y
+    out[2] = q0[3]*q1[2] + q0[0]*q1[1] - q0[1]*q1[0] + q0[2]*q1[3]  # z
+    out[3] = q0[3]*q1[3] - q0[0]*q1[0] - q0[1]*q1[1] - q0[2]*q1[2]  # w
+
+
+cdef void quat_rot(
+    DTYPEv1 vector,
+    DTYPEv1 quat,
+    DTYPEv1 quat_conj,
+    DTYPEv1 tmp4,
+    DTYPEv1 out,
+) nogil:
+    """Quaternion rotation"""
+    for i in range(3):
+        quat_conj[i] = vector[i]
+    quat_conj[3] = 0
+    quat_mult(quat, quat_conj, tmp4)
+    for i in range(3):
+        quat_conj[i] = -quat[i]
+    quat_conj[3] = quat[3]
+    quat_mult(tmp4, quat_conj, out)
+
+
 cdef void quat2rot(DTYPEv1 quat, DTYPEv2 matrix) nogil:
     """Quaternion to matrix"""
     cdef double q00 = quat[0]*quat[0]
