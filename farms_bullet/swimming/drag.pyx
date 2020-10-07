@@ -7,54 +7,6 @@ cimport numpy as np
 from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, GpsArrayCy
 
 
-cdef np.ndarray compute_buoyancy(link, np.ndarray position, global2com, double mass, double surface, double gravity):
-    """Compute buoyancy"""
-    return np.array(pybullet.multiplyTransforms(
-        *global2com,
-        [0, 0, -1000*mass*gravity/link.density*min(
-            max(surface-position, 0)/link.height, 1
-        )],
-        [0, 0, 0, 1],
-    )[0]) if mass > 0 else np.zeros(3)
-
-
-cdef void compute_force(np.ndarray force, np.ndarray link_velocity, np.ndarray coefficients, urdf2com, np.ndarray buoyancy):
-    """Compute force and torque
-
-    Times:
-    - 3.533 [s]
-    - 3.243 [s]
-    """
-    force[:] = (
-        np.sign(link_velocity)
-        *np.array(pybullet.multiplyTransforms(
-            coefficients[0],
-            [0, 0, 0, 1],
-            *urdf2com,
-        )[0])
-        *link_velocity**2
-        + buoyancy
-    )
-
-
-cdef void compute_torque(np.ndarray torque, np.ndarray link_angular_velocity, np.ndarray coefficients, urdf2com):
-    """Compute force and torque
-
-    Times:
-    - 3.533 [s]
-    - 3.243 [s]
-    """
-    torque[:] = (
-        np.sign(link_angular_velocity)
-        *np.array(pybullet.multiplyTransforms(
-            coefficients[1],
-            [0, 0, 0, 1],
-            *urdf2com,
-        )[0])
-        *link_angular_velocity**2
-    )
-
-
 cdef link_swimming_info(GpsArrayCy data_gps, unsigned int iteration, int sensor_i):
     """Link swimming information
 
@@ -116,6 +68,54 @@ cdef link_swimming_info(GpsArrayCy data_gps, unsigned int iteration, int sensor_
         global2com,
         urdf2com,
     )
+
+
+cdef void compute_force(np.ndarray force, np.ndarray link_velocity, np.ndarray coefficients, urdf2com, np.ndarray buoyancy):
+    """Compute force and torque
+
+    Times:
+    - 3.533 [s]
+    - 3.243 [s]
+    """
+    force[:] = (
+        np.sign(link_velocity)
+        *np.array(pybullet.multiplyTransforms(
+            coefficients[0],
+            [0, 0, 0, 1],
+            *urdf2com,
+        )[0])
+        *link_velocity**2
+        + buoyancy
+    )
+
+
+cdef void compute_torque(np.ndarray torque, np.ndarray link_angular_velocity, np.ndarray coefficients, urdf2com):
+    """Compute force and torque
+
+    Times:
+    - 3.533 [s]
+    - 3.243 [s]
+    """
+    torque[:] = (
+        np.sign(link_angular_velocity)
+        *np.array(pybullet.multiplyTransforms(
+            coefficients[1],
+            [0, 0, 0, 1],
+            *urdf2com,
+        )[0])
+        *link_angular_velocity**2
+    )
+
+
+cdef np.ndarray compute_buoyancy(link, np.ndarray position, global2com, double mass, double surface, double gravity):
+    """Compute buoyancy"""
+    return np.array(pybullet.multiplyTransforms(
+        *global2com,
+        [0, 0, -1000*mass*gravity/link.density*min(
+            max(surface-position, 0)/link.height, 1
+        )],
+        [0, 0, 0, 1],
+    )[0]) if mass > 0 else np.zeros(3)
 
 
 cpdef list drag_forces(
