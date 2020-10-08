@@ -531,7 +531,7 @@ cpdef void swimming_motion(
         int model,
         list links,
         dict links_map,
-        link_frame,
+        bint link_frame,
         units,
         pos=np.zeros(3)
 ):
@@ -540,7 +540,7 @@ cpdef void swimming_motion(
     cdef str link_name
     cdef unsigned int i, sensor_i, flags
     cdef DTYPEv1 hydro
-    cdef DTYPEv1 hydro_force=np.zeros(3), hydro_torque=np.zeros(3)
+    cdef np.ndarray hydro_force=np.zeros(3), hydro_torque=np.zeros(3)
     # cdef np.ndarray hydro
     cdef double newtons, torques
     newtons = units.newtons
@@ -554,20 +554,17 @@ cpdef void swimming_motion(
         for i in range(3):
             hydro_force[i] = hydro[i]*newtons
             hydro_torque[i] = hydro[i+3]*torques
-        # hydro = np.array(data_hydrodynamics.array[iteration, sensor_i], copy=True)
-        # hydro[:3] *= newtons
-        # hydro[3:] *= torques
         pybullet.applyExternalForce(
             model,
             link_id,
-            forceObj=np.array(hydro_force, copy=False),
+            forceObj=hydro_force.tolist(),
             posObj=pos,  # pybullet.getDynamicsInfo(model, link)[3]
             flags=flags,
         )
         pybullet.applyExternalTorque(
             model,
             link_id,
-            torqueObj=np.array(hydro_torque, copy=False),
+            torqueObj=hydro_torque.tolist(),
             flags=flags,
         )
 
