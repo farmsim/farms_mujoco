@@ -42,6 +42,8 @@ cdef class ContactsSensors(DoubleArray3D):
         cdef unsigned int sensor_i, model_id
         cdef double rx, ry, rz, fx, fy, fz, px, py, pz
         cdef double rx_tot, ry_tot, rz_tot, fx_tot, fy_tot, fz_tot
+        cdef double inewtons = self.inewtons
+        cdef double imeters = self.imeters
         cdef tuple contact
         for sensor_i, (model_id, model_link) in enumerate(
                 zip(self.model_ids, self.model_links)
@@ -57,23 +59,23 @@ cdef class ContactsSensors(DoubleArray3D):
             fz_tot = 0
             for contact in self.get_contacts(model_id, model_link):
                 # Normal reaction
-                rx = contact[9]*contact[7][0]*self.inewtons
-                ry = contact[9]*contact[7][1]*self.inewtons
-                rz = contact[9]*contact[7][2]*self.inewtons
+                rx = contact[9]*contact[7][0]*inewtons
+                ry = contact[9]*contact[7][1]*inewtons
+                rz = contact[9]*contact[7][2]*inewtons
                 rx_tot += rx
                 ry_tot += ry
                 rz_tot += rz
                 # Lateral friction dir 1 + Lateral friction dir 2
-                fx = (contact[10]*contact[11][0] + contact[12]*contact[13][0])*self.inewtons
-                fy = (contact[10]*contact[11][1] + contact[12]*contact[13][1])*self.inewtons
-                fz = (contact[10]*contact[11][2] + contact[12]*contact[13][2])*self.inewtons
+                fx = (contact[10]*contact[11][0] + contact[12]*contact[13][0])*inewtons
+                fy = (contact[10]*contact[11][1] + contact[12]*contact[13][1])*inewtons
+                fz = (contact[10]*contact[11][2] + contact[12]*contact[13][2])*inewtons
                 fx_tot += fx
                 fy_tot += fy
                 fz_tot += fz
                 # Position
-                px += (rx+fx)*contact[5][0]*self.imeters
-                py += (ry+fy)*contact[5][1]*self.imeters
-                pz += (rz+fz)*contact[5][2]*self.imeters
+                px += (rx+fx)*contact[5][0]*imeters
+                py += (ry+fy)*contact[5][1]*imeters
+                pz += (rz+fz)*contact[5][2]*imeters
             self.array[iteration, sensor_i, CONTACT_REACTION_X] = rx_tot
             self.array[iteration, sensor_i, CONTACT_REACTION_Y] = ry_tot
             self.array[iteration, sensor_i, CONTACT_REACTION_Z] = rz_tot
