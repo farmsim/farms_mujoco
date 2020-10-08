@@ -43,6 +43,12 @@ def parse_args():
         default=False,
         help='Headless mode instead of using GUI',
     )
+    parser.add_argument(
+        '--noprogress', '--npb',
+        action='store_false',
+        dest='show_progress',
+        help='Hide progress bar',
+    )
 
     # Camera
     parser.add_argument(
