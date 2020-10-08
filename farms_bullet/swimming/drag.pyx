@@ -407,7 +407,7 @@ cdef void compute_buoyancy(
     DTYPEv1 quat_c,
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
-):
+) nogil:
     """Compute buoyancy"""
     if mass > 0:
         tmp[0] = 0
@@ -422,16 +422,22 @@ cdef void compute_buoyancy(
             buyoancy[i] = 0
 
 
-cpdef list drag_forces(
+cpdef bint drag_forces(
         unsigned int iteration,
         GpsArrayCy data_gps,
+        unsigned int gps_index,
         HydrodynamicsArrayCy data_hydrodynamics,
-        links,
-        masses,
+        unsigned int hydro_index,
+        DTYPEv2 coefficients,
+        DTYPEv2 z3,
+        DTYPEv2 z4,
+        double surface,
+        double mass,
+        double height,
+        double density,
         double gravity,
         bint use_buoyancy,
-        double surface,
-):
+) nogil:
     """Drag swimming
 
     Times:
@@ -442,131 +448,126 @@ cpdef list drag_forces(
     -  [s]
     -  [s]
     """
-    z3 = np.zeros([6, 4])
-    z4 = np.zeros([7, 4])
-    cdef unsigned int i, hydro_i
+    cdef unsigned int i
+    # cdef unsigned int sensor_i = data_gps.names.index(link_name)
+    # hydro_i = data_hydrodynamics.names.index(link_name)
+    cdef double position = data_gps.array[iteration, gps_index, 2]
+    if position > surface:
+        return 0
+    # cdef double[6][3] z3
+    # cdef double[6][4] z4
+    # # z3 = np.zeros([6, 3])
+    # # z4 = np.zeros([7, 4])
     cdef DTYPEv1 force=z3[0], torque=z3[1], buoyancy=z3[2], tmp=z3[3]
     cdef DTYPEv1 link_lin_velocity=z3[4], link_ang_velocity=z3[5]
     cdef DTYPEv1 urdf2global=z4[0], com2global=z4[1]
     cdef DTYPEv1 global2com=z4[2], urdf2com=z4[3], com2urdf=z4[4]
     cdef DTYPEv1 quat_c=z4[5], tmp4=z4[6]
-    cdef DTYPEv2 coefficients
-    cdef np.ndarray positions = np.array(data_gps.array[iteration, :, 2], copy=False)
-    cdef np.ndarray sensors = np.argwhere(positions < surface)[:, 0]
-    if not sensors.shape[0]:
-        return []
-    links_map = {link.name: link for link in links}
-    links_swimming = [
-        links_map[data_gps.names[sensor_i]]
-        for sensor_i in sensors
-        if data_gps.names[sensor_i] in links_map
-    ]
-    for sensor_i, link, position in zip(sensors, links_swimming, positions):
-        link_swimming_info(
-            data_gps=data_gps,
-            iteration=iteration,
-            sensor_i=data_gps.names.index(link.name),
-            urdf2global=urdf2global,
-            com2global=com2global,
-            global2com=global2com,
-            urdf2com=urdf2com,
-            link_lin_velocity=link_lin_velocity,
-            link_ang_velocity=link_ang_velocity,
-            quat_c=quat_c,
-            tmp4=tmp4,
+
+    # Swimming information
+    link_swimming_info(
+        data_gps=data_gps,
+        iteration=iteration,
+        sensor_i=gps_index,
+        urdf2global=urdf2global,
+        com2global=com2global,
+        global2com=global2com,
+        urdf2com=urdf2com,
+        link_lin_velocity=link_lin_velocity,
+        link_ang_velocity=link_ang_velocity,
+        quat_c=quat_c,
+        tmp4=tmp4,
+    )
+
+    # Buoyancy forces
+    if use_buoyancy:
+        compute_buoyancy(
+            density,
+            height,
+            position,
+            global2com,
+            mass,
+            surface,
+            gravity,
+            buoyancy,
+            quat_c,
+            tmp4,
+            tmp,
         )
 
-        # Buoyancy forces
-        if use_buoyancy:
-            compute_buoyancy(
-                link.density,
-                link.height,
-                position,
-                global2com,
-                masses[link.name],
-                surface,
-                gravity,
-                buoyancy,
-                quat_c,
-                tmp4,
-                tmp,
-            )
+    # Drag forces in inertial frame
+    quat_conj(urdf2com, com2urdf)
+    compute_force(
+        force,
+        link_velocity=link_lin_velocity,
+        coefficients=coefficients[0],
+        urdf2com=urdf2com,
+        com2urdf=com2urdf,
+        buoyancy=buoyancy,
+        quat_c=quat_c,
+        tmp4=tmp4,
+        tmp=tmp,
+    )
+    compute_torque(
+        torque,
+        link_ang_velocity=link_ang_velocity,
+        coefficients=coefficients[1],
+        urdf2com=urdf2com,
+        com2urdf=com2urdf,
+        quat_c=quat_c,
+        tmp4=tmp4,
+        tmp=tmp,
+    )
 
-        # Drag forces in inertial frame
-        coefficients = np.array(link.drag_coefficients)
-        quat_conj(urdf2com, com2urdf)
-        compute_force(
-            force,
-            link_velocity=link_lin_velocity,
-            coefficients=coefficients[0],
-            urdf2com=urdf2com,
-            com2urdf=com2urdf,
-            buoyancy=buoyancy,
-            quat_c=quat_c,
-            tmp4=tmp4,
-            tmp=tmp,
-        )
-        compute_torque(
-            torque,
-            link_ang_velocity=link_ang_velocity,
-            coefficients=coefficients[1],
-            urdf2com=urdf2com,
-            com2urdf=com2urdf,
-            quat_c=quat_c,
-            tmp4=tmp4,
-            tmp=tmp,
-        )
-
-        # Store data
-        hydro_i = data_hydrodynamics.names.index(link.name)
-        for i in range(3):
-            data_hydrodynamics.array[iteration, hydro_i, i] = force[i]
-            data_hydrodynamics.array[iteration, hydro_i, i+3] = torque[i]
-    return links_swimming
+    # Store data
+    for i in range(3):
+        data_hydrodynamics.array[iteration, hydro_index, i] = force[i]
+        data_hydrodynamics.array[iteration, hydro_index, i+3] = torque[i]
+    return 1
 
 
 cpdef void swimming_motion(
         unsigned int iteration,
         HydrodynamicsArrayCy data_hydrodynamics,
+        unsigned int hydro_index,
         int model,
-        list links,
-        dict links_map,
-        bint link_frame,
-        units,
-        pos=np.zeros(3)
+        int link_id,
+        int frame=pybullet.LINK_FRAME,
+        double newtons=1.0,
+        double torques=1.0,
+        np.ndarray pos=np.zeros(3),
 ):
     """Swimming motion"""
-    cdef int link_id
-    cdef str link_name
-    cdef unsigned int i, sensor_i, flags
-    cdef DTYPEv1 hydro
+    # cdef int link_id
+    # cdef str link_name
+    cdef unsigned int i  # , sensor_i, flags
     cdef np.ndarray hydro_force=np.zeros(3), hydro_torque=np.zeros(3)
     # cdef np.ndarray hydro
-    cdef double newtons, torques
-    newtons = units.newtons
-    torques = units.torques
-    flags = pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
-    for link in links:
-        # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
-        sensor_i = data_hydrodynamics.names.index(link.name)
-        link_id = links_map[link.name]
-        hydro = data_hydrodynamics.array[iteration, sensor_i]
-        for i in range(3):
-            hydro_force[i] = hydro[i]*newtons
-            hydro_torque[i] = hydro[i+3]*torques
-        pybullet.applyExternalForce(
-            model,
-            link_id,
-            forceObj=hydro_force.tolist(),
-            posObj=pos,  # pybullet.getDynamicsInfo(model, link)[3]
-            flags=flags,
-        )
-        pybullet.applyExternalTorque(
-            model,
-            link_id,
-            torqueObj=hydro_torque.tolist(),
-            flags=flags,
-        )
+    # cdef double newtons, torques
+    # newtons = units.newtons
+    # torques = units.torques
+    # flags = pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
+
+    # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
+    # sensor_i = data_hydrodynamics.names.index(link.name)
+    # link_id = links_map[link.name]
+    cdef DTYPEv1 hydro = data_hydrodynamics.array[iteration, hydro_index]
+    for i in range(3):
+        hydro_force[i] = hydro[i]*newtons
+        hydro_torque[i] = hydro[i+3]*torques
+    pybullet.applyExternalForce(
+        model,
+        link_id,
+        forceObj=hydro_force.tolist(),
+        posObj=pos.tolist(),  # pybullet.getDynamicsInfo(model, link)[3]
+        flags=frame,
+    )
+    pybullet.applyExternalTorque(
+        model,
+        link_id,
+        torqueObj=hydro_torque.tolist(),
+        flags=frame,
+    )
 
 
 cpdef swimming_debug(iteration, data_gps, links):
@@ -597,3 +598,131 @@ cpdef swimming_debug(iteration, data_gps, links):
                 lineWidth=5,
                 lifeTime=1,
             )
+
+
+cdef draw_hydrodynamics(
+    unsigned int iteration,
+    HydrodynamicsArrayCy data_hydrodynamics,
+    int model,
+    int link_id,
+    unsigned int hydro_index,
+    hydrodynamics_plot,
+    bint new_active,
+    double meters,
+):
+    """Draw hydrodynamics forces"""
+    cdef bint old_active = hydrodynamics_plot[hydro_index][0]
+    cdef DTYPEv1 force = data_hydrodynamics.array[iteration, hydro_index, :3]
+    if new_active:
+        hydrodynamics_plot[hydro_index][0] = True
+        hydrodynamics_plot[hydro_index][1] = pybullet.addUserDebugLine(
+            lineFromXYZ=[0, 0, 0],
+            lineToXYZ=1000*np.array(force),
+            lineColorRGB=[0, 0, 1],
+            lineWidth=7*meters,
+            parentObjectUniqueId=model,
+            parentLinkIndex=link_id,
+            replaceItemUniqueId=hydrodynamics_plot[hydro_index][1],
+        )
+    elif old_active and not new_active:
+        hydrodynamics_plot[hydro_index][0] = False
+        hydrodynamics_plot[hydro_index][1] = pybullet.addUserDebugLine(
+            lineFromXYZ=[0, 0, 0],
+            lineToXYZ=[0, 0, 0],
+            lineColorRGB=[0, 0, 1],
+            lineWidth=0,
+            parentObjectUniqueId=model,
+            parentLinkIndex=0,
+            replaceItemUniqueId=hydrodynamics_plot[hydro_index][1],
+        )
+
+
+cpdef void swimming_step(iteration, animat):
+    """Swimming step"""
+    physics_options = animat.options.physics
+    cdef bint show_hydrodynamics = animat.options.show_hydrodynamics
+    cdef str link_name
+    cdef bint apply_force = 1
+    cdef unsigned int gps_index
+    cdef unsigned int hydro_index
+    cdef bint drag = physics_options.drag
+    cdef bint sph = physics_options.sph
+    cdef bint buoyancy = physics_options.buoyancy
+    cdef double water_surface = physics_options.water_surface
+    cdef int frame = pybullet.LINK_FRAME
+    cdef int model, link_id
+    cdef double meters = animat.units.meters
+    cdef double newtons = animat.units.newtons
+    cdef double torques = animat.units.torques
+    cdef double mass
+    cdef double height
+    cdef double density
+    cdef DTYPEv2 z3 = np.zeros([6, 3])
+    cdef DTYPEv2 z4 = np.zeros([7, 4])
+    cdef DTYPEv2 coefficients
+    if drag or sph:
+        if sph:
+            water_surface = 1e8
+        sensors = animat.data.sensors
+        hydro = sensors.hydrodynamics
+        gps = sensors.gps
+        frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
+        newtons = animat.units.newtons
+        torques = animat.units.torques
+        model = animat.identity()
+        hydrodynamics_plot = animat.hydrodynamics_plot
+        for link in animat.options.morphology.links:
+            if link.swimming:
+                link_name = link.name
+                hydro_index = hydro.names.index(link_name)
+                if drag:
+                    gps_index = gps.names.index(link_name)
+                    coefficients = np.array(link.drag_coefficients)
+                    mass = animat.masses[link_name]
+                    height = link.height
+                    density = link.density
+                    apply_force = drag_forces(
+                        iteration=iteration,
+                        data_gps=gps,
+                        gps_index=gps_index,
+                        data_hydrodynamics=hydro,
+                        hydro_index=hydro_index,
+                        coefficients=coefficients,
+                        z3=z3,
+                        z4=z4,
+                        surface=water_surface,
+                        mass=mass,
+                        height=height,
+                        density=density,
+                        gravity=-9.81,
+                        use_buoyancy=buoyancy,
+                    )
+                if apply_force:
+                    link_id = animat.links_map[link_name]
+                    swimming_motion(
+                        iteration=iteration,
+                        data_hydrodynamics=hydro,
+                        hydro_index=hydro_index,
+                        model=model,
+                        link_id=link_id,
+                        frame=frame,
+                        newtons=newtons,
+                        torques=torques,
+                    )
+                    if False:
+                        swimming_debug(
+                            iteration=iteration,
+                            data_gps=animat.data.sensors.gps,
+                            link=link,
+                        )
+                if show_hydrodynamics:
+                    draw_hydrodynamics(
+                        iteration=iteration,
+                        data_hydrodynamics=hydro,
+                        model=model,
+                        link_id=link_id,
+                        hydro_index=hydro_index,
+                        hydrodynamics_plot=hydrodynamics_plot,
+                        new_active=apply_force,
+                        meters=meters,
+                    )
