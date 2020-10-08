@@ -196,7 +196,7 @@ cdef void transpose(
     cdef unsigned int i, j
     for i in range(3):
         for j in range(3):
-            out[j, i] = matrix[i, j]
+            out[i, j] = matrix[j, i]
 
 
 cdef void matrix_dot_vector(
@@ -226,38 +226,50 @@ cdef void matrix_dot_matrix(
                 out[i, j] += matrix[i, k]*matrix2[k, j]
 
 
+cdef void quat_conj(
+    DTYPEv1 quat,
+    DTYPEv1 out,
+) nogil:
+    """Quaternion multiplication"""
+    cdef unsigned int i
+    for i in range(3):
+        out[i] = -quat[i]
+    out[3] = quat[3]
+
+
 cdef void quat_mult(
     DTYPEv1 q0,
     DTYPEv1 q1,
     DTYPEv1 out,
+    bint full=1,
 ) nogil:
     """Quaternion multiplication"""
     out[0] = q0[3]*q1[0] + q0[0]*q1[3] + q0[1]*q1[2] - q0[2]*q1[1]  # x
     out[1] = q0[3]*q1[1] - q0[0]*q1[2] + q0[1]*q1[3] + q0[2]*q1[0]  # y
     out[2] = q0[3]*q1[2] + q0[0]*q1[1] - q0[1]*q1[0] + q0[2]*q1[3]  # z
-    out[3] = q0[3]*q1[3] - q0[0]*q1[0] - q0[1]*q1[1] - q0[2]*q1[2]  # w
+    if full:
+        out[3] = q0[3]*q1[3] - q0[0]*q1[0] - q0[1]*q1[1] - q0[2]*q1[2]  # w
 
 
 cdef void quat_rot(
     DTYPEv1 vector,
     DTYPEv1 quat,
-    DTYPEv1 quat_conj,
+    DTYPEv1 quat_c,
     DTYPEv1 tmp4,
     DTYPEv1 out,
 ) nogil:
     """Quaternion rotation"""
-    for i in range(3):
-        quat_conj[i] = vector[i]
-    quat_conj[3] = 0
-    quat_mult(quat, quat_conj, tmp4)
-    for i in range(3):
-        quat_conj[i] = -quat[i]
-    quat_conj[3] = quat[3]
-    quat_mult(tmp4, quat_conj, out)
+    quat_c[3] = 0
+    quat_c[0] = vector[0]
+    quat_c[1] = vector[1]
+    quat_c[2] = vector[2]
+    quat_mult(quat, quat_c, tmp4)
+    quat_conj(quat, quat_c)
+    quat_mult(tmp4, quat_c, out, full=0)
 
 
 cdef void quat2rot(DTYPEv1 quat, DTYPEv2 matrix) nogil:
-    """Quaternion to matrix"""
+    """Quaternion to rotation matrix"""
     cdef double q00 = quat[0]*quat[0]
     cdef double q01 = quat[0]*quat[1]
     cdef double q02 = quat[0]*quat[2]
@@ -282,12 +294,14 @@ cdef void link_swimming_info(
     GpsArrayCy data_gps,
     unsigned int iteration,
     int sensor_i,
-    DTYPEv2 urdf2global,
-    DTYPEv2 com2global,
-    DTYPEv2 global2com,
-    DTYPEv2 urdf2com,
+    DTYPEv1 urdf2global,
+    DTYPEv1 com2global,
+    DTYPEv1 global2com,
+    DTYPEv1 urdf2com,
     DTYPEv1 link_lin_velocity,
     DTYPEv1 link_ang_velocity,
+    DTYPEv1 quat_c,
+    DTYPEv1 tmp4,
 ) nogil:
     """Link swimming information
 
@@ -302,35 +316,37 @@ cdef void link_swimming_info(
     """
 
     # Orientations
-    quat2rot(data_gps.urdf_orientation_cy(iteration, sensor_i), urdf2global)
-    quat2rot(data_gps.com_orientation_cy(iteration, sensor_i), com2global)
-    transpose(com2global, global2com)
+    urdf2global = data_gps.urdf_orientation_cy(iteration, sensor_i)
+    com2global = data_gps.com_orientation_cy(iteration, sensor_i)
+    quat_conj(com2global, global2com)
 
     # Compute velocity in CoM frame
-    matrix_dot_vector(
-        global2com,
+    quat_rot(
         data_gps.com_lin_velocity_cy(iteration, sensor_i),
+        global2com,
+        quat_c,
+        tmp4,
         link_lin_velocity,
     )
-    matrix_dot_vector(
-        global2com,
+    quat_rot(
         data_gps.com_ang_velocity_cy(iteration, sensor_i),
+        global2com,
+        quat_c,
+        tmp4,
         link_ang_velocity,
     )
-    matrix_dot_matrix(
-        urdf2global,
-        global2com,
-        urdf2com,
-    )
+    quat_mult(urdf2global, global2com, urdf2com)
 
 
 cdef void compute_force(
     DTYPEv1 force,
     DTYPEv1 link_velocity,
     DTYPEv1 coefficients,
-    DTYPEv2 urdf2com,
-    DTYPEv2 com2urdf,
+    DTYPEv1 urdf2com,
+    DTYPEv1 com2urdf,
     DTYPEv1 buoyancy,
+    DTYPEv1 quat_c,
+    DTYPEv1 tmp4,
     DTYPEv1 tmp,
 ) nogil:
     """Compute force and torque
@@ -339,22 +355,15 @@ cdef void compute_force(
     - 3.533 [s]
     - 3.243 [s]
     """
+    cdef unsigned int i
     for i in range(3):
         force[i] = link_velocity[i]*link_velocity[i]
         if link_velocity[i] < 0:
             force[i] *= -1
-    matrix_dot_vector(
-        com2urdf,
-        force,
-        tmp,
-    )
+    quat_rot(force, com2urdf, quat_c, tmp4, tmp)
     for i in range(3):
         tmp[i] *= coefficients[i]
-    matrix_dot_vector(
-        urdf2com,
-        tmp,
-        force,
-    )
+    quat_rot(tmp, urdf2com, quat_c, tmp4, force)
     for i in range(3):
         force[i] += buoyancy[i]
 
@@ -363,8 +372,10 @@ cdef void compute_torque(
     DTYPEv1 torque,
     DTYPEv1 link_ang_velocity,
     DTYPEv1 coefficients,
-    DTYPEv2 urdf2com,
-    DTYPEv2 com2urdf,
+    DTYPEv1 urdf2com,
+    DTYPEv1 com2urdf,
+    DTYPEv1 quat_c,
+    DTYPEv1 tmp4,
     DTYPEv1 tmp,
 ) nogil:
     """Compute force and torque
@@ -373,35 +384,30 @@ cdef void compute_torque(
     - 3.533 [s]
     - 3.243 [s]
     """
+    cdef unsigned int i
     for i in range(3):
         torque[i] = link_ang_velocity[i]*link_ang_velocity[i]
         if link_ang_velocity[i] < 0:
             torque[i] *= -1
-    matrix_dot_vector(
-        com2urdf,
-        torque,
-        tmp,
-    )
+    quat_rot(torque, com2urdf, quat_c, tmp4, tmp)
     for i in range(3):
         tmp[i] *= coefficients[i]
-    matrix_dot_vector(
-        urdf2com,
-        tmp,
-        torque,
-    )
+    quat_rot(tmp, urdf2com, quat_c, tmp4, torque)
 
 
 cdef void compute_buoyancy(
     double density,
     double height,
     double position,
-    DTYPEv2 global2com,
+    DTYPEv1 global2com,
     double mass,
     double surface,
     double gravity,
     DTYPEv1 buyoancy,
+    DTYPEv1 quat_c,
+    DTYPEv1 tmp4,
     DTYPEv1 tmp,
-) nogil:
+):
     """Compute buoyancy"""
     if mass > 0:
         tmp[0] = 0
@@ -410,11 +416,7 @@ cdef void compute_buoyancy(
             max(surface-position, 0)/height,
             1,
         )
-        matrix_dot_vector(
-            global2com,
-            tmp,
-            buyoancy,
-        )
+        quat_rot(tmp, global2com, quat_c, tmp4, buyoancy)
     else:
         for i in range(3):
             buyoancy[i] = 0
@@ -427,7 +429,7 @@ cpdef list drag_forces(
         links,
         masses,
         double gravity,
-        use_buoyancy,
+        bint use_buoyancy,
         double surface,
 ):
     """Drag swimming
@@ -436,14 +438,18 @@ cpdef list drag_forces(
     - 14.967 [s]
     - 13.877 [s]
     - 11.086 [s]
-    -  [s]
+    - 2.171 [s]
     -  [s]
     -  [s]
     """
+    z3 = np.zeros([6, 4])
+    z4 = np.zeros([7, 4])
     cdef unsigned int i, hydro_i
-    cdef double[3] force, torque, buoyancy, tmp
-    cdef double[3] link_lin_velocity, link_ang_velocity
-    cdef double[3][3] urdf2global, com2global, global2com, urdf2com, com2urdf
+    cdef DTYPEv1 force=z3[0], torque=z3[1], buoyancy=z3[2], tmp=z3[3]
+    cdef DTYPEv1 link_lin_velocity=z3[4], link_ang_velocity=z3[5]
+    cdef DTYPEv1 urdf2global=z4[0], com2global=z4[1]
+    cdef DTYPEv1 global2com=z4[2], urdf2com=z4[3], com2urdf=z4[4]
+    cdef DTYPEv1 quat_c=z4[5], tmp4=z4[6]
     cdef DTYPEv2 coefficients
     cdef np.ndarray positions = np.array(data_gps.array[iteration, :, 2], copy=False)
     cdef np.ndarray sensors = np.argwhere(positions < surface)[:, 0]
@@ -466,6 +472,8 @@ cpdef list drag_forces(
             urdf2com=urdf2com,
             link_lin_velocity=link_lin_velocity,
             link_ang_velocity=link_ang_velocity,
+            quat_c=quat_c,
+            tmp4=tmp4,
         )
 
         # Buoyancy forces
@@ -479,12 +487,14 @@ cpdef list drag_forces(
                 surface,
                 gravity,
                 buoyancy,
+                quat_c,
+                tmp4,
                 tmp,
             )
 
         # Drag forces in inertial frame
         coefficients = np.array(link.drag_coefficients)
-        transpose(urdf2com, com2urdf)
+        quat_conj(urdf2com, com2urdf)
         compute_force(
             force,
             link_velocity=link_lin_velocity,
@@ -492,6 +502,8 @@ cpdef list drag_forces(
             urdf2com=urdf2com,
             com2urdf=com2urdf,
             buoyancy=buoyancy,
+            quat_c=quat_c,
+            tmp4=tmp4,
             tmp=tmp,
         )
         compute_torque(
@@ -500,6 +512,8 @@ cpdef list drag_forces(
             coefficients=coefficients[1],
             urdf2com=urdf2com,
             com2urdf=com2urdf,
+            quat_c=quat_c,
+            tmp4=tmp4,
             tmp=tmp,
         )
 
@@ -526,7 +540,8 @@ cpdef void swimming_motion(
     cdef str link_name
     cdef unsigned int i, sensor_i, flags
     cdef DTYPEv1 hydro
-    cdef double hydro_force[3], hydro_torque[3]
+    cdef DTYPEv1 hydro_force=np.zeros(3), hydro_torque=np.zeros(3)
+    # cdef np.ndarray hydro
     cdef double newtons, torques
     newtons = units.newtons
     torques = units.torques
@@ -539,17 +554,20 @@ cpdef void swimming_motion(
         for i in range(3):
             hydro_force[i] = hydro[i]*newtons
             hydro_torque[i] = hydro[i+3]*torques
+        # hydro = np.array(data_hydrodynamics.array[iteration, sensor_i], copy=True)
+        # hydro[:3] *= newtons
+        # hydro[3:] *= torques
         pybullet.applyExternalForce(
             model,
             link_id,
-            forceObj=np.array(hydro_force),
+            forceObj=np.array(hydro_force, copy=False),
             posObj=pos,  # pybullet.getDynamicsInfo(model, link)[3]
             flags=flags,
         )
         pybullet.applyExternalTorque(
             model,
             link_id,
-            torqueObj=np.array(hydro_torque),
+            torqueObj=np.array(hydro_torque, copy=False),
             flags=flags,
         )
 
