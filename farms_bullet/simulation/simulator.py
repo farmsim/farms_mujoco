@@ -1,6 +1,7 @@
 """Simulator"""
 
 import time
+import contextlib
 
 import numpy as np
 
@@ -14,18 +15,24 @@ def init_engine(headless=False, opengl2=False):
     """Initialise engine"""
     pylog.debug('Pybullet version: {}'.format(pybullet.getAPIVersion()))
     background_color = 0.9*np.ones(3)
-    pybullet.connect(
-        pybullet.DIRECT if headless else pybullet.GUI,  # pybullet.DIRECT
-        # options='--enable_experimental_opencl'
-        # options='--opengl2'  #  --minGraphicsUpdateTimeMs=32000
-        options=(
+
+    options = ''
+    if not headless:
+        options += (
             '--background_color_red={}'
             ' --background_color_green={}'
             ' --background_color_blue={}'
-        ).format(*background_color) + (
-            ' --opengl2' if opengl2 else ''
+        ).format(*background_color)
+    elif opengl2:
+        options += ' --opengl2'
+    kwargs_options = {'options': options} if options else {}
+    with contextlib.redirect_stdout(None):
+        pybullet.connect(
+            pybullet.DIRECT if headless else pybullet.GUI,  # pybullet.DIRECT
+            # options='--enable_experimental_opencl'
+            # options='--opengl2'  #  --minGraphicsUpdateTimeMs=32000
+            **kwargs_options
         )
-    )
     pybullet_path = pybullet_data.getDataPath()
     pylog.debug('Adding pybullet data path {}'.format(pybullet_path))
     pybullet.setAdditionalSearchPath(pybullet_path)

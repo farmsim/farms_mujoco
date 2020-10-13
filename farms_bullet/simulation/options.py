@@ -27,6 +27,7 @@ class SimulationOptions(Options):
         self.play = kwargs.pop('play', True)
         self.fast = kwargs.pop('fast', False)
         self.headless = kwargs.pop('headless', False)
+        self.show_progress = kwargs.pop('show_progress', True)
 
         # Camera
         self.free_camera = kwargs.pop('free_camera', False)
@@ -69,6 +70,7 @@ class SimulationOptions(Options):
             play=kwargs.pop('play', not clargs.pause),
             fast=kwargs.pop('fast', clargs.fast),
             headless=kwargs.pop('headless', clargs.headless),
+            show_progress=kwargs.pop('show_progress', clargs.show_progress),
 
             # Camera
             free_camera=kwargs.pop('free_camera', clargs.free_camera),
