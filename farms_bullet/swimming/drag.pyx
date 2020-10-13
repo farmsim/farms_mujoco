@@ -9,223 +9,6 @@ cimport numpy as np
 from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, GpsArrayCy
 
 
-# cdef link_swimming_info(GpsArrayCy data_gps, unsigned int iteration, int sensor_i):
-#     """Link swimming information
-
-#     Times:
-#     - 10.369 [s]
-#     - 9.403 [s]
-#     - 8.972 [s]
-#     - 7.815 [s]
-#     - 7.204 [s]
-#     - 4.507 [s]
-#     - 4.304 [s]
-#     """
-
-#     # Declarations
-#     zeros = [0, 0, 0]
-#     quat_unit = [0, 0, 0, 1]
-
-#     # Orientations
-#     ori_urdf = np.array(
-#         data_gps.urdf_orientation_cy(iteration, sensor_i),
-#         copy=False,
-#     ).tolist()
-#     ori_com = np.array(
-#         data_gps.com_orientation_cy(iteration, sensor_i),
-#         copy=False,
-#     ).tolist()
-#     global2com = pybullet.invertTransform(zeros, ori_com)
-#     # urdf2global = (zeros, ori_urdf)
-
-#     # Velocities in global frame
-#     lin_velocity = np.array(
-#         data_gps.com_lin_velocity_cy(iteration, sensor_i),
-#         copy=False,
-#     ).tolist()
-#     ang_velocity = np.array(
-#         data_gps.com_ang_velocity_cy(iteration, sensor_i),
-#         copy=False,
-#     ).tolist()
-
-#     # Compute velocity in CoM frame
-#     link_velocity = np.array(pybullet.multiplyTransforms(
-#         *global2com,
-#         lin_velocity,
-#         quat_unit,
-#     )[0])
-#     link_angular_velocity = np.array(pybullet.multiplyTransforms(
-#         *global2com,
-#         ang_velocity,
-#         quat_unit,
-#     )[0])
-#     urdf2com = pybullet.multiplyTransforms(
-#         *global2com,
-#         zeros,  # *urdf2global,
-#         ori_urdf,  # *urdf2global,
-#     )
-#     return (
-#         link_velocity,
-#         link_angular_velocity,
-#         global2com,
-#         urdf2com,
-#     )
-
-
-# cdef void compute_force(np.ndarray force, np.ndarray link_velocity, np.ndarray coefficients, urdf2com, np.ndarray buoyancy):
-#     """Compute force and torque
-
-#     Times:
-#     - 3.533 [s]
-#     - 3.243 [s]
-#     """
-#     force[:] = (
-#         np.sign(link_velocity)
-#         *np.array(pybullet.multiplyTransforms(
-#             coefficients[0],
-#             [0, 0, 0, 1],
-#             *urdf2com,
-#         )[0])
-#         *link_velocity**2
-#         + buoyancy
-#     )
-
-
-# cdef void compute_torque(np.ndarray torque, np.ndarray link_angular_velocity, np.ndarray coefficients, urdf2com):
-#     """Compute force and torque
-
-#     Times:
-#     - 3.533 [s]
-#     - 3.243 [s]
-#     """
-#     torque[:] = (
-#         np.sign(link_angular_velocity)
-#         *np.array(pybullet.multiplyTransforms(
-#             coefficients[1],
-#             [0, 0, 0, 1],
-#             *urdf2com,
-#         )[0])
-#         *link_angular_velocity**2
-#     )
-
-
-# cpdef list drag_forces(
-#         unsigned int iteration,
-#         GpsArrayCy data_gps,
-#         HydrodynamicsArrayCy data_hydrodynamics,
-#         links,
-#         masses,
-#         double gravity,
-#         use_buoyancy,
-#         double surface,
-# ):
-#     """Drag swimming
-
-#     Times:
-#     - 14.967 [s]
-#     - 13.877 [s]
-#     -  [s]
-#     -  [s]
-#     -  [s]
-#     -  [s]
-#     """
-#     cdef unsigned int i, hydro_i
-#     cdef np.ndarray force = np.zeros(3)
-#     cdef np.ndarray torque = np.zeros(3)
-#     cdef np.ndarray coefficients, buoyancy
-#     cdef np.ndarray positions = np.array(data_gps.array[iteration, :, 2], copy=False)
-#     cdef np.ndarray sensors = np.argwhere(positions < surface)[:, 0]
-#     if not sensors.shape[0]:
-#         return []
-#     links_map = {link.name: link for link in links}
-#     links_swimming = [
-#         links_map[data_gps.names[sensor_i]]
-#         for sensor_i in sensors
-#         if data_gps.names[sensor_i] in links_map
-#     ]
-#     for sensor_i, link, position in zip(sensors, links_swimming, positions):
-#         (
-#             link_velocity,
-#             link_angular_velocity,
-#             global2com,
-#             urdf2com,
-#         ) = link_swimming_info(
-#             data_gps=data_gps,
-#             iteration=iteration,
-#             # sensor_i=sensor_i,
-#             sensor_i=data_gps.names.index(link.name),
-#         )
-
-#         # Buoyancy forces
-#         buoyancy = compute_buoyancy(
-#             link,
-#             position,
-#             global2com,
-#             masses[link.name],
-#             surface,
-#             gravity,
-#         ) if use_buoyancy else np.zeros(3)
-
-#         # Drag forces in inertial frame
-#         coefficients = np.array(link.drag_coefficients)
-#         compute_force(
-#             force,
-#             link_velocity=link_velocity,
-#             coefficients=coefficients,
-#             urdf2com=urdf2com,
-#             buoyancy=buoyancy,
-#         )
-#         compute_torque(
-#             torque,
-#             link_angular_velocity=link_angular_velocity,
-#             coefficients=coefficients,
-#             urdf2com=urdf2com,
-#         )
-#         hydro_i = data_hydrodynamics.names.index(link.name)
-#         for i in range(3):
-#             data_hydrodynamics.array[iteration, hydro_i, i] = force[i]
-#             data_hydrodynamics.array[iteration, hydro_i, i+3] = torque[i]
-#     return links_swimming
-
-
-cdef void transpose(
-    DTYPEv2 matrix,
-    DTYPEv2 out,
-) nogil:
-    """Quaternion to matrix"""
-    cdef unsigned int i, j
-    for i in range(3):
-        for j in range(3):
-            out[i, j] = matrix[j, i]
-
-
-cdef void matrix_dot_vector(
-    DTYPEv2 matrix,
-    DTYPEv1 vector,
-    DTYPEv1 out,
-) nogil:
-    """Matrix-vector multiplication"""
-    cdef unsigned int i, j
-    for i in range(3):
-        out[i] = 0
-        for j in range(3):
-            out[i] += matrix[i, j]*vector[j]
-
-
-cdef void matrix_dot_matrix(
-    DTYPEv2 matrix,
-    DTYPEv2 matrix2,
-    DTYPEv2 out,
-) nogil:
-    """Matrix-vector multiplication"""
-    cdef unsigned int i, j, k
-    for i in range(3):
-        for j in range(3):
-            out[i, j] = 0
-            for k in range(3):
-                out[i, j] += matrix[i, k]*matrix2[k, j]
-
-
 cdef void quat_conj(
     DTYPEv1 quat,
     DTYPEv1 out,
@@ -268,28 +51,6 @@ cdef void quat_rot(
     quat_mult(tmp4, quat_c, out, full=0)
 
 
-cdef void quat2rot(DTYPEv1 quat, DTYPEv2 matrix) nogil:
-    """Quaternion to rotation matrix"""
-    cdef double q00 = quat[0]*quat[0]
-    cdef double q01 = quat[0]*quat[1]
-    cdef double q02 = quat[0]*quat[2]
-    cdef double q03 = quat[0]*quat[3]
-    cdef double q11 = quat[1]*quat[1]
-    cdef double q12 = quat[1]*quat[2]
-    cdef double q13 = quat[1]*quat[3]
-    cdef double q22 = quat[2]*quat[2]
-    cdef double q23 = quat[2]*quat[3]
-    matrix[0, 0] = 1 - 2*(q11 + q22)
-    matrix[0, 1] = 2*(q01 - q23)
-    matrix[0, 2] = 2*(q02 + q13)
-    matrix[1, 0] = 2*(q01 + q23)
-    matrix[1, 1] = 1 - 2*(q00 + q22)
-    matrix[1, 2] = 2*(q12 - q03)
-    matrix[2, 0] = 2*(q02 - q13)
-    matrix[2, 1] = 2*(q12 + q03)
-    matrix[2, 2] = 1 - 2*(q00 + q11)
-
-
 cdef void link_swimming_info(
     GpsArrayCy data_gps,
     unsigned int iteration,
@@ -303,17 +64,7 @@ cdef void link_swimming_info(
     DTYPEv1 quat_c,
     DTYPEv1 tmp4,
 ) nogil:
-    """Link swimming information
-
-    Times:
-    - 10.369 [s]
-    - 9.403 [s]
-    - 8.972 [s]
-    - 7.815 [s]
-    - 7.204 [s]
-    - 4.507 [s]
-    - 4.304 [s]
-    """
+    """Link swimming information"""
 
     # Orientations
     urdf2global = data_gps.urdf_orientation_cy(iteration, sensor_i)
@@ -349,12 +100,7 @@ cdef void compute_force(
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
 ) nogil:
-    """Compute force and torque
-
-    Times:
-    - 3.533 [s]
-    - 3.243 [s]
-    """
+    """Compute force and torque"""
     cdef unsigned int i
     for i in range(3):
         force[i] = link_velocity[i]*link_velocity[i]
@@ -378,12 +124,7 @@ cdef void compute_torque(
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
 ) nogil:
-    """Compute force and torque
-
-    Times:
-    - 3.533 [s]
-    - 3.243 [s]
-    """
+    """Compute force and torque"""
     cdef unsigned int i
     for i in range(3):
         torque[i] = link_ang_velocity[i]*link_ang_velocity[i]
@@ -438,16 +179,7 @@ cpdef bint drag_forces(
         double gravity,
         bint use_buoyancy,
 ) nogil:
-    """Drag swimming
-
-    Times:
-    - 14.967 [s]
-    - 13.877 [s]
-    - 11.086 [s]
-    - 2.171 [s]
-    -  [s]
-    -  [s]
-    """
+    """Drag swimming"""
     cdef unsigned int i
     # cdef unsigned int sensor_i = data_gps.names.index(link_name)
     # hydro_i = data_hydrodynamics.names.index(link_name)
