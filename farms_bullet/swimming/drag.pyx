@@ -423,7 +423,17 @@ cdef class SwimmingHandler:
         ]
         self.n_links = len(links)
         self.masses = np.array([self.animat.masses[link.name] for link in links])
-        self.heights = np.array([link.height for link in links])
+        aabb = [
+            pybullet.getAABB(
+                bodyUniqueId=animat.identity(),
+                linkIndex=self.animat.links_map[link.name],
+            )
+            for link in links
+        ]
+        self.heights = np.array([
+            0.5*(_aabb[1][2] -_aabb[0][2])
+            for _aabb in aabb
+        ])
         self.densities = np.array([link.density for link in links])
         self.hydro_indices = np.array([
             self.hydro.names.index(link.name)
