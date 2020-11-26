@@ -4,6 +4,9 @@ import os
 import numpy as np
 import pybullet
 
+import farms_pylog as pylog
+from ..utils.output import redirect_output
+
 
 class SimulationModel:
     """SimulationModel"""
@@ -51,13 +54,17 @@ class SimulationModel:
     def from_sdf(sdf, **kwargs):
         """Model from SDF"""
         assert os.path.isfile(sdf), '{} does not exist'.format(sdf)
-        return pybullet.loadSDF(sdf, **kwargs)[0]
+        with redirect_output(pylog.warning):
+            model = pybullet.loadSDF(sdf, **kwargs)[0]
+        return model
 
     @staticmethod
     def from_urdf(urdf, **kwargs):
         """Model from SDF"""
         assert os.path.isfile(urdf), '{} does not exist'.format(urdf)
-        return pybullet.loadURDF(urdf, **kwargs)
+        with redirect_output(pylog.warning):
+            model = pybullet.loadURDF(urdf, **kwargs)
+        return model
 
 
 class GroundModel(SimulationModel):

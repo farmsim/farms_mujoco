@@ -8,6 +8,7 @@ import numpy as np
 import farms_pylog as pylog
 from ..model.control import control_models
 from ..interface.interface import Interfaces
+from ..utils.output import redirect_output
 from .simulator import init_engine, real_time_handing
 from .render import rendering
 
@@ -96,43 +97,50 @@ class Simulation:
         pylog.debug('Setting non real-time simulation')
         pybullet.setRealTimeSimulation(0)
         pylog.debug('Setting simulation parameters')
-        pybullet.setPhysicsEngineParameter(
-            fixedTimeStep=self.options.timestep*self.options.units.seconds,
-            numSolverIterations=self.options.n_solver_iters,
-            erp=self.options.erp,
-            contactERP=self.options.contact_erp,
-            frictionERP=self.options.friction_erp,
-            numSubSteps=self.options.num_sub_steps,
-            maxNumCmdPer1ms=self.options.max_num_cmd_per_1ms,
-            solverResidualThreshold=self.options.residual_threshold,
-            # solverResidualThreshold=1e-12,
-            # restitutionVelocityThreshold=1e-3,
-            # useSplitImpulse=False,
-            # splitImpulsePenetrationThreshold=1e-5,
-            # contactBreakingThreshold=1e-5
-            # numSubSteps=100,
-            # maxNumCmdPer1ms=int(1e5),
+        with redirect_output(pylog.debug):
+            pybullet.setPhysicsEngineParameter(
+                fixedTimeStep=self.options.timestep*self.options.units.seconds,
+                numSolverIterations=self.options.n_solver_iters,
+                erp=self.options.erp,
+                contactERP=self.options.contact_erp,
+                frictionERP=self.options.friction_erp,
+                numSubSteps=self.options.num_sub_steps,
+                maxNumCmdPer1ms=self.options.max_num_cmd_per_1ms,
+                solverResidualThreshold=self.options.residual_threshold,
+                # constraintSolverType=pybullet.CONSTRAINT_SOLVER_LCP_DANTZIG,
+                # constraintSolverType=pybullet.CONSTRAINT_SOLVER_LCP_PGS,
+                # globalCFM=1e-10,
+                # solverResidualThreshold=1e-12,
+                # restitutionVelocityThreshold=1e-3,
+                # useSplitImpulse=False,
+                # splitImpulsePenetrationThreshold=1e-5,
+                # contactBreakingThreshold=1e-5
+                # numSubSteps=100,
+                # maxNumCmdPer1ms=int(1e5),
 
-            # # Parameters
-            # fixedTimeStep
-            # numSolverIterations
-            # useSplitImpulse
-            # splitImpulsePenetrationThreshold
-            # numSubSteps
-            # collisionFilterMode
-            # contactBreakingThreshold
-            # maxNumCmdPer1ms
-            # enableFileCaching
-            # restitutionVelocityThreshold
-            # erp
-            # contactERP
-            # frictionERP
-            # enableConeFriction
-            # deterministicOverlappingPairs
-            # solverResidualThreshold
-        )
+                # # Parameters
+                # fixedTimeStep
+                # numSolverIterations
+                # useSplitImpulse
+                # splitImpulsePenetrationThreshold
+                # numSubSteps
+                # collisionFilterMode
+                # contactBreakingThreshold
+                # maxNumCmdPer1ms
+                # enableFileCaching
+                # restitutionVelocityThreshold
+                # erp
+                # contactERP
+                # frictionERP
+                # enableConeFriction
+                # deterministicOverlappingPairs
+                # solverResidualThreshold
+            )
         pylog.debug('Physics parameters:\n{}'.format(
-            pybullet.getPhysicsEngineParameters()
+            '\n'.join([
+                '- {}: {}'.format(key, value)
+                for key, value in pybullet.getPhysicsEngineParameters().items()
+            ])
         ))
 
     def check_quit(self):
@@ -203,7 +211,8 @@ class Simulation:
     def end():
         """Terminate simulation"""
         # Disconnect from simulation
-        pybullet.disconnect()
+        with redirect_output(pylog.debug):
+            pybullet.disconnect()
 
 
 class AnimatSimulation(Simulation):

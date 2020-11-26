@@ -1,7 +1,6 @@
 """Simulator"""
 
 import time
-import contextlib
 
 import numpy as np
 
@@ -9,6 +8,8 @@ import pybullet
 import pybullet_data
 
 import farms_pylog as pylog
+
+from ..utils.output import redirect_output
 
 
 def init_engine(headless=False, opengl2=False):
@@ -25,8 +26,9 @@ def init_engine(headless=False, opengl2=False):
         ).format(*background_color)
     elif opengl2:
         options += ' --opengl2'
+    # options += ' --enable_experimental_opencl'
     kwargs_options = {'options': options} if options else {}
-    with contextlib.redirect_stdout(None):
+    with redirect_output(pylog.debug):
         pybullet.connect(
             pybullet.DIRECT if headless else pybullet.GUI,  # pybullet.DIRECT
             # options='--enable_experimental_opencl'

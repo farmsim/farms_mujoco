@@ -15,6 +15,7 @@ from farms_sdf.sdf import (
     Heightmap,
     Collision,
 )
+from ..utils.output import redirect_output
 
 
 def rot_quat(rot):
@@ -421,11 +422,12 @@ def load_sdf(
 def load_sdf_pybullet(sdf_path, index=0, morphology_links=None):
     """Original way of loading SDF - Deprecated"""
     links, joints = {}, {}
-    identity = pybullet.loadSDF(
-        sdf_path,
-        useMaximalCoordinates=0,
-        globalScaling=1,
-    )[index]
+    with redirect_output(pylog.warning):
+        identity = pybullet.loadSDF(
+            sdf_path,
+            useMaximalCoordinates=0,
+            globalScaling=1,
+        )[index]
     for joint_i in range(pybullet.getNumJoints(identity)):
         joint_info = pybullet.getJointInfo(identity, joint_i)
         links[joint_info[12].decode('UTF-8')] = joint_i
