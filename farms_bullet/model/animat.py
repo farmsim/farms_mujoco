@@ -366,8 +366,12 @@ class Animat(SimulationModel):
     def set_joint_dynamics(self, joint, **kwargs):
         """Apply motor damping"""
         for key, value in kwargs.items():
+            dynamics_kwargs = {
+                'jointLowerLimit': kwargs['jointLowerLimit'],
+                'jointUpperLimit': kwargs['jointUpperLimit'],
+            } if key in ('jointLowerLimit', 'jointUpperLimit') else {key: value}
             pybullet.changeDynamics(
                 bodyUniqueId=self.identity(),
                 linkIndex=self.joints_map[joint],
-                **{key: value}
+                **dynamics_kwargs
             )
