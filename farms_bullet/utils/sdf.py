@@ -207,29 +207,19 @@ def load_sdf(
                 link_name = '{}_dummy_{}'.format(link.name, i-1)
                 link_index[link_name] = link_i
                 links_names.append(link_name)
-                assert link.name in parenting, (
-                    'Link {} is not in parenting {}'.format(
-                        link.name,
-                        parenting,
-                    )
-                )
-                assert parenting[link.name] in link_index, (
+                assert link.name in link_index, (
                     'Link {} is not in link_index {}'.format(
-                        parenting[link.name],
+                        link.name,
                         link_index,
                     )
                 )
-                parenting[link_name] = link_index[parenting[link.name]]
+                parenting[link_name] = link.name
                 link_pos.append([0, 0, 0])
                 link_ori.append([0, 0, 0])
-                # parenting[link_name] = link_index[parenting[link.name]]
-                # link_pos.append(link.pose[:3])
-                # link_ori.append(link.pose[3:])
                 link_masses.append(0)
-                link_com.append(link.pose[:3])
-                # link_com.append([0, 0, 0])
+                link_com.append([0, 0, 0])
                 joint_types.append(pybullet.JOINT_FIXED)
-                joints_names.append('{}_dummy_{}'.format(joint.name, i-1))
+                joints_names.append('joint_dummy_{}_{}'.format(link.name, i-1))
                 joints_axis.append([0.0, 0.0, 1.0])
             else:
                 # Link information
