@@ -372,7 +372,7 @@ def load_sdf(
         linkJointAxis=joints_axis,
         flags=(
             pybullet.URDF_USE_SELF_COLLISION
-            # | pybullet.URDF_MERGE_FIXED_LINKS
+            | pybullet.URDF_MERGE_FIXED_LINKS
             # | pybullet.URDF_MAINTAIN_LINK_ORDER  # Removes certain links?
             # | pybullet.URDF_ENABLE_SLEEPING
             # | pybullet.URDF_USE_INERTIA_FROM_FILE
