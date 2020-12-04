@@ -398,6 +398,8 @@ def load_sdf(
         reset_controllers(model)
     links, joints = {}, {}
     links[links_names[0]] = -1
+
+    # Get links and joints maps
     for joint_i in range(pybullet.getNumJoints(model)):
         joint_info = pybullet.getJointInfo(model, joint_i)
         joint_name = joint_info[1].decode('UTF-8')
@@ -406,6 +408,32 @@ def load_sdf(
         link_name = joint_info[12].decode('UTF-8')
         link_number = int(link_name.replace('link', ''))
         links[links_names[link_number]] = joint_i
+
+    # Set joints properties
+    for joint in sdf.joints:
+        if joint.axis is not None:
+            pybullet.changeDynamics(
+                bodyUniqueId=model,
+                linkIndex=joints[joint.name],
+                jointLowerLimit=joint.axis.limits[0],
+                jointUpperLimit=joint.axis.limits[1],
+            )
+            # pybullet.changeDynamics(
+            #     bodyUniqueId=model,
+            #     linkIndex=joints[joint.name],
+            #     contactDamping=1e3,
+            #     contactStiffness=1e1,
+            # )
+            for key, value in [
+                    ['jointDamping', 0],
+                    ['jointLimitForce', joint.axis.limits[2]],
+                    ['maxJointVelocity', joint.axis.limits[3]],
+            ]:
+                pybullet.changeDynamics(
+                    bodyUniqueId=model,
+                    linkIndex=joints[joint.name],
+                    **{key: value}
+                )
     return model, links, joints
 
 
