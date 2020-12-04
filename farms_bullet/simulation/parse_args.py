@@ -129,7 +129,7 @@ def parse_args():
         '--erp',
         type=float,
         dest='erp',
-        default=1e-2,
+        default=0,
         help='Pybullet ERP',
     )
     parser.add_argument(
