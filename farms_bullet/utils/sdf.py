@@ -324,29 +324,29 @@ def load_sdf(
     if verbose:
         pylog.debug('\n'.join(
             [
-                '0 (Base link): {} - index: {} - mass: {:.4f} [kg]'.format(
+                '0 (Base link): {} - index: {} - mass: {:.4f} [g]'.format(
                     name,
                     link_i,
-                    link_masses[link_i],
+                    1e3*link_masses[link_i],
                 )
                 if link_i == 0
                 else (
                     '{: >3} {: <15}'
                     ' - parent: {: <15} ({: >2})'
-                    ' - mass: {:.4f} [kg]'
+                    ' - mass: {:.4f} [g]'
                     ' - joint: {: <15} - axis: {}'
                 ).format(
                     '{}:'.format(link_i),
                     name,
                     parenting[name],
                     link_index[parenting[name]],
-                    link_masses[link_i],
+                    1e3*link_masses[link_i],
                     joints_names[link_i-1],
                     joints_axis[link_i-1],
                 )
                 for link_i, name in enumerate(links_names)
             ] + [
-                '\nTotal mass: {:.4f} [kg]'.format(sum(link_masses))
+                '\nTotal mass: {:.4f} [g]'.format(1e3*sum(link_masses))
             ]
         ))
         pylog.debug('Spawning model')
@@ -385,7 +385,7 @@ def load_sdf(
         pylog.debug('Spawned model (Identity={})'.format(model))
         pylog.debug(
             '\n'.join([
-                '{: <15} mass: {:.4f} [kg] - inertia: {} {} {}'.format(
+                '{: <15} mass: {:.7f} [kg] - inertia: {} {} {}'.format(
                     link_name+':',
                     *np.array(
                         pybullet.getDynamicsInfo(model, link_i-1)
