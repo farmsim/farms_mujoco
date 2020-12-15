@@ -32,15 +32,20 @@ def initial_pose(identity, joints, joints_options, spawn_options, units):
     spawn_orientation = pybullet.getQuaternionFromEuler(
         spawn_options.orientation
     )
+    com_pos, com_ori = pybullet.getDynamicsInfo(identity, -1)[3:5]
     pos_offset = np.array(pybullet.multiplyTransforms(
         [0, 0, 0],
         spawn_orientation,
-        *pybullet.getDynamicsInfo(identity, -1)[3:5],
+        com_pos,
+        com_ori,
     )[0])
     pybullet.resetBasePositionAndOrientation(
         identity,
-        np.array(spawn_options.position)+pos_offset,
-        spawn_orientation,
+        np.array(spawn_options.position)*units.meters+pos_offset,
+        pybullet.multiplyTransforms(
+            [0, 0, 0], spawn_orientation,
+            [0, 0, 0], com_ori,
+        )[1],
     )
     pybullet.resetBaseVelocity(
         objectUniqueId=identity,
