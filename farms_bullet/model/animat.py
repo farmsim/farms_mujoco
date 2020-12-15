@@ -111,23 +111,55 @@ class Animat(SimulationModel):
         # Body properties
         self.set_body_properties()
 
-    def spawn_sdf(self, verbose=False, original=False):
+    def spawn_sdf(self, verbose=True, original=False):
         """Spawn sdf"""
         if verbose:
-            pylog.debug(self.sdf)
+            pylog.debug('Spawning {} using {}'.format(
+                self.sdf,
+                'Pybullet' if original else 'FARMS',
+            ))
         if original:
             self._identity, self.links_map, self.joints_map = load_sdf_pybullet(
                 sdf_path=self.sdf,
                 morphology_links=self.options.morphology.links_names(),
+                units=self.units,
             )
         else:
             self._identity, self.links_map, self.joints_map = load_sdf(
                 sdf_path=self.sdf,
                 force_concave=False,
-                reset_control=False,
-                verbose=True,
+                reset_control=True,
+                verbose=verbose,
                 links_options=self.options.morphology.links,
+                units=self.units,
             )
+        if verbose:
+            pylog.debug('{}\n\n{}\n{}'.format(
+                'Spawned model (Identity={})'.format(self._identity),
+                'Model properties after units scaling:',
+                '\n'.join([
+                    (
+                        '- {: <20}:'
+                        ' - Mass: {:.3e}'
+                        ' - Inertias: {}'
+                        ' - COM: {}'
+                        ' - Orientation: {}'
+                    ).format(
+                        link_name+':',
+                        *[
+                            float(1000*value)
+                            if val_i == 0  # Mass
+                            else str(['{:.3e}'.format(val) for val in value])
+                            if val_i == 1  # Inertias
+                            else str(['{:+.3e}'.format(val) for val in value])
+                            for val_i, value in enumerate(np.array(
+                                pybullet.getDynamicsInfo(self._identity, link)
+                            )[[0, 2, 3, 4]])
+                        ],
+                    )
+                    for link_name, link in self.links_map.items()
+                ]),
+            ))
         initial_pose(
             identity=self._identity,
             joints=self.joints_identities(),

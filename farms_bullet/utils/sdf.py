@@ -2,6 +2,7 @@
 
 import os
 import numpy as np
+from scipy.spatial.transform import Rotation
 import pybullet
 import farms_pylog as pylog
 from farms_sdf.sdf import (
@@ -43,15 +44,15 @@ def rot_diff(rot0, rot1):
     return pybullet.getDifferenceQuaternion(rot0, rot1)
 
 
-def pybullet_options_from_shape(shape, path='', force_concave=False):
+def pybullet_options_from_shape(shape, path='', force_concave=False, meters=1):
     """Pybullet shape"""
     options = {}
     collision = isinstance(shape, Collision)
     if collision:
-        options['collisionFramePosition'] = shape.pose[:3]
+        options['collisionFramePosition'] = np.array(shape.pose[:3])*meters
         options['collisionFrameOrientation'] = rot_quat(shape.pose[3:])
     else:
-        options['visualFramePosition'] = shape.pose[:3]
+        options['visualFramePosition'] = np.array(shape.pose[:3])*meters
         options['visualFrameOrientation'] = rot_quat(shape.pose[3:])
         options['rgbaColor'] = shape.diffuse
         options['specularColor'] = shape.specular
@@ -60,26 +61,30 @@ def pybullet_options_from_shape(shape, path='', force_concave=False):
         options['planeNormal'] = shape.geometry.normal
     elif isinstance(shape.geometry, Box):
         options['shapeType'] = pybullet.GEOM_BOX
-        options['halfExtents'] = 0.5*np.array(shape.geometry.size)
+        options['halfExtents'] = 0.5*np.array(shape.geometry.size)*meters
     elif isinstance(shape.geometry, Sphere):
         options['shapeType'] = pybullet.GEOM_SPHERE
-        options['radius'] = shape.geometry.radius
+        options['radius'] = shape.geometry.radius*meters
     elif isinstance(shape.geometry, Cylinder):
         options['shapeType'] = pybullet.GEOM_CYLINDER
-        options['radius'] = shape.geometry.radius
-        options['height' if collision else 'length'] = shape.geometry.length
+        options['radius'] = shape.geometry.radius*meters
+        options['height' if collision else 'length'] = (
+            shape.geometry.length*meters
+        )
     elif isinstance(shape.geometry, Capsule):
         options['shapeType'] = pybullet.GEOM_CAPSULE
-        options['radius'] = shape.geometry.radius
-        options['height' if collision else 'length'] = shape.geometry.length
+        options['radius'] = shape.geometry.radius*meters
+        options['height' if collision else 'length'] = (
+            shape.geometry.length*meters
+        )
     elif isinstance(shape.geometry, Mesh):
         options['shapeType'] = pybullet.GEOM_MESH
         options['fileName'] = os.path.join(path, shape.geometry.uri)
-        options['meshScale'] = shape.geometry.scale
+        options['meshScale'] = np.array(shape.geometry.scale)*meters
         if force_concave:
             options['flags'] = pybullet.GEOM_FORCE_CONCAVE_TRIMESH
     elif isinstance(shape.geometry, Heightmap):
-        options['shapeType'] = pybullet.GEOM_HEIGHTMAP
+        options['shapeType'] = pybullet.GEOM_HEIGHTFIELD
     else:
         raise Exception('Unknown type {}'.format(type(shape.geometry)))
     return options
@@ -151,11 +156,14 @@ def rearange_base_link_dict(dictionary, base_link_index):
 def load_sdf(
         sdf_path,
         force_concave=False,
-        reset_control=False,
+        reset_control=True,
         verbose=False,
         links_options=None,
+        **kwargs,
 ):
     """Load SDF"""
+    units = kwargs.pop('units')
+    assert not kwargs, kwargs
     sdf = ModelSDF.read(sdf_path)[0]
     folder = os.path.dirname(sdf_path)
     links_names = []
@@ -169,6 +177,8 @@ def load_sdf(
     link_ori = []
     link_masses = []
     link_com = []
+    link_inertias = []
+    link_inertiaori = []
     link_i = 0
     base_link_index = None
     parenting = {joint.child: joint.parent for joint in sdf.joints}
@@ -189,6 +199,7 @@ def load_sdf(
                         link.visuals[i],
                         path=folder,
                         force_concave=force_concave,
+                        meters=units.meters,
                     )
                 ) if i < len(link.visuals) else -1
             )
@@ -199,6 +210,7 @@ def load_sdf(
                         link.collisions[i],
                         path=folder,
                         force_concave=force_concave,
+                        meters=units.meters,
                     )
                 ) if i < len(link.collisions) else -1
             )
@@ -218,6 +230,8 @@ def load_sdf(
                 link_ori.append([0, 0, 0])
                 link_masses.append(0)
                 link_com.append([0, 0, 0])
+                link_inertias.append([0, 0, 0])
+                link_inertiaori.append([0, 0, 0, 1])
                 joint_types.append(pybullet.JOINT_FIXED)
                 joints_names.append('joint_dummy_{}_{}'.format(link.name, i-1))
                 joints_axis.append([0.0, 0.0, 1.0])
@@ -236,6 +250,17 @@ def load_sdf(
                     link.inertial.pose[:3]
                     if link.inertial
                     else np.zeros(3)
+                )
+                inertia_vec = link.inertial.inertias
+                inertia_tensor = np.array([
+                    [inertia_vec[0], inertia_vec[1], inertia_vec[2]],
+                    [inertia_vec[1], inertia_vec[3], inertia_vec[4]],
+                    [inertia_vec[2], inertia_vec[4], inertia_vec[5]],
+                ])
+                inertias, inertia_vectors = np.linalg.eig(inertia_tensor)
+                link_inertias.append(inertias)
+                link_inertiaori.append(
+                    Rotation.from_matrix(inertia_vectors).as_quat()
                 )
                 # link_com.append([0, 0, 0])
                 # Joint information
@@ -260,6 +285,8 @@ def load_sdf(
     link_ori = rearange_base_link_list(link_ori, base_link_index)
     link_com = rearange_base_link_list(link_com, base_link_index)
     link_masses = rearange_base_link_list(link_masses, base_link_index)
+    link_inertias = rearange_base_link_list(link_inertias, base_link_index)
+    link_inertiaori = rearange_base_link_list(link_inertiaori, base_link_index)
     visuals = rearange_base_link_list(visuals, base_link_index)
     collisions = rearange_base_link_list(collisions, base_link_index)
     link_index = rearange_base_link_dict(link_index, base_link_index)
@@ -296,6 +323,12 @@ def load_sdf(
             else link_mass
             for link_name, link_mass in zip(links_names, link_masses)
         ]
+        link_inertias = [
+            mass_multiplier_map[link_name]*link_inertia
+            if link_name in mass_multiplier_map
+            else link_inertia
+            for link_name, link_inertia in zip(links_names, link_inertias)
+        ]
 
     # Local information
     link_local_positions = []
@@ -331,10 +364,10 @@ def load_sdf(
                 )
                 if link_i == 0
                 else (
-                    '{: >3} {: <15}'
-                    ' - parent: {: <15} ({: >2})'
+                    '{: >3} {: <20}'
+                    ' - parent: {: <20} ({: >2})'
                     ' - mass: {:.4f} [g]'
-                    ' - joint: {: <15} - axis: {}'
+                    ' - joint: {: <20} - axis: {}'
                 ).format(
                     '{}:'.format(link_i),
                     name,
@@ -352,19 +385,19 @@ def load_sdf(
         pylog.debug('Spawning model')
 
     # Spawn model
-    model = pybullet.createMultiBody(
+    identity = pybullet.createMultiBody(
         baseMass=link_masses[0],
-        basePosition=link_pos[0],
+        basePosition=np.array(link_pos[0])*units.meters,
         baseOrientation=rot_quat(link_ori[0]),
         baseVisualShapeIndex=visuals[0],
         baseCollisionShapeIndex=collisions[0],
-        baseInertialFramePosition=link_com[0],
-        baseInertialFrameOrientation=[0, 0, 0, 1],
+        baseInertialFramePosition=np.array(link_com[0])*units.meters,
+        baseInertialFrameOrientation=link_inertiaori[0],
         linkMasses=link_masses[1:],
-        linkPositions=link_local_positions,
+        linkPositions=np.array(link_local_positions)*units.meters,
         linkOrientations=link_local_orientations,
-        linkInertialFramePositions=link_com[1:],
-        linkInertialFrameOrientations=[[0, 0, 0, 1]]*(len(collisions)-1),
+        linkInertialFramePositions=np.array(link_com[1:])*units.meters,
+        linkInertialFrameOrientations=link_inertiaori[1:],
         linkVisualShapeIndices=visuals[1:],
         linkCollisionShapeIndices=collisions[1:],
         linkParentIndices=link_parent_indices,
@@ -381,27 +414,16 @@ def load_sdf(
             # | pybullet.URDF_USE_MATERIAL_COLORS_FROM_MTL
         ),
     )
-    if verbose:
-        pylog.debug('Spawned model (Identity={})'.format(model))
-        pylog.debug(
-            '\n'.join([
-                '{: <15} mass: {:.7f} [kg] - inertia: {} {} {}'.format(
-                    link_name+':',
-                    *np.array(
-                        pybullet.getDynamicsInfo(model, link_i-1)
-                    )[[0, 2, 3, 4]],
-                )
-                for link_i, link_name in enumerate(links_names)
-            ])
-        )
+
+    # Reset control
     if reset_control:
-        reset_controllers(model)
-    links, joints = {}, {}
-    links[links_names[0]] = -1
+        reset_controllers(identity)
 
     # Get links and joints maps
-    for joint_i in range(pybullet.getNumJoints(model)):
-        joint_info = pybullet.getJointInfo(model, joint_i)
+    links, joints = {}, {}
+    links[links_names[0]] = -1
+    for joint_i in range(pybullet.getNumJoints(identity)):
+        joint_info = pybullet.getJointInfo(identity, joint_i)
         joint_name = joint_info[1].decode('UTF-8')
         joint_number = int(joint_name.replace('joint', ''))-1
         joints[joints_names[joint_number]] = joint_i
@@ -409,47 +431,95 @@ def load_sdf(
         link_number = int(link_name.replace('link', ''))
         links[links_names[link_number]] = joint_i
 
+    # Set inertias
+    for link_name, inertia in zip(
+            links_names,
+            link_inertias,
+    ):
+        pybullet.changeDynamics(
+            bodyUniqueId=identity,
+            linkIndex=links[link_name],
+            localInertiaDiagonal=inertia,
+        )
+
+    # Units scaling
+    inertia_unit = units.kilograms*units.meters**2
+    for link in links.values():
+        mass, inertias = np.array(
+            pybullet.getDynamicsInfo(identity, link)
+        )[[0, 2]]
+        pybullet.changeDynamics(
+            bodyUniqueId=identity,
+            linkIndex=link,
+            jointLowerLimit=joint.axis.limits[0],
+            jointUpperLimit=joint.axis.limits[1],
+        )
+        pybullet.changeDynamics(
+            bodyUniqueId=identity,
+            linkIndex=link,
+            mass=mass*units.kilograms,
+        )
+        pybullet.changeDynamics(
+            bodyUniqueId=identity,
+            linkIndex=link,
+            localInertiaDiagonal=np.array(inertias)*inertia_unit,
+        )
+
     # Set joints properties
     for joint in sdf.joints:
         if joint.axis is not None:
             pybullet.changeDynamics(
-                bodyUniqueId=model,
+                bodyUniqueId=identity,
                 linkIndex=joints[joint.name],
                 jointLowerLimit=joint.axis.limits[0],
                 jointUpperLimit=joint.axis.limits[1],
             )
-            # pybullet.changeDynamics(
-            #     bodyUniqueId=model,
-            #     linkIndex=joints[joint.name],
-            #     contactDamping=1e3,
-            #     contactStiffness=1e1,
-            # )
             for key, value in [
-                    ['jointDamping', 0],
-                    ['jointLimitForce', joint.axis.limits[2]],
-                    ['maxJointVelocity', joint.axis.limits[3]],
+                    ['jointDamping', 0*units.torques*units.seconds],
+                    ['jointLimitForce', joint.axis.limits[2]*units.newtons],
+                    ['maxJointVelocity', joint.axis.limits[3]/units.seconds],
             ]:
                 pybullet.changeDynamics(
-                    bodyUniqueId=model,
+                    bodyUniqueId=identity,
                     linkIndex=joints[joint.name],
                     **{key: value}
                 )
-    return model, links, joints
+
+    return identity, links, joints
 
 
-def load_sdf_pybullet(sdf_path, index=0, morphology_links=None):
+def load_sdf_pybullet(sdf_path, index=0, morphology_links=None, **kwargs):
     """Original way of loading SDF - Deprecated"""
+    units = kwargs.pop('units')
+    assert not kwargs, kwargs
     links, joints = {}, {}
     with redirect_output(pylog.warning):
         identity = pybullet.loadSDF(
             sdf_path,
             useMaximalCoordinates=0,
-            globalScaling=1,
+            globalScaling=units.meters,
         )[index]
+    inertia_unit = units.kilograms*units.meters**2
     for joint_i in range(pybullet.getNumJoints(identity)):
         joint_info = pybullet.getJointInfo(identity, joint_i)
-        links[joint_info[12].decode('UTF-8')] = joint_i
+        link_name = joint_info[12].decode('UTF-8')
+        links[link_name] = joint_i
         joints[joint_info[1].decode('UTF-8')] = joint_i
+        mass, inertias = np.array(
+            pybullet.getDynamicsInfo(identity, links[link_name])
+        )[[0, 2]]
+        pybullet.changeDynamics(
+            bodyUniqueId=identity,
+            linkIndex=links[link_name],
+            mass=mass*units.kilograms,
+        )
+        pybullet.changeDynamics(
+            bodyUniqueId=identity,
+            linkIndex=links[link_name],
+            localInertiaDiagonal=(
+                np.array(inertias)*inertia_unit
+            ),
+        )
     if morphology_links is not None:
         for link in morphology_links:
             if link not in links:
