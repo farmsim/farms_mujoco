@@ -448,12 +448,13 @@ def load_sdf(
         mass, inertias = np.array(
             pybullet.getDynamicsInfo(identity, link)
         )[[0, 2]]
-        pybullet.changeDynamics(
-            bodyUniqueId=identity,
-            linkIndex=link,
-            jointLowerLimit=joint.axis.limits[0],
-            jointUpperLimit=joint.axis.limits[1],
-        )
+        # assert joint.axis.limits[0] < joint.axis.limits[1]
+        # pybullet.changeDynamics(
+        #     bodyUniqueId=identity,
+        #     linkIndex=link,
+        #     jointLowerLimit=joint.axis.limits[0],
+        #     jointUpperLimit=joint.axis.limits[1],
+        # )
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=link,
