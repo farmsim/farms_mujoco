@@ -43,6 +43,7 @@ class Simulation:
 
         self.models = models
         self.options = options
+        self.analytics = tuple()
 
         # Initialise engine
         pylog.debug('Initialising physics engine')
@@ -110,6 +111,7 @@ class Simulation:
                 constraintSolverType=pybullet.CONSTRAINT_SOLVER_LCP_DANTZIG,
                 # constraintSolverType=pybullet.CONSTRAINT_SOLVER_LCP_PGS,
                 globalCFM=1e-10,
+                reportSolverAnalytics=1,
                 # solverResidualThreshold=1e-12,
                 # restitutionVelocityThreshold=1e-3,
                 # useSplitImpulse=False,
@@ -160,7 +162,7 @@ class Simulation:
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
                 self.control(self.iteration)
-                pybullet.stepSimulation()
+                self.analytics = pybullet.stepSimulation()
                 self.iteration += 1
                 self.post_step(self.iteration)
                 if pbar is not None:
@@ -175,7 +177,12 @@ class Simulation:
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
                 self.control(self.iteration)
-                pybullet.stepSimulation()
+                self.analytics = pybullet.stepSimulation()
+                # if self.analytics:
+                #     print(
+                #         self.analytics[0]['numIterationsUsed'],
+                #         self.analytics[0]['remainingResidual'],
+                #     )
                 self.iteration += 1
                 self.post_step(self.iteration)
                 yield self.iteration-1
