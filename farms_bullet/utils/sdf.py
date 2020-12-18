@@ -241,27 +241,33 @@ def load_sdf(
                 links_names.append(link.name)
                 link_pos.append(link.pose[:3])
                 link_ori.append(link.pose[3:])
-                link_masses.append(
-                    link.inertial.mass
-                    if link.inertial
-                    else 0
-                )
-                link_com.append(
-                    link.inertial.pose[:3]
-                    if link.inertial
-                    else np.zeros(3)
-                )
-                inertia_vec = link.inertial.inertias
-                inertia_tensor = np.array([
-                    [inertia_vec[0], inertia_vec[1], inertia_vec[2]],
-                    [inertia_vec[1], inertia_vec[3], inertia_vec[4]],
-                    [inertia_vec[2], inertia_vec[4], inertia_vec[5]],
-                ])
-                inertias, inertia_vectors = np.linalg.eig(inertia_tensor)
-                link_inertias.append(inertias)
-                link_inertiaori.append(
-                    Rotation.from_matrix(inertia_vectors).as_quat()
-                )
+                if link.inertial is None:
+                    link_masses.append(0)
+                    link_com.append([0, 0, 0])
+                    link_inertias.append([0, 0, 0])
+                    link_inertiaori.append([0, 0, 0, 1])
+                else:
+                    link_masses.append(
+                        link.inertial.mass
+                        if link.inertial
+                        else 0
+                    )
+                    link_com.append(
+                        link.inertial.pose[:3]
+                        if link.inertial
+                        else np.zeros(3)
+                    )
+                    inertia_vec = link.inertial.inertias
+                    inertia_tensor = np.array([
+                        [inertia_vec[0], inertia_vec[1], inertia_vec[2]],
+                        [inertia_vec[1], inertia_vec[3], inertia_vec[4]],
+                        [inertia_vec[2], inertia_vec[4], inertia_vec[5]],
+                    ])
+                    inertias, inertia_vectors = np.linalg.eig(inertia_tensor)
+                    link_inertias.append(inertias)
+                    link_inertiaori.append(
+                        Rotation.from_matrix(inertia_vectors).as_quat()
+                    )
                 # link_com.append([0, 0, 0])
                 # Joint information
                 if joint is None:
@@ -468,7 +474,7 @@ def load_sdf(
 
     # Set joints properties
     for joint in sdf.joints:
-        if joint.axis is not None:
+        if joint.axis is not None and joint.axis.limits is not None:
             pybullet.changeDynamics(
                 bodyUniqueId=identity,
                 linkIndex=joints[joint.name],
