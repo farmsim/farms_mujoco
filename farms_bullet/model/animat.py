@@ -153,7 +153,8 @@ class Animat(SimulationModel):
                             if val_i == 1  # Inertias
                             else str(['{:+.3e}'.format(val) for val in value])
                             for val_i, value in enumerate(np.array(
-                                pybullet.getDynamicsInfo(self._identity, link)
+                                pybullet.getDynamicsInfo(self._identity, link),
+                                dtype=object,
                             )[[0, 2, 3, 4]])
                         ],
                     )
@@ -374,7 +375,7 @@ class Animat(SimulationModel):
                     self.links_map[link]
                 ))
             ))
-        pylog.debug('Model mass: {} [kg]'.format(self.mass()))
+        pylog.debug('Model mass: {} [kg]'.format(self.total_mass()))
 
     def total_mass(self):
         """Print dynamics"""
