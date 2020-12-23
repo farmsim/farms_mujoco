@@ -191,7 +191,7 @@ class Animat(SimulationModel):
         if self.options.control.sensors.joints:
             self.sensors.add({
                 'joints': JointsStatesSensor(
-                    array=self.data.sensors.proprioception.array,
+                    array=self.data.sensors.joints.array,
                     model_id=self._identity,
                     joints=[
                         self.joints_map[joint]
