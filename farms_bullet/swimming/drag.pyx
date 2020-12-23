@@ -6,7 +6,7 @@ import pybullet
 import numpy as np
 cimport numpy as np
 
-from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, GpsArrayCy
+from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, LinkSensorArrayCy
 
 
 cdef void quat_conj(
@@ -52,7 +52,7 @@ cdef void quat_rot(
 
 
 cdef void link_swimming_info(
-    GpsArrayCy data_gps,
+    LinkSensorArrayCy data_links,
     unsigned int iteration,
     int sensor_i,
     DTYPEv1 urdf2global,
@@ -67,20 +67,20 @@ cdef void link_swimming_info(
     """Link swimming information"""
 
     # Orientations
-    urdf2global = data_gps.urdf_orientation_cy(iteration, sensor_i)
-    com2global = data_gps.com_orientation_cy(iteration, sensor_i)
+    urdf2global = data_links.urdf_orientation_cy(iteration, sensor_i)
+    com2global = data_links.com_orientation_cy(iteration, sensor_i)
     quat_conj(com2global, global2com)
 
     # Compute velocity in CoM frame
     quat_rot(
-        data_gps.com_lin_velocity_cy(iteration, sensor_i),
+        data_links.com_lin_velocity_cy(iteration, sensor_i),
         global2com,
         quat_c,
         tmp4,
         link_lin_velocity,
     )
     quat_rot(
-        data_gps.com_ang_velocity_cy(iteration, sensor_i),
+        data_links.com_ang_velocity_cy(iteration, sensor_i),
         global2com,
         quat_c,
         tmp4,
@@ -165,8 +165,8 @@ cdef void compute_buoyancy(
 
 cpdef bint drag_forces(
         unsigned int iteration,
-        GpsArrayCy data_gps,
-        unsigned int gps_index,
+        LinkSensorArrayCy data_links,
+        unsigned int links_index,
         HydrodynamicsArrayCy data_hydrodynamics,
         unsigned int hydro_index,
         DTYPEv2 coefficients,
@@ -181,9 +181,9 @@ cpdef bint drag_forces(
 ) nogil:
     """Drag swimming"""
     cdef unsigned int i
-    # cdef unsigned int sensor_i = data_gps.names.index(link_name)
+    # cdef unsigned int sensor_i = data_links.names.index(link_name)
     # hydro_i = data_hydrodynamics.names.index(link_name)
-    cdef double position = data_gps.array[iteration, gps_index, 2]
+    cdef double position = data_links.array[iteration, links_index, 2]
     if position > surface:
         return 0
     # cdef double[6][3] z3
@@ -198,9 +198,9 @@ cpdef bint drag_forces(
 
     # Swimming information
     link_swimming_info(
-        data_gps=data_gps,
+        data_links=data_links,
         iteration=iteration,
-        sensor_i=gps_index,
+        sensor_i=links_index,
         urdf2global=urdf2global,
         com2global=com2global,
         global2com=global2com,
@@ -302,13 +302,13 @@ cpdef void swimming_motion(
     )
 
 
-cpdef swimming_debug(iteration, data_gps, links):
+cpdef swimming_debug(iteration, data_links, links):
     """Swimming debug"""
     for link in links:
-        sensor_i = data_gps.index(link.name)
-        joint = np.array(data_gps.urdf_position(iteration, sensor_i))
-        joint_ori = np.array(data_gps.urdf_orientation(iteration, sensor_i))
-        # com_ori = np.array(data_gps.com_orientation(iteration, sensor_i))
+        sensor_i = data_links.index(link.name)
+        joint = np.array(data_links.urdf_position(iteration, sensor_i))
+        joint_ori = np.array(data_links.urdf_orientation(iteration, sensor_i))
+        # com_ori = np.array(data_links.com_orientation(iteration, sensor_i))
         ori_joint = np.array(
             pybullet.getMatrixFromQuaternion(joint_ori)
         ).reshape([3, 3])
@@ -375,7 +375,6 @@ cdef class SwimmingHandler:
     cdef object animat
     cdef object links
     cdef object hydro
-    cdef object gps
     cdef int model
     cdef int frame
     cdef unsigned int n_links
@@ -389,7 +388,7 @@ cdef class SwimmingHandler:
     cdef double torques
     cdef int[:] links_ids
     cdef int[:] links_swimming
-    cdef unsigned int[:] gps_indices
+    cdef unsigned int[:] links_indices
     cdef unsigned int[:] hydro_indices
     cdef DTYPEv1 masses
     cdef DTYPEv1 heights
@@ -401,8 +400,8 @@ cdef class SwimmingHandler:
     def __init__(self, animat):
         super(SwimmingHandler, self).__init__()
         self.animat = animat
+        self.links = animat.data.sensors.links
         self.hydro = animat.data.sensors.hydrodynamics
-        self.gps = animat.data.sensors.gps
         self.model = animat.identity()
         physics_options = animat.options.physics
         self.drag = physics_options.drag
@@ -439,8 +438,8 @@ cdef class SwimmingHandler:
             self.hydro.names.index(link.name)
             for link in links
         ], dtype=np.uintc)
-        self.gps_indices = np.array([
-            self.gps.names.index(link.name)
+        self.links_indices = np.array([
+            self.links.names.index(link.name)
             for link in links
         ], dtype=np.uintc)
         self.links_coefficients = np.array([
@@ -464,8 +463,8 @@ cdef class SwimmingHandler:
                 if self.drag:
                     apply_force = drag_forces(
                         iteration=iteration,
-                        data_gps=self.gps,
-                        gps_index=self.gps_indices[i],
+                        data_links=self.links,
+                        links_index=self.links_indices[i],
                         data_hydrodynamics=self.hydro,
                         hydro_index=self.hydro_indices[i],
                         coefficients=self.links_coefficients[i],
@@ -492,7 +491,7 @@ cdef class SwimmingHandler:
                     if False:
                         swimming_debug(
                             iteration=iteration,
-                            data_gps=self.gps,
+                            data_links=self.links,
                             link=link,
                         )
                 if self.show_hydrodynamics:

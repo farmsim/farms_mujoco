@@ -193,7 +193,7 @@ class SensorsOptions(Options):
 
     def __init__(self, **kwargs):
         super(SensorsOptions, self).__init__()
-        self.gps = kwargs.pop('gps')
+        self.links = kwargs.pop('links')
         self.joints = kwargs.pop('joints')
         self.contacts = kwargs.pop('contacts')
         if kwargs:
@@ -203,7 +203,7 @@ class SensorsOptions(Options):
     def options_from_kwargs(kwargs):
         """Options from kwargs"""
         options = {}
-        options['gps'] = kwargs.pop('sens_gps', None)
+        options['links'] = kwargs.pop('sens_links', None)
         options['joints'] = kwargs.pop('sens_joints', None)
         options['contacts'] = kwargs.pop('sens_contacts', None)
         return options

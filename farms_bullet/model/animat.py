@@ -174,14 +174,14 @@ class Animat(SimulationModel):
     def add_sensors(self):
         """Add sensors"""
         # Links
-        if self.options.control.sensors.gps:
+        if self.options.control.sensors.links:
             self.sensors.add({
-                'gps': LinksStatesSensor(
-                    array=self.data.sensors.gps.array,
+                'links': LinksStatesSensor(
+                    array=self.data.sensors.links.array,
                     model_id=self.identity(),
                     links=[
                         self.links_map[link]
-                        for link in self.options.control.sensors.gps
+                        for link in self.options.control.sensors.links
                     ],
                     units=self.units
                 )
@@ -229,12 +229,12 @@ class Animat(SimulationModel):
                 self.links_map[link.name],
             )[0]
         if self.data is not None:
-            gps = self.data.sensors.gps
-            gps.masses = [0 for _ in gps.names]
+            links = self.data.sensors.links
+            links.masses = [0 for _ in links.names]
             for link in self.options.morphology.links:
-                if link.name in gps.names:
-                    index = gps.names.index(link.name)
-                    gps.masses[index] = self.masses[link.name]
+                if link.name in links.names:
+                    index = links.names.index(link.name)
+                    links.masses[index] = self.masses[link.name]
         if verbose:
             pylog.debug('Body mass: {} [kg]'.format(np.sum(self.masses.values())))
 
