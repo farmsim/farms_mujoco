@@ -452,7 +452,8 @@ def load_sdf(
     inertia_unit = units.kilograms*units.meters**2
     for link in links.values():
         mass, inertias = np.array(
-            pybullet.getDynamicsInfo(identity, link)
+            pybullet.getDynamicsInfo(identity, link),
+            dtype=object,
         )[[0, 2]]
         # assert joint.axis.limits[0] < joint.axis.limits[1]
         # pybullet.changeDynamics(
@@ -513,7 +514,8 @@ def load_sdf_pybullet(sdf_path, index=0, morphology_links=None, **kwargs):
         links[link_name] = joint_i
         joints[joint_info[1].decode('UTF-8')] = joint_i
         mass, inertias = np.array(
-            pybullet.getDynamicsInfo(identity, links[link_name])
+            pybullet.getDynamicsInfo(identity, links[link_name]),
+            dtype=object,
         )[[0, 2]]
         pybullet.changeDynamics(
             bodyUniqueId=identity,
