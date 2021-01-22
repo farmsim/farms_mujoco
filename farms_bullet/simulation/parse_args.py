@@ -3,9 +3,12 @@
 import argparse
 
 
-def parse_args():
-    """ Parse arguments """
-    parser = argparse.ArgumentParser(description='Salamander simulation')
+def argument_parser():
+    """Argument parser"""
+    parser = argparse.ArgumentParser(
+        description='FARMS simulation with Pybullet',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
     # Simulation
     parser.add_argument(
@@ -167,7 +170,12 @@ def parse_args():
         default=1e-6,
         help='Pybullet solver residual threshold',
     )
+    return parser
 
+
+def parse_args():
+    """Parse arguments"""
+    parser = argument_parser()
     # return parser.parse_args()
     args, _ = parser.parse_known_args()
     return args
