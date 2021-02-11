@@ -7,7 +7,10 @@ def argument_parser():
     """Argument parser"""
     parser = argparse.ArgumentParser(
         description='FARMS simulation with Pybullet',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        formatter_class=(
+            lambda prog:
+            argparse.HelpFormatter(prog, max_help_position=50)
+        ),
     )
 
     # Simulation
