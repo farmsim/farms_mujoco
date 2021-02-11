@@ -341,6 +341,7 @@ cdef draw_hydrodynamics(
     hydrodynamics_plot,
     bint new_active,
     double meters,
+    double scale=1,
 ):
     """Draw hydrodynamics forces"""
     cdef bint old_active = hydrodynamics_plot[hydro_index][0]
@@ -349,7 +350,7 @@ cdef draw_hydrodynamics(
         hydrodynamics_plot[hydro_index][0] = True
         hydrodynamics_plot[hydro_index][1] = pybullet.addUserDebugLine(
             lineFromXYZ=[0, 0, 0],
-            lineToXYZ=1000*np.array(force),
+            lineToXYZ=scale*np.array(force),
             lineColorRGB=[0, 0, 1],
             lineWidth=7*meters,
             parentObjectUniqueId=model,
@@ -386,6 +387,7 @@ cdef class SwimmingHandler:
     cdef double meters
     cdef double newtons
     cdef double torques
+    cdef double hydrodynamics_scale
     cdef int[:] links_ids
     cdef int[:] links_swimming
     cdef unsigned int[:] links_indices
@@ -413,6 +415,7 @@ cdef class SwimmingHandler:
         self.meters = animat.units.meters
         self.newtons = animat.units.newtons
         self.torques = animat.units.torques
+        self.hydrodynamics_scale = 1
         self.z3 = np.zeros([6, 3])
         self.z4 = np.zeros([7, 4])
         links = [
@@ -504,4 +507,9 @@ cdef class SwimmingHandler:
                         hydrodynamics_plot=hydrodynamics_plot,
                         new_active=apply_force,
                         meters=self.meters,
+                        scale=self.hydrodynamics_scale,
                     )
+
+    cpdef set_hydrodynamics_scale(self, double value):
+        """Set hydrodynamics scale"""
+        self.hydrodynamics_scale = value
