@@ -108,8 +108,11 @@ class Simulation:
                 numSubSteps=self.options.num_sub_steps,
                 maxNumCmdPer1ms=self.options.max_num_cmd_per_1ms,
                 solverResidualThreshold=self.options.residual_threshold,
-                constraintSolverType=pybullet.CONSTRAINT_SOLVER_LCP_DANTZIG,
-                # constraintSolverType=pybullet.CONSTRAINT_SOLVER_LCP_PGS,
+                constraintSolverType={
+                    'si': pybullet.CONSTRAINT_SOLVER_LCP_SI,
+                    'dantzig': pybullet.CONSTRAINT_SOLVER_LCP_DANTZIG,
+                    'pgs': pybullet.CONSTRAINT_SOLVER_LCP_PGS,
+                }[self.options.lcp],
                 globalCFM=1e-10,
                 reportSolverAnalytics=1,
                 # solverResidualThreshold=1e-12,

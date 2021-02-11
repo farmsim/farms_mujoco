@@ -115,6 +115,14 @@ def argument_parser():
 
     # Pybullet
     parser.add_argument(
+        '--lcp',
+        type=str,
+        choices=('si', 'dantzig', 'pgs'),
+        dest='lcp',
+        default='dantzig',
+        help='Constraint solver LCP type',
+    )
+    parser.add_argument(
         '--n_solver_iters',
         type=int,
         dest='n_solver_iters',

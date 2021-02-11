@@ -45,6 +45,7 @@ class SimulationOptions(Options):
         # Pybullet
         self.gravity = kwargs.pop('gravity', [0, 0, -9.81])
         self.opengl2 = kwargs.pop('opengl2', False)
+        self.lcp = kwargs.pop('lcp', 'dantzig')
         self.n_solver_iters = kwargs.pop('n_solver_iters', 50)
         self.erp = kwargs.pop('erp', 0)
         self.contact_erp = kwargs.pop('contact_erp', 0)
@@ -86,6 +87,7 @@ class SimulationOptions(Options):
 
             # Pybullet
             opengl2=kwargs.pop('opengl2', clargs.opengl2),
+            lcp=kwargs.pop('lcp', clargs.lcp),
             n_solver_iters=kwargs.pop('n_solver_iters', clargs.n_solver_iters),
             erp=kwargs.pop('erp', clargs.erp),
             contact_erp=kwargs.pop('contact_erp', clargs.contact_erp),
