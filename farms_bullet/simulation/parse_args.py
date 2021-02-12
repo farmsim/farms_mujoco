@@ -133,6 +133,14 @@ def argument_parser():
         help='Number of solver iterations for physics simulation',
     )
     parser.add_argument(
+        '--gravity',
+        nargs=3,
+        type=float,
+        metavar=('x', 'y', 'z'),
+        default=(0, 0, -9.81),
+        help='Gravity',
+    )
+    parser.add_argument(
         '--opengl2',
         action='store_true',
         dest='opengl2',

@@ -86,6 +86,7 @@ class SimulationOptions(Options):
             video_distance=kwargs.pop('video_distance', clargs.video_distance),
 
             # Pybullet
+            gravity=kwargs.pop('gravity', clargs.gravity),
             opengl2=kwargs.pop('opengl2', clargs.opengl2),
             lcp=kwargs.pop('lcp', clargs.lcp),
             n_solver_iters=kwargs.pop('n_solver_iters', clargs.n_solver_iters),
