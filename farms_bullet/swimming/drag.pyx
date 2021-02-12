@@ -13,11 +13,11 @@ cdef void quat_conj(
     DTYPEv1 quat,
     DTYPEv1 out,
 ) nogil:
-    """Quaternion multiplication"""
+    """Quaternion conjugate"""
     cdef unsigned int i
     for i in range(3):
-        out[i] = -quat[i]
-    out[3] = quat[3]
+        out[i] = -quat[i]  # x, y, z
+    out[3] = quat[3]  # w
 
 
 cdef void quat_mult(
@@ -26,7 +26,7 @@ cdef void quat_mult(
     DTYPEv1 out,
     bint full=1,
 ) nogil:
-    """Quaternion multiplication"""
+    """Hamilton product of two quaternions out = q0*q1"""
     out[0] = q0[3]*q1[0] + q0[0]*q1[3] + q0[1]*q1[2] - q0[2]*q1[1]  # x
     out[1] = q0[3]*q1[1] - q0[0]*q1[2] + q0[1]*q1[3] + q0[2]*q1[0]  # y
     out[2] = q0[3]*q1[2] + q0[0]*q1[1] - q0[1]*q1[0] + q0[2]*q1[3]  # z
@@ -41,7 +41,15 @@ cdef void quat_rot(
     DTYPEv1 tmp4,
     DTYPEv1 out,
 ) nogil:
-    """Quaternion rotation"""
+    """Quaternion rotation
+
+    :param vector: Vector to rotate
+    :param quat: Quaternion rotation
+    :param quat_c: Returned quaternion conjugate
+    :param tmp4: Temporary quaternion
+    :param out: Rotated vector
+
+    """
     quat_c[3] = 0
     quat_c[0] = vector[0]
     quat_c[1] = vector[1]
@@ -64,7 +72,21 @@ cdef void link_swimming_info(
     DTYPEv1 quat_c,
     DTYPEv1 tmp4,
 ) nogil:
-    """Link swimming information"""
+    """Link swimming information
+
+    :param data_links: Links data
+    :param iteration: Simulation iteration
+    :param sensor_i: Sensor index
+    :param urdf2global: URDF to global frame transform
+    :param com2global: CoM to global frame transform
+    :param global2com: Global to CoM frame transform
+    :param urdf2com: URDF to CoM frame transform
+    :param link_lin_velocity: Link linear velocity in CoM frame
+    :param link_ang_velocity: Link angular velocity in CoM frame
+    :param quat_c: Temporary conjugate quaternion
+    :param tmp4: Temporary quaternion
+
+    """
 
     # Orientations
     urdf2global = data_links.urdf_orientation_cy(iteration, sensor_i)
@@ -100,7 +122,19 @@ cdef void compute_force(
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
 ) nogil:
-    """Compute force and torque"""
+    """Compute force and torque
+
+    :param force: Returned force applied to the link in CoM frame
+    :param link_velocity: Link linear velocity in CoM frame
+    :param coefficients: Drag coefficients
+    :param urdf2com: URDF to CoM frame transform
+    :param com2urdf: CoM to URDF frame transform
+    :param buoyancy: Buoyancy force
+    :param quat_c: Temporary conjugate quaternion
+    :param tmp4: Temporary quaternion
+    :param tmp: Temporary quaternion
+
+    """
     cdef unsigned int i
     for i in range(3):
         force[i] = link_velocity[i]*link_velocity[i]
@@ -124,7 +158,18 @@ cdef void compute_torque(
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
 ) nogil:
-    """Compute force and torque"""
+    """Compute force and torque
+
+    :param torque: Returned torque applied to the link in CoM frame
+    :param link_ang_velocity: Link angular velocity in CoM frame
+    :param coefficients: Drag coefficients
+    :param urdf2com: URDF to CoM frame transform
+    :param com2urdf: CoM to URDF frame transform
+    :param quat_c: Temporary conjugate quaternion
+    :param tmp4: Temporary quaternion
+    :param tmp: Temporary quaternion
+
+    """
     cdef unsigned int i
     for i in range(3):
         torque[i] = link_ang_velocity[i]*link_ang_velocity[i]
@@ -149,7 +194,21 @@ cdef void compute_buoyancy(
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
 ) nogil:
-    """Compute buoyancy"""
+    """Compute buoyancy
+
+    :param density: Density of the link
+    :param height: Height of the link
+    :param position: Z position of the CoM in global frame
+    :param global2com: Global to CoM frame transform
+    :param mass: Mass of the link
+    :param surface: Surface height
+    :param gravity: Gravity Z component in global frame
+    :param buyoancy: Returned buyoancy forvce in CoM frame
+    :param quat_c: Temporary conjugate quaternion
+    :param tmp4: Temporary quaternion
+    :param tmp: Temporary quaternion
+
+    """
     if mass > 0:
         tmp[0] = 0
         tmp[1] = 0
@@ -179,7 +238,26 @@ cpdef bint drag_forces(
         double gravity,
         bint use_buoyancy,
 ) nogil:
-    """Drag swimming"""
+    """Drag swimming
+
+    The forces and torques are stored into data_hydrodynamics.array in
+    the CoM frame
+
+    :param iteration: Simulation iteration
+    :param data_links: Links data
+    :param links_index: Link data index
+    :param data_hydrodynamics: Hydrodynamics data
+    :param hydro_index: Hydrodynamics data index
+    :param coefficients: Drag coefficients
+    :param z3: Temporary array
+    :param z4: Temporary array
+    :param surface: Surface height
+    :param mass: Link mass
+    :param height: Link height
+    :param density: Link density
+    :param gravity: Gravity value
+    :param use_buoyancy: Flag for using buoyancy computation
+    """
     cdef unsigned int i
     # cdef unsigned int sensor_i = data_links.names.index(link_name)
     # hydro_i = data_hydrodynamics.names.index(link_name)
@@ -269,7 +347,19 @@ cpdef void swimming_motion(
         double torques=1.0,
         np.ndarray pos=np.zeros(3),
 ):
-    """Swimming motion"""
+    """Swimming motion
+
+    :param iteration: Simulation iterations
+    :param data_hydrodynamics: Hydrodynamics data
+    :param hydro_index: Hydrodynamics data index
+    :param model: Model identity
+    :param link_id: Link identity
+    :param frame: Force application frame (LINK_FRAME or WORLD_FRAME)
+    :param newtons: Newtons scaling
+    :param torques: Torques scaling
+    :param pos: Position where to apply the force
+
+    """
     # cdef int link_id
     # cdef str link_name
     cdef unsigned int i  # , sensor_i, flags
@@ -303,7 +393,13 @@ cpdef void swimming_motion(
 
 
 cpdef swimming_debug(iteration, data_links, links):
-    """Swimming debug"""
+    """Swimming debug
+
+    :param iteration: Simulation iterations
+    :param data_links: Links data
+    :param links: Links options
+
+    """
     for link in links:
         sensor_i = data_links.index(link.name)
         joint = np.array(data_links.urdf_position(iteration, sensor_i))
@@ -338,12 +434,24 @@ cdef draw_hydrodynamics(
     int link_id,
     HydrodynamicsArrayCy data_hydrodynamics,
     unsigned int hydro_index,
-    hydrodynamics_plot,
+    object hydrodynamics_plot,
     bint new_active,
     double meters,
     double scale=1,
 ):
-    """Draw hydrodynamics forces"""
+    """Draw hydrodynamics forces
+
+    :param iteration: Simulation iteration
+    :param model: Model identity
+    :param link_id: Link identity
+    :param data_hydrodynamics: Hydrodynamics data
+    :param hydro_index: Hydrodynamics data index
+    :param hydrodynamics_plot: Hydrodynamcis plotting objects
+    :param new_active: Bool to decalre if recently active
+    :param meters: Meters scaling
+    :param scale: Plot scaling factor
+
+    """
     cdef bint old_active = hydrodynamics_plot[hydro_index][0]
     cdef DTYPEv1 force = data_hydrodynamics.array[iteration, hydro_index, :3]
     if new_active:
