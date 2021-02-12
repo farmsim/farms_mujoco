@@ -189,7 +189,7 @@ cdef void compute_buoyancy(
     double mass,
     double surface,
     double gravity,
-    DTYPEv1 buyoancy,
+    DTYPEv1 buoyancy,
     DTYPEv1 quat_c,
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
@@ -203,7 +203,7 @@ cdef void compute_buoyancy(
     :param mass: Mass of the link
     :param surface: Surface height
     :param gravity: Gravity Z component in global frame
-    :param buyoancy: Returned buyoancy forvce in CoM frame
+    :param buoyancy: Returned buoyancy forvce in CoM frame
     :param quat_c: Temporary conjugate quaternion
     :param tmp4: Temporary quaternion
     :param tmp: Temporary quaternion
@@ -216,10 +216,10 @@ cdef void compute_buoyancy(
             max(surface-position, 0)/height,
             1,
         )
-        quat_rot(tmp, global2com, quat_c, tmp4, buyoancy)
+        quat_rot(tmp, global2com, quat_c, tmp4, buoyancy)
     else:
         for i in range(3):
-            buyoancy[i] = 0
+            buoyancy[i] = 0
 
 
 cpdef bint drag_forces(
