@@ -73,6 +73,11 @@ class SimulationOptions(Options):
             headless=kwargs.pop('headless', clargs.headless),
             show_progress=kwargs.pop('show_progress', clargs.show_progress),
 
+            # Units
+            meters=kwargs.pop('meters', clargs.meters),
+            seconds=kwargs.pop('seconds', clargs.seconds),
+            kilograms=kwargs.pop('kilograms', clargs.kilograms),
+
             # Camera
             free_camera=kwargs.pop('free_camera', clargs.free_camera),
             top_camera=kwargs.pop('top_camera', clargs.top_camera),
