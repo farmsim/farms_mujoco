@@ -1,5 +1,6 @@
 """Animat"""
 
+import os
 import numpy as np
 import pybullet
 import farms_pylog as pylog
@@ -118,6 +119,9 @@ class Animat(SimulationModel):
                 self.sdf,
                 'Pybullet' if original else 'FARMS',
             ))
+        assert os.path.isfile(self.sdf), '{} is not a file'.format(
+            self.sdf
+        )
         if original:
             self._identity, self.links_map, self.joints_map = load_sdf_pybullet(
                 sdf_path=self.sdf,
