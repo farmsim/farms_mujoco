@@ -80,7 +80,7 @@ cdef void link_swimming_info(
     :param urdf2global: URDF to global frame transform
     :param com2global: CoM to global frame transform
     :param global2com: Global to CoM frame transform
-    :param urdf2com: URDF to CoM frame transform
+    :param urdf2com: Returned URDF to CoM frame transform
     :param link_lin_velocity: Link linear velocity in CoM frame
     :param link_ang_velocity: Link angular velocity in CoM frame
     :param quat_c: Temporary conjugate quaternion
@@ -518,12 +518,12 @@ cdef class SwimmingHandler:
         self.sph = physics_options.sph
         self.buoyancy = physics_options.buoyancy
         self.show_hydrodynamics = animat.options.show_hydrodynamics
-        self.water_surface = physics_options.water_surface
-        self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
         self.meters = animat.units.meters
         self.newtons = animat.units.newtons
         self.torques = animat.units.torques
-        self.hydrodynamics_scale = 1
+        self.water_surface = physics_options.water_surface*self.meters
+        self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
+        self.hydrodynamics_scale = 1*self.meters
         self.z3 = np.zeros([6, 3])
         self.z4 = np.zeros([7, 4])
         links = [
@@ -543,7 +543,7 @@ cdef class SwimmingHandler:
         self.heights = np.array([
             0.5*(_aabb[1][2] -_aabb[0][2])
             for _aabb in aabb
-        ])
+        ])/self.meters
         self.densities = np.array([link.density for link in links])
         self.hydro_indices = np.array([
             self.hydro.names.index(link.name)
@@ -620,4 +620,4 @@ cdef class SwimmingHandler:
 
     cpdef set_hydrodynamics_scale(self, double value):
         """Set hydrodynamics scale"""
-        self.hydrodynamics_scale = value
+        self.hydrodynamics_scale = value*self.meters
