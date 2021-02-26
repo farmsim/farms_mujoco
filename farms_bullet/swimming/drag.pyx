@@ -65,7 +65,8 @@ cdef void link_swimming_info(
     int sensor_i,
     DTYPEv1 urdf2global,
     DTYPEv1 com2global,
-    DTYPEv1 global2com,
+    DTYPEv1 global2urdf,
+    DTYPEv1 com2urdf,
     DTYPEv1 urdf2com,
     DTYPEv1 link_lin_velocity,
     DTYPEv1 link_ang_velocity,
@@ -79,10 +80,10 @@ cdef void link_swimming_info(
     :param sensor_i: Sensor index
     :param urdf2global: URDF to global frame transform
     :param com2global: CoM to global frame transform
-    :param global2com: Global to CoM frame transform
+    :param global2urdf: Global to URDF frame transform
     :param urdf2com: Returned URDF to CoM frame transform
-    :param link_lin_velocity: Link linear velocity in CoM frame
-    :param link_ang_velocity: Link angular velocity in CoM frame
+    :param link_lin_velocity: Link linear velocity in URDF frame
+    :param link_ang_velocity: Link angular velocity in URDF frame
     :param quat_c: Temporary conjugate quaternion
     :param tmp4: Temporary quaternion
 
@@ -91,48 +92,39 @@ cdef void link_swimming_info(
     # Orientations
     urdf2global = data_links.urdf_orientation_cy(iteration, sensor_i)
     com2global = data_links.com_orientation_cy(iteration, sensor_i)
-    quat_conj(com2global, global2com)
+    quat_conj(urdf2global, global2urdf)
+    quat_mult(global2urdf, com2global, com2urdf)
+    quat_conj(com2urdf, urdf2com)
 
     # Compute velocity in CoM frame
     quat_rot(
         data_links.com_lin_velocity_cy(iteration, sensor_i),
-        global2com,
+        global2urdf,
         quat_c,
         tmp4,
         link_lin_velocity,
     )
     quat_rot(
         data_links.com_ang_velocity_cy(iteration, sensor_i),
-        global2com,
+        global2urdf,
         quat_c,
         tmp4,
         link_ang_velocity,
     )
-    quat_mult(urdf2global, global2com, urdf2com)
 
 
 cdef void compute_force(
     DTYPEv1 force,
     DTYPEv1 link_velocity,
     DTYPEv1 coefficients,
-    DTYPEv1 urdf2com,
-    DTYPEv1 com2urdf,
     DTYPEv1 buoyancy,
-    DTYPEv1 quat_c,
-    DTYPEv1 tmp4,
-    DTYPEv1 tmp,
 ) nogil:
     """Compute force and torque
 
-    :param force: Returned force applied to the link in CoM frame
-    :param link_velocity: Link linear velocity in CoM frame
+    :param force: Returned force applied to the link in URDF frame
+    :param link_velocity: Link linear velocity in URDF frame
     :param coefficients: Drag coefficients
-    :param urdf2com: URDF to CoM frame transform
-    :param com2urdf: CoM to URDF frame transform
     :param buoyancy: Buoyancy force
-    :param quat_c: Temporary conjugate quaternion
-    :param tmp4: Temporary quaternion
-    :param tmp: Temporary quaternion
 
     """
     cdef unsigned int i
@@ -140,11 +132,7 @@ cdef void compute_force(
         force[i] = link_velocity[i]*link_velocity[i]
         if link_velocity[i] < 0:
             force[i] *= -1
-    quat_rot(force, com2urdf, quat_c, tmp4, tmp)
-    for i in range(3):
-        tmp[i] *= coefficients[i]
-    quat_rot(tmp, urdf2com, quat_c, tmp4, force)
-    for i in range(3):
+        force[i] *= coefficients[i]
         force[i] += buoyancy[i]
 
 
@@ -152,22 +140,12 @@ cdef void compute_torque(
     DTYPEv1 torque,
     DTYPEv1 link_ang_velocity,
     DTYPEv1 coefficients,
-    DTYPEv1 urdf2com,
-    DTYPEv1 com2urdf,
-    DTYPEv1 quat_c,
-    DTYPEv1 tmp4,
-    DTYPEv1 tmp,
 ) nogil:
     """Compute force and torque
 
     :param torque: Returned torque applied to the link in CoM frame
     :param link_ang_velocity: Link angular velocity in CoM frame
     :param coefficients: Drag coefficients
-    :param urdf2com: URDF to CoM frame transform
-    :param com2urdf: CoM to URDF frame transform
-    :param quat_c: Temporary conjugate quaternion
-    :param tmp4: Temporary quaternion
-    :param tmp: Temporary quaternion
 
     """
     cdef unsigned int i
@@ -175,17 +153,14 @@ cdef void compute_torque(
         torque[i] = link_ang_velocity[i]*link_ang_velocity[i]
         if link_ang_velocity[i] < 0:
             torque[i] *= -1
-    quat_rot(torque, com2urdf, quat_c, tmp4, tmp)
-    for i in range(3):
-        tmp[i] *= coefficients[i]
-    quat_rot(tmp, urdf2com, quat_c, tmp4, torque)
+        torque[i] *= coefficients[i]
 
 
 cdef void compute_buoyancy(
     double density,
     double height,
     double position,
-    DTYPEv1 global2com,
+    DTYPEv1 global2urdf,
     double mass,
     double surface,
     double gravity,
@@ -199,24 +174,24 @@ cdef void compute_buoyancy(
     :param density: Density of the link
     :param height: Height of the link
     :param position: Z position of the CoM in global frame
-    :param global2com: Global to CoM frame transform
+    :param global2urdf: Global to URDF frame transform
     :param mass: Mass of the link
     :param surface: Surface height
     :param gravity: Gravity Z component in global frame
-    :param buoyancy: Returned buoyancy forvce in CoM frame
+    :param buoyancy: Returned buoyancy force in URDF frame
     :param quat_c: Temporary conjugate quaternion
     :param tmp4: Temporary quaternion
     :param tmp: Temporary quaternion
 
     """
-    if mass > 0:
+    if mass > 0 and position < surface:
         tmp[0] = 0
         tmp[1] = 0
         tmp[2] = -1000*mass*gravity/density*min(
             max(surface-position, 0)/height,
             1,
         )
-        quat_rot(tmp, global2com, quat_c, tmp4, buoyancy)
+        quat_rot(tmp, global2urdf, quat_c, tmp4, buoyancy)
     else:
         for i in range(3):
             buoyancy[i] = 0
@@ -259,19 +234,13 @@ cpdef bint drag_forces(
     :param use_buoyancy: Flag for using buoyancy computation
     """
     cdef unsigned int i
-    # cdef unsigned int sensor_i = data_links.names.index(link_name)
-    # hydro_i = data_hydrodynamics.names.index(link_name)
     cdef double position = data_links.array[iteration, links_index, 2]
     if position > surface:
         return 0
-    # cdef double[6][3] z3
-    # cdef double[6][4] z4
-    # # z3 = np.zeros([6, 3])
-    # # z4 = np.zeros([7, 4])
     cdef DTYPEv1 force=z3[0], torque=z3[1], buoyancy=z3[2], tmp=z3[3]
     cdef DTYPEv1 link_lin_velocity=z3[4], link_ang_velocity=z3[5]
     cdef DTYPEv1 urdf2global=z4[0], com2global=z4[1]
-    cdef DTYPEv1 global2com=z4[2], urdf2com=z4[3], com2urdf=z4[4]
+    cdef DTYPEv1 global2urdf=z4[2], urdf2com=z4[3], com2urdf=z4[4]
     cdef DTYPEv1 quat_c=z4[5], tmp4=z4[6]
 
     # Swimming information
@@ -281,7 +250,8 @@ cpdef bint drag_forces(
         sensor_i=links_index,
         urdf2global=urdf2global,
         com2global=com2global,
-        global2com=global2com,
+        global2urdf=global2urdf,
+        com2urdf=com2urdf,
         urdf2com=urdf2com,
         link_lin_velocity=link_lin_velocity,
         link_ang_velocity=link_ang_velocity,
@@ -292,42 +262,35 @@ cpdef bint drag_forces(
     # Buoyancy forces
     if use_buoyancy:
         compute_buoyancy(
-            density,
-            height,
-            position,
-            global2com,
-            mass,
-            surface,
-            gravity,
-            buoyancy,
-            quat_c,
-            tmp4,
-            tmp,
+            density=density,
+            height=height,
+            position=position,
+            global2urdf=global2urdf,
+            mass=mass,
+            surface=surface,
+            gravity=gravity,
+            buoyancy=buoyancy,
+            quat_c=quat_c,
+            tmp4=tmp4,
+            tmp=tmp,
         )
 
-    # Drag forces in inertial frame
-    quat_conj(urdf2com, com2urdf)
+    # Drag forces in URDF frame
     compute_force(
-        force,
+        force=force,
         link_velocity=link_lin_velocity,
         coefficients=coefficients[0],
-        urdf2com=urdf2com,
-        com2urdf=com2urdf,
         buoyancy=buoyancy,
-        quat_c=quat_c,
-        tmp4=tmp4,
-        tmp=tmp,
     )
     compute_torque(
-        torque,
+        torque=torque,
         link_ang_velocity=link_ang_velocity,
         coefficients=coefficients[1],
-        urdf2com=urdf2com,
-        com2urdf=com2urdf,
-        quat_c=quat_c,
-        tmp4=tmp4,
-        tmp=tmp,
     )
+
+    # Drag forces in inertial frame
+    quat_rot(force, urdf2com, quat_c, tmp4, force)
+    quat_rot(torque, urdf2com, quat_c, tmp4, torque)
 
     # Store data
     for i in range(3):
@@ -336,7 +299,7 @@ cpdef bint drag_forces(
     return 1
 
 
-cpdef void swimming_motion(
+cpdef void swimming_apply_forces(
         unsigned int iteration,
         HydrodynamicsArrayCy data_hydrodynamics,
         unsigned int hydro_index,
@@ -360,28 +323,18 @@ cpdef void swimming_motion(
     :param pos: Position where to apply the force
 
     """
-    # cdef int link_id
-    # cdef str link_name
     cdef unsigned int i  # , sensor_i, flags
     cdef np.ndarray hydro_force=np.zeros(3), hydro_torque=np.zeros(3)
-    # cdef np.ndarray hydro
-    # cdef double newtons, torques
-    # newtons = units.newtons
-    # torques = units.torques
-    # flags = pybullet.LINK_FRAME if link_frame else pybullet.WORLD_FRAME
-
-    # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
-    # sensor_i = data_hydrodynamics.names.index(link.name)
-    # link_id = links_map[link.name]
     cdef DTYPEv1 hydro = data_hydrodynamics.array[iteration, hydro_index]
     for i in range(3):
         hydro_force[i] = hydro[i]*newtons
         hydro_torque[i] = hydro[i+3]*torques
+    # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
     pybullet.applyExternalForce(
         model,
         link_id,
         forceObj=hydro_force.tolist(),
-        posObj=pos.tolist(),  # pybullet.getDynamicsInfo(model, link)[3]
+        posObj=pos.tolist(),
         flags=frame,
     )
     pybullet.applyExternalTorque(
@@ -522,6 +475,7 @@ cdef class SwimmingHandler:
         self.newtons = animat.units.newtons
         self.torques = animat.units.torques
         self.water_surface = physics_options.water_surface*self.meters
+        # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
         self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
         self.hydrodynamics_scale = 1*self.meters
         self.z3 = np.zeros([6, 3])
@@ -589,7 +543,7 @@ cdef class SwimmingHandler:
                         use_buoyancy=self.buoyancy,
                     )
                 if apply_force:
-                    swimming_motion(
+                    swimming_apply_forces(
                         iteration=iteration,
                         data_hydrodynamics=self.hydro,
                         hydro_index=self.hydro_indices[i],
