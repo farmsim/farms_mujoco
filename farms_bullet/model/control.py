@@ -125,7 +125,7 @@ class ModelController:
         """Positions"""
         assert iteration >= 0
         return {
-            '{}'.format(joint): 0
+            joint: 0
             for joint in self.joints[ControlType.POSITION]
         }
 
@@ -133,7 +133,7 @@ class ModelController:
         """Velocities"""
         assert iteration >= 0
         return {
-            '{}'.format(joint): 0
+            joint: 0
             for joint in self.joints[ControlType.VELOCITY]
         }
 
@@ -141,6 +141,6 @@ class ModelController:
         """Torques"""
         assert iteration >= 0
         return {
-            '{}'.format(joint): 0
+            joint: 0
             for joint in self.joints[ControlType.TORQUE]
         }
