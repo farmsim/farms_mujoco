@@ -125,22 +125,22 @@ class ModelController:
         """Positions"""
         assert iteration >= 0
         return {
-            'joint_{}'.format(joint_i): 0
-            for joints in self.joints
+            '{}'.format(joint): 0
+            for joint in self.joints[ControlType.POSITION]
         }
 
     def velocities(self, iteration, time, timestep):
         """Velocities"""
         assert iteration >= 0
         return {
-            'joint_{}'.format(joint_i): 0
-            for joints in self.joints
+            '{}'.format(joint): 0
+            for joint in self.joints[ControlType.VELOCITY]
         }
 
     def torques(self, iteration, time, timestep):
         """Torques"""
         assert iteration >= 0
         return {
-            'joint_{}'.format(joint_i): 0
-            for joints in self.joints
+            '{}'.format(joint): 0
+            for joint in self.joints[ControlType.TORQUE]
         }
