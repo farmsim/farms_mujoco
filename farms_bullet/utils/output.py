@@ -38,5 +38,8 @@ def redirect_output(stdout_function=None):
                     frame.f_code.co_name,
                     frame.f_lineno,
                 )
-                captured_stdout = header + captured_stdout.replace('\n', '\n>   ')
+                captured_stdout = header + captured_stdout.replace(
+                    '\n',
+                    '\n>   ',
+                )
                 stdout_function(captured_stdout)
