@@ -118,6 +118,7 @@ cdef void compute_force(
     DTYPEv1 link_velocity,
     DTYPEv1 coefficients,
     DTYPEv1 buoyancy,
+    double viscosity,
 ) nogil:
     """Compute force and torque
 
@@ -125,6 +126,7 @@ cdef void compute_force(
     :param link_velocity: Link linear velocity in URDF frame
     :param coefficients: Drag coefficients
     :param buoyancy: Buoyancy force
+    :param viscosity: Fluid viscosity
 
     """
     cdef unsigned int i
@@ -132,7 +134,7 @@ cdef void compute_force(
         force[i] = link_velocity[i]*link_velocity[i]
         if link_velocity[i] < 0:
             force[i] *= -1
-        force[i] *= coefficients[i]
+        force[i] *= viscosity*coefficients[i]
         force[i] += buoyancy[i]
 
 
@@ -207,6 +209,7 @@ cpdef bint drag_forces(
         DTYPEv2 z3,
         DTYPEv2 z4,
         double surface,
+        double viscosity,
         double mass,
         double height,
         double density,
@@ -227,6 +230,7 @@ cpdef bint drag_forces(
     :param z3: Temporary array
     :param z4: Temporary array
     :param surface: Surface height
+    :param viscosity: Fluid viscosity
     :param mass: Link mass
     :param height: Link height
     :param density: Link density
@@ -281,6 +285,7 @@ cpdef bint drag_forces(
         link_velocity=link_lin_velocity,
         coefficients=coefficients[0],
         buoyancy=buoyancy,
+        viscosity=viscosity,
     )
     compute_torque(
         torque=torque,
@@ -444,6 +449,7 @@ cdef class SwimmingHandler:
     cdef bint sph
     cdef bint buoyancy
     cdef bint show_hydrodynamics
+    cdef double viscosity
     cdef double water_surface
     cdef double meters
     cdef double newtons
@@ -474,7 +480,8 @@ cdef class SwimmingHandler:
         self.meters = animat.units.meters
         self.newtons = animat.units.newtons
         self.torques = animat.units.torques
-        self.water_surface = physics_options.water_surface*self.meters
+        self.viscosity = physics_options.viscosity
+        self.water_surface = physics_options.water_surface
         # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
         self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
         self.hydrodynamics_scale = 1*self.meters
@@ -536,6 +543,7 @@ cdef class SwimmingHandler:
                         z3=self.z3,
                         z4=self.z4,
                         surface=self.water_surface,
+                        viscosity=self.viscosity,
                         mass=self.masses[i],
                         height=self.heights[i],
                         density=self.densities[i],
