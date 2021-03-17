@@ -3,6 +3,26 @@
 import argparse
 
 
+def positive(value, value_type):
+    """Positive value"""
+    typed_value = value_type(value)
+    if typed_value <= 0:
+        raise argparse.ArgumentTypeError(
+            '{} is not a positive int value'.format(value)
+        )
+    return typed_value
+
+
+def positive_int(value):
+    """Positive int"""
+    return positive(value, value_type=int)
+
+
+def positive_float(value):
+    """Positive float"""
+    return positive(value, value_type=float)
+
+
 def argument_parser():
     """Argument parser"""
     parser = argparse.ArgumentParser(
@@ -16,14 +36,14 @@ def argument_parser():
     # Simulation
     parser.add_argument(
         '--timestep',
-        type=float,
+        type=positive_float,
         default=1e-3,
         help='Simulation timestep',
     )
     parser.add_argument(
         '--duration',
-        type=float,
-        default=1,
+        type=positive_float,
+        default=10,
         help='Simulation duration',
     )
     parser.add_argument(
@@ -54,19 +74,19 @@ def argument_parser():
     # Units
     parser.add_argument(
         '--meters',
-        type=float,
+        type=positive_float,
         default=1,
         help='Unit scaling of meters within physics engine',
     )
     parser.add_argument(
         '--seconds',
-        type=float,
+        type=positive_float,
         default=1,
         help='Unit scaling of seconds within physics engine',
     )
     parser.add_argument(
         '--kilograms',
-        type=float,
+        type=positive_float,
         default=1,
         help='Unit scaling of kilograms within physics engine',
     )
@@ -133,7 +153,7 @@ def argument_parser():
     )
     parser.add_argument(
         '--n_solver_iters',
-        type=int,
+        type=positive_int,
         default=50,
         help='Number of solver iterations for physics simulation',
     )
@@ -153,37 +173,37 @@ def argument_parser():
     )
     parser.add_argument(
         '--erp',
-        type=float,
+        type=positive_float,
         default=0,
         help='Pybullet ERP',
     )
     parser.add_argument(
         '--contact_erp',
-        type=float,
+        type=positive_float,
         default=0,
         help='Pybullet contact ERP',
     )
     parser.add_argument(
         '--friction_erp',
-        type=float,
+        type=positive_float,
         default=0,
         help='Pybullet friction ERP',
     )
     parser.add_argument(
         '--num_sub_steps',
-        type=int,
+        type=positive_int,
         default=0,
         help='Pybullet number of sub-steps',
     )
     parser.add_argument(
         '--max_num_cmd_per_1ms',
-        type=int,
+        type=positive_int,
         default=int(1e9),
         help='Pybullet maximum number of commands per millisecond',
     )
     parser.add_argument(
         '--residual_threshold',
-        type=float,
+        type=positive_float,
         default=1e-6,
         help='Pybullet solver residual threshold',
     )
