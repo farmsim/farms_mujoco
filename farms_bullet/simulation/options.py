@@ -1,7 +1,7 @@
 """Simulation options"""
 
 from farms_data.options import Options
-from farms_sdf.units import SimulationUnitScaling
+from farms_data.units import SimulationUnitScaling
 from .parse_args import parse_args
 
 
