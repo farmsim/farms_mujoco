@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 import pybullet
-import pybullet_data
+# import pybullet_data
 
 import farms_pylog as pylog
 
@@ -35,9 +35,9 @@ def init_engine(headless=False, opengl2=False):
             # options='--opengl2'  #  --minGraphicsUpdateTimeMs=32000
             **kwargs_options
         )
-    pybullet_path = pybullet_data.getDataPath()
-    pylog.debug('Adding pybullet data path {}'.format(pybullet_path))
-    pybullet.setAdditionalSearchPath(pybullet_path)
+    # pybullet_path = pybullet_data.getDataPath()
+    # pylog.debug('Adding pybullet data path {}'.format(pybullet_path))
+    # pybullet.setAdditionalSearchPath(pybullet_path)
 
 
 def real_time_handing(timestep, tic_rt, rtl=1.0, verbose=False, **kwargs):
