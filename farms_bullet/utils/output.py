@@ -3,7 +3,7 @@
 import os
 import sys
 import contextlib
-from inspect import currentframe, getframeinfo
+from inspect import currentframe, getsourcefile
 
 
 @contextlib.contextmanager
@@ -34,7 +34,7 @@ def redirect_output(stdout_function=None):
             if stdout_function is not None:
                 frame = currentframe().f_back.f_back
                 header = '[REDIRECT] {}::{}::{}():\n>   '.format(
-                    getframeinfo(frame).filename,
+                    os.path.basename(getsourcefile(frame)),
                     frame.f_code.co_name,
                     frame.f_lineno,
                 )
