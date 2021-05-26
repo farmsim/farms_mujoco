@@ -247,16 +247,8 @@ def load_sdf(
                     link_inertias.append([0, 0, 0])
                     link_inertiaori.append([0, 0, 0, 1])
                 else:
-                    link_masses.append(
-                        link.inertial.mass
-                        if link.inertial
-                        else 0
-                    )
-                    link_com.append(
-                        link.inertial.pose[:3]
-                        if link.inertial
-                        else np.zeros(3)
-                    )
+                    link_masses.append(link.inertial.mass)
+                    link_com.append(link.inertial.pose[:3])
                     inertia_vec = link.inertial.inertias
                     inertia_tensor = np.array([
                         [inertia_vec[0], inertia_vec[1], inertia_vec[2]],
@@ -268,7 +260,6 @@ def load_sdf(
                     link_inertiaori.append(
                         Rotation.from_matrix(inertia_vectors).as_quat()
                     )
-                # link_com.append([0, 0, 0])
                 # Joint information
                 if joint is None:
                     # Base link
@@ -363,16 +354,25 @@ def load_sdf(
     if verbose:
         pylog.debug('\n'.join(
             [
-                '0 (Base link): {} - index: {} - mass: {:.4f} [g]'.format(
+                (
+                    '0 (Base link): {}'
+                    ' - index: {}'
+                    ' - mass: {:.4f} [g]'
+                    ' - inertias: [{:.3e}, {:.3e}, {:.3e}]'
+                ).format(
                     name,
                     link_i,
                     1e3*link_masses[link_i],
+                    link_inertias[link_i][0],
+                    link_inertias[link_i][1],
+                    link_inertias[link_i][2],
                 )
                 if link_i == 0
                 else (
                     '{: >3} {: <20}'
                     ' - parent: {: <20} ({: >2})'
                     ' - mass: {:.4f} [g]'
+                    ' - inertias: [{:.3e} {:.3e} {:.3e}]'
                     ' - joint: {: <20} - axis: {}'
                 ).format(
                     '{}:'.format(link_i),
@@ -380,13 +380,14 @@ def load_sdf(
                     parenting[name],
                     link_index[parenting[name]],
                     1e3*link_masses[link_i],
+                    link_inertias[link_i][0],
+                    link_inertias[link_i][1],
+                    link_inertias[link_i][2],
                     joints_names[link_i-1],
                     joints_axis[link_i-1],
                 )
                 for link_i, name in enumerate(links_names)
-            ] + [
-                '\nTotal mass: {:.4f} [g]'.format(1e3*sum(link_masses))
-            ]
+            ] + ['\nTotal mass: {:.4f} [g]'.format(1e3*sum(link_masses))]
         ))
         pylog.debug('Spawning model')
 
@@ -438,10 +439,7 @@ def load_sdf(
         links[links_names[link_number]] = joint_i
 
     # Set inertias
-    for link_name, inertia in zip(
-            links_names,
-            link_inertias,
-    ):
+    for link_name, inertia in zip(links_names, link_inertias):
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=links[link_name],

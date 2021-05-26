@@ -140,7 +140,7 @@ class Animat(SimulationModel):
         if verbose:
             pylog.debug('{}\n\n{}\n{}'.format(
                 'Spawned model (Identity={})'.format(self._identity),
-                'Model properties after units scaling:',
+                'Model properties from pybullet (scaled units):',
                 '\n'.join([
                     (
                         '- {: <20}:'
@@ -151,7 +151,7 @@ class Animat(SimulationModel):
                     ).format(
                         link_name+':',
                         *[
-                            float(1000*value)
+                            float(value)
                             if val_i == 0  # Mass
                             else str(['{:.3e}'.format(val) for val in value])
                             if val_i == 1  # Inertias
