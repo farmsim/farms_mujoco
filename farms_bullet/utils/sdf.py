@@ -226,8 +226,8 @@ def load_sdf(
                     )
                 )
                 parenting[link_name] = link.name
-                link_pos.append([0, 0, 0])
-                link_ori.append([0, 0, 0])
+                link_pos.append(link.pose[:3])
+                link_ori.append(link.pose[3:])
                 link_masses.append(0)
                 link_com.append([0, 0, 0])
                 link_inertias.append([0, 0, 0])
