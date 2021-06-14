@@ -100,7 +100,7 @@ def find_joint(sdf_model, link):
 
 def joint_pybullet_type(joint):
     """Find joint"""
-    if joint.type == 'revolute':
+    if joint.type in ('revolute', 'continuous'):
         return pybullet.JOINT_REVOLUTE
     return pybullet.JOINT_FIXED
 
@@ -157,12 +157,13 @@ def load_sdf(
         sdf_path,
         force_concave=False,
         reset_control=True,
-        verbose=False,
         links_options=None,
+        use_self_collision=False,
         **kwargs,
 ):
     """Load SDF"""
     units = kwargs.pop('units')
+    verbose = kwargs.pop('verbose', False)
     assert not kwargs, kwargs
     sdf = ModelSDF.read(sdf_path)[0]
     folder = os.path.dirname(sdf_path)
@@ -413,6 +414,9 @@ def load_sdf(
         flags=(
             pybullet.URDF_USE_SELF_COLLISION
             | pybullet.URDF_MERGE_FIXED_LINKS
+        ) if use_self_collision else (
+            pybullet.URDF_MERGE_FIXED_LINKS
+            # | pybullet.URDF_USE_SELF_COLLISION
             # | pybullet.URDF_MAINTAIN_LINK_ORDER  # Removes certain links?
             # | pybullet.URDF_ENABLE_SLEEPING
             # | pybullet.URDF_USE_INERTIA_FROM_FILE
@@ -431,12 +435,16 @@ def load_sdf(
     links[links_names[0]] = -1
     for joint_i in range(pybullet.getNumJoints(identity)):
         joint_info = pybullet.getJointInfo(identity, joint_i)
-        joint_name = joint_info[1].decode('UTF-8')
-        joint_number = int(joint_name.replace('joint', ''))-1
-        joints[joints_names[joint_number]] = joint_i
+        # Link
         link_name = joint_info[12].decode('UTF-8')
         link_number = int(link_name.replace('link', ''))
         links[links_names[link_number]] = joint_i
+        # Joint
+        joint_name = joint_info[1].decode('UTF-8')
+        joint_number = int(joint_name.replace('joint', ''))-1
+        joints[joints_names[joint_number]] = joint_i
+        # Checks
+        assert joint_types[joint_number] == joint_info[2]
 
     # Set inertias
     for link_name, inertia in zip(links_names, link_inertias):
@@ -448,18 +456,20 @@ def load_sdf(
 
     # Units scaling
     inertia_unit = units.kilograms*units.meters**2
-    for link in links.values():
+    for link_name, link in links.items():
         mass, inertias = np.array(
             pybullet.getDynamicsInfo(identity, link),
             dtype=object,
         )[[0, 2]]
-        # assert joint.axis.limits[0] < joint.axis.limits[1]
-        # pybullet.changeDynamics(
-        #     bodyUniqueId=identity,
-        #     linkIndex=link,
-        #     jointLowerLimit=joint.axis.limits[0],
-        #     jointUpperLimit=joint.axis.limits[1],
-        # )
+        assert np.isclose(mass, link_masses[links_names.index(link_name)])
+        if joint.axis is not None and joint.axis.limits is not None:
+            assert joint.axis.limits[0] < joint.axis.limits[1]
+            pybullet.changeDynamics(
+                bodyUniqueId=identity,
+                linkIndex=link,
+                jointLowerLimit=joint.axis.limits[0],
+                jointUpperLimit=joint.axis.limits[1],
+            )
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=link,
@@ -523,9 +533,7 @@ def load_sdf_pybullet(sdf_path, index=0, morphology_links=None, **kwargs):
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=links[link_name],
-            localInertiaDiagonal=(
-                np.array(inertias)*inertia_unit
-            ),
+            localInertiaDiagonal=np.array(inertias)*inertia_unit,
         )
     if morphology_links is not None:
         for link in morphology_links:

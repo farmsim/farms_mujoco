@@ -135,6 +135,7 @@ class Animat(SimulationModel):
                 reset_control=True,
                 verbose=verbose,
                 links_options=self.options.morphology.links,
+                use_self_collision=self.options.morphology.self_collisions,
                 units=self.units,
             )
         if verbose:
