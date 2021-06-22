@@ -5,6 +5,9 @@ import numpy as np
 import pybullet
 
 import farms_pylog as pylog
+from farms_data.units import SimulationUnitScaling
+from .options import SpawnLoader
+from ..utils.sdf import load_sdf
 from ..utils.output import redirect_output
 
 
@@ -54,8 +57,14 @@ class SimulationModel:
     def from_sdf(sdf, **kwargs):
         """Model from SDF"""
         assert os.path.isfile(sdf), '{} does not exist'.format(sdf)
-        with redirect_output(pylog.warning):
-            model = pybullet.loadSDF(sdf, **kwargs)[0]
+        spawn_loader = kwargs.pop('spawn_loader', SpawnLoader.FARMS)
+        if spawn_loader == SpawnLoader.PYBULLET:
+            with redirect_output(pylog.warning):
+                model = pybullet.loadSDF(sdf, **kwargs)[0]
+        else:
+            if 'units' not in kwargs:
+                kwargs['units'] = SimulationUnitScaling()
+            model = load_sdf(sdf, force_concave=True, **kwargs)
         return model
 
     @staticmethod
