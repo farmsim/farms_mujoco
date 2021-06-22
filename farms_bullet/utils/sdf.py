@@ -84,7 +84,10 @@ def pybullet_options_from_shape(shape, path='', force_concave=False, meters=1):
         if force_concave:
             options['flags'] = pybullet.GEOM_FORCE_CONCAVE_TRIMESH
     elif isinstance(shape.geometry, Heightmap):
+        options = {}
         options['shapeType'] = pybullet.GEOM_HEIGHTFIELD
+        options['fileName'] = os.path.join(path, shape.geometry.uri)
+        options['meshScale'] = np.array(shape.geometry.size)*meters
     else:
         raise Exception('Unknown type {}'.format(type(shape.geometry)))
     return options
@@ -462,14 +465,6 @@ def load_sdf(
             dtype=object,
         )[[0, 2]]
         assert np.isclose(mass, link_masses[links_names.index(link_name)])
-        if joint.axis is not None and joint.axis.limits is not None:
-            assert joint.axis.limits[0] < joint.axis.limits[1]
-            pybullet.changeDynamics(
-                bodyUniqueId=identity,
-                linkIndex=link,
-                jointLowerLimit=joint.axis.limits[0],
-                jointUpperLimit=joint.axis.limits[1],
-            )
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=link,
