@@ -64,7 +64,7 @@ class SimulationModel:
         else:
             if 'units' not in kwargs:
                 kwargs['units'] = SimulationUnitScaling()
-            model = load_sdf(sdf, force_concave=True, **kwargs)
+            model = load_sdf(sdf, force_concave=True, **kwargs)[0]
         return model
 
     @staticmethod
