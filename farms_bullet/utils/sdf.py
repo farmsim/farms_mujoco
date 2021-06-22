@@ -167,6 +167,7 @@ def load_sdf(
     """Load SDF"""
     units = kwargs.pop('units')
     verbose = kwargs.pop('verbose', False)
+    global_scaling = kwargs.pop('globalScaling', 1)
     assert not kwargs, kwargs
     sdf = ModelSDF.read(sdf_path)[0]
     folder = os.path.dirname(sdf_path)
@@ -202,8 +203,7 @@ def load_sdf(
                     **pybullet_options_from_shape(
                         link.visuals[i],
                         path=folder,
-                        force_concave=force_concave,
-                        meters=units.meters,
+                        meters=units.meters*global_scaling,
                     )
                 ) if i < len(link.visuals) else -1
             )
@@ -214,7 +214,7 @@ def load_sdf(
                         link.collisions[i],
                         path=folder,
                         force_concave=force_concave,
-                        meters=units.meters,
+                        meters=units.meters*global_scaling,
                     )
                 ) if i < len(link.collisions) else -1
             )

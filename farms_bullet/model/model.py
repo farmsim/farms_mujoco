@@ -62,8 +62,6 @@ class SimulationModel:
             with redirect_output(pylog.warning):
                 model = pybullet.loadSDF(sdf, **kwargs)[0]
         else:
-            if 'units' not in kwargs:
-                kwargs['units'] = SimulationUnitScaling()
             model = load_sdf(sdf, force_concave=True, **kwargs)[0]
         return model
 
