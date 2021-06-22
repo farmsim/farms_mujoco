@@ -208,8 +208,7 @@ cpdef bint drag_forces(
         DTYPEv2 coefficients,
         DTYPEv2 z3,
         DTYPEv2 z4,
-        double surface,
-        double viscosity,
+        WaterProperties water,
         double mass,
         double height,
         double density,
@@ -229,8 +228,7 @@ cpdef bint drag_forces(
     :param coefficients: Drag coefficients
     :param z3: Temporary array
     :param z4: Temporary array
-    :param surface: Surface height
-    :param viscosity: Fluid viscosity
+    :param water: Water properties
     :param mass: Link mass
     :param height: Link height
     :param density: Link density
@@ -238,8 +236,11 @@ cpdef bint drag_forces(
     :param use_buoyancy: Flag for using buoyancy computation
     """
     cdef unsigned int i
-    cdef double position = data_links.array[iteration, links_index, 2]
-    if position > surface:
+    cdef double pos_x = data_links.array[iteration, links_index, 0]
+    cdef double pos_y = data_links.array[iteration, links_index, 1]
+    cdef double pos_z = data_links.array[iteration, links_index, 2]
+    cdef double surface = water.surface(pos_x, pos_y)
+    if pos_z > surface:
         return 0
     cdef DTYPEv1 force=z3[0], torque=z3[1], buoyancy=z3[2], tmp=z3[3]
     cdef DTYPEv1 link_lin_velocity=z3[4], link_ang_velocity=z3[5]
@@ -268,7 +269,7 @@ cpdef bint drag_forces(
         compute_buoyancy(
             density=density,
             height=height,
-            position=position,
+            position=pos_z,
             global2urdf=global2urdf,
             mass=mass,
             surface=surface,
@@ -285,7 +286,7 @@ cpdef bint drag_forces(
         link_velocity=link_lin_velocity,
         coefficients=coefficients[0],
         buoyancy=buoyancy,
-        viscosity=viscosity,
+        viscosity=water.viscosity(pos_x, pos_y, pos_z),
     )
     compute_torque(
         torque=torque,
@@ -436,6 +437,38 @@ cdef draw_hydrodynamics(
         )
 
 
+cdef class WaterProperties:
+    """Water properties"""
+
+    cdef double _surface
+    cdef double _density
+    cdef double _viscosity
+    cdef DTYPEv1 _velocity
+
+    def __init__(self, surface, density, velocity, viscosity):
+        super(WaterProperties, self).__init__()
+        self._surface = surface
+        self._density = density
+        self._velocity = velocity
+        self._viscosity = viscosity
+
+    cdef double surface(self, double x, double y) nogil:
+        """Surface"""
+        return self._surface
+
+    cdef double density(self, double x, double y, double z) nogil:
+        """Density"""
+        return self._density
+
+    cdef DTYPEv1 velocity(self, double x, double y, double z) nogil:
+        """Velocity in global frame"""
+        return self._velocity
+
+    cdef double viscosity(self, double x, double y, double z) nogil:
+        """Viscosity"""
+        return self._viscosity
+
+
 cdef class SwimmingHandler:
     """Swimming handler"""
 
@@ -449,8 +482,7 @@ cdef class SwimmingHandler:
     cdef bint sph
     cdef bint buoyancy
     cdef bint show_hydrodynamics
-    cdef double viscosity
-    cdef double water_surface
+    cdef WaterProperties water
     cdef double meters
     cdef double newtons
     cdef double torques
@@ -480,8 +512,12 @@ cdef class SwimmingHandler:
         self.meters = animat.units.meters
         self.newtons = animat.units.newtons
         self.torques = animat.units.torques
-        self.viscosity = physics_options.viscosity
-        self.water_surface = physics_options.water_surface
+        self.water = WaterProperties(
+            surface=physics_options.water_surface,
+            density=1000,
+            velocity=np.zeros(3),
+            viscosity=physics_options.viscosity,
+        )
         # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
         self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
         self.hydrodynamics_scale = 1*self.meters
@@ -523,7 +559,7 @@ cdef class SwimmingHandler:
             for link in links
         ], dtype=np.intc)
         if self.sph:
-            self.water_surface = 1e8
+            self.water._surface = 1e8
 
     cpdef step(self, unsigned int iteration):
         """Swimming step"""
@@ -542,8 +578,7 @@ cdef class SwimmingHandler:
                         coefficients=self.links_coefficients[i],
                         z3=self.z3,
                         z4=self.z4,
-                        surface=self.water_surface,
-                        viscosity=self.viscosity,
+                        water=self.water,
                         mass=self.masses[i],
                         height=self.heights[i],
                         density=self.densities[i],
@@ -583,3 +618,7 @@ cdef class SwimmingHandler:
     cpdef set_hydrodynamics_scale(self, double value):
         """Set hydrodynamics scale"""
         self.hydrodynamics_scale = value*self.meters
+
+    cpdef set_frame(self, int frame):
+        """Set frame"""
+        self.frame = frame
