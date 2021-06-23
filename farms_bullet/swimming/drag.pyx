@@ -244,6 +244,7 @@ cpdef bint drag_forces(
         return 0
     cdef DTYPEv1 force=z3[0], torque=z3[1], buoyancy=z3[2], tmp=z3[3]
     cdef DTYPEv1 link_lin_velocity=z3[4], link_ang_velocity=z3[5]
+    cdef DTYPEv1 fluid_velocity_urdf=z3[6]
     cdef DTYPEv1 urdf2global=z4[0], com2global=z4[1]
     cdef DTYPEv1 global2urdf=z4[2], urdf2com=z4[3], com2urdf=z4[4]
     cdef DTYPEv1 quat_c=z4[5], tmp4=z4[6]
@@ -279,6 +280,18 @@ cpdef bint drag_forces(
             tmp4=tmp4,
             tmp=tmp,
         )
+
+    # Add fluid velocity
+    quat_rot(
+        vector=water.velocity(pos_x, pos_y, pos_z),
+        quat=global2urdf,
+        quat_c=quat_c,
+        tmp4=tmp4,
+        out=fluid_velocity_urdf,
+    )
+    link_lin_velocity[0] -= fluid_velocity_urdf[0]
+    link_lin_velocity[1] -= fluid_velocity_urdf[1]
+    link_lin_velocity[2] -= fluid_velocity_urdf[2]
 
     # Drag forces in URDF frame
     compute_force(
@@ -521,7 +534,7 @@ cdef class SwimmingHandler:
         # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
         self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
         self.hydrodynamics_scale = 1*self.meters
-        self.z3 = np.zeros([6, 3])
+        self.z3 = np.zeros([7, 3])
         self.z4 = np.zeros([7, 4])
         links = [
             link
