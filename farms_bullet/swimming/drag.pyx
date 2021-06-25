@@ -527,8 +527,8 @@ cdef class SwimmingHandler:
         self.torques = animat.units.torques
         self.water = WaterProperties(
             surface=physics_options.water_surface,
-            density=1000,
-            velocity=np.zeros(3),
+            density=physics_options.water_density,
+            velocity=np.array(physics_options.water_velocity),
             viscosity=physics_options.viscosity,
         )
         # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
