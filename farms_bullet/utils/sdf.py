@@ -451,6 +451,7 @@ def load_sdf(
 
     # Set inertias
     for link_name, inertia in zip(links_names, link_inertias):
+        assert link_name in links, 'Link {} not in {}'.format(link_name, links)
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=links[link_name],
