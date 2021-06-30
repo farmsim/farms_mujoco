@@ -518,18 +518,18 @@ cdef class SwimmingHandler:
         self.hydro = animat.data.sensors.hydrodynamics
         self.model = animat.identity()
         physics_options = animat.options.physics
-        self.drag = physics_options.drag
-        self.sph = physics_options.sph
-        self.buoyancy = physics_options.buoyancy
-        self.show_hydrodynamics = animat.options.show_hydrodynamics
-        self.meters = animat.units.meters
-        self.newtons = animat.units.newtons
-        self.torques = animat.units.torques
+        self.drag = bool(physics_options.drag)
+        self.sph = bool(physics_options.sph)
+        self.buoyancy = bool(physics_options.buoyancy)
+        self.show_hydrodynamics = bool(animat.options.show_hydrodynamics)
+        self.meters = float(animat.units.meters)
+        self.newtons = float(animat.units.newtons)
+        self.torques = float(animat.units.torques)
         self.water = WaterProperties(
-            surface=physics_options.water_surface,
-            density=physics_options.water_density,
-            velocity=np.array(physics_options.water_velocity),
-            viscosity=physics_options.viscosity,
+            surface=float(physics_options.water_surface),
+            density=float(physics_options.water_density),
+            velocity=np.array(physics_options.water_velocity, dtype=float),
+            viscosity=float(physics_options.viscosity),
         )
         # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
         self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
