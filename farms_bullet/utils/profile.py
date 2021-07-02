@@ -1,18 +1,21 @@
 """Profile"""
 
+import io
 import pstats
 import cProfile
 
 
-def profile(function, **kwargs):
+def profile(function, profile_filename='', **kwargs):
     """Profile with cProfile"""
     n_time = kwargs.pop('pstat_n_time', 30)
     n_cumtime = kwargs.pop('pstat_n_cumtime', 30)
     prof = cProfile.Profile()
-    profile_filename = kwargs.pop('profile_filename', 'simulation.profile')
     result = prof.runcall(function, **kwargs)
-    prof.dump_stats(profile_filename)
-    pstat = pstats.Stats(profile_filename)
+    if profile_filename:
+        prof.dump_stats(profile_filename)
+        pstat = pstats.Stats(profile_filename)
+    else:
+        pstat = pstats.Stats(prof, stream=io.StringIO())
     pstat.sort_stats('time').print_stats(n_time)
     pstat.sort_stats('cumtime').print_stats(n_cumtime)
     return result
