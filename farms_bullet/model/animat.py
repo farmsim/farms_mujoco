@@ -180,6 +180,10 @@ class Animat(SimulationModel):
         """Add sensors"""
         # Links
         if self.options.control.sensors.links:
+            for link in self.options.control.sensors.links:
+                assert link in self.links_map, (
+                    'link {} not in {}'.format(link, self.links_map)
+                )
             self.sensors.add({
                 'links': LinksStatesSensor(
                     array=self.data.sensors.links.array,
