@@ -299,11 +299,23 @@ class Animat(SimulationModel):
             )
 
         # Model options dynamics
+        pylog.debug('Setting link dynamic properties:\n  - {}'.format(
+            '\n  - '.join([
+                '{:<20} {}'.format(link.name+':', link.pybullet_dynamics)
+                for link in self.options.morphology.links
+            ])
+        ))
         for link in self.options.morphology.links:
             self.set_link_dynamics(
                 link.name,
                 **link.pybullet_dynamics,
             )
+        pylog.debug('Setting joint dynamic properties:\n  - {}'.format(
+            '\n  - '.join([
+                '{:<20} {}'.format(joint.name+':', joint.pybullet_dynamics)
+                for joint in self.options.morphology.joints
+            ])
+        ))
         for joint in self.options.morphology.joints:
             self.set_joint_dynamics(
                 joint.name,
@@ -404,7 +416,7 @@ class Animat(SimulationModel):
             )
 
     def set_link_dynamics(self, link, **kwargs):
-        """Apply motor damping"""
+        """Set link dynamic properties"""
         for key, value in kwargs.items():
             pybullet.changeDynamics(
                 bodyUniqueId=self.identity(),
@@ -413,7 +425,7 @@ class Animat(SimulationModel):
             )
 
     def set_joint_dynamics(self, joint, **kwargs):
-        """Apply motor damping"""
+        """Set joint dynamic properties"""
         for key, value in kwargs.items():
             dynamics_kwargs = {
                 'jointLowerLimit': kwargs['jointLowerLimit'],
