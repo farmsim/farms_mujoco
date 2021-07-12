@@ -93,17 +93,18 @@ class ModelController:
 
     def __init__(self, joints, control_types, max_torques):
         super(ModelController, self).__init__()
+        self.control_types = [
+            ControlType.POSITION,
+            ControlType.VELOCITY,
+            ControlType.TORQUE,
+        ]
         self.joints = [
             [
                 joint
                 for joint in joints
                 if control_types[joint] == control_type
             ]
-            for control_type in [
-                ControlType.POSITION,
-                ControlType.VELOCITY,
-                ControlType.TORQUE
-            ]
+            for control_type in self.control_types
         ]
         self.max_torques = [
             np.array([
@@ -111,11 +112,7 @@ class ModelController:
                 for joint in joints
                 if control_types[joint] == control_type
             ])
-            for control_type in [
-                ControlType.POSITION,
-                ControlType.VELOCITY,
-                ControlType.TORQUE
-            ]
+            for control_type in self.control_types
         ]
 
     def step(self, iteration, time, timestep):
