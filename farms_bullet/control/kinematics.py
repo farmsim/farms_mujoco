@@ -43,11 +43,12 @@ class KinematicsController(ModelController):
             timestep,
             n_iterations,
             animat_data,
+            max_torques,
     ):
         super(KinematicsController, self).__init__(
             joints=joints,
             control_types={joint: ControlType.POSITION for joint in joints},
-            max_torques={joint: 1e3 for joint in joints},
+            max_torques=max_torques,
         )
         assert kinematics.shape[1] == len(joints), (
             'Expected {} joints, but got {}'.format(
