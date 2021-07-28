@@ -142,6 +142,12 @@ def argument_parser():
         default=1,
         help='Camera distance',
     )
+    parser.add_argument(
+        '--video_motion_filter',
+        type=positive_float,
+        default=None,
+        help='Camera motion filter',
+    )
 
     # Pybullet
     parser.add_argument(

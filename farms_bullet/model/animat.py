@@ -258,7 +258,6 @@ class Animat(SimulationModel):
             mask=0,
         )
         # Remove self collisions
-        # if self.options.morphology.self_collisions:
         for link0 in self.options.morphology.links:
             for link1 in self.options.morphology.links:
                 if link0.name != link1.name:

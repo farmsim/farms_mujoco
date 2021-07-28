@@ -22,7 +22,9 @@ class Camera:
         self.pitch = kwargs.pop('pitch')
         self.distance = kwargs.pop('distance')
         self.yaw_speed = kwargs.pop('yaw_speed', 0)
-        self.motion_filter = kwargs.pop('motion_filter', 10*timestep)
+        self.motion_filter = kwargs.pop('motion_filter', None)
+        if self.motion_filter is None:
+            self.motion_filter = 10*timestep
         assert not kwargs, kwargs
 
     @staticmethod

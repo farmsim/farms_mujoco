@@ -242,9 +242,10 @@ class AnimatSimulation(Simulation):
                 ),
                 timestep=self.options.timestep,
                 rotating_camera=self.options.rotating_camera,
-                top_camera=self.options.top_camera,
                 pitch=self.options.video_pitch,
                 yaw=self.options.video_yaw,
+                distance=self.options.video_distance,
+                motion_filter=self.options.video_filter,
             )
 
         if self.options.record:

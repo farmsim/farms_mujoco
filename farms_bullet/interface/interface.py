@@ -23,18 +23,15 @@ class Interfaces:
 
     def init_camera(self, target_identity, timestep, **kwargs):
         """Initialise camera"""
-        # Camera
         self.camera = UserCamera(
             target_identity=target_identity,
-            yaw=0,
             yaw_speed=(
                 360/10*self.camera_skips
                 if kwargs.pop('rotating_camera', False)
                 else 0
             ),
-            pitch=-89 if kwargs.pop('top_camera', False) else -45,
-            distance=1,
-            timestep=timestep
+            timestep=timestep,
+            **kwargs,
         )
 
     def init_video(self, target_identity, simulation_options, **kwargs):
@@ -51,7 +48,10 @@ class Interfaces:
                 if kwargs.pop('rotating_camera', False)
                 else 0
             ),
-            motion_filter=kwargs.pop('motion_filter', 1e-1),
+            motion_filter=kwargs.pop(
+                'motion_filter',
+                simulation_options.video_filter,
+            ),
             distance=simulation_options.video_distance,
         )
         assert not kwargs, kwargs
@@ -148,7 +148,7 @@ class UserParameters(dict):
         super(UserParameters, self).__init__()
         self['play'] = ParameterPlay(initial_value=options.play)
         self['rtl'] = DebugParameter('Real-time limiter', 1, 1e-3, 3)
-        self['zoom'] = DebugParameter('Zoom', 1, 0, 1)
+        self['zoom'] = DebugParameter('Zoom', 1, 0, 3)
 
     def init(self):
         """Intialise"""

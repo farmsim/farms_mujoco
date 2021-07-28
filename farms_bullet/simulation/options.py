@@ -41,6 +41,7 @@ class SimulationOptions(Options):
         self.video_yaw = kwargs.pop('video_yaw', 0)
         self.video_pitch = kwargs.pop('video_pitch', -45)
         self.video_distance = kwargs.pop('video_distance', 1)
+        self.video_filter = kwargs.pop('video_filter', None)
 
         # Pybullet
         self.gravity = kwargs.pop('gravity', [0, 0, -9.81])
@@ -89,6 +90,7 @@ class SimulationOptions(Options):
             video_yaw=kwargs.pop('video_yaw', clargs.video_yaw),
             video_pitch=kwargs.pop('video_pitch', clargs.video_pitch),
             video_distance=kwargs.pop('video_distance', clargs.video_distance),
+            video_filter=kwargs.pop('video_filter', clargs.video_motion_filter),
 
             # Pybullet
             gravity=kwargs.pop('gravity', clargs.gravity),
