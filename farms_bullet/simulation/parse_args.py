@@ -29,7 +29,7 @@ def argument_parser():
         description='FARMS simulation with Pybullet',
         formatter_class=(
             lambda prog:
-            argparse.HelpFormatter(prog, max_help_position=50)
+            argparse.ArgumentDefaultsHelpFormatter(prog, max_help_position=50)
         ),
     )
 
