@@ -39,7 +39,7 @@ class Simulation:
     """
 
     def __init__(self, models, options, interface=None):
-        super(Simulation, self).__init__()
+        super().__init__()
 
         self.models = models
         self.options = options
@@ -113,33 +113,8 @@ class Simulation:
                     'dantzig': pybullet.CONSTRAINT_SOLVER_LCP_DANTZIG,
                     'pgs': pybullet.CONSTRAINT_SOLVER_LCP_PGS,
                 }[self.options.lcp],
-                globalCFM=1e-10,
-                reportSolverAnalytics=1,
-                # solverResidualThreshold=1e-12,
-                # restitutionVelocityThreshold=1e-3,
-                # useSplitImpulse=False,
-                # splitImpulsePenetrationThreshold=1e-5,
-                # contactBreakingThreshold=1e-5
-                # numSubSteps=100,
-                # maxNumCmdPer1ms=int(1e5),
-
-                # # Parameters
-                # fixedTimeStep
-                # numSolverIterations
-                # useSplitImpulse
-                # splitImpulsePenetrationThreshold
-                # numSubSteps
-                # collisionFilterMode
-                # contactBreakingThreshold
-                # maxNumCmdPer1ms
-                # enableFileCaching
-                # restitutionVelocityThreshold
-                # erp
-                # contactERP
-                # frictionERP
-                # enableConeFriction
-                # deterministicOverlappingPairs
-                # solverResidualThreshold
+                globalCFM=self.options.cfm,
+                reportSolverAnalytics=self.options.report_solver_analytics,
             )
         pylog.debug('Physics parameters:\n{}'.format(
             '\n'.join([
@@ -194,11 +169,7 @@ class Simulation:
 
     @staticmethod
     def pre_step(_iteration):
-        """Pre-step
-
-        Returns bool
-
-        """
+        """Pre-step"""
         return True
 
     def step(self, iteration):
@@ -220,7 +191,6 @@ class Simulation:
     @staticmethod
     def end():
         """Terminate simulation"""
-        # Disconnect from simulation
         with redirect_output(pylog.debug):
             pybullet.disconnect()
 
@@ -229,7 +199,7 @@ class AnimatSimulation(Simulation):
     """Animat simulation"""
 
     def __init__(self, **kwargs):
-        super(AnimatSimulation, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         animat = self.animat()
 
         # Interface
@@ -253,14 +223,10 @@ class AnimatSimulation(Simulation):
             self.interface.init_video(
                 target_identity=animat.identity(),
                 simulation_options=self.options,
-                # fps=1./(skips*self.options.timestep),
                 pitch=self.options.video_pitch,
                 yaw=self.options.video_yaw,
-                # skips=skips,
                 motion_filter=10*skips*self.options.timestep,
-                # distance=1,
                 rotating_camera=self.options.rotating_camera,
-                # top_camera=self.options.top_camera
             )
 
         # Real-time handling
@@ -324,7 +290,7 @@ class AnimatSimulation(Simulation):
             log_path='',
             plot=False,
             video='',
-            **kwargs
+            **kwargs,
     ):
         """Plot after simulation"""
         animat = self.animat()

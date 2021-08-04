@@ -147,8 +147,8 @@ class UserParameters(dict):
     def __init__(self, options):
         super(UserParameters, self).__init__()
         self['play'] = ParameterPlay(initial_value=options.play)
-        self['rtl'] = DebugParameter('Real-time limiter', 1, 1e-3, 3)
-        self['zoom'] = DebugParameter('Zoom', 1, 0, 3)
+        self['rtl'] = DebugParameter('Real-time limiter', options.rtl, 1e-3, 3)
+        self['zoom'] = DebugParameter('Zoom', options.zoom, 0, 3)
 
     def init(self):
         """Intialise"""

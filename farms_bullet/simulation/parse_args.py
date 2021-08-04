@@ -53,6 +53,12 @@ def argument_parser():
         help='Pause simulation at start',
     )
     parser.add_argument(
+        '--rtl',
+        type=positive_float,
+        default=1.0,
+        help='Simulation real-time limiter',
+    )
+    parser.add_argument(
         '--fast',
         action='store_true',
         default=False,
@@ -92,6 +98,12 @@ def argument_parser():
     )
 
     # Camera
+    parser.add_argument(
+        '--zoom',
+        type=positive_float,
+        default=1,
+        help='Camera zoom',
+    )
     parser.add_argument(
         '-f', '--free_camera',
         action='store_true',
@@ -176,6 +188,12 @@ def argument_parser():
         action='store_true',
         default=False,
         help='Run simulation with OpenGL 2 instead of 3',
+    )
+    parser.add_argument(
+        '--cfm',
+        type=positive_float,
+        default=0,
+        help='Pybullet CFM',
     )
     parser.add_argument(
         '--erp',
