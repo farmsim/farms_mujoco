@@ -1,6 +1,5 @@
 """Profile"""
 
-import io
 import pstats
 import cProfile
 
@@ -15,7 +14,7 @@ def profile(function, profile_filename='', **kwargs):
         prof.dump_stats(profile_filename)
         pstat = pstats.Stats(profile_filename)
     else:
-        pstat = pstats.Stats(prof, stream=io.StringIO())
+        pstat = pstats.Stats(prof)
     pstat.sort_stats('time').print_stats(n_time)
     pstat.sort_stats('cumtime').print_stats(n_cumtime)
     return result
