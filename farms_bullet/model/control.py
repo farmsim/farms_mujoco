@@ -68,6 +68,21 @@ def control_models(iteration, time, timestep, models, torques):
                 # ],
                 forces=controller.max_torques[ControlType.POSITION]*torques,
             )
+        if controller.joints[ControlType.VELOCITY]:
+            joints_velocities = controller.velocities(iteration, time, timestep)
+            pybullet.setJointMotorControlArray(
+                bodyUniqueId=model.identity(),
+                jointIndices=[
+                    model.joints_map[joint]
+                    for joint in controller.joints[ControlType.VELOCITY]
+                ],
+                controlMode=pybullet.VELOCITY_CONTROL,
+                targetVelocities=[
+                    joints_velocities[joint]
+                    for joint in controller.joints[ControlType.VELOCITY]
+                ],
+                forces=controller.max_torques[ControlType.VELOCITY]*torques,
+            )
         if controller.joints[ControlType.TORQUE]:
             joints_torques = controller.torques(iteration, time, timestep)
             pybullet.setJointMotorControlArray(
