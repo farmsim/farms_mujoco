@@ -253,36 +253,30 @@ class AnimatSimulation(Simulation):
             play = self.interface.user_params.play().value
             if not iteration % int(0.1/self.options.timestep):
                 self.interface.user_params.update()
+                self.interface.camera.update()
+            if self.interface.user_params.zoom().changed or not iteration:
+                self.interface.camera.set_zoom(
+                    self.interface.user_params.zoom().value
+                )
             if not play:
                 time.sleep(0.1)
                 self.interface.user_params.update()
+            elif self.options.record:
+                self.interface.video.record(iteration)
         return play
 
     def post_step(self, iteration):
         """Post step"""
-
-        # Camera
-        if not self.options.headless:
-            self.interface.camera.update()
-            # Camera zoom
-            if self.interface.user_params.zoom().changed:
-                self.interface.camera.set_zoom(
-                    self.interface.user_params.zoom().value
-                )
-        if self.options.record:
-            self.interface.video.record(iteration)
-
-        # Real-time
-        if not self.options.headless:
-            if (
-                    not self.options.fast
-                    and self.interface.user_params.rtl().value < 2.99
-            ):
-                real_time_handing(
-                    self.options.timestep,
-                    self.tic_rt,
-                    rtl=self.interface.user_params.rtl().value
-                )
+        if (
+                not self.options.headless
+                and not self.options.fast
+                and self.interface.user_params.rtl().value < 2.99
+        ):
+            real_time_handing(
+                timestep=self.options.timestep,
+                tic_rt=self.tic_rt,
+                rtl=self.interface.user_params.rtl().value,
+            )
 
     def postprocess(
             self,
