@@ -192,25 +192,25 @@ def argument_parser():
     parser.add_argument(
         '--cfm',
         type=positive_float,
-        default=0,
+        default=1e-8,
         help='Pybullet CFM',
     )
     parser.add_argument(
         '--erp',
         type=positive_float,
-        default=0,
+        default=1e-8,
         help='Pybullet ERP',
     )
     parser.add_argument(
         '--contact_erp',
         type=positive_float,
-        default=0,
+        default=1e-8,
         help='Pybullet contact ERP',
     )
     parser.add_argument(
         '--friction_erp',
         type=positive_float,
-        default=0,
+        default=1e-8,
         help='Pybullet friction ERP',
     )
     parser.add_argument(
@@ -228,7 +228,7 @@ def argument_parser():
     parser.add_argument(
         '--residual_threshold',
         type=positive_float,
-        default=1e-6,
+        default=1e-8,
         help='Pybullet solver residual threshold',
     )
     return parser
