@@ -32,6 +32,35 @@ class SimulationModel:
         """Joints"""
         return np.arange(pybullet.getNumJoints(self._identity), dtype=int)
 
+    def n_joints(self):
+        """Get number of joints"""
+        return pybullet.getNumJoints(self._identity)
+
+    @staticmethod
+    def get_parent_links_info(identity, base_link='base_link'):
+        """Get links (parent of joint)"""
+        links = {base_link: -1}
+        links.update({
+            info[12].decode('UTF-8'): info[16] + 1
+            for info in [
+                pybullet.getJointInfo(identity, j)
+                for j in range(pybullet.getNumJoints(identity))
+            ]
+        })
+        return links
+
+    @staticmethod
+    def get_joints_info(identity):
+        """Get joints"""
+        joints = {
+            info[1].decode('UTF-8'): info[0]
+            for info in [
+                pybullet.getJointInfo(identity, j)
+                for j in range(pybullet.getNumJoints(identity))
+            ]
+        }
+        return joints
+
     def spawn(self):
         """Spawn"""
 
