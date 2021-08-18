@@ -234,7 +234,7 @@ class AnimatSimulation(Simulation):
 
         # Simulation state
         self.simulation_state = None
-        self.save()
+        # self.save()
 
     def animat(self):
         """Salamander animat"""
