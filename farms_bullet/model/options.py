@@ -123,7 +123,7 @@ class SpawnOptions(Options):
         """From options"""
         options = {}
         # Loader
-        options['loader'] = kwargs.pop('spawn_loader', SpawnLoader.PYBULLET)
+        options['loader'] = kwargs.pop('spawn_loader', SpawnLoader.FARMS)
         # Position in [m]
         options['position'] = kwargs.pop('spawn_position', [0, 0, 0.1])
         # Orientation in [rad] (Euler angles)
