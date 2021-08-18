@@ -390,10 +390,14 @@ class Animat(SimulationModel):
     def set_link_dynamics(self, link, **kwargs):
         """Set link dynamic properties"""
         for key, value in kwargs.items():
+            dynamics_kwargs = {
+                'contactStiffness': kwargs['contactStiffness'],
+                'contactDamping': kwargs['contactDamping'],
+            } if key in ('contactStiffness', 'contactDamping') else {key: value}
             pybullet.changeDynamics(
                 bodyUniqueId=self.identity(),
                 linkIndex=self.links_map[link],
-                **{key: value}
+                **dynamics_kwargs
             )
 
     def set_joint_dynamics(self, joint, **kwargs):
