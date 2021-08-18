@@ -166,13 +166,13 @@ def argument_parser():
         '--lcp',
         type=str,
         choices=('si', 'dantzig', 'pgs'),
-        default='dantzig',
+        default='si',
         help='Constraint solver LCP type',
     )
     parser.add_argument(
         '--n_solver_iters',
         type=positive_int,
-        default=50,
+        default=100,
         help='Number of solver iterations for physics simulation',
     )
     parser.add_argument(
@@ -192,25 +192,25 @@ def argument_parser():
     parser.add_argument(
         '--cfm',
         type=positive_float,
-        default=1e-8,
+        default=1e0,
         help='Pybullet CFM',
     )
     parser.add_argument(
         '--erp',
         type=positive_float,
-        default=1e-8,
+        default=1e-1,
         help='Pybullet ERP',
     )
     parser.add_argument(
         '--contact_erp',
         type=positive_float,
-        default=1e-8,
+        default=1e-1,
         help='Pybullet contact ERP',
     )
     parser.add_argument(
         '--friction_erp',
         type=positive_float,
-        default=1e-8,
+        default=1e-1,
         help='Pybullet friction ERP',
     )
     parser.add_argument(
