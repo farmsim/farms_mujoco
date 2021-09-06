@@ -192,25 +192,25 @@ def argument_parser():
     parser.add_argument(
         '--cfm',
         type=positive_float,
-        default=1e0,
+        default=0,
         help='Pybullet CFM',
     )
     parser.add_argument(
         '--erp',
         type=positive_float,
-        default=1e-1,
+        default=0,
         help='Pybullet ERP',
     )
     parser.add_argument(
         '--contact_erp',
         type=positive_float,
-        default=1e-1,
+        default=0,
         help='Pybullet contact ERP',
     )
     parser.add_argument(
         '--friction_erp',
         type=positive_float,
-        default=1e-1,
+        default=0,
         help='Pybullet friction ERP',
     )
     parser.add_argument(
