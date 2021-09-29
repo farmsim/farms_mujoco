@@ -132,7 +132,7 @@ cdef class JointsStatesSensor(DoubleArray3D):
             self.array[iteration, joint_i, JOINT_FORCE_Z] = fz*self.inewtons
             # Torques
             self.array[iteration, joint_i, JOINT_TORQUE_X] = tx*self.itorques
-            self.array[iteration, joint_i, JOINT_TORQUE_X] = ty*self.itorques
+            self.array[iteration, joint_i, JOINT_TORQUE_Y] = ty*self.itorques
             self.array[iteration, joint_i, JOINT_TORQUE_Z] = tz*self.itorques
             # Motor torque
             self.array[iteration, joint_i, JOINT_TORQUE] = torque*self.itorques
