@@ -11,6 +11,7 @@ from ..sensors.sensors import (
     JointsStatesSensor,
     ContactsSensors,
 )
+from .control import reset_controllers
 from .options import SpawnLoader
 from .model import SimulationModel
 
@@ -107,6 +108,9 @@ class Animat(SimulationModel):
 
         # Body properties
         self.set_body_properties()
+
+        # Reset controllers
+        reset_controllers(self._identity)
 
     def spawn_sdf(self, verbose=True, original=False):
         """Spawn sdf"""

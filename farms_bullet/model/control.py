@@ -45,8 +45,6 @@ def control_models(iteration, time, timestep, models, torques):
     for model in models:
         if model.controller is None:
             continue
-        if iteration == 0:
-            reset_controllers(model.identity())
         controller = model.controller
         if controller.joints[ControlType.POSITION]:
             joints_positions = controller.positions(iteration, time, timestep)
