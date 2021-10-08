@@ -260,7 +260,7 @@ def load_sdf(
                         [inertia_vec[2], inertia_vec[4], inertia_vec[5]],
                     ])
                     inertias, inertia_vectors = np.linalg.eig(inertia_tensor)
-                    link_inertias.append(inertias)
+                    link_inertias.append(list(inertias))
                     link_inertiaori.append(
                         Rotation.from_matrix(inertia_vectors).as_quat()
                     )
@@ -461,11 +461,12 @@ def load_sdf(
     # Units scaling
     inertia_unit = units.kilograms*units.meters**2
     for link_name, link in links.items():
-        mass, inertias = np.array(
-            pybullet.getDynamicsInfo(identity, link),
-            dtype=object,
-        )[[0, 2]]
-        assert np.isclose(mass, link_masses[links_names.index(link_name)])
+        mass, _, inertias, *_ = pybullet.getDynamicsInfo(identity, link)
+        assert np.isclose([mass], [link_masses[links_names.index(link_name)]])
+        assert np.isclose(
+            inertias,
+            link_inertias[links_names.index(link_name)]
+        ).all(), (inertias, link_inertias[links_names.index(link_name)])
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=link,
@@ -474,7 +475,7 @@ def load_sdf(
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=link,
-            localInertiaDiagonal=np.array(inertias)*inertia_unit,
+            localInertiaDiagonal=list(np.array(inertias)*inertia_unit),
         )
 
     # Set joints properties
@@ -529,7 +530,7 @@ def load_sdf_pybullet(sdf_path, index=0, morphology_links=None, **kwargs):
         pybullet.changeDynamics(
             bodyUniqueId=identity,
             linkIndex=links[link_name],
-            localInertiaDiagonal=np.array(inertias)*inertia_unit,
+            localInertiaDiagonal=list(np.array(inertias)*inertia_unit),
         )
     if morphology_links is not None:
         for link in morphology_links:
