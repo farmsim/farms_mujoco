@@ -4,10 +4,11 @@ import os
 import sys
 import contextlib
 from inspect import currentframe, getsourcefile
+from typing import Callable, Union
 
 
 @contextlib.contextmanager
-def redirect_output(stdout_function=None):
+def redirect_output(stdout_function: Union[Callable, None] = None):
     """Redirect output"""
     if os.name == 'nt':
         yield

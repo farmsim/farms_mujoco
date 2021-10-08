@@ -15,7 +15,7 @@ class Interfaces:
             video=None,
             camera_skips=1
     ):
-        super(Interfaces, self).__init__()
+        super().__init__()
         self.camera = camera
         self.user_params = user_params
         self.video = video
@@ -68,7 +68,7 @@ class DebugParameter:
     """DebugParameter"""
 
     def __init__(self, name, val, val_min, val_max):
-        super(DebugParameter, self).__init__()
+        super().__init__()
         self.name = name
         self.value = val
         self.val_min = val_min
@@ -106,15 +106,11 @@ class DebugParameter:
 
     def update(self):
         """Update"""
-        previous_value = self.value
+        previous = self.value
         self.value = self.get_value()
-        self.changed = abs(self.value - previous_value) > 1e-2
+        self.changed = abs(self.value - previous) > 1e-2
         if self.changed:
-            pylog.debug('{} changed ({} -> {})'.format(
-                self.name,
-                previous_value,
-                self.value
-            ))
+            pylog.debug('%s changed (%s -> %s)', self.name, previous, self.value)
 
 
 class ParameterPlay(DebugParameter):
@@ -128,7 +124,7 @@ class ParameterPlay(DebugParameter):
 
     def __init__(self, initial_value=True):
         self.previous_value = initial_value
-        super(ParameterPlay, self).__init__(
+        super().__init__(
             'Play/Pause', self.previous_value, 0, -1
         )
         self.value = initial_value
@@ -145,7 +141,7 @@ class UserParameters(dict):
     """Parameters control"""
 
     def __init__(self, options):
-        super(UserParameters, self).__init__()
+        super().__init__()
         self['play'] = ParameterPlay(initial_value=options.play)
         self['rtl'] = DebugParameter('Real-time limiter', options.rtl, 1e-3, 3)
         self['zoom'] = DebugParameter('Zoom', options.zoom, 0, 3)

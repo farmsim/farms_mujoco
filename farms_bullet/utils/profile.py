@@ -2,9 +2,10 @@
 
 import pstats
 import cProfile
+from typing import Callable
 
 
-def profile(function, profile_filename='', **kwargs):
+def profile(function: Callable, profile_filename: str = '', **kwargs) -> None:
     """Profile with cProfile"""
     n_time = kwargs.pop('pstat_n_time', 30)
     n_cumtime = kwargs.pop('pstat_n_cumtime', 30)

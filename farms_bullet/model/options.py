@@ -15,7 +15,7 @@ class ModelOptions(Options):
     """Simulation options"""
 
     def __init__(self, spawn, morphology, control):
-        super(ModelOptions, self).__init__()
+        super().__init__()
         self.spawn = (
             spawn
             if isinstance(spawn, SpawnOptions)
@@ -37,7 +37,7 @@ class MorphologyOptions(Options):
     """ morphology options"""
 
     def __init__(self, **kwargs):
-        super(MorphologyOptions, self).__init__()
+        super().__init__()
         links = kwargs.pop('links')
         self.links = (
             links
@@ -79,7 +79,7 @@ class LinkOptions(Options):
     """
 
     def __init__(self, **kwargs):
-        super(LinkOptions, self).__init__()
+        super().__init__()
         self.name = kwargs.pop('name')
         self.collisions = kwargs.pop('collisions')
         self.mass_multiplier = kwargs.pop('mass_multiplier')
@@ -96,7 +96,7 @@ class JointOptions(Options):
     """
 
     def __init__(self, **kwargs):
-        super(JointOptions, self).__init__()
+        super().__init__()
         self.name = kwargs.pop('name')
         self.initial_position = kwargs.pop('initial_position')
         self.initial_velocity = kwargs.pop('initial_velocity')
@@ -109,7 +109,7 @@ class SpawnOptions(Options):
     """Spawn options"""
 
     def __init__(self, **kwargs):
-        super(SpawnOptions, self).__init__()
+        super().__init__()
         self.loader = kwargs.pop('loader')
         self.position = kwargs.pop('position')
         self.orientation = kwargs.pop('orientation')
@@ -139,7 +139,7 @@ class ControlOptions(Options):
     """Control options"""
 
     def __init__(self, **kwargs):
-        super(ControlOptions, self).__init__()
+        super().__init__()
         sensors = kwargs.pop('sensors')
         self.sensors = (
             sensors
@@ -180,7 +180,7 @@ class JointControlOptions(Options):
     """Joint options"""
 
     def __init__(self, **kwargs):
-        super(JointControlOptions, self).__init__()
+        super().__init__()
         self.joint = kwargs.pop('joint')
         self.control_type = kwargs.pop('control_type')
         self.max_torque = kwargs.pop('max_torque')
@@ -192,7 +192,7 @@ class SensorsOptions(Options):
     """Sensors options"""
 
     def __init__(self, **kwargs):
-        super(SensorsOptions, self).__init__()
+        super().__init__()
         self.links = kwargs.pop('links')
         self.joints = kwargs.pop('joints')
         self.contacts = kwargs.pop('contacts')

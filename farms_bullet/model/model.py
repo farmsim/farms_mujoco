@@ -204,7 +204,7 @@ class SimulationModels(SimulationModel):
     """Simulation models"""
 
     def __init__(self, models):
-        super(SimulationModels, self).__init__()
+        super().__init__()
         self._models = models
 
     def __iter__(self):

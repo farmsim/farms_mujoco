@@ -3,7 +3,7 @@
 import pybullet
 
 
-def rendering(render=1):
+def rendering(render: int = 1):
     """Enable/disable rendering"""
     pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_RENDERING, render)
     pybullet.configureDebugVisualizer(pybullet.COV_ENABLE_GUI, render)

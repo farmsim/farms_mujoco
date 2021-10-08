@@ -1,9 +1,12 @@
 """Animat"""
 
 import os
+from typing import Union
 import numpy as np
 import pybullet
 import farms_pylog as pylog
+from farms_data.units import SimulationUnitScaling
+from farms_data.amphibious.animat_data import ModelData
 from ..utils.sdf import load_sdf, load_sdf_pybullet
 from ..sensors.sensors import (
     Sensors,
@@ -12,7 +15,7 @@ from ..sensors.sensors import (
     ContactsSensors,
 )
 from .control import reset_controllers
-from .options import SpawnLoader
+from .options import SpawnLoader, ModelOptions
 from .model import SimulationModel
 
 
@@ -67,10 +70,14 @@ class Animat(SimulationModel):
     """Animat"""
 
     def __init__(
-            self, identity=None, sdf=None,
-            options=None, data=None, units=None
+            self,
+            identity: Union[int] = None,
+            sdf: Union[str, None] = None,
+            options: Union[ModelOptions, None] = None,
+            data: Union[ModelData, None] = None,
+            units: Union[SimulationUnitScaling, None] = None,
     ):
-        super(Animat, self).__init__(identity=identity)
+        super().__init__(identity=identity)
         self.sdf = sdf
         self.options = options
         self.links_map = {}

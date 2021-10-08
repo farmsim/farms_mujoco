@@ -9,7 +9,7 @@ class SimulationOptions(Options):
     """Simulation options"""
 
     def __init__(self, **kwargs):
-        super(SimulationOptions, self).__init__()
+        super().__init__()
         units = kwargs.pop('units', None)
         self.units = SimulationUnitScaling(
             meters=units.pop('meters', 1),
@@ -69,6 +69,7 @@ class SimulationOptions(Options):
         """Create simulation options and consider command-line arguments"""
         clargs = parse_args()
         timestep = kwargs.pop('timestep', clargs.timestep)
+        assert timestep > 0, f'{timestep=} should be > 0'
         return cls(
             # Simulation
             timestep=timestep,

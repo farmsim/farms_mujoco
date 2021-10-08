@@ -2,20 +2,26 @@
 
 import os
 import time
+from typing import Callable, Union
+
 import pybullet
-from tqdm import tqdm
 import numpy as np
+import numpy.typing as npt
+from tqdm import tqdm
 import farms_pylog as pylog
+from ..model.animat import Animat
 from ..model.control import control_models
+from ..model.model import SimulationModels
 from ..interface.interface import Interfaces
 from ..utils.output import redirect_output
 from .simulator import init_engine, real_time_handing
+from .options import SimulationOptions
 from .render import rendering
 
 
-def simulation_profiler(func):
+def simulation_profiler(func: Callable) -> Callable:
     """Profile simulation"""
-    def inner(self, profile=False, show_progress=False):
+    def inner(self, profile: bool = False, show_progress: bool = False):
         """Inner function"""
         if profile:
             logger = pybullet.startStateLogging(
@@ -35,15 +41,19 @@ class Simulation:
 
     Handles the start/run/end of the experiment, the GUI if not headless, the
     physics properties, etc.
-
     """
 
-    def __init__(self, models, options, interface=None):
+    def __init__(
+            self,
+            models: SimulationModels,
+            options: SimulationOptions,
+            interface: Union[Interfaces, None] = None,
+    ):
         super().__init__()
 
         self.models = models
         self.options = options
-        self.analytics = tuple()
+        self.analytics: tuple = tuple()
 
         # Initialise engine
         pylog.debug('Initialising physics engine')
@@ -72,7 +82,7 @@ class Simulation:
             if not self.options.headless
             else None
         )
-        if not self.options.headless:
+        if not self.options.headless and self.interface is not None:
             self.interface.init_debug(self.options)
 
         if not self.options.headless:
@@ -115,13 +125,13 @@ class Simulation:
                 }[self.options.lcp],
                 globalCFM=self.options.cfm,
                 reportSolverAnalytics=self.options.report_solver_analytics,
+                # jointFeedbackMode=pybullet.JOINT_FEEDBACK_IN_JOINT_FRAME,
+                # warmStartingFactor=0,
             )
-        pylog.debug('Physics parameters:\n{}'.format(
-            '\n'.join([
-                '- {}: {}'.format(key, value)
-                for key, value in pybullet.getPhysicsEngineParameters().items()
-            ])
-        ))
+        pylog.debug('Physics parameters:\n%s', '\n'.join([
+            '- {}: {}'.format(key, value)
+            for key, value in pybullet.getPhysicsEngineParameters().items()
+        ]))
 
     def check_quit(self):
         """Check quit"""
@@ -141,8 +151,8 @@ class Simulation:
                 self.step(self.iteration)
                 self.control(self.iteration)
                 self.analytics = pybullet.stepSimulation()
-                self.iteration += 1
                 self.post_step(self.iteration)
+                self.iteration += 1
                 if pbar is not None:
                     pbar.update(1)
 
@@ -155,37 +165,37 @@ class Simulation:
             if self.pre_step(self.iteration):
                 self.step(self.iteration)
                 self.control(self.iteration)
+                yield self.iteration
                 self.analytics = pybullet.stepSimulation()
                 # if self.analytics:
                 #     print(
                 #         self.analytics[0]['numIterationsUsed'],
                 #         self.analytics[0]['remainingResidual'],
                 #     )
-                self.iteration += 1
                 self.post_step(self.iteration)
-                yield self.iteration-1
+                self.iteration += 1
                 if pbar is not None:
                     pbar.update(1)
 
-    @staticmethod
-    def pre_step(_iteration):
+    def pre_step(self, iteration: int) -> bool:
         """Pre-step"""
+        assert iteration >= 0
         return True
 
-    def step(self, iteration):
+    def step(self, iteration: int):
         """Step function"""
 
-    def control(self, iteration):
+    def control(self, iteration: int):
         """Physics step"""
         control_models(
             iteration=iteration,
             time=self.options.timestep*iteration,
             timestep=self.options.timestep,
             models=self.models,
-            torques=self.options.units.torques,
+            units=self.options.units,
         )
 
-    def post_step(self, iteration):
+    def post_step(self, iteration: int):
         """Post-step"""
 
     @staticmethod
@@ -200,7 +210,7 @@ class AnimatSimulation(Simulation):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        animat = self.animat()
+        animat: Animat = self.animat()
 
         # Interface
         if not self.options.headless:
@@ -230,18 +240,20 @@ class AnimatSimulation(Simulation):
             )
 
         # Real-time handling
-        self.tic_rt = np.zeros(3)
+        self.tic_rt: npt.ArrayLike = np.zeros(3)
 
-        # Simulation state
+        # Simulation state - Can be saved using self.save()
         self.simulation_state = None
-        # self.save()
 
-    def animat(self):
+    def animat(self) -> Animat:
         """Salamander animat"""
         return self.models[0]
 
-    def pre_step(self, iteration):
-        """New step"""
+    def pre_step(self, iteration: int) -> bool:
+        """Pre-step
+
+        Returns bool to indicate if simulation should be played or paused
+        """
         play = True
         # if not(iteration % 10000) and iteration > 0:
         #     pybullet.restoreState(self.simulation_state)
@@ -249,7 +261,7 @@ class AnimatSimulation(Simulation):
         #     state.array[self.animat().data.iteration] = (
         #         state.default_initial_state()
         #     )
-        if not self.options.headless:
+        if not self.options.headless and self.interface is not None:
             play = self.interface.user_params.play().value
             if not iteration % int(0.1/self.options.timestep):
                 self.interface.user_params.update()
@@ -265,11 +277,12 @@ class AnimatSimulation(Simulation):
                 self.interface.video.record(iteration)
         return play
 
-    def post_step(self, iteration):
+    def post_step(self, iteration: int):
         """Post step"""
         if (
                 not self.options.headless
                 and not self.options.fast
+                and self.interface is not None
                 and self.interface.user_params.rtl().value < 2.99
         ):
             real_time_handing(
@@ -280,10 +293,10 @@ class AnimatSimulation(Simulation):
 
     def postprocess(
             self,
-            iteration,
-            log_path='',
-            plot=False,
-            video='',
+            iteration: int,
+            log_path: str = '',
+            plot: bool = False,
+            video: str = '',
             **kwargs,
     ):
         """Plot after simulation"""
@@ -296,7 +309,7 @@ class AnimatSimulation(Simulation):
 
         # Log
         if log_path:
-            pylog.info('Saving data to {}'.format(log_path))
+            pylog.info('Saving data to %s', log_path)
             animat.data.to_file(
                 os.path.join(log_path, 'simulation.hdf5'),
                 iteration,
@@ -309,7 +322,7 @@ class AnimatSimulation(Simulation):
             animat.data.plot(times)
 
         # Record video
-        if video:
+        if video and self.interface is not None:
             self.interface.video.save(
                 video,
                 iteration=iteration,

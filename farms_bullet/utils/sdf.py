@@ -1,6 +1,7 @@
 """SDF"""
 
 import os
+from typing import List, Tuple, Dict
 import numpy as np
 from scipy.spatial.transform import Rotation
 import pybullet
@@ -16,6 +17,7 @@ from farms_sdf.sdf import (
     Heightmap,
     Collision,
 )
+from ..model.options import LinkOptions
 from ..utils.output import redirect_output
 
 
@@ -157,13 +159,13 @@ def rearange_base_link_dict(dictionary, base_link_index):
 
 
 def load_sdf(
-        sdf_path,
-        force_concave=False,
-        reset_control=True,
-        links_options=None,
-        use_self_collision=False,
+        sdf_path: str,
+        force_concave: bool = False,
+        reset_control: bool = True,
+        links_options: List[LinkOptions] = None,
+        use_self_collision: bool = False,
         **kwargs,
-):
+) -> Tuple[int, Dict[str, int], Dict[str, int]]:
     """Load SDF"""
     units = kwargs.pop('units')
     verbose = kwargs.pop('verbose', False)
@@ -414,6 +416,7 @@ def load_sdf(
         linkParentIndices=link_parent_indices,
         linkJointTypes=joint_types,
         linkJointAxis=joints_axis,
+        useMaximalCoordinates=0,
         flags=(
             pybullet.URDF_USE_SELF_COLLISION
             | pybullet.URDF_MERGE_FIXED_LINKS

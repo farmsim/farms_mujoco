@@ -23,7 +23,7 @@ def positive_float(value):
     return positive(value, value_type=float)
 
 
-def argument_parser():
+def argument_parser() -> argparse.ArgumentParser:
     """Argument parser"""
     parser = argparse.ArgumentParser(
         description='FARMS simulation with Pybullet',
