@@ -526,7 +526,7 @@ cdef class SwimmingHandler:
         self.newtons = float(animat.units.newtons)
         self.torques = float(animat.units.torques)
         self.water = WaterProperties(
-            surface=float(physics_options.water_surface),
+            surface=float(physics_options.water_height),
             density=float(physics_options.water_density),
             velocity=np.array(physics_options.water_velocity, dtype=float),
             viscosity=float(physics_options.viscosity),
