@@ -35,7 +35,7 @@ setup(
                 extra_compile_args=['-O3'],  # , '-fopenmp'
                 extra_link_args=['-O3']  # , '-fopenmp'
             )
-            for folder in ['sensors', 'swimming']
+            for folder in ['sensors', 'swimming', 'utils']
         ],
         include_path=[np.get_include()] + get_include_paths(),
         compiler_directives={
