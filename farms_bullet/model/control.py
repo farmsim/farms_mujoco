@@ -1,9 +1,10 @@
 """Control"""
 
-from typing import List, Dict
+from typing import List, Tuple, Dict, Union
 from enum import IntEnum
 import pybullet
 import numpy as np
+import numpy.typing as npt
 
 from farms_data.units import SimulationUnitScaling
 from .model import SimulationModels
@@ -58,129 +59,123 @@ def control_models(
         if model.controller is None:
             continue
         controller = model.controller
-        if controller.joints[ControlType.POSITION]:
-            joints_positions = controller.positions(iteration, time, timestep)
+        joints_map = model.joints_map
+        if controller.joints_names[ControlType.POSITION]:
             kwargs = {}
-            if isinstance(joints_positions, tuple):
-                # Gains are provided
-                (
-                    joints_positions,
-                    kwargs['positionGains'],
-                    kwargs['velocityGains'],
-                ) = joints_positions
-                kwargs['targetVelocities'] = (
-                    np.zeros_like(kwargs['velocityGains'])
-                )
+            if controller.position_args is not None:
+                kwargs['positionGains'] = controller.position_args[0]
+                kwargs['velocityGains'] = controller.position_args[1]
+                kwargs['targetVelocities'] = controller.position_args[2]
+            joints_positions = controller.positions(iteration, time, timestep)
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
-                    model.joints_map[joint]
-                    for joint in controller.joints[ControlType.POSITION]
+                    joints_map[joint]
+                    for joint in controller.joints_names[ControlType.POSITION]
                 ],
                 controlMode=pybullet.POSITION_CONTROL,
                 targetPositions=[
                     joints_positions[joint]
-                    for joint in controller.joints[ControlType.POSITION]
+                    for joint in controller.joints_names[ControlType.POSITION]
                 ],
                 forces=controller.max_torques[ControlType.POSITION]*torques,
                 **kwargs,
             )
-        if controller.joints[ControlType.VELOCITY]:
-            joints_velocities = controller.velocities(iteration, time, timestep)
+        if controller.joints_names[ControlType.VELOCITY]:
             kwargs = {}
-            if isinstance(joints_velocities, tuple):
-                # Gains are provided
-                (
-                    joints_velocities,
-                    kwargs['positionGains'],
-                    kwargs['velocityGains'],
-                ) = joints_velocities
+            if controller.velocity_args is not None:
+                kwargs['positionGains'] = controller.velocity_args[0]
+                kwargs['velocityGains'] = controller.velocity_args[1]
+            joints_velocities = controller.velocities(iteration, time, timestep)
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
-                    model.joints_map[joint]
-                    for joint in controller.joints[ControlType.VELOCITY]
+                    joints_map[joint]
+                    for joint in controller.joints_names[ControlType.VELOCITY]
                 ],
                 controlMode=pybullet.VELOCITY_CONTROL,
                 targetVelocities=[
                     joints_velocities[joint]*iseconds
-                    for joint in controller.joints[ControlType.VELOCITY]
+                    for joint in controller.joints_names[ControlType.VELOCITY]
                 ],
                 forces=controller.max_torques[ControlType.VELOCITY]*torques,
                 **kwargs,
             )
-        if controller.joints[ControlType.TORQUE]:
+        if controller.joints_names[ControlType.TORQUE]:
             joints_torques = controller.torques(iteration, time, timestep)
             pybullet.setJointMotorControlArray(
                 bodyUniqueId=model.identity(),
                 jointIndices=[
-                    model.joints_map[joint]
-                    for joint in controller.joints[ControlType.TORQUE]
+                    joints_map[joint]
+                    for joint in controller.joints_names[ControlType.TORQUE]
                 ],
                 controlMode=pybullet.TORQUE_CONTROL,
-                forces=np.clip(
-                    [
-                        joints_torques[joint]
-                        for joint in controller.joints[ControlType.TORQUE]
-                    ],
-                    -controller.max_torques[ControlType.TORQUE],
-                    controller.max_torques[ControlType.TORQUE],
-                )*torques,
+                forces=[
+                    joints_torques[joint]*torques
+                    for joint in controller.joints_names[ControlType.TORQUE]
+                ],
             )
 
 
 class ModelController:
     """ModelController"""
 
-    def __init__(self, joints: List[List[str]], max_torques: List[List[float]]):
+    def __init__(
+            self,
+            joints_names: Tuple[List[str], ...],
+            max_torques: Tuple[npt.NDArray[float], ...],
+    ):
         super().__init__()
-        self.joints = joints
+        self.joints_names = joints_names
         self.max_torques = max_torques
+        self.indices: Union[None, Tuple[npt.ArrayLike]] = None
+        self.position_args: Union[None, Tuple[npt.ArrayLike]] = None
+        self.velocity_args: Union[None, Tuple[npt.ArrayLike]] = None
         control_types = list(ControlType)
-        assert len(self.joints) == len(control_types)
+        assert len(self.joints_names) == len(control_types)
         assert len(self.max_torques) == len(control_types)
 
     @staticmethod
     def joints_from_control_types(
             joints_names: List[str],
-            joints_control_types: Dict[str, ControlType],
-    ):
+            joints_control_types: Dict[str, List[ControlType]],
+    ) -> Tuple[List[str], ...]:
         """From control types"""
-        return [
+        return tuple(
             [
                 joint
                 for joint in joints_names
-                if joints_control_types[joint] == control_type
+                if control_type in joints_control_types[joint]
             ]
             for control_type in list(ControlType)
-        ]
+        )
 
     @staticmethod
     def max_torques_from_control_types(
             joints_names: List[str],
             max_torques: Dict[str, float],
-            joints_control_types: Dict[str, ControlType],
-    ):
+            joints_control_types: Dict[str, List[ControlType]],
+    ) -> Tuple[npt.NDArray, ...]:
         """From control types"""
-        return [
+        return tuple(
             np.array([
                 max_torques[joint]
                 for joint in joints_names
-                if joints_control_types[joint] == control_type
+                if control_type in joints_control_types[joint]
             ])
             for control_type in list(ControlType)
-        ]
+        )
 
     @classmethod
     def from_control_types(
             cls,
             joints_names: List[str],
             max_torques: Dict[str, float],
-            joints_control_types: Dict[str, ControlType],
+            joints_control_types: Dict[str, List[ControlType]],
     ):
         """From control types"""
         return cls(
-            joints=cls.joints_from_control_types(
+            joints_names=cls.joints_from_control_types(
                 joints_names=joints_names,
                 joints_control_types=joints_control_types,
             ),
@@ -211,7 +206,7 @@ class ModelController:
         assert timestep > 0
         return {
             joint: 0
-            for joint in self.joints[ControlType.POSITION]
+            for joint in self.joints_names[ControlType.POSITION]
         }
 
     def velocities(
@@ -226,7 +221,7 @@ class ModelController:
         assert timestep > 0
         return {
             joint: 0
-            for joint in self.joints[ControlType.VELOCITY]
+            for joint in self.joints_names[ControlType.VELOCITY]
         }
 
     def torques(
@@ -241,5 +236,5 @@ class ModelController:
         assert timestep > 0
         return {
             joint: 0
-            for joint in self.joints[ControlType.TORQUE]
+            for joint in self.joints_names[ControlType.TORQUE]
         }
