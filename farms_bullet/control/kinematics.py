@@ -37,7 +37,7 @@ class KinematicsController(ModelController):
 
     def __init__(
             self,
-            joints,
+            joints_names,
             kinematics,
             sampling,
             timestep,
@@ -45,14 +45,14 @@ class KinematicsController(ModelController):
             animat_data,
             max_torques,
     ):
-        super(KinematicsController, self).__init__(
-            joints=joints,
-            control_types={joint: ControlType.POSITION for joint in joints},
+        super().__init__(
+            joints_names=joints_names,
+            control_types={joint: ControlType.POSITION for joint in joints_names},
             max_torques=max_torques,
         )
-        assert kinematics.shape[1] == len(joints), (
+        assert kinematics.shape[1] == len(joints_names), (
             'Expected {} joints, but got {}'.format(
-                len(joints),
+                len(joints_names),
                 kinematics.shape[1],
             )
         )
@@ -67,6 +67,6 @@ class KinematicsController(ModelController):
     def positions(self, iteration, time, timestep):
         """Postions"""
         return dict(zip(
-            self.joints[ControlType.POSITION],
+            self.joints_names[ControlType.POSITION],
             self.kinematics[iteration],
         ))
