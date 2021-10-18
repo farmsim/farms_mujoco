@@ -15,7 +15,7 @@ class SimulationModel:
     """SimulationModel"""
 
     def __init__(self, identity=None):
-        super(SimulationModel, self).__init__()
+        super().__init__()
         self._identity = identity
         self.joint_list = None
         self.controller = None
@@ -107,7 +107,7 @@ class GroundModel(SimulationModel):
     """DescriptionFormatModel"""
 
     def __init__(self, position=None, orientation=None):
-        super(GroundModel, self).__init__()
+        super().__init__()
         self.position = position
         self.orientation = orientation
         self.plane = None
@@ -136,7 +136,7 @@ class DescriptionFormatModel(SimulationModel):
             spawn_options=None,
             visual_options=None
     ):
-        super(DescriptionFormatModel, self).__init__()
+        super().__init__()
         self.path = path
         self.load_options = (
             load_options

@@ -15,7 +15,7 @@ class Camera:
     """Camera"""
 
     def __init__(self, timestep, target_identity=None, **kwargs):
-        super(Camera, self).__init__()
+        super().__init__()
         self.target = target_identity
         self.timestep = timestep
         self.yaw = kwargs.pop('yaw')
@@ -41,7 +41,7 @@ class CameraTarget(Camera):
     """Camera with target following"""
 
     def __init__(self, target_identity, **kwargs):
-        super(CameraTarget, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.target = target_identity
         self.target_pos = kwargs.pop(
             'target_pos',
@@ -64,7 +64,7 @@ class UserCamera(CameraTarget):
     """UserCamera"""
 
     def __init__(self, target_identity, **kwargs):
-        super(UserCamera, self).__init__(target_identity, **kwargs)
+        super().__init__(target_identity, **kwargs)
         self.update(use_camera=False)
 
     def set_zoom(self, value):
@@ -102,7 +102,7 @@ class CameraRecord(CameraTarget):
     """Camera recording"""
 
     def __init__(self, timestep, target_identity, n_iterations, fps, **kwargs):
-        super(CameraRecord, self).__init__(
+        super().__init__(
             target_identity=target_identity,
             timestep=timestep,
             **kwargs,
