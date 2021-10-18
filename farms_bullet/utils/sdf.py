@@ -498,8 +498,22 @@ def load_sdf(
                 pybullet.changeDynamics(
                     bodyUniqueId=identity,
                     linkIndex=joints[joint.name],
-                    **{key: value}
+                    **{key: value},
                 )
+
+    # Set links properties
+    for link_name in links_names:
+        for key, value in [
+                ['restitution', 0],
+                ['lateralFriction', 1],
+                ['spinningFriction', 0],
+                ['rollingFriction', 0],
+        ]:
+            pybullet.changeDynamics(
+                bodyUniqueId=identity,
+                linkIndex=links[link_name],
+                **{key: value},
+            )
 
     return identity, links, joints
 
