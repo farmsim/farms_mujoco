@@ -41,14 +41,14 @@ class MorphologyOptions(Options):
         links = kwargs.pop('links')
         self.links = (
             links
-            if all([isinstance(link, LinkOptions) for link in links])
+            if all(isinstance(link, LinkOptions) for link in links)
             else [LinkOptions(**link) for link in kwargs.pop('links')]
         )
         self.self_collisions = kwargs.pop('self_collisions')
         joints = kwargs.pop('joints')
         self.joints = (
             joints
-            if all([isinstance(joint, JointOptions) for joint in joints])
+            if all(isinstance(joint, JointOptions) for joint in joints)
             else [JointOptions(**joint) for joint in joints]
         )
         if kwargs:
@@ -149,7 +149,7 @@ class ControlOptions(Options):
         joints = kwargs.pop('joints')
         self.joints = (
             joints
-            if all([isinstance(joint, JointControlOptions) for joint in joints])
+            if all(isinstance(joint, JointControlOptions) for joint in joints)
             else [JointControlOptions(**joint) for joint in joints]
         )
         if kwargs:
