@@ -11,21 +11,25 @@ cdef class Sensors(dict):
 
 cdef class ContactsSensors(DoubleArray3D):
     """Model sensors"""
+
     cdef public unsigned int [:] model_ids
     cdef public int [:] model_links
     cdef public double imeters
     cdef public double inewtons
+
     cpdef tuple get_contacts(self, unsigned int model_id, int model_link)
     cpdef void update(self, unsigned int iteration)
 
 
 cdef class JointsStatesSensor(DoubleArray3D):
     """Joint state sensor"""
+
     cdef public unsigned int model_id
     cdef public list joints_map
     cdef public double seconds
     cdef public double inewtons
     cdef public double itorques
+
     cpdef public tuple get_joints_states(self)
     cpdef public void update(self, unsigned int iteration)
 
@@ -38,6 +42,9 @@ cdef class LinksStatesSensor(DoubleArray3D):
     cdef public double imeters
     cdef public double ivelocity
     cdef public double seconds
+    cdef public tuple transform_inv_pos
+    cdef public tuple transform_inv_ori
+
     cpdef public tuple get_base_link_state(self)
     cpdef public tuple get_children_links_states(self)
     cpdef public void update(self, unsigned int iteration)

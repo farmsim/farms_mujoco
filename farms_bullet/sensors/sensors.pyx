@@ -126,6 +126,8 @@ cdef class JointsStatesSensor(DoubleArray3D):
             self.array[iteration, joint_i, JOINT_POSITION] = position
             # Velocity
             self.array[iteration, joint_i, JOINT_VELOCITY] = velocity*self.seconds
+            # Motor torque
+            self.array[iteration, joint_i, JOINT_TORQUE] = torque*self.itorques
             # Forces
             self.array[iteration, joint_i, JOINT_FORCE_X] = fx*self.inewtons
             self.array[iteration, joint_i, JOINT_FORCE_Y] = fy*self.inewtons
@@ -134,8 +136,6 @@ cdef class JointsStatesSensor(DoubleArray3D):
             self.array[iteration, joint_i, JOINT_TORQUE_X] = tx*self.itorques
             self.array[iteration, joint_i, JOINT_TORQUE_Y] = ty*self.itorques
             self.array[iteration, joint_i, JOINT_TORQUE_Z] = tz*self.itorques
-            # Motor torque
-            self.array[iteration, joint_i, JOINT_TORQUE] = torque*self.itorques
 
 
 cdef class LinksStatesSensor(DoubleArray3D):
@@ -149,33 +149,35 @@ cdef class LinksStatesSensor(DoubleArray3D):
     ]
     """
 
-    def __init__(self, array, model_id, links, units):
+    def __init__(self, array, model_id, links, units, transform_inv=None):
         super(LinksStatesSensor, self).__init__(array)
         self.model = model_id
         self.links = links
         self.imeters = 1./units.meters
         self.ivelocity = 1./units.velocity
         self.seconds = units.seconds
+        if transform_inv is not None:
+            self.transform_inv_pos, self.transform_inv_ori = transform_inv
+        else:
+            self.transform_inv_pos = None
+            self.transform_inv_ori = None
 
     cpdef tuple get_base_link_state(self):
         """Get link states"""
         cdef tuple pos_com, ori_com, base_velocity
-        cdef tuple transform_loc, transform_inv, transform_urdf
-        base_info = pybullet.getBasePositionAndOrientation(self.model)
-        pos_com = base_info[0]
-        ori_com = base_info[1]
-        transform_loc = (
-            pybullet.getDynamicsInfo(self.model, -1)[3:5]
-        )
-        transform_inv = pybullet.invertTransform(
-            position=transform_loc[0],
-            orientation=transform_loc[1],
-        )
+        cdef tuple transform_loc, transform_urdf
+        pos_com, ori_com = pybullet.getBasePositionAndOrientation(self.model)
+        if self.transform_inv_pos is None or self.transform_inv_ori is None:
+            transform_loc = pybullet.getDynamicsInfo(self.model, -1)[3:5]
+            self.transform_inv_pos, self.transform_inv_ori = pybullet.invertTransform(
+                position=transform_loc[0],
+                orientation=transform_loc[1],
+            )
         transform_urdf = pybullet.multiplyTransforms(
             pos_com,
             ori_com,
-            transform_inv[0],
-            transform_inv[1],
+            self.transform_inv_pos,
+            self.transform_inv_ori,
         )
         base_velocity = pybullet.getBaseVelocity(self.model)
         return (
