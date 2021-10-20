@@ -530,7 +530,6 @@ cdef class SwimmingHandler:
         cdef unsigned int i
         cdef bint apply_force = 1
         if self.drag or self.sph:
-            hydrodynamics_plot = self.animat.hydrodynamics_plot
             for i in range(self.n_links):
                 if self.drag:
                     apply_force = drag_forces(
@@ -573,7 +572,7 @@ cdef class SwimmingHandler:
                         link_id=self.links_ids[i],
                         data_hydrodynamics=self.hydro,
                         hydro_index=self.hydro_indices[i],
-                        hydrodynamics_plot=hydrodynamics_plot,
+                        hydrodynamics_plot=self.animat.hydrodynamics_plot,
                         new_active=apply_force,
                         meters=self.meters,
                         scale=self.hydrodynamics_scale,
