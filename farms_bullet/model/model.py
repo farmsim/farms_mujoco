@@ -86,7 +86,7 @@ class SimulationModel:
     def from_sdf(sdf, **kwargs):
         """Model from SDF"""
         assert os.path.isfile(sdf), '{} does not exist'.format(sdf)
-        spawn_loader = kwargs.pop('spawn_loader', SpawnLoader.FARMS)
+        spawn_loader = kwargs.get('spawn_loader', SpawnLoader.FARMS)
         if spawn_loader == SpawnLoader.PYBULLET:
             with redirect_output(pylog.warning):
                 model = pybullet.loadSDF(sdf, **kwargs)[0]
@@ -171,8 +171,8 @@ class DescriptionFormatModel(SimulationModel):
             pos = pybullet.getBasePositionAndOrientation(
                 bodyUniqueId=self._identity
             )[0]
-            pos_obj = self.spawn_options.pop('posObj')
-            orn_obj = self.spawn_options.pop('ornObj')
+            pos_obj = self.spawn_options.get('posObj')
+            orn_obj = self.spawn_options.get('ornObj')
             pybullet.resetBasePositionAndOrientation(
                 bodyUniqueId=self._identity,
                 posObj=np.array(pos) + np.array(pos_obj),
