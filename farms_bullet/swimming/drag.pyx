@@ -432,6 +432,12 @@ cdef class WaterProperties:
         """Viscosity"""
         return self._viscosity
 
+    cpdef void set_velocity(self, double vx, double vy, double vz):
+        """Set velocity"""
+        self._velocity[0] = vx
+        self._velocity[1] = vy
+        self._velocity[2] = vz
+
 
 cdef class SwimmingHandler:
     """Swimming handler"""
@@ -585,3 +591,7 @@ cdef class SwimmingHandler:
     cpdef set_frame(self, int frame):
         """Set frame"""
         self.frame = frame
+
+    cpdef void set_water_velocity(self, DTYPEv1 velocity):
+        """Set water velocity"""
+        self.water.set_velocity(vx=velocity[0], vy=velocity[1], vz=velocity[2])
