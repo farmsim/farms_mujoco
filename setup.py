@@ -18,20 +18,20 @@ DEBUG = False
 
 
 setup(
-    name='farms_bullet',
+    name='farms_mujoco',
     version='0.1',
     author='farmsdev',
     author_email='biorob-farms@groupes.epfl.ch',
-    description='FARMS package for running simulation with the Bullet engine',
-    keywords='farms simulation bullet',
+    description='FARMS package for running simulations with the Mujoco simulator',
+    keywords='farms simulation mujoco',
     packages=find_packages(),
     include_package_data=True,
     include_dirs=[np.get_include()],
     ext_modules=cythonize(
         [
             Extension(
-                'farms_bullet.{}*'.format(folder.replace('/', '_') + '.' if folder else ''),
-                sources=['farms_bullet/{}*.pyx'.format(folder + '/' if folder else '')],
+                'farms_mujoco.{}*'.format(folder.replace('/', '_') + '.' if folder else ''),
+                sources=['farms_mujoco/{}*.pyx'.format(folder + '/' if folder else '')],
                 extra_compile_args=['-O3'],  # , '-fopenmp'
                 extra_link_args=['-O3']  # , '-fopenmp'
             )
@@ -56,7 +56,7 @@ setup(
         'cython',
         'numpy',
         'trimesh',
-        'pybullet',
+        'dm_control',
         'deepdish',
     ],
 )
