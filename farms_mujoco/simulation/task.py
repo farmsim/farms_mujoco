@@ -38,6 +38,77 @@ def print_contacts(geoms_names, physics):
         ]))
 
 
+def links_data(physics, maps):
+    """Read links data"""
+    return [
+        physics.data.sensordata[
+            maps['sensors'][identifier]['indices']
+        ].reshape([
+            len(maps['sensors'][identifier]['names']),
+            n_c,
+        ])
+        for identifier, n_c in [
+                ['framepos', 3],
+                ['framequat', 4],
+                ['framelinvel', 3],
+                ['frameangvel', 3],
+        ]
+    ]
+
+
+def joints_data(physics, maps):
+    """Read joints data"""
+    return [
+        physics.data.sensordata[
+            maps['sensors'][identifier]['indices']
+        ].reshape(
+            [
+                len(maps['joints']['names']),
+                n_c,
+            ]
+            if n_c > 1
+            else len(maps['joints']['names'])
+        )
+        for identifier, n_c in [
+                ['jointpos', 1],
+                ['jointvel', 1],
+                ['actuatorfrc', 2],
+        ]
+    ]
+
+
+def physics2data(physics, iteration, data, maps):
+    """Sensors data collection"""
+
+    # Links
+    framepos, framequat, framelinvel, frameangvel = links_data(physics, maps)
+    data.sensors.links.array[iteration, :,
+        sc.link_urdf_position_x:sc.link_urdf_position_z+1,
+    ] = framepos
+    data.sensors.links.array[iteration, :,
+            sc.link_urdf_orientation_x:sc.link_urdf_orientation_w+1,
+    ] = framequat[:, [3, 0, 1, 2]]
+    data.sensors.links.array[iteration, :,
+            sc.link_com_velocity_lin_x:sc.link_com_velocity_lin_z+1,
+    ] = framelinvel
+    data.sensors.links.array[iteration, :,
+            sc.link_com_velocity_ang_x:sc.link_com_velocity_ang_z+1,
+    ] = frameangvel
+
+    # Joints
+    jointpos, jointvel, actuatorfrc = joints_data(physics, maps)
+    data.sensors.joints.array[iteration, :, sc.joint_position] = (
+        jointpos
+    )
+    data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
+        jointvel
+    )
+    data.sensors.joints.array[iteration, :, sc.joint_torque] = np.sum(
+        actuatorfrc,
+        axis=1,
+    )
+
+
 class ExperimentTask(Task):
     """Defines a task in a `control.Environment`."""
 
@@ -136,7 +207,7 @@ class ExperimentTask(Task):
                     ['linear velocities', 'framelinvel'],
                     ['angular velocities', 'frameangvel'],
                 ],
-                self.links_data(physics),
+                links_data(physics, self.maps),
         ):
             pylog.info(
                 'Links initial %s:\n%s',
@@ -157,7 +228,7 @@ class ExperimentTask(Task):
                     ['velocities', 'jointvel'],
                     ['torques', 'actuatorfrc'],
                 ],
-                self.joints_data(physics),
+                joints_data(physics, self.maps),
         ):
             pylog.info(
                 'Joints initial %s:\n%s',
@@ -206,79 +277,11 @@ class ExperimentTask(Task):
                 # hydrodynamics=[],
             )
 
-    def links_data(self, physics):
-        """Read links data"""
-        return [
-            physics.data.sensordata[
-                self.maps['sensors'][identifier]['indices']
-            ].reshape([
-                len(self.maps['sensors'][identifier]['names']),
-                n_c,
-            ])
-            for identifier, n_c in [
-                    ['framepos', 3],
-                    ['framequat', 4],
-                    ['framelinvel', 3],
-                    ['frameangvel', 3],
-            ]
-        ]
-
-    def joints_data(self, physics):
-        """Read joints data"""
-        return [
-            physics.data.sensordata[
-                self.maps['sensors'][identifier]['indices']
-            ].reshape(
-                [
-                    len(self.maps['joints']['names']),
-                    n_c,
-                ]
-                if n_c > 1
-                else len(self.maps['joints']['names'])
-            )
-            for identifier, n_c in [
-                    ['jointpos', 1],
-                    ['jointvel', 1],
-                    ['actuatorfrc', 2],
-            ]
-        ]
-
-    def sensors2data(self, physics, iteration):
-        """Sensors data collection"""
-
-        # Links
-        framepos, framequat, framelinvel, frameangvel = self.links_data(physics)
-        self.data.sensors.links.array[iteration, :,
-            sc.link_urdf_position_x:sc.link_urdf_position_z+1,
-        ] = framepos
-        self.data.sensors.links.array[iteration, :,
-                sc.link_urdf_orientation_x:sc.link_urdf_orientation_w+1,
-        ] = framequat[:, [3, 0, 1, 2]]
-        self.data.sensors.links.array[iteration, :,
-                sc.link_com_velocity_lin_x:sc.link_com_velocity_lin_z+1,
-        ] = framelinvel
-        self.data.sensors.links.array[iteration, :,
-                sc.link_com_velocity_ang_x:sc.link_com_velocity_ang_z+1,
-        ] = frameangvel
-
-        # Joints
-        jointpos, jointvel, actuatorfrc = self.joints_data(physics)
-        self.data.sensors.joints.array[iteration, :, sc.joint_position] = (
-            jointpos
-        )
-        self.data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
-            jointvel
-        )
-        self.data.sensors.joints.array[iteration, :, sc.joint_torque] = np.sum(
-            actuatorfrc,
-            axis=1,
-        )
-
     def before_step(self, action, physics):
         """Operations before physics step"""
 
         # Sensors
-        self.sensors2data(physics, self.iteration)
+        physics2data(physics, self.iteration, self.data, self.maps)
 
         # Print contacts
         if 2 < physics.time() < 2.1:
