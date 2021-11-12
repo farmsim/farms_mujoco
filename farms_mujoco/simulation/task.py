@@ -67,14 +67,7 @@ class ExperimentTask(Task):
         self._app = app
 
     def initialize_episode(self, physics):
-        """Sets the state of the environment at the start of each episode.
-
-    Called by `control.Environment` at the start of each episode *within*
-        `physics.reset_context()` (see the documentation for `base.Physics`).
-
-    Args:
-        physics: Instance of `Physics`.
-        """
+        """Sets the state of the environment at the start of each episode"""
 
         # Initialise iterations
         self.iteration = 0
@@ -282,16 +275,7 @@ class ExperimentTask(Task):
         )
 
     def before_step(self, action, physics):
-        """Updates the task from the provided action.
-
-    Called by `control.Environment` before stepping the physics engine.
-
-    Args:
-        action: numpy array or array-like action values, or a nested structure of
-        such arrays. Should conform to the specification returned by
-        `self.action_spec(physics)`.
-        physics: Instance of `Physics`.
-        """
+        """Operations before physics step"""
 
         # Sensors
         self.sensors2data(physics, self.iteration)
@@ -320,17 +304,7 @@ class ExperimentTask(Task):
 
 
     def after_step(self, physics):
-        """Optional method to update the task after the physics engine has stepped.
-
-    Called by `control.Environment` after stepping the physics engine and before
-        `control.Environment` calls `get_observation, `get_reward` and
-        `get_termination`.
-
-    The default implementation is a no-op.
-
-    Args:
-        physics: Instance of `Physics`.
-        """
+        """Operations after physics step"""
         self.iteration += 1
         assert self.iteration <= self.n_iterations
         if self.iteration == self.n_iterations:
@@ -343,60 +317,22 @@ class ExperimentTask(Task):
                 self._app.close()
 
     def action_spec(self, physics):
-        """Returns a specification describing the valid actions for this task.
-
-    Args:
-        physics: Instance of `Physics`.
-
-    Returns:
-        A `BoundedArraySpec`, or a nested structure containing `BoundedArraySpec`s
-        that describe the shapes, dtypes and elementwise lower and upper bounds
-      for the action array(s) passed to `self.step`.
-        """
+        """Action specifications"""
         return []
 
     def step_spec(self, physics):
-        """Returns a specification describing the time_step for this task.
-
-    Args:
-        physics: Instance of `Physics`.
-
-    Returns:
-        A `BoundedArraySpec`, or a nested structure containing `BoundedArraySpec`s
-        that describe the shapes, dtypes and elementwise lower and upper bounds
-      for the array(s) returned by `self.step`.
-        """
+        """Timestep specifications"""
 
     def get_observation(self, physics):
-        """Returns an observation from the environment.
-
-    Args:
-        physics: Instance of `Physics`.
-        """
-        # Sensor data
-        # sensor_data = physics.data.sensordata
+        """Environment observation"""
 
     def get_reward(self, physics):
-        """Returns a reward from the environment.
-
-    Args:
-        physics: Instance of `Physics`.
-        """
+        """Reward"""
         return 0
 
     def get_termination(self, physics):
-        """If the episode should end, returns a final discount, otherwise None."""
+        """Return final discount if episode should end, else None"""
         return None
 
     def observation_spec(self, physics):
-        """Optional method that returns the observation spec.
-
-    If not implemented, the Environment infers the spec from the observation.
-
-    Args:
-        physics: Instance of `Physics`.
-
-    Returns:
-        A dict mapping observation name to `ArraySpec` containing observation
-        shape and dtype.
-        """
+        """Observation specifications"""
