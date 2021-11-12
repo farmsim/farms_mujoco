@@ -301,12 +301,13 @@ class ExperimentTask(Task):
             print_contacts(self.maps['geoms']['names'], physics)
 
         # Set external force
-        physics.data.xfrc_applied[:] = 0
         if 3 < physics.time() < 4:
             index = np.argwhere(
                 np.array(self.maps['xfrc']['names']) == self.base_link
             )[0, 0]
             physics.data.xfrc_applied[index, 2] = self.external_force
+        elif 2.9 < physics.time() < 3 or 4 < physics.time() < 4.1:
+            physics.data.xfrc_applied[:] = 0  # No interaction
 
         # Control
         freq = 1.0
