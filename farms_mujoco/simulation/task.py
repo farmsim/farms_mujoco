@@ -28,15 +28,12 @@ class ExperimentTask(Task):
         self.iteration: int = 0
         self.duration: float = duration
         self.timestep: float = timestep
-        self.n_iterations: int = int(duration/timestep)
+        self.n_iterations: int = duration2nit(duration, timestep)
         self.data: ModelData = kwargs.pop('data', None)
         self.base_link: str = base_link  # Link which to apply external force
         self.maps: Dict = {
-            'links': {},
-            'joints': {},
-            'sensors': {},
-            'xfrc': {},
-            'geoms': {},
+            'links': {}, 'joints': {},
+            'sensors': {}, 'xfrc': {}, 'geoms': {},
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart = kwargs.pop('restart', True)
@@ -190,12 +187,15 @@ class ExperimentTask(Task):
     def before_step(self, action, physics):
         """Operations before physics step"""
 
+        # Checks
+        assert self.iteration < self.n_iterations
+
         # Sensors
         physics2data(physics, self.iteration, self.data, self.maps)
 
         # Print contacts
         if 2 < physics.time() < 2.1:
-            print_contacts(self.maps['geoms']['names'], physics)
+            print_contacts(physics, self.maps['geoms']['names'])
 
         # Set external force
         if 3 < physics.time() < 4:
@@ -220,6 +220,8 @@ class ExperimentTask(Task):
         """Operations after physics step"""
         self.iteration += 1
         assert self.iteration <= self.n_iterations
+
+        # Simulation complete
         if self.iteration == self.n_iterations:
             pylog.info('Simulation complete')
             if self._plot:
@@ -245,7 +247,7 @@ class ExperimentTask(Task):
 
     def get_termination(self, physics):
         """Return final discount if episode should end, else None"""
-        return None
+        return 1 if self.iteration >= self.n_iterations else None
 
     def observation_spec(self, physics):
         """Observation specifications"""
