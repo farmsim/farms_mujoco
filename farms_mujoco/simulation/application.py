@@ -20,6 +20,10 @@ class FarmsApplication(viewer.application.Application):
         """Toggle pause"""
         self._pause_subject.toggle()
 
+    def set_speed(self, multiplier):
+        """Simulation speed multiplier"""
+        self._time_multiplier.set(multiplier)
+
     def close(self):
         """Close"""
         pylog.info('Closing simulation window')

@@ -31,11 +31,12 @@ class Simulation:
     def __init__(self, mjcf_model, base_link, duration, timestep, **kwargs):
         super().__init__()
         self._mjcf = mjcf
+        self.fast = kwargs.pop('fast', False)
         self.pause = kwargs.pop('pause', True)
         self.headless = kwargs.pop('headless', False)
 
         # Simulator configuration
-        viewer.util._MAX_TIME_MULTIPLIER = 16  # pylint: disable=protected-access
+        viewer.util._MAX_TIME_MULTIPLIER = 2**15  # pylint: disable=protected-access
         os.environ['MUJOCO_GL'] = 'egl' if self.headless else 'glfw'  # 'osmesa'
         warnings.filterwarnings('ignore', category=DeprecationWarning)
 
@@ -87,6 +88,12 @@ class Simulation:
         """Run simulation"""
         if not self.headless:
             app = FarmsApplication()
+            app.set_speed(multiplier=(
+                # pylint: disable=protected-access
+                viewer.util._MAX_TIME_MULTIPLIER
+                if self.fast
+                else 1
+            ))
             self._task.set_app(app=app)
             if not self.pause:
                 app.toggle_pause()
