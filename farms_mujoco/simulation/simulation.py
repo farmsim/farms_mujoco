@@ -1,8 +1,12 @@
 """Simulation"""
 
+import os
+import warnings
+
 from tqdm import tqdm
 
 from dm_control import mjcf
+from dm_control import viewer
 from dm_control.rl.control import Environment
 
 import farms_pylog as pylog
@@ -30,6 +34,13 @@ class Simulation:
         self.pause = kwargs.pop('pause', True)
         self.restart = kwargs.pop('restart', True)
         self.headless = kwargs.pop('headless', False)
+
+        # Simulator configuration
+        viewer.util._MAX_TIME_MULTIPLIER = 16  # pylint: disable=protected-access
+        os.environ['MUJOCO_GL'] = 'egl' if self.headless else 'glfw'  # 'osmesa'
+        warnings.filterwarnings('ignore', category=DeprecationWarning)
+
+        # Simulation
         env_kwargs = extract_sub_dict(
             dictionary=kwargs,
             keys=('control_timestep', 'n_sub_steps', 'flat_observation'),
