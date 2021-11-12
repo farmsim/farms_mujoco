@@ -3,6 +3,8 @@
 import glfw
 from dm_control import viewer
 
+import farms_pylog as pylog
+
 
 class FarmsApplication(viewer.application.Application):
     """FARMS application"""
@@ -20,6 +22,7 @@ class FarmsApplication(viewer.application.Application):
 
     def close(self):
         """Close"""
+        pylog.info('Closing simulation window')
         glfw.set_window_should_close(
             # pylint: disable=protected-access
             window=self._window._context.window,

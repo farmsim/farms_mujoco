@@ -30,9 +30,8 @@ class Simulation:
 
     def __init__(self, mjcf_model, base_link, duration, timestep, **kwargs):
         super().__init__()
-        self.mjcf = mjcf
+        self._mjcf = mjcf
         self.pause = kwargs.pop('pause', True)
-        self.restart = kwargs.pop('restart', True)
         self.headless = kwargs.pop('headless', False)
 
         # Simulator configuration
@@ -45,7 +44,7 @@ class Simulation:
             dictionary=kwargs,
             keys=('control_timestep', 'n_sub_steps', 'flat_observation'),
         )
-        self._physics = mjcf.Physics.from_mjcf_model(mjcf_model)
+        self._physics = self._mjcf.Physics.from_mjcf_model(mjcf_model)
         self._task = ExperimentTask(
             base_link=base_link.name,
             duration=duration,

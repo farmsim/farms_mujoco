@@ -14,7 +14,7 @@ from farms_data.amphibious.animat_data import ModelData
 from .physics import physics2data, links_data, joints_data, print_contacts
 
 
-def duration2nit(duration, timestep):
+def duration2nit(duration: float, timestep: float) -> int:
     """Number of iterations from duration"""
     return int(duration/timestep)
 
@@ -36,8 +36,8 @@ class ExperimentTask(Task):
             'sensors': {}, 'xfrc': {}, 'geoms': {},
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
-        self._restart = kwargs.pop('restart', True)
-        self._plot = kwargs.pop('plot', False)
+        self._restart: bool = kwargs.pop('restart', True)
+        self._plot: bool = kwargs.pop('plot', False)
         assert not kwargs, kwargs
 
     def set_app(self, app):
@@ -46,6 +46,12 @@ class ExperimentTask(Task):
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode"""
+
+        # Checks
+        if self._restart:
+            assert self._app is not None, (
+                'Simulation can not be restarted without application interface'
+            )
 
         # Initialise iterations
         self.iteration = 0
@@ -230,6 +236,8 @@ class ExperimentTask(Task):
                 plt.show()
             if self._app is not None and not self._restart:
                 self._app.close()
+            else:
+                pylog.info('Simulation can be restarted')
 
     def action_spec(self, physics):
         """Action specifications"""
