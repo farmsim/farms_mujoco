@@ -537,7 +537,7 @@ def add_cameras(mjcf_model, link, dist=0.3):
         )
 
 
-def setup_mjcf_xml(sdf_path, **kwargs):
+def setup_mjcf_xml(sdf_path, timestep, **kwargs):
     """Setup MJCF XML"""
 
     # Animat
@@ -545,7 +545,7 @@ def setup_mjcf_xml(sdf_path, **kwargs):
     mjcf_model = sdf2mjcf(sdf)
     mjcf_model.size.njmax = 2**12
     mjcf_model.size.nconmax = 2**12
-    mjcf_model.option.timestep = kwargs.pop('timestep', 1e-3)
+    mjcf_model.option.timestep = timestep
     mjcf_model.option.iterations = kwargs.pop('solver_iterations', 100)
     mjcf_model.option.solver = 'Newton'  # PGS, CG, Newton
     mjcf_model.option.integrator = 'Euler'  # Euler, RK4

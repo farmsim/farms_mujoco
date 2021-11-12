@@ -49,10 +49,11 @@ class Simulation:
         )
 
     @classmethod
-    def from_sdf(cls, sdf_path, **kwargs):
+    def from_sdf(cls, sdf_path, timestep, **kwargs):
         """From SDF"""
         mjcf_model, base_link = setup_mjcf_xml(
             sdf_path=sdf_path,
+            timestep=timestep,
             **extract_sub_dict(
                 dictionary=kwargs,
                 keys=(
@@ -64,6 +65,7 @@ class Simulation:
         return cls(
             mjcf_model=mjcf_model,
             base_link=base_link,
+            timestep=timestep,
             **kwargs,
         )
 
