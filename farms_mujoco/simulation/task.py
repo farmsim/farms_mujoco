@@ -1,6 +1,7 @@
 """Task"""
 
 from typing import Dict
+from enum import IntEnum
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +13,13 @@ from farms_data.sensors.sensor_convention import sc
 from farms_data.amphibious.animat_data import ModelData
 
 from .physics import physics2data, links_data, joints_data, print_contacts
+
+
+class ControlType(IntEnum):
+    """Control type"""
+    POSITION = 0
+    VELOCITY = 1
+    TORQUE = 2
 
 
 def duration2nit(duration: float, timestep: float) -> int:
@@ -34,10 +42,12 @@ class ExperimentTask(Task):
         self.maps: Dict = {
             'links': {}, 'joints': {},
             'sensors': {}, 'xfrc': {}, 'geoms': {},
+            'ctrl': {}
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
         self._plot: bool = kwargs.pop('plot', False)
+        self._controller = kwargs.pop('controller', None)
         assert not kwargs, kwargs
 
     def set_app(self, app):
@@ -52,6 +62,9 @@ class ExperimentTask(Task):
             assert self._app is not None, (
                 'Simulation can not be restarted without application interface'
             )
+        if self._controller is not None:
+            for name in self._controller.joints_names[ControlType.POSITION]:
+                pass
 
         # Initialise iterations
         self.iteration = 0
@@ -190,6 +203,18 @@ class ExperimentTask(Task):
                 # hydrodynamics=[],
             )
 
+        # Control
+        if self._controller is not None:
+            ctrl_names = np.array(physics.named.data.ctrl.axes.row.names)
+            for joint in self._controller.joints_names[ControlType.POSITION]:
+                assert f'actuator_position_{joint}' in ctrl_names, (
+                    f'{joint} not in {ctrl_names}'
+                )
+            self.maps['ctrl']['pos'] = [
+                np.argwhere(ctrl_names == f'actuator_position_{joint}')[0, 0]
+                for joint in self._controller.joints_names[ControlType.POSITION]
+            ]
+
     def before_step(self, action, physics):
         """Operations before physics step"""
 
@@ -199,31 +224,43 @@ class ExperimentTask(Task):
         # Sensors
         physics2data(physics, self.iteration, self.data, self.maps)
 
-        # Print contacts
-        if 2 < physics.time() < 2.1:
-            print_contacts(physics, self.maps['geoms']['names'])
+        # # Print contacts
+        # if 2 < physics.time() < 2.1:
+        #     print_contacts(physics, self.maps['geoms']['names'])
 
-        # Set external force
-        if 3 < physics.time() < 4:
-            index = np.argwhere(
-                np.array(self.maps['xfrc']['names']) == self.base_link
-            )[0, 0]
-            physics.data.xfrc_applied[index, 2] = self.external_force
-        elif 2.9 < physics.time() < 3 or 4 < physics.time() < 4.1:
-            physics.data.xfrc_applied[:] = 0  # No interaction
+        # # Set external force
+        # if 3 < physics.time() < 4:
+        #     index = np.argwhere(
+        #         np.array(self.maps['xfrc']['names']) == self.base_link
+        #     )[0, 0]
+        #     physics.data.xfrc_applied[index, 2] = self.external_force
+        # elif 2.9 < physics.time() < 3 or 4 < physics.time() < 4.1:
+        #     physics.data.xfrc_applied[:] = 0  # No interaction
 
         # Control
-        freq = 1.0
-        amp = 0.1
-        controls = [
-            [amp*np.sin(2*np.pi*freq*physics.time()), 0.0]
-            for i in range(int(physics.model.nu/2))
-        ]
-        physics.set_control(np.array(controls).flatten())
+        if self._controller is not None:
+            current_time = self.iteration*self.timestep
+            self._controller.step(
+                iteration=self.iteration,
+                time=current_time,
+                timestep=self.timestep,
+            )
+            if self._controller.joints_names[ControlType.POSITION]:
+                joints_positions = self._controller.positions(
+                    iteration=self.iteration,
+                    time=current_time,
+                    timestep=self.timestep,
+                )
+                physics.data.ctrl[self.maps['ctrl']['pos']] = [
+                    joints_positions[joint]
+                    for joint in self._controller.joints_names[ControlType.POSITION]
+                ]
 
 
     def after_step(self, physics):
         """Operations after physics step"""
+
+        # Checks
         self.iteration += 1
         assert self.iteration <= self.n_iterations
 
