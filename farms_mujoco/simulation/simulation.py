@@ -3,6 +3,7 @@
 import os
 import warnings
 
+import numpy as np
 from tqdm import tqdm
 
 from dm_control import mjcf
@@ -28,9 +29,9 @@ def extract_sub_dict(dictionary, keys):
 class Simulation:
     """Simulation"""
 
-    def __init__(self, mjcf_model, base_link, duration, timestep, **kwargs):
+    def __init__(self, mjcf_model, base_link, n_iterations, timestep, **kwargs):
         super().__init__()
-        self._mjcf = mjcf
+        self._mjcf_model = mjcf_model
         self.fast = kwargs.pop('fast', False)
         self.pause = kwargs.pop('pause', True)
         self.headless = kwargs.pop('headless', False)
@@ -45,17 +46,17 @@ class Simulation:
             dictionary=kwargs,
             keys=('control_timestep', 'n_sub_steps', 'flat_observation'),
         )
-        self._physics = self._mjcf.Physics.from_mjcf_model(mjcf_model)
-        self._task = ExperimentTask(
+        self._physics = mjcf.Physics.from_mjcf_model(mjcf_model)
+        self.task = ExperimentTask(
             base_link=base_link.name,
-            duration=duration,
+            n_iterations=n_iterations,
             timestep=timestep,
             **kwargs,
         )
         self._env = Environment(
             physics=self._physics,
-            task=self._task,
-            time_limit=duration,
+            task=self.task,
+            time_limit=n_iterations*timestep,
             **env_kwargs,
         )
 
@@ -94,11 +95,11 @@ class Simulation:
                 if self.fast
                 else 1
             ))
-            self._task.set_app(app=app)
+            self.task.set_app(app=app)
             if not self.pause:
                 app.toggle_pause()
             app.launch(environment_loader=self._env)
         else:
-            for _ in tqdm(range(self._task.n_iterations)):
+            for _ in tqdm(range(self.task.n_iterations)):
                 self._env.step(action=None)
         pylog.info('Closing simulation')

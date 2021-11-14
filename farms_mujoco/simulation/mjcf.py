@@ -336,9 +336,11 @@ def add_link_recursive(mjcf_model, mjcf_items, sdf, **kwargs):
         )
 
 
-def sdf2mjcf(sdf, mjcf_model=None, use_site=False):
+def sdf2mjcf(sdf, **kwargs):
     """Export to MJCF string"""
 
+    mjcf_model = kwargs.pop('mjcf_model', None)
+    use_site = kwargs.pop('use_site', False)
     if mjcf_model is None:
         mjcf_model = mjcf.RootElement()
 
