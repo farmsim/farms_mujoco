@@ -5,32 +5,7 @@ import numpy as np
 import farms_pylog as pylog
 # pylint: disable=no-name-in-module
 from farms_data.sensors.sensor_convention import sc
-
-
-def collect_contacts(physics):
-    """Collect contacts"""
-    contacts = {}
-    for contact_i, contact in enumerate(physics.data.contact):
-        if contact.dist < contact.includemargin:
-            forcetorque = physics.data.contact_force(contact_i)
-            reaction = forcetorque[0, 0]*contact.frame[0:3]
-            friction1 = forcetorque[0, 1]*contact.frame[3:6]
-            friction2 = forcetorque[0, 2]*contact.frame[6:9]
-            contacts[(contact.geom1, contact.geom2)] = (
-                reaction + friction1 + friction2
-                + contacts.get((contact.geom1, contact.geom2), 0.)
-            )
-    return contacts
-
-
-def print_contacts(physics, geoms_names):
-    """Print contacts"""
-    contacts = collect_contacts(physics)
-    if contacts:
-        pylog.info('\n'.join([
-            f'({geoms_names[geoms[0]]}, {geoms_names[geoms[1]]}): {force}'
-            for geoms, force in contacts.items()
-        ]))
+from ..sensors.sensors import cycontacts2data
 
 
 def links_data(physics, sensor_maps):
@@ -235,6 +210,16 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
             for joint_name in joints_names
         ])
 
+    # Contacts
+    data_names = sensor_data.contacts.names[:4]
+    body_names = physics.named.model.body_pos.axes.row.names
+    sensor_maps['geom2data'] = {
+        geom_id: data_names.index(body_names[body_id])
+        for geom_id, body_id in enumerate(physics.model.geom_bodyid)
+        if body_names[body_id] in data_names
+    }
+    sensor_maps['geom_set'] = set(sensor_maps['geom2data'].keys())
+
 
 def physics2data(physics, iteration, data, maps):
     """Sensors data collection"""
@@ -277,4 +262,13 @@ def physics2data(physics, iteration, data, maps):
     data.sensors.joints.array[iteration, :, sc.joint_torque] = (
         physics.data.sensordata[sensor_maps['actuatorfrc_position2data']]
         + physics.data.sensordata[sensor_maps['actuatorfrc_velocity2data']]
+    )
+
+    # Contacts
+    cycontacts2data(
+        physics=physics,
+        iteration=iteration,
+        data=data.sensors.contacts,
+        geom2data=sensor_maps['geom2data'],
+        geom_set=sensor_maps['geom_set'],
     )

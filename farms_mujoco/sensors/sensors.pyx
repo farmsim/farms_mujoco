@@ -5,6 +5,136 @@ cimport numpy as np
 
 import pybullet
 
+from farms_data.sensors.data_cy cimport ContactsArrayCy
+from dm_control.mujoco.wrapper.core import mjlib
+
+from libc.math cimport sqrt
+
+
+cdef double norm3d(double[3] vector) nogil:
+    """Compute 3D norm"""
+    return sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2])
+
+
+cdef void store_forces(
+    unsigned int iteration,
+    unsigned int index,
+    DTYPEv3 cdata,
+    DTYPEv1 forcetorque,
+    double[9] frame,
+    double[3] pos,
+    int sign,
+) nogil:
+    """Store forces"""
+    cdef double norm
+    cdef double[3] reaction, friction, friction1, friction2, total
+    for i in range(3):
+        reaction[i] = sign*forcetorque[i]*frame[0+i]
+        friction1[i] = sign*forcetorque[i]*frame[3+i]
+        friction2[i] = sign*forcetorque[i]*frame[6+i]
+        friction[i] = friction1[i] + friction2[i]
+        total[i] = reaction[i] + friction[i]
+    cdata[iteration, index, CONTACT_REACTION_X] += reaction[0]
+    cdata[iteration, index, CONTACT_REACTION_Y] += reaction[1]
+    cdata[iteration, index, CONTACT_REACTION_Z] += reaction[2]
+    cdata[iteration, index, CONTACT_FRICTION_X] += friction[0]
+    cdata[iteration, index, CONTACT_FRICTION_Y] += friction[1]
+    cdata[iteration, index, CONTACT_FRICTION_Z] += friction[2]
+    cdata[iteration, index, CONTACT_TOTAL_X] += total[0]
+    cdata[iteration, index, CONTACT_TOTAL_Y] += total[1]
+    cdata[iteration, index, CONTACT_TOTAL_Z] += total[2]
+    norm = norm3d(total)
+    cdata[iteration, index, CONTACT_POSITION_X] += norm*pos[0]
+    cdata[iteration, index, CONTACT_POSITION_Y] += norm*pos[1]
+    cdata[iteration, index, CONTACT_POSITION_Z] += norm*pos[2]
+
+
+cdef void normalize_forces_pos(
+    unsigned int iteration,
+    unsigned int index,
+    DTYPEv3 cdata,
+) nogil:
+    """Normalize forces position"""
+    cdef double[3] vector
+    vector[0] = cdata[iteration, index, CONTACT_TOTAL_X]
+    vector[1] = cdata[iteration, index, CONTACT_TOTAL_Y]
+    vector[2] = cdata[iteration, index, CONTACT_TOTAL_Z]
+    cdef double norm = norm3d(vector)
+    if norm > 0:
+        cdata[iteration, index, CONTACT_POSITION_X] /= norm
+        cdata[iteration, index, CONTACT_POSITION_Y] /= norm
+        cdata[iteration, index, CONTACT_POSITION_Z] /= norm
+
+
+cdef cycontact2data(
+    unsigned int iteration,
+    unsigned int contact_i,
+    unsigned int index,
+    object model_ptr,
+    object data_ptr,
+    object contact,
+    DTYPEv3 cdata,
+    int sign,
+):
+    """Extract force"""
+    cdef double[9] frame
+    cdef double[3] pos
+    cdef np.ndarray[double, ndim=1] forcetorque = np.empty(6, dtype=np.double)
+    frame[:] = contact.frame
+    pos[:] = contact.pos
+    mjlib.mj_contactForce(model_ptr, data_ptr, contact_i, forcetorque)
+    store_forces(
+        iteration=iteration, index=index, cdata=cdata,
+        forcetorque=forcetorque,
+        frame=frame, pos=pos, sign=sign,
+    )
+
+
+cpdef cycontacts2data(
+    object physics,
+    unsigned int iteration,
+    ContactsArrayCy data,
+    dict geom2data,
+    set geom_set
+):
+    """Contacts to data"""
+    cdef unsigned int contact_i
+    cdef DTYPEv3 cdata = data.array
+    cdef object model_ptr = physics.model.ptr
+    cdef object data_ptr = physics.data.ptr
+    cdef object contacts = physics.data.contact
+    for contact_i in range(len(physics.data.contact)):
+        # Extract body index
+        contact = contacts[contact_i]
+        if contact.geom1 in geom_set:
+            cycontact2data(
+                iteration=iteration,
+                contact_i=contact_i,
+                index=geom2data[contact.geom1],
+                model_ptr=model_ptr,
+                data_ptr=data_ptr,
+                contact=contact,
+                cdata=cdata,
+                sign=1,
+            )
+        if contact.geom2 in geom_set:
+            cycontact2data(
+                iteration=iteration,
+                contact_i=contact_i,
+                index=geom2data[contact.geom2],
+                model_ptr=model_ptr,
+                data_ptr=data_ptr,
+                contact=contact,
+                cdata=cdata,
+                sign=-1,
+            )
+    for index in range(len(data.names)):
+        normalize_forces_pos(
+            iteration=iteration,
+            index=index,
+            cdata=cdata,
+        )
+
 
 cdef class Sensors(dict):
     """Sensors"""

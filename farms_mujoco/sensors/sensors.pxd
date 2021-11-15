@@ -1,5 +1,6 @@
 """Cython sensors"""
 
+include 'types.pxd'
 include 'sensor_convention.pxd'
 from farms_data.sensors.array cimport DoubleArray3D
 
