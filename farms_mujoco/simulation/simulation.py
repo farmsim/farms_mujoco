@@ -103,3 +103,41 @@ class Simulation:
             for _ in tqdm(range(self.task.n_iterations)):
                 self._env.step(action=None)
         pylog.info('Closing simulation')
+
+    def postprocess(
+            self,
+            iteration: int,
+            log_path: str = '',
+            plot: bool = False,
+            video: str = '',
+            **kwargs,
+    ):
+        """Postprocessing after simulation"""
+        # animat = self.animat()
+        times = np.arange(
+            0,
+            self.task.timestep*self.task.n_iterations,
+            self.task.timestep
+        )[:iteration]
+
+        # Log
+        if log_path:
+            pylog.info('Saving data to %s', log_path)
+            self.task.data.to_file(
+                os.path.join(log_path, 'simulation.hdf5'),
+                iteration,
+            )
+            self.task.simulation_options.save(os.path.join(log_path, 'simulation_options.yaml'))
+            self.task.animat_options.save(os.path.join(log_path, 'animat_options.yaml'))
+
+        # Plot
+        if plot:
+            self.task.data.plot(times)
+
+        # # Record video
+        # if video and self.interface is not None:
+        #     self.interface.video.save(
+        #         video,
+        #         iteration=iteration,
+        #         writer=kwargs.pop('writer', 'ffmpeg')
+        #     )
