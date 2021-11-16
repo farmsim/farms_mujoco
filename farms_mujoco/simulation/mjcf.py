@@ -13,7 +13,7 @@ from dm_control import mjcf
 import farms_pylog as pylog
 from farms_sdf.sdf import (
     ModelSDF, Mesh, Visual, Collision,
-    Box, Cylinder, Capsule, Sphere,
+    Box, Cylinder, Capsule, Sphere, Plane,
 )
 
 MIN_MASS = 1e-12
@@ -60,6 +60,41 @@ def euler2mcjquat(euler):
 
 
 def mjc_add_link(mjcf_model, mjcf_items, sdf_link, **kwargs):
+def grid_material(mjcf_model):
+    """Get grid texture"""
+    texture = mjcf_model.asset.find(
+        namespace='texture',
+        identifier='texture_grid',
+    )
+    if texture is None:
+        texture = mjcf_model.asset.add(  # Add grid texture to assets
+            'texture',
+            name='texture_grid',
+            type='2d',
+            builtin='checker',
+            rgb1=[0.1, 0.2, 0.3],
+            rgb2=[0.2, 0.3, 0.4],
+            width=300,
+            height=300,
+            mark='edge',
+            markrgb=[0.2, 0.3, 0.4],
+        )
+    material = mjcf_model.asset.find(
+        namespace='material',
+        identifier='material_grid',
+    )
+    if material is None:
+        material = mjcf_model.asset.add(  # Add grid material to assets
+            'material',
+            name='material_grid',
+            texture='texture_grid',
+            texrepeat=[1, 1],
+            texuniform=True,
+            reflectance=0.2,
+        )
+    return material, texture
+
+
     """Add link to world"""
 
     sdf_parent = kwargs.pop('sdf_parent', None)
@@ -244,6 +279,19 @@ def mjc_add_link(mjcf_model, mjcf_items, sdf_link, **kwargs):
                 'geom',
                 type='sphere',
                 size=[element.geometry.radius]*3,
+                **geom_kwargs,
+                **visual_kwargs,
+                **collision_kwargs,
+            )
+
+        elif isinstance(element.geometry, Plane):
+
+            material, _ = grid_material(mjcf_model)
+            geom = body.add(
+                'geom',
+                type='plane',
+                size=element.geometry.size,
+                material=material.name,
                 **geom_kwargs,
                 **visual_kwargs,
                 **collision_kwargs,
@@ -449,34 +497,15 @@ def night_sky(mjcf_model):
 
 def add_plane(mjcf_model):
     """Add plane"""
-    texture = mjcf_model.asset.add(  # Add grid texture to assets
-        'texture',
-        name='texture_grid',
-        type='2d',
-        builtin='checker',
-        rgb1=[0.1, 0.2, 0.3],
-        rgb2=[0.2, 0.3, 0.4],
-        width=300,
-        height=300,
-        mark='edge',
-        markrgb=[0.2, 0.3, 0.4],
-    )
-    material = mjcf_model.asset.add(  # Add grid material to assets
-        'material',
-        name='material_grid',
-        texture='texture_grid',
-        texrepeat=[1, 1],
-        texuniform=True,
-        reflectance=0.2,
-    )
+    material, texture = grid_material(mjcf_model)
     geometry = mjcf_model.worldbody.add(  # Add floor
         'geom',
         type='plane',
         name='floor',
         pos=[0, 0, 0],
         size=[10, 10, 0.1],
-        material='material_grid',
-        friction=[1, 0, 0],
+        material=material.name,
+        friction=[1e0, 0, 0],
     )
     return geometry, material, texture
 
