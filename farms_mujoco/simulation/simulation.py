@@ -61,11 +61,15 @@ class Simulation:
         )
 
     @classmethod
-    def from_sdf(cls, sdf_path, timestep, **kwargs):
+    def from_sdf(cls, sdf_path_animat, sdf_path_arena, timestep, **kwargs):
         """From SDF"""
         mjcf_model, base_link = setup_mjcf_xml(
-            sdf_path=sdf_path,
+            sdf_path_animat=sdf_path_animat,
+            sdf_path_arena=sdf_path_arena,
             timestep=timestep,
+            discardvisual=kwargs.get('headless', False),
+            animat_options=kwargs.get('animat_options', None),
+            simulation_options=kwargs.get('simulation_options', None),
             **extract_sub_dict(
                 dictionary=kwargs,
                 keys=(

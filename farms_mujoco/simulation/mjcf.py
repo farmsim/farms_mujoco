@@ -59,7 +59,6 @@ def euler2mcjquat(euler):
     ).as_quat()[[3, 0, 1, 2]]
 
 
-def mjc_add_link(mjcf_model, mjcf_items, sdf_link, **kwargs):
 def grid_material(mjcf_model):
     """Get grid texture"""
     texture = mjcf_model.asset.find(
@@ -95,6 +94,7 @@ def grid_material(mjcf_model):
     return material, texture
 
 
+def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     """Add link to world"""
 
     sdf_parent = kwargs.pop('sdf_parent', None)
@@ -102,6 +102,16 @@ def grid_material(mjcf_model):
     sdf_joint = kwargs.pop('sdf_joint', None)
     directory = kwargs.pop('directory', '')
     free = kwargs.pop('free', False)
+    self_collisions = kwargs.pop('self_collisions', False)
+    concave = kwargs.pop('concave', False)
+    overwrite = kwargs.pop('overwrite', True)
+    solref = kwargs.pop('solref', [0.02, 1])
+    solimp = kwargs.pop('solimp', [0.9, 0.95, 0.001, 0.5, 2])
+    friction = kwargs.pop('friction', [1.0, 0, 0])
+    frictionloss = kwargs.pop('frictionloss', 1e-5)
+    damping = kwargs.pop('damping', 0)
+    use_site = kwargs.pop('use_site', False)
+    assert not kwargs, kwargs
 
     # Links (bodies)
     if mjc_parent is None or sdf_parent is None:
@@ -116,10 +126,10 @@ def grid_material(mjcf_model):
         pos=link_local_pos,
         quat=euler2mcjquat(link_local_euler),
     )
-    mjcf_items['links'][sdf_link.name] = body
+    mjcf_map['links'][sdf_link.name] = body
 
     # Site
-    if kwargs.pop('use_site', False):
+    if use_site:
         site = body.add(
             'site',
             type='box',
@@ -129,7 +139,7 @@ def grid_material(mjcf_model):
             quat=[1, 0, 0, 0],
             size=[1e-2]*3,
         )
-        mjcf_items['sites'][site.name] = site
+        mjcf_map['sites'][site.name] = site
 
     # joints
     joint = None
@@ -143,19 +153,16 @@ def grid_material(mjcf_model):
                 axis=sdf_joint.axis.xyz,
                 pos=sdf_joint.pose[:3],
                 # euler=sdf_joint.pose[3:],  # Euler not supported in joint
-                damping=1e-3,
-                frictionloss=1e-3,
+                type='hinge',
+                damping=damping,
+                frictionloss=frictionloss,
             )
-            mjcf_items['joints'][sdf_joint.name] = joint
+            mjcf_map['joints'][sdf_joint.name] = joint
 
     # Visual and collisions (geoms)
     for element in sdf_link.collisions + sdf_link.visuals:
 
         geom = None
-
-        # Properties
-        self_collisions = 0
-        friction = [0.5, 0, 0]
 
         # Include in mjcf
         visual_kwargs = {}
@@ -178,9 +185,13 @@ def grid_material(mjcf_model):
             visual_kwargs['group'] = 1
         elif isinstance(element, Collision):
             collision_kwargs['friction'] = friction
+            collision_kwargs['margin'] = 0
             collision_kwargs['contype'] = 1  # World collisions
             collision_kwargs['conaffinity'] = self_collisions
+            collision_kwargs['condim'] = 3
             collision_kwargs['group'] = 2
+            collision_kwargs['solref'] = solref
+            collision_kwargs['solimp'] = solimp
 
         # Mesh
         if isinstance(element.geometry, Mesh):
@@ -193,7 +204,7 @@ def grid_material(mjcf_model):
             path, extension = os.path.splitext(mesh_path)
             if extension != '.stl':
                 stl_path = f'{path}.stl'
-                if not os.path.isfile(stl_path):
+                if overwrite or not os.path.isfile(stl_path):
                     mesh = tri.load_mesh(mesh_path)
                     if isinstance(mesh, tri.Scene):
                         mesh = tri.util.concatenate(
@@ -302,9 +313,9 @@ def grid_material(mjcf_model):
 
         if geom is not None:
             if isinstance(element, Visual):
-                mjcf_items['visuals'][element.name] = geom
+                mjcf_map['visuals'][element.name] = geom
             elif isinstance(element, Collision):
-                mjcf_items['collisions'][element.name] = geom
+                mjcf_map['collisions'][element.name] = geom
 
     # Inertial
     inertial = sdf_link.inertial
@@ -341,30 +352,38 @@ def grid_material(mjcf_model):
                 inertial.inertias[4],
             ],
         )
+    elif not free:
+        body.add(
+            'inertial',
+            pos=[0, 0, 0],
+            quat=[1, 0, 0, 0],
+            mass=1,
+            diaginertia=[1, 1, 1],
+        )
 
     return body, joint
 
 
-def add_link_recursive(mjcf_model, mjcf_items, sdf, **kwargs):
+def add_link_recursive(mjcf_model, mjcf_map, sdf, **kwargs):
     """Add link recursive"""
 
     # Handle kwargs
     sdf_link = kwargs.pop('sdf_link', None)
     sdf_parent = kwargs.pop('sdf_parent', None)
     sdf_joint = kwargs.pop('sdf_joint', None)
-    use_site = kwargs.pop('use_site', False)
+    free = kwargs.pop('free', False)
 
     # Add link
     mjc_add_link(
         mjcf_model=mjcf_model,
-        mjcf_items=mjcf_items,
+        mjcf_map=mjcf_map,
         sdf_link=sdf_link,
         sdf_parent=sdf_parent,
         sdf_joint=sdf_joint,
         directory=sdf.directory,
-        use_site=use_site,
+        free=free,
         mjc_parent=(
-            mjcf_items['links'].get(sdf_parent.name)
+            mjcf_map['links'].get(sdf_parent.name)
             if sdf_parent is not None
             else None
         ),
@@ -375,12 +394,12 @@ def add_link_recursive(mjcf_model, mjcf_items, sdf, **kwargs):
     for child in sdf.get_children(link=sdf_link):
         add_link_recursive(
             mjcf_model=mjcf_model,
-            mjcf_items=mjcf_items,
+            mjcf_map=mjcf_map,
             sdf=sdf,
             sdf_link=child,
             sdf_parent=sdf_link,
             sdf_joint=sdf.get_parent_joint(link=child),
-            use_site=use_site,
+            **kwargs
         )
 
 
@@ -388,82 +407,134 @@ def sdf2mjcf(sdf, **kwargs):
     """Export to MJCF string"""
 
     mjcf_model = kwargs.pop('mjcf_model', None)
+    fixed_base = kwargs.pop('fixed_base', False)
+    concave = kwargs.pop('concave', False)
     use_site = kwargs.pop('use_site', False)
+    use_sensors = kwargs.pop('use_sensors', False)
+    use_actuators = kwargs.pop('use_actuators', False)
+    # Position
+    act_pos_gain = kwargs.pop('act_pos_gain', 1)
+    act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
+    act_pos_ctrlrange = kwargs.pop('act_pos_ctrlrange', [0, 0])
+    act_pos_forcelimited = kwargs.pop('act_pos_forcelimited', False)
+    act_pos_forcerange = kwargs.pop('act_pos_forcerange', [0, 0])
+    # Velocity
+    act_vel_gain = kwargs.pop('act_vel_gain', 1)
+    act_vel_ctrllimited = kwargs.pop('act_vel_ctrllimited', False)
+    act_vel_ctrlrange = kwargs.pop('act_vel_ctrlrange', [0, 0])
+    act_vel_forcelimited = kwargs.pop('act_vel_forcelimited', False)
+    act_vel_forcerange = kwargs.pop('act_vel_forcerange', [0, 0])
+    # Animat options
+    animat_options = kwargs.pop('animat_options', None)
+    simulation_options = kwargs.pop('simulation_options', None)
     if mjcf_model is None:
         mjcf_model = mjcf.RootElement()
 
-    # Compiler
-    mjcf_model.compiler.angle = 'radian'
-    mjcf_model.compiler.eulerseq = 'xyz'
-    mjcf_model.compiler.boundmass = MIN_MASS
-    mjcf_model.compiler.boundinertia = MIN_INERTIA
-    mjcf_model.compiler.balanceinertia = True
-    mjcf_model.compiler.inertiafromgeom = False
-
     # Base link
-    base_link = sdf.get_base_link()
+    roots = sdf.get_base_links()
 
-    # Links and joints
-    mjcf_items = {
+    # Elements
+    mjcf_map = {
         element: {}
-        for element in ['links', 'joints', 'sites', 'visuals', 'collisions']
+        for element in [
+                'links', 'joints',
+                'sites', 'visuals', 'collisions',
+                'actuators',
+        ]
     }
 
-    add_link_recursive(
-        mjcf_model=mjcf_model,
-        mjcf_items=mjcf_items,
-        sdf=sdf,
-        sdf_link=base_link,
-        free=True,
-        use_site=use_site,
-    )
+    # Add trees from roots
+    for root in roots:
+        add_link_recursive(
+            mjcf_model=mjcf_model,
+            mjcf_map=mjcf_map,
+            sdf=sdf,
+            sdf_link=root,
+            free=not fixed_base,
+            use_site=use_site,
+            self_collisions=fixed_base,
+            concave=concave,
+            **kwargs
+        )
 
     # Actuators
-    for joint_name in mjcf_items['joints']:
-        mjcf_model.actuator.add(
-            'position',
-            name=f'actuator_position_{joint_name}',
-            joint=joint_name,
-            kp=1e-2,
+    if use_actuators:
+        joints_names = (
+            [joint.joint_name for joint in animat_options.control.joints]
+            if animat_options is not None
+            else mjcf_map['joints']
         )
-        mjcf_model.actuator.add(
-            'velocity',
-            name=f'actuator_velocity_{joint_name}',
-            joint=joint_name,
-            kv=1e-3,
-        )
+        for joint_name in joints_names:
+            if mjcf_model.find('joint', joint_name).type != 'hinge':
+                continue
+            # mjcf_model.actuator.add(
+            #     'general',
+            #     name=f'act_pos_{joint_name}',
+            #     joint=joint_name,
+            # )
+            name = f'actuator_position_{joint_name}'
+            mjcf_map['actuators'][name] = mjcf_model.actuator.add(
+                'position',
+                name=name,
+                joint=joint_name,
+                kp=act_pos_gain,
+                ctrllimited=act_pos_ctrllimited,
+                ctrlrange=act_pos_ctrlrange,
+                forcelimited=act_pos_forcelimited,
+                forcerange=act_pos_forcerange,
+            )
+            name = f'actuator_velocity_{joint_name}'
+            mjcf_map['actuators'][name] = mjcf_model.actuator.add(
+                'velocity',
+                name=name,
+                joint=joint_name,
+                kv=act_vel_gain,
+                ctrllimited=act_vel_ctrllimited,
+                ctrlrange=act_vel_ctrlrange,
+                forcelimited=act_vel_forcelimited,
+                forcerange=act_vel_forcerange,
+            )
+            name = f'actuator_torque_{joint_name}'
+            mjcf_map['actuators'][name] = mjcf_model.actuator.add(
+                'motor',
+                name=name,
+                joint=joint_name,
+            )
+        assert mjcf_map['actuators'], mjcf_map['actuators']
 
     # Sensors
-    for link_name in mjcf_items['links']:
-        for link_sensor in ('framepos', 'framequat', 'framelinvel', 'frameangvel'):
-            mjcf_model.sensor.add(
-                link_sensor,
-                name=f'{link_sensor}_{link_name}',
-                objname=link_name,
-                objtype='body',
-            )
-        if use_site:
-            for link_sensor in ('touch',):  # 'velocimeter', 'gyro',
+    if use_sensors:
+        for link_name in mjcf_map['links']:
+            for link_sensor in (
+                    'framepos', 'framequat',
+                    'framelinvel', 'frameangvel',
+            ):
                 mjcf_model.sensor.add(
                     link_sensor,
                     name=f'{link_sensor}_{link_name}',
-                    site=f'site_{link_name}',
+                    objname=link_name,
+                    objtype='body',
                 )
-    for joint_name in mjcf_items['joints']:
-        for joint_sensor in ('jointpos', 'jointvel'):
-            mjcf_model.sensor.add(
-                joint_sensor,
-                name=f'{joint_sensor}_{joint_name}',
-                joint=joint_name,
-            )
-        for joint_sensor in ('actuatorfrc',):
-            for actuator_type in ('position', 'velocity'):
+            if use_site:
+                for link_sensor in ('touch',):  # 'velocimeter', 'gyro',
+                    mjcf_model.sensor.add(
+                        link_sensor,
+                        name=f'{link_sensor}_{link_name}',
+                        site=f'site_{link_name}',
+                    )
+        for joint_name in mjcf_map['joints']:
+            for joint_sensor in ('jointpos', 'jointvel'):
                 mjcf_model.sensor.add(
                     joint_sensor,
-                    name=f'{joint_sensor}_{actuator_type}_{joint_name}',
-                    actuator=f'actuator_{actuator_type}_{joint_name}',
+                    name=f'{joint_sensor}_{joint_name}',
+                    joint=joint_name,
                 )
-
+        for actuator_name, actuator in mjcf_map['actuators'].items():
+            mjcf_model.sensor.add(
+                'actuatorfrc',
+                name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
+                actuator=actuator_name,
+            )
 
     return mjcf_model
 
@@ -568,27 +639,79 @@ def add_cameras(mjcf_model, link, dist=0.3):
         )
 
 
-def setup_mjcf_xml(sdf_path, timestep, **kwargs):
+def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
     """Setup MJCF XML"""
 
+    animat_options = kwargs.pop('animat_options', None)
+    simulation_options = kwargs.pop('simulation_options', None)
+
+    # Arena
+    mjcf_model = sdf2mjcf(
+        sdf=ModelSDF.read(filename=os.path.expandvars(sdf_path_arena))[0],
+        # mjcf_model=mjcf_model,
+        fixed_base=True,
+        concave=True,
+        simulation_options=simulation_options,
+    )
+    # add_plane(mjcf_model)
+
     # Animat
-    sdf = ModelSDF.read(filename=os.path.expandvars(sdf_path))[0]
-    mjcf_model = sdf2mjcf(sdf)
+    sdf_animat = ModelSDF.read(filename=os.path.expandvars(sdf_path_animat))[0]
+    mjcf_model = sdf2mjcf(
+        sdf=sdf_animat,
+        mjcf_model=mjcf_model,
+        use_sensors=True,
+        use_actuators=True,
+        animat_options=animat_options,
+        simulation_options=simulation_options,
+        # Links
+        friction=[1.0, 1e-3, 1e-4],
+        # Joints
+        damping=1e-4,
+        act_pos_gain=5e-3,
+        act_vel_gain=1e-4,
+    )
+
+    # Spawn options
+    sdf_base_link = sdf_animat.get_base_link()
+    base_link = mjcf_model.worldbody.body[-1]
+    assert base_link.name == sdf_base_link.name
+    base_link.pos = kwargs.pop('spawn_position', [0, 0, 0])
+    base_link.quat = euler2mcjquat(kwargs.pop('spawn_rotation', [0, 0, 0]))
+
+    # Compiler
+    mjcf_model.compiler.angle = 'radian'
+    mjcf_model.compiler.eulerseq = 'xyz'
+    mjcf_model.compiler.boundmass = MIN_MASS
+    mjcf_model.compiler.boundinertia = MIN_INERTIA
+    mjcf_model.compiler.balanceinertia = False
+    mjcf_model.compiler.inertiafromgeom = False
+    mjcf_model.compiler.convexhull = False
+    mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
+
+    # Simulation options
     mjcf_model.size.njmax = 2**12
     mjcf_model.size.nconmax = 2**12
-    mjcf_model.option.timestep = timestep
+    mjcf_model.option.gravity = kwargs.pop('gravity', [0, 0, -9.81])
+    mjcf_model.option.timestep = kwargs.pop('timestep', 1e-3)
     mjcf_model.option.iterations = kwargs.pop('solver_iterations', 100)
     mjcf_model.option.solver = 'Newton'  # PGS, CG, Newton
     mjcf_model.option.integrator = 'Euler'  # Euler, RK4
     mjcf_model.option.mpr_iterations = kwargs.pop('mpr_iterations', 50)
 
-    # Spawn options
-    base_link = mjcf_model.worldbody.body[0]
-    base_link.pos = kwargs.pop('spawn_position', [0, 0, 0])
-    base_link.euler = kwargs.pop('spawn_rotation', [0, 0, 0])
+    # Animat options
+    if animat_options is not None:
+        for link in animat_options.morphology.links:
+            pass
+        for joint in animat_options.morphology.joints:
+            pass
+        base_link.pos = animat_options.spawn.position
+        base_link.quat = euler2mcjquat(animat_options.spawn.orientation)
 
-    # Add plane
-    add_plane(mjcf_model)
+    if simulation_options is not None:
+        mjcf_model.option.gravity = simulation_options.gravity
+        mjcf_model.option.timestep = simulation_options.timestep
+        mjcf_model.option.iterations = simulation_options.n_solver_iters
 
     # Add particles
     if kwargs.pop('use_particles', False):
