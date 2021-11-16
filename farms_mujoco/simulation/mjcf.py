@@ -414,10 +414,10 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         inertia_mat[2][0] = inertial.inertias[2]
         inertia_mat[1][2] = inertial.inertias[4]
         inertia_mat[2][1] = inertial.inertias[4]
-        mat = euler2mat(inertial.pose[3:])
-        inertia_mat = mat @ inertia_mat @ mat.T
         eigvals = np.linalg.eigvals(inertia_mat)
         assert (eigvals > 0).all(), f'Eigen values <= 0: {eigvals}\n{inertia_mat}'
+        rot_mat = euler2mat(inertial.pose[3:])
+        inertia_mat = rot_mat @ inertia_mat @ rot_mat.T  # Rotate inertia tensor
         body.add(
             'inertial',
             pos=[pos*units.meters for pos in inertial.pose[:3]],
