@@ -219,22 +219,92 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                     mesh.export(stl_path)
                 mesh_path = stl_path
 
-            # Add mesh asset
-            mjcf_model.asset.add(  # Add mesh to assets
-                'mesh',
-                name=f'mesh_{element.name}',
-                file=mesh_path,
-                scale=element.geometry.scale,
-            )
+            # Convexify
+            mesh = tri.load_mesh(mesh_path)
+            if (
+                    isinstance(element, Collision)
+                    and concave
+                    and not tri.convex.is_convex(mesh)
+                    and False
+            ):
+                pylog.info('Convexifying %s', mesh_path)
+                meshes = tri.interfaces.vhacd.convex_decomposition(
+                    mesh,
+                    # Original parameters
+                    # resolution=100000,
+                    # concavity=0.001,
+                    # planeDownsampling=4,
+                    # convexhullDownsampling=4,
+                    # alpha=0.05,
+                    # beta=0.05,
+                    # maxhulls=1024,
+                    # pca=0,
+                    # mode=0,
+                    # maxNumVerticesPerCH=64,
+                    # minVolumePerCH=0.0001,
+                    # convexhullApproximation=1,
+                    # oclAcceleration=1,
+                    # oclPlatformId=0,
+                    # oclDevideID=0,
+                    # Parameters
+                    resolution=int(1e5),
+                    concavity=1e-8,
+                    planeDownsampling=1,
+                    convexhullDownsampling=1,
+                    alpha=0.05,
+                    beta=0.05,
+                    gamma=0.00125,
+                    delta=0.05,
+                    maxhulls=int(1e4),
+                    pca=0,
+                    mode=1,
+                    maxNumVerticesPerCH=int(1e4),
+                    minVolumePerCH=1e-10,
+                    convexhullApproximation=1,
+                    oclAcceleration=1,
+                )
+                pylog.info('Convex decomposiion complete')
+                original_path, extension = os.path.splitext(mesh_path)
+                name = geom_kwargs['name']
+                for mesh_i, mesh in enumerate(meshes):
+                    path = f'{original_path}_convex_{mesh_i}{extension}'
+                    pylog.info('Exporting and loading %s', path)
+                    mesh.export(path)
+                    mjcf_model.asset.add(  # Add mesh to assets
+                        'mesh',
+                        name=f'mesh_{element.name}_convex_{mesh_i}',
+                        file=path,
+                        scale=element.geometry.scale,
+                    )
+                    geom_kwargs['name'] = f'{name}_convex_{mesh_i}'
+                    _geom = body.add(
+                        'geom',
+                        type='mesh',
+                        mesh=f'mesh_{element.name}_convex_{mesh_i}',
+                        **geom_kwargs,
+                        **visual_kwargs,
+                        **collision_kwargs,
+                    )
+                    pylog.info('loaded %s', path)
+                    if not mesh_i:
+                        geom = _geom
+            else:
+                # Add mesh asset
+                mjcf_model.asset.add(  # Add mesh to assets
+                    'mesh',
+                    name=f'mesh_{element.name}',
+                    file=mesh_path,
+                    scale=element.geometry.scale,
+                )
 
-            geom = body.add(
-                'geom',
-                type='mesh',
-                mesh=f'mesh_{element.name}',
-                **geom_kwargs,
-                **visual_kwargs,
-                **collision_kwargs,
-            )
+                geom = body.add(
+                    'geom',
+                    type='mesh',
+                    mesh=f'mesh_{element.name}',
+                    **geom_kwargs,
+                    **visual_kwargs,
+                    **collision_kwargs,
+                )
 
         # Box
         elif isinstance(element.geometry, Box):
