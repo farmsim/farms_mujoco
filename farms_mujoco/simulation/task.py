@@ -8,6 +8,7 @@ import numpy as np
 from dm_control.rl.control import Task
 
 import farms_pylog as pylog
+from farms_data.units import SimulationUnitScaling
 from farms_data.amphibious.animat_data import ModelData
 
 from .physics import (
@@ -52,6 +53,11 @@ class ExperimentTask(Task):
         self._restart: bool = kwargs.pop('restart', True)
         self._plot: bool = kwargs.pop('plot', False)
         self._save: str = kwargs.pop('save', '')
+        self._units = kwargs.pop('units', (
+            self.simulation_options.units
+            if self.simulation_options is not None
+            else SimulationUnitScaling()
+        ))
         assert not kwargs, kwargs
 
     def set_app(self, app):
@@ -66,9 +72,6 @@ class ExperimentTask(Task):
             assert self._app is not None, (
                 'Simulation can not be restarted without application interface'
             )
-        # if self._controller is not None:
-        #     for name in self._controller.joints_names[ControlType.POSITION]:
-        #         pass
 
         # Initialise iterations
         self.iteration = 0
@@ -131,7 +134,7 @@ class ExperimentTask(Task):
         assert self.iteration < self.n_iterations
 
         # Sensors
-        physics2data(physics, self.iteration, self.data, self.maps)
+        physics2data(physics, self.iteration, self.data, self.maps, self._units)
 
         # # Print contacts
         # if 2 < physics.time() < 2.1:
@@ -162,7 +165,8 @@ class ExperimentTask(Task):
                 )
                 physics.data.ctrl[self.maps['ctrl']['pos']] = [
                     joints_positions[joint]
-                    for joint in self._controller.joints_names[ControlType.POSITION]
+                    for joint
+                    in self._controller.joints_names[ControlType.POSITION]
                 ]
 
     def after_step(self, physics):

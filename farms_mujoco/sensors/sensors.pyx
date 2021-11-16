@@ -49,23 +49,6 @@ cdef void store_forces(
     cdata[iteration, index, CONTACT_POSITION_Z] += norm*pos[2]
 
 
-cdef void normalize_forces_pos(
-    unsigned int iteration,
-    unsigned int index,
-    DTYPEv3 cdata,
-) nogil:
-    """Normalize forces position"""
-    cdef double[3] vector
-    vector[0] = cdata[iteration, index, CONTACT_TOTAL_X]
-    vector[1] = cdata[iteration, index, CONTACT_TOTAL_Y]
-    vector[2] = cdata[iteration, index, CONTACT_TOTAL_Z]
-    cdef double norm = norm3d(vector)
-    if norm > 0:
-        cdata[iteration, index, CONTACT_POSITION_X] /= norm
-        cdata[iteration, index, CONTACT_POSITION_Y] /= norm
-        cdata[iteration, index, CONTACT_POSITION_Z] /= norm
-
-
 cdef cycontact2data(
     unsigned int iteration,
     unsigned int contact_i,
@@ -90,12 +73,55 @@ cdef cycontact2data(
     )
 
 
+cdef void normalize_forces_pos(
+    unsigned int iteration,
+    unsigned int index,
+    DTYPEv3 cdata,
+) nogil:
+    """Normalize forces position"""
+    cdef double[3] vector
+    vector[0] = cdata[iteration, index, CONTACT_TOTAL_X]
+    vector[1] = cdata[iteration, index, CONTACT_TOTAL_Y]
+    vector[2] = cdata[iteration, index, CONTACT_TOTAL_Z]
+    cdef double norm = norm3d(vector)
+    if norm > 0:
+        cdata[iteration, index, CONTACT_POSITION_X] /= norm
+        cdata[iteration, index, CONTACT_POSITION_Y] /= norm
+        cdata[iteration, index, CONTACT_POSITION_Z] /= norm
+
+
+cdef void scale_forces(
+    unsigned int iteration,
+    unsigned int index,
+    DTYPEv3 cdata,
+    double meters,
+    double newtons,
+) nogil:
+    """Scale forces"""
+    cdef double imeters=1./meters
+    cdef double inewtons=1./newtons
+    cdata[iteration, index, CONTACT_REACTION_X] *= inewtons
+    cdata[iteration, index, CONTACT_REACTION_Y] *= inewtons
+    cdata[iteration, index, CONTACT_REACTION_Z] *= inewtons
+    cdata[iteration, index, CONTACT_FRICTION_X] *= inewtons
+    cdata[iteration, index, CONTACT_FRICTION_Y] *= inewtons
+    cdata[iteration, index, CONTACT_FRICTION_Z] *= inewtons
+    cdata[iteration, index, CONTACT_TOTAL_X] *= inewtons
+    cdata[iteration, index, CONTACT_TOTAL_Y] *= inewtons
+    cdata[iteration, index, CONTACT_TOTAL_Z] *= inewtons
+    cdata[iteration, index, CONTACT_POSITION_X] *= imeters
+    cdata[iteration, index, CONTACT_POSITION_Y] *= imeters
+    cdata[iteration, index, CONTACT_POSITION_Z] *= imeters
+
+
 cpdef cycontacts2data(
     object physics,
     unsigned int iteration,
     ContactsArrayCy data,
     dict geom2data,
-    set geom_set
+    set geom_set,
+    double meters,
+    double newtons,
 ):
     """Contacts to data"""
     cdef unsigned int contact_i
@@ -134,7 +160,13 @@ cpdef cycontacts2data(
             index=index,
             cdata=cdata,
         )
-
+        scale_forces(
+            iteration=iteration,
+            index=index,
+            cdata=cdata,
+            meters=meters,
+            newtons=newtons,
+        )
 
 cdef class Sensors(dict):
     """Sensors"""

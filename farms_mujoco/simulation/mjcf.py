@@ -11,6 +11,7 @@ from scipy.spatial.transform import Rotation
 from dm_control import mjcf
 
 import farms_pylog as pylog
+from farms_data.units import SimulationUnitScaling
 from farms_sdf.sdf import (
     ModelSDF, Mesh, Visual, Collision,
     Box, Cylinder, Capsule, Sphere, Plane,
@@ -105,12 +106,13 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     self_collisions = kwargs.pop('self_collisions', False)
     concave = kwargs.pop('concave', False)
     overwrite = kwargs.pop('overwrite', True)
-    solref = kwargs.pop('solref', [0.02, 1])
-    solimp = kwargs.pop('solimp', [0.9, 0.95, 0.001, 0.5, 2])
+    solref = kwargs.pop('solref', None)  # [0.02, 1]
+    solimp = kwargs.pop('solimp', None)  # [0.9, 0.95, 0.001, 0.5, 2]
     friction = kwargs.pop('friction', [1.0, 0, 0])
     frictionloss = kwargs.pop('frictionloss', 1e-5)
     damping = kwargs.pop('damping', 0)
     use_site = kwargs.pop('use_site', False)
+    units = kwargs.pop('units', SimulationUnitScaling())
     assert not kwargs, kwargs
 
     # Links (bodies)
@@ -123,7 +125,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     body = mjc_parent.add(
         'body',
         name=sdf_link.name,
-        pos=link_local_pos,
+        pos=[pos*units.meters for pos in link_local_pos],
         quat=euler2mcjquat(link_local_euler),
     )
     mjcf_map['links'][sdf_link.name] = body
@@ -137,7 +139,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
             group=1,
             pos=[0, 0, 0],
             quat=[1, 0, 0, 0],
-            size=[1e-2]*3,
+            size=[1e-2*units.meters]*3,
         )
         mjcf_map['sites'][site.name] = site
 
@@ -151,10 +153,10 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 'joint',
                 name=sdf_joint.name,
                 axis=sdf_joint.axis.xyz,
-                pos=sdf_joint.pose[:3],
+                pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
                 # euler=sdf_joint.pose[3:],  # Euler not supported in joint
                 type='hinge',
-                damping=damping,
+                damping=damping*units.damping,
                 frictionloss=frictionloss,
             )
             mjcf_map['joints'][sdf_joint.name] = joint
@@ -169,7 +171,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         collision_kwargs = {}
         geom_kwargs = {
             'name': element.name,
-            'pos': element.pose[:3],
+            'pos': [pos*units.meters for pos in element.pose[:3]],
             'quat': euler2mcjquat(element.pose[3:]),
         }
         if isinstance(element, Visual):
@@ -190,8 +192,15 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
             collision_kwargs['conaffinity'] = self_collisions
             collision_kwargs['condim'] = 3
             collision_kwargs['group'] = 2
-            collision_kwargs['solref'] = solref
-            collision_kwargs['solimp'] = solimp
+            if solref is not None:
+                if all(sol < 0 for sol in solref):
+                    solref[0] *= units.newtons/units.meters
+                    solref[1] *= units.newtons/units.velocity
+                else:
+                    solref[0] *= units.seconds
+                collision_kwargs['solref'] = solref
+            if solimp is not None:
+                collision_kwargs['solimp'] = solimp
 
         # Mesh
         if isinstance(element.geometry, Mesh):
@@ -225,7 +234,6 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                     isinstance(element, Collision)
                     and concave
                     and not tri.convex.is_convex(mesh)
-                    and False
             ):
                 pylog.info('Convexifying %s', mesh_path)
                 meshes = tri.interfaces.vhacd.convex_decomposition(
@@ -274,7 +282,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                         'mesh',
                         name=f'mesh_{element.name}_convex_{mesh_i}',
                         file=path,
-                        scale=element.geometry.scale,
+                        scale=[s*units.meters for s in element.geometry.scale],
                     )
                     geom_kwargs['name'] = f'{name}_convex_{mesh_i}'
                     _geom = body.add(
@@ -294,7 +302,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                     'mesh',
                     name=f'mesh_{element.name}',
                     file=mesh_path,
-                    scale=element.geometry.scale,
+                    scale=[s*units.meters for s in element.geometry.scale],
                 )
 
                 geom = body.add(
@@ -312,7 +320,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
             geom = body.add(
                 'geom',
                 type='box',
-                size=[0.5*s for s in element.geometry.size],
+                size=[0.5*s*units.meters for s in element.geometry.size],
                 **geom_kwargs,
                 **visual_kwargs,
                 **collision_kwargs,
@@ -325,9 +333,9 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 'geom',
                 type='cylinder',
                 size=[  # Radius, length, unused
-                    element.geometry.radius,
-                    0.5*element.geometry.length,
-                    element.geometry.radius,
+                    element.geometry.radius*units.meters,
+                    0.5*element.geometry.length*units.meters,
+                    element.geometry.radius*units.meters,
                 ],
                 **geom_kwargs,
                 **visual_kwargs,
@@ -341,12 +349,12 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 'geom',
                 type='capsule',
                 size=[  # Radius, length, unused
-                    element.geometry.radius,
+                    element.geometry.radius*units.meters,
                     max(
                         element.geometry.length-2*element.geometry.radius,
                         element.geometry.radius,
-                    ),
-                    element.geometry.radius,
+                    )*units.meters,
+                    element.geometry.radius*units.meters,
                 ],
                 **geom_kwargs,
                 **visual_kwargs,
@@ -359,7 +367,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
             geom = body.add(
                 'geom',
                 type='sphere',
-                size=[element.geometry.radius]*3,
+                size=[element.geometry.radius*units.meters]*3,
                 **geom_kwargs,
                 **visual_kwargs,
                 **collision_kwargs,
@@ -405,21 +413,21 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         assert (eigvals > 0).all(), f'Eigen values <= 0: {eigvals}\n{inertia_mat}'
         body.add(
             'inertial',
-            pos=inertial.pose[:3],
+            pos=[pos*units.meters for pos in inertial.pose[:3]],
             quat=euler2mcjquat(inertial.pose[3:]),
-            mass=inertial.mass,
+            mass=inertial.mass*units.kilograms,
             # diaginertia=np.clip([
             #     inertial.inertias[0],
             #     inertial.inertias[3],
             #     inertial.inertias[5]
             # ], 0, np.inf).tolist(),
             fullinertia=[
-                max(MIN_INERTIA, inertial.inertias[0]),
-                max(MIN_INERTIA, inertial.inertias[3]),
-                max(MIN_INERTIA, inertial.inertias[5]),
-                inertial.inertias[1],
-                inertial.inertias[2],
-                inertial.inertias[4],
+                max(MIN_INERTIA, inertial.inertias[0])*units.inertia,
+                max(MIN_INERTIA, inertial.inertias[3])*units.inertia,
+                max(MIN_INERTIA, inertial.inertias[5])*units.inertia,
+                inertial.inertias[1]*units.inertia,
+                inertial.inertias[2]*units.inertia,
+                inertial.inertias[4]*units.inertia,
             ],
         )
     elif not free:
@@ -497,6 +505,12 @@ def sdf2mjcf(sdf, **kwargs):
     # Animat options
     animat_options = kwargs.pop('animat_options', None)
     simulation_options = kwargs.pop('simulation_options', None)
+    units = kwargs.pop('units', (
+        simulation_options.units
+        if simulation_options is not None
+        else SimulationUnitScaling()
+    ))
+
     if mjcf_model is None:
         mjcf_model = mjcf.RootElement()
 
@@ -524,6 +538,7 @@ def sdf2mjcf(sdf, **kwargs):
             use_site=use_site,
             self_collisions=fixed_base,
             concave=concave,
+            units=units,
             **kwargs
         )
 
@@ -547,22 +562,22 @@ def sdf2mjcf(sdf, **kwargs):
                 'position',
                 name=name,
                 joint=joint_name,
-                kp=act_pos_gain,
+                kp=act_pos_gain*units.torques,
                 ctrllimited=act_pos_ctrllimited,
                 ctrlrange=act_pos_ctrlrange,
                 forcelimited=act_pos_forcelimited,
-                forcerange=act_pos_forcerange,
+                forcerange=[val*units.torques for val in act_pos_forcerange],
             )
             name = f'actuator_velocity_{joint_name}'
             mjcf_map['actuators'][name] = mjcf_model.actuator.add(
                 'velocity',
                 name=name,
                 joint=joint_name,
-                kv=act_vel_gain,
+                kv=act_vel_gain*units.torques/units.angular_velocity,
                 ctrllimited=act_vel_ctrllimited,
-                ctrlrange=act_vel_ctrlrange,
+                ctrlrange=[val*units.angular_velocity for val in act_vel_ctrlrange],
                 forcelimited=act_vel_forcelimited,
-                forcerange=act_vel_forcerange,
+                forcerange=[val*units.torques for val in act_vel_forcerange],
             )
             name = f'actuator_torque_{joint_name}'
             mjcf_map['actuators'][name] = mjcf_model.actuator.add(
@@ -665,7 +680,7 @@ def add_particles(mjcf_model):
     composite.geom.rgba = [0.8, 0.2, 0.1, 1.0]
 
 
-def add_lights(mjcf_model, link):
+def add_lights(mjcf_model, link, meters=1):
     """Add lights"""
     mjcf_model.visual.quality.shadowsize = 32*1024
     for i, pos in enumerate([[-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1]]):
@@ -675,7 +690,7 @@ def add_lights(mjcf_model, link):
             mode='trackcom',
             # target='targetbody',
             active=str(True).lower(),
-            pos=pos,
+            pos=[val*meters for val in pos],
             castshadow=str(not i).lower(),
             directional=str(False).lower(),
             dir=[0, 0, -1.0],
@@ -688,7 +703,7 @@ def add_lights(mjcf_model, link):
         )
 
 
-def add_cameras(mjcf_model, link, dist=0.3):
+def add_cameras(mjcf_model, link, meters=1, dist=0.3):
     """Add cameras"""
     mjcf_model.visual.quality.shadowsize = 32*1024
     for i, (mode, pose) in enumerate([
@@ -701,7 +716,7 @@ def add_cameras(mjcf_model, link, dist=0.3):
             'camera',
             name=f'camera_{link.name}_{i}',
             mode=mode,
-            pos=pose[:3],
+            pos=[pos*meters for pos in pose[:3]],
             quat=euler2mcjquat(pose[3:]),
             # target='',
             fovy=45,
@@ -714,13 +729,24 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
 
     animat_options = kwargs.pop('animat_options', None)
     simulation_options = kwargs.pop('simulation_options', None)
+    units = kwargs.pop('units', (
+        simulation_options.units
+        if simulation_options is not None
+        else SimulationUnitScaling()
+    ))
+    timestep = kwargs.pop(
+        'timestep',
+        simulation_options.timestep
+        if simulation_options is not None
+        else 1e-3,
+    )
 
     # Arena
     mjcf_model = sdf2mjcf(
         sdf=ModelSDF.read(filename=os.path.expandvars(sdf_path_arena))[0],
         # mjcf_model=mjcf_model,
         fixed_base=True,
-        concave=True,
+        concave=False,
         simulation_options=simulation_options,
     )
     # add_plane(mjcf_model)
@@ -763,7 +789,7 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
     mjcf_model.size.njmax = 2**12
     mjcf_model.size.nconmax = 2**12
     mjcf_model.option.gravity = kwargs.pop('gravity', [0, 0, -9.81])
-    mjcf_model.option.timestep = kwargs.pop('timestep', 1e-3)
+    mjcf_model.option.timestep = timestep
     mjcf_model.option.iterations = kwargs.pop('solver_iterations', 100)
     mjcf_model.option.solver = 'Newton'  # PGS, CG, Newton
     mjcf_model.option.integrator = 'Euler'  # Euler, RK4
@@ -775,12 +801,15 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
             pass
         for joint in animat_options.morphology.joints:
             pass
-        base_link.pos = animat_options.spawn.position
+        base_link.pos = [pos*units.meters for pos in animat_options.spawn.position]
         base_link.quat = euler2mcjquat(animat_options.spawn.orientation)
 
     if simulation_options is not None:
-        mjcf_model.option.gravity = simulation_options.gravity
-        mjcf_model.option.timestep = simulation_options.timestep
+        mjcf_model.option.gravity = [
+            garvity*units.acceleration
+            for garvity in simulation_options.gravity
+        ]
+        mjcf_model.option.timestep = timestep
         mjcf_model.option.iterations = simulation_options.n_solver_iters
 
     # Add particles
@@ -788,10 +817,10 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
         add_particles(mjcf_model)
 
     # Light and shadows
-    add_lights(mjcf_model=mjcf_model, link=base_link)
+    add_lights(mjcf_model=mjcf_model, link=base_link, meters=units.meters)
 
     # Add cameras
-    add_cameras(mjcf_model=mjcf_model, link=base_link)
+    add_cameras(mjcf_model=mjcf_model, link=base_link, meters=units.meters)
 
     # Night sky
     night_sky(mjcf_model)

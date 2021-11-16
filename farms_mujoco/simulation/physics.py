@@ -221,7 +221,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     sensor_maps['geom_set'] = set(sensor_maps['geom2data'].keys())
 
 
-def physics2data(physics, iteration, data, maps):
+def physics2data(physics, iteration, data, maps, units):
     """Sensors data collection"""
 
     sensor_maps = maps['sensors']
@@ -235,16 +235,18 @@ def physics2data(physics, iteration, data, maps):
     # ] = physics.data.sensordata[sensor_maps['framequat2data']]
     data.sensors.links.array[iteration, :,
         sc.link_urdf_position_x:sc.link_urdf_position_z+1,
-    ] = physics.data.xpos[sensor_maps['xpos2data']]
+    ] = physics.data.xpos[sensor_maps['xpos2data']]/units.meters
     data.sensors.links.array[iteration, :,
         sc.link_urdf_orientation_x:sc.link_urdf_orientation_w+1,
     ] = physics.data.xquat[sensor_maps['xquat2data']][:, [1, 2, 3, 0]]
     data.sensors.links.array[iteration, :,
             sc.link_com_velocity_lin_x:sc.link_com_velocity_lin_z+1,
-    ] = physics.data.sensordata[sensor_maps['framelinvel2data']]
+    ] = physics.data.sensordata[sensor_maps['framelinvel2data']]/units.velocity
     data.sensors.links.array[iteration, :,
             sc.link_com_velocity_ang_x:sc.link_com_velocity_ang_z+1,
-    ] = physics.data.sensordata[sensor_maps['frameangvel2data']]
+    ] = (
+        physics.data.sensordata[sensor_maps['frameangvel2data']]
+    )/units.angular_velocity
 
     # Joints
     data.sensors.joints.array[iteration, :, sc.joint_position] = (
@@ -252,7 +254,7 @@ def physics2data(physics, iteration, data, maps):
     )
     data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
         physics.data.sensordata[sensor_maps['jointvel2data']]
-    )
+    )/units.angular_velocity
     # data.sensors.joints.array[iteration, :, sc.joint_position] = (
     #     physics.data.qpos[sensor_maps['qpos2data']]
     # )
@@ -262,7 +264,7 @@ def physics2data(physics, iteration, data, maps):
     data.sensors.joints.array[iteration, :, sc.joint_torque] = (
         physics.data.sensordata[sensor_maps['actuatorfrc_position2data']]
         + physics.data.sensordata[sensor_maps['actuatorfrc_velocity2data']]
-    )
+    )/units.torques
 
     # Contacts
     cycontacts2data(
@@ -271,4 +273,6 @@ def physics2data(physics, iteration, data, maps):
         data=data.sensors.contacts,
         geom2data=sensor_maps['geom2data'],
         geom_set=sensor_maps['geom_set'],
+        meters=units.meters,
+        newtons=units.newtons,
     )
