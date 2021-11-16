@@ -43,7 +43,6 @@ class ExperimentTask(Task):
         self.data: ModelData = kwargs.pop('data', None)
         self._controller = kwargs.pop('controller', None)
         self.animat_options = kwargs.pop('animat_options', None)
-        self.simulation_options = kwargs.pop('simulation_options', None)
         self.maps: Dict = {
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'xfrc': {}, 'geoms': {},
@@ -53,11 +52,7 @@ class ExperimentTask(Task):
         self._restart: bool = kwargs.pop('restart', True)
         self._plot: bool = kwargs.pop('plot', False)
         self._save: str = kwargs.pop('save', '')
-        self._units = kwargs.pop('units', (
-            self.simulation_options.units
-            if self.simulation_options is not None
-            else SimulationUnitScaling()
-        ))
+        self._units = kwargs.pop('units', SimulationUnitScaling)
         assert not kwargs, kwargs
 
     def set_app(self, app):

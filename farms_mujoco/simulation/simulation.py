@@ -12,7 +12,7 @@ from dm_control.rl.control import Environment
 
 import farms_pylog as pylog
 
-from .mjcf import setup_mjcf_xml
+from .mjcf import setup_mjcf_xml, mjcf2str
 from .task import ExperimentTask
 from .application import FarmsApplication
 
@@ -35,6 +35,9 @@ class Simulation:
         self.fast = kwargs.pop('fast', False)
         self.pause = kwargs.pop('pause', True)
         self.headless = kwargs.pop('headless', False)
+        self.options = kwargs.pop('simulation_options', None)
+        if self.options is not None:
+            kwargs['units'] = self.options.units
 
         # Simulator configuration
         viewer.util._MAX_TIME_MULTIPLIER = 2**15  # pylint: disable=protected-access
@@ -85,6 +88,13 @@ class Simulation:
             **kwargs,
         )
 
+    def save_mjcf_xml(self, path):
+        """Save simulation to mjcf xml"""
+        mjcf_xml_str = mjcf2str(mjcf_model=self._mjcf_model)
+        pylog.info(mjcf_xml_str)
+        with open(path, 'w+') as xml_file:
+            xml_file.write(mjcf_xml_str)
+
     def physics(self):
         """Physics"""
         return self.physics
@@ -131,7 +141,7 @@ class Simulation:
                 os.path.join(log_path, 'simulation.hdf5'),
                 iteration,
             )
-            self.task.simulation_options.save(os.path.join(log_path, 'simulation_options.yaml'))
+            self.options.save(os.path.join(log_path, 'simulation_options.yaml'))
             self.task.animat_options.save(os.path.join(log_path, 'animat_options.yaml'))
 
         # Plot
