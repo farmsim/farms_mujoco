@@ -21,14 +21,27 @@ MIN_MASS = 1e-12
 MIN_INERTIA = 1e-12
 
 
+def euler2mjcquat(euler):
+    """Euler to Mujoco quaternion"""
+    return Rotation.from_euler(
+        angles=euler,
+        seq='xyz',
+    ).as_quat()[[3, 0, 1, 2]]
+
+
+def euler2mat(euler):
+    """Euler to Mujoco quaternion"""
+    return Rotation.from_euler(
+        angles=euler,
+        seq='xyz',
+    ).as_matrix()
+
+
 def poseul2mat4d(position, euler):
     """4D transform"""
     transform = np.eye(4)
     transform[:3, -1] = position
-    transform[:3, :3] = Rotation.from_euler(
-        angles=euler,
-        seq='xyz',
-    ).as_matrix()
+    transform[:3, :3] = euler2mat(euler)
     return transform
 
 
@@ -50,14 +63,6 @@ def get_local_transform(parent_pose, child_pose):
     return local_transform[:3, -1], Rotation.from_matrix(
         local_transform[:3, :3]
     ).as_euler('xyz')
-
-
-def euler2mcjquat(euler):
-    """Euler to Mujoco quaternion"""
-    return Rotation.from_euler(
-        angles=euler,
-        seq='xyz',
-    ).as_quat()[[3, 0, 1, 2]]
 
 
 def grid_material(mjcf_model):
@@ -126,7 +131,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         'body',
         name=sdf_link.name,
         pos=[pos*units.meters for pos in link_local_pos],
-        quat=euler2mcjquat(link_local_euler),
+        quat=euler2mjcquat(link_local_euler),
     )
     mjcf_map['links'][sdf_link.name] = body
 
@@ -172,7 +177,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         geom_kwargs = {
             'name': element.name,
             'pos': [pos*units.meters for pos in element.pose[:3]],
-            'quat': euler2mcjquat(element.pose[3:]),
+            'quat': euler2mjcquat(element.pose[3:]),
         }
         if isinstance(element, Visual):
             if element.color is not None:
@@ -409,12 +414,14 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         inertia_mat[2][0] = inertial.inertias[2]
         inertia_mat[1][2] = inertial.inertias[4]
         inertia_mat[2][1] = inertial.inertias[4]
+        mat = euler2mat(inertial.pose[3:])
+        inertia_mat = mat @ inertia_mat @ mat.T
         eigvals = np.linalg.eigvals(inertia_mat)
         assert (eigvals > 0).all(), f'Eigen values <= 0: {eigvals}\n{inertia_mat}'
         body.add(
             'inertial',
             pos=[pos*units.meters for pos in inertial.pose[:3]],
-            quat=euler2mcjquat(inertial.pose[3:]),
+            # quat=euler2mjcquat(inertial.pose[3:]),  # Not working??
             mass=inertial.mass*units.kilograms,
             # diaginertia=np.clip([
             #     inertial.inertias[0],
@@ -422,12 +429,20 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
             #     inertial.inertias[5]
             # ], 0, np.inf).tolist(),
             fullinertia=[
-                max(MIN_INERTIA, inertial.inertias[0])*units.inertia,
-                max(MIN_INERTIA, inertial.inertias[3])*units.inertia,
-                max(MIN_INERTIA, inertial.inertias[5])*units.inertia,
-                inertial.inertias[1]*units.inertia,
-                inertial.inertias[2]*units.inertia,
-                inertial.inertias[4]*units.inertia,
+                # max(MIN_INERTIA, inertial.inertias[0])*units.inertia,
+                # max(MIN_INERTIA, inertial.inertias[3])*units.inertia,
+                # max(MIN_INERTIA, inertial.inertias[5])*units.inertia,
+                # inertial.inertias[1]*units.inertia,
+                # inertial.inertias[2]*units.inertia,
+                # inertial.inertias[4]*units.inertia,
+                # Since quat does not seem to have any effect, the tensor is
+                # rotated beforehand to set the right inertial orientation
+                max(MIN_INERTIA, inertia_mat[0][0])*units.inertia,
+                max(MIN_INERTIA, inertia_mat[1][1])*units.inertia,
+                max(MIN_INERTIA, inertia_mat[2][2])*units.inertia,
+                inertia_mat[0][1]*units.inertia,
+                inertia_mat[0][2]*units.inertia,
+                inertia_mat[1][2]*units.inertia,
             ],
         )
     elif not free:
@@ -717,7 +732,7 @@ def add_cameras(mjcf_model, link, meters=1, dist=0.3):
             name=f'camera_{link.name}_{i}',
             mode=mode,
             pos=[pos*meters for pos in pose[:3]],
-            quat=euler2mcjquat(pose[3:]),
+            quat=euler2mjcquat(pose[3:]),
             # target='',
             fovy=45,
             ipd=0.068,
@@ -773,7 +788,7 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
     base_link = mjcf_model.worldbody.body[-1]
     assert base_link.name == sdf_base_link.name
     base_link.pos = kwargs.pop('spawn_position', [0, 0, 0])
-    base_link.quat = euler2mcjquat(kwargs.pop('spawn_rotation', [0, 0, 0]))
+    base_link.quat = euler2mjcquat(kwargs.pop('spawn_rotation', [0, 0, 0]))
 
     # Compiler
     mjcf_model.compiler.angle = 'radian'
@@ -802,7 +817,7 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
         for joint in animat_options.morphology.joints:
             pass
         base_link.pos = [pos*units.meters for pos in animat_options.spawn.position]
-        base_link.quat = euler2mcjquat(animat_options.spawn.orientation)
+        base_link.quat = euler2mjcquat(animat_options.spawn.orientation)
 
     if simulation_options is not None:
         mjcf_model.option.gravity = [
