@@ -2,13 +2,14 @@
 
 import os
 import warnings
+import traceback
 
 import numpy as np
 from tqdm import tqdm
 
 from dm_control import mjcf
 from dm_control import viewer
-from dm_control.rl.control import Environment
+from dm_control.rl.control import Environment, PhysicsError
 
 import farms_pylog as pylog
 
@@ -114,8 +115,12 @@ class Simulation:
                 app.toggle_pause()
             app.launch(environment_loader=self._env)
         else:
-            for _ in tqdm(range(self.task.n_iterations)):
-                self._env.step(action=None)
+            try:
+                for _ in tqdm(range(self.task.n_iterations)):
+                    self._env.step(action=None)
+            except PhysicsError as err:
+                pylog.error(traceback.format_exc())
+                raise err
         pylog.info('Closing simulation')
 
     def postprocess(
@@ -127,7 +132,8 @@ class Simulation:
             **kwargs,
     ):
         """Postprocessing after simulation"""
-        # animat = self.animat()
+
+        # Times
         times = np.arange(
             0,
             self.task.timestep*self.task.n_iterations,
@@ -141,8 +147,12 @@ class Simulation:
                 os.path.join(log_path, 'simulation.hdf5'),
                 iteration,
             )
-            self.options.save(os.path.join(log_path, 'simulation_options.yaml'))
-            self.task.animat_options.save(os.path.join(log_path, 'animat_options.yaml'))
+            self.options.save(
+                os.path.join(log_path, 'simulation_options.yaml')
+            )
+            self.task.animat_options.save(
+                os.path.join(log_path, 'animat_options.yaml')
+            )
 
         # Plot
         if plot:
