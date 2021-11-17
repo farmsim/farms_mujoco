@@ -812,12 +812,40 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
 
     # Animat options
     if animat_options is not None:
-        for link in animat_options.morphology.links:
-            pass
-        for joint in animat_options.morphology.joints:
-            pass
+
+        # Spawn
         base_link.pos = [pos*units.meters for pos in animat_options.spawn.position]
         base_link.quat = euler2mjcquat(animat_options.spawn.orientation)
+
+        # Links
+        for link in animat_options.morphology.links:
+            mjcf_model.find(
+                namespace='body',
+                identifier=link.name,
+            )
+
+        # Joints
+        for joint in animat_options.morphology.joints:
+            mjcf_model.find(
+                namespace='joint',
+                identifier=joint.name,
+            )
+
+        # Joints control
+        joints_equations = {}
+        for joint_options in animat_options.control.joints:
+            joint = mjcf_model.find(
+                namespace='joint',
+                identifier=joint_options.joint_name,
+            )
+            joints_equations[joint_options.joint_name] = joint_options.equation
+            if joint_options.passive.is_passive:
+                joint.stiffness = (
+                    joint_options.passive.stiffness_coefficient
+                )*units.torques
+                joint.damping = (
+                    joint_options.passive.damping_coefficient
+                )*units.torques/units.angular_velocity
 
     if simulation_options is not None:
         mjcf_model.option.gravity = [
