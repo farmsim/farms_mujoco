@@ -121,6 +121,38 @@ class ExperimentTask(Task):
                 np.argwhere(ctrl_names == f'actuator_position_{joint}')[0, 0]
                 for joint in self._controller.joints_names[ControlType.POSITION]
             ]
+            self.maps['ctrl']['vel'] = [
+                np.argwhere(ctrl_names == f'actuator_velocity_{joint}')[0, 0]
+                for joint in self._controller.joints_names[ControlType.VELOCITY]
+            ]
+            self.maps['ctrl']['trq'] = [
+                np.argwhere(ctrl_names == f'actuator_torque_{joint}')[0, 0]
+                for joint in self._controller.joints_names[ControlType.TORQUE]
+            ]
+            act_trnid = physics.named.model.actuator_trnid
+            jnt_names = physics.named.model.jnt_type.axes.row.names
+            jntname2actid = {name: {} for name in jnt_names}
+            for act_i, act_bias in enumerate(physics.model.actuator_biasprm):
+                act_type = (
+                    'pos' if act_bias[1] != 0
+                    else 'vel' if act_bias[2] != 0
+                    else 'trq'
+                )
+                jnt_name = jnt_names[act_trnid[act_i][0]]
+                jntname2actid[jnt_name][act_type] = act_i
+            if self.animat_options is not None:
+                animat_options = self.animat_options
+                for jnt_opts in animat_options.control.joints:
+                    jnt_name = jnt_opts['joint_name']
+                    if ControlType.POSITION not in jnt_opts.control_types:
+                        for act_type in ('pos', 'vel'):
+                            if act_type in jntname2actid[jnt_name]:
+                                physics.named.model.actuator_forcelimited[
+                                    jntname2actid[jnt_name][act_type]
+                                ] = 1
+                                physics.named.model.actuator_forcerange[
+                                    jntname2actid[jnt_name][act_type]
+                                ] = [0, 0]
 
     def before_step(self, action, physics):
         """Operations before physics step"""
@@ -162,6 +194,18 @@ class ExperimentTask(Task):
                     joints_positions[joint]
                     for joint
                     in self._controller.joints_names[ControlType.POSITION]
+                ]
+            else:
+                joints_torques = self._controller.torques(
+                    iteration=self.iteration,
+                    time=current_time,
+                    timestep=self.timestep,
+                )
+                torques = self._units.torques
+                physics.data.ctrl[self.maps['ctrl']['trq']] = [
+                    joints_torques[joint]*torques
+                    for joint
+                    in self._controller.joints_names[ControlType.TORQUE]
                 ]
 
     def after_step(self, physics):
