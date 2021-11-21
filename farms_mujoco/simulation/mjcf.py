@@ -800,6 +800,35 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
     mjcf_model.compiler.convexhull = False
     mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
 
+    # Statistic
+    scale = 1
+    mjcf_model.statistic.meansize = 1
+    mjcf_model.statistic.meanmass = 1
+    mjcf_model.statistic.meaninertia = 1
+    # mjcf_model.statistic.extent = 100*units.meters
+
+    # Visual
+    mjcf_model.visual.map.znear = 1e-3*units.meters
+    mjcf_model.visual.map.zfar = 100*units.meters
+    mjcf_model.visual.map.force = 1*units.meters/units.newtons*scale
+    mjcf_model.visual.map.torque = 1*units.meters/units.torques*scale
+    mjcf_model.visual.scale.forcewidth = 0.001*units.meters*scale
+    mjcf_model.visual.scale.contactwidth = 0.01*units.meters*scale
+    mjcf_model.visual.scale.contactheight = 0.001*units.meters*scale
+    mjcf_model.visual.scale.connect = 0.01*units.meters*scale
+    mjcf_model.visual.scale.com = 0.01*units.meters*scale
+    mjcf_model.visual.scale.camera = 0.01*units.meters*scale
+    mjcf_model.visual.scale.light = 0.01*units.meters*scale
+    mjcf_model.visual.scale.selectpoint = 0.01*units.meters*scale
+    mjcf_model.visual.scale.jointlength = 0.01*units.meters*scale
+    mjcf_model.visual.scale.jointwidth = 0.001*units.meters*scale
+    mjcf_model.visual.scale.actuatorlength = 0.01*units.meters*scale
+    mjcf_model.visual.scale.actuatorwidth = 0.001*units.meters*scale
+    mjcf_model.visual.scale.framelength = 0.01*units.meters*scale
+    mjcf_model.visual.scale.framewidth = 0.001*units.meters*scale
+    mjcf_model.visual.scale.constraint = 0.01*units.meters*scale
+    mjcf_model.visual.scale.slidercrank = 0.01*units.meters*scale
+
     # Simulation options
     mjcf_model.size.njmax = 2**12
     mjcf_model.size.nconmax = 2**12
