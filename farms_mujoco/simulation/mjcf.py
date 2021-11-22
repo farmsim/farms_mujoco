@@ -639,14 +639,23 @@ def sdf2mjcf(sdf, **kwargs):
     return mjcf_model
 
 
-def mjcf2str(mjcf_model):
+def mjcf2str(mjcf_model, remove_temp=True):
     """Export to MJCF string"""
+    # XML
+    mjcf_xml = mjcf_model.to_xml()
+    # Remove unique identifiers from mesh paths
+    if remove_temp:
+        for mesh in mjcf_xml.find('asset').findall('mesh'):
+            mjcf_mesh = mjcf_model.find('mesh', mesh.attrib['name'])
+            mesh.attrib['file'] = mjcf_mesh.file.prefix + mjcf_mesh.file.extension
+    # Convert to string
     xml_str = ET.tostring(
-        mjcf_model.to_xml(),
+        mjcf_xml,
         encoding='utf8',
-        method='xml'
+        method='xml',
     ).decode('utf8')
     dom = xml.dom.minidom.parseString(xml_str)
+    # for asset in mjcf_model.asset
     return dom.toprettyxml(indent=2*' ')
 
 
