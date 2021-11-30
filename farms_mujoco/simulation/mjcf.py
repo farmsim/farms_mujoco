@@ -21,16 +21,23 @@ MIN_MASS = 1e-12
 MIN_INERTIA = 1e-12
 
 
+def quat2mjcquat(quat):
+    """Quaternion to MuJoCo quaternion"""
+    quat_type = np.array if isinstance(quat, np.ndarray) else type(quat)
+    quat = np.array(quat)[[3, 0, 1, 2]]
+    return quat_type(quat)
+
+
 def euler2mjcquat(euler):
-    """Euler to Mujoco quaternion"""
-    return Rotation.from_euler(
+    """Euler to MuJoCo quaternion"""
+    return quat2mjcquat(Rotation.from_euler(
         angles=euler,
         seq='xyz',
-    ).as_quat()[[3, 0, 1, 2]]
+    ).as_quat())
 
 
 def euler2mat(euler):
-    """Euler to Mujoco quaternion"""
+    """Euler to 3D matrix"""
     return Rotation.from_euler(
         angles=euler,
         seq='xyz',
@@ -135,24 +142,14 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     )
     mjcf_map['links'][sdf_link.name] = body
 
-    # Site
-    if use_site:
-        site = body.add(
-            'site',
-            type='box',
-            name=f'site_{sdf_link.name}',
-            group=1,
-            pos=[0, 0, 0],
-            quat=[1, 0, 0, 0],
-            size=[1e-2*units.meters]*3,
-        )
-        mjcf_map['sites'][site.name] = site
 
     # joints
     joint = None
-    if free:  # Freejoint
-        joint = body.add('freejoint', name=f'root_{sdf_link.name}')
-    elif sdf_joint is not None:
+    if isinstance(sdf_link, ModelSDF):
+        if free:  # Freejoint
+            joint = body.add('freejoint', name=f'root_{sdf_link.name}')
+        return body, joint
+    if not free and sdf_joint is not None:
         if sdf_joint.type in ('revolute', 'continuous'):
             joint = body.add(
                 'joint',
@@ -165,6 +162,19 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 frictionloss=frictionloss,
             )
             mjcf_map['joints'][sdf_joint.name] = joint
+
+    # Site
+    if use_site:
+        site = body.add(
+            'site',
+            type='box',
+            name=f'site_{sdf_link.name}',
+            group=1,
+            pos=[0, 0, 0],
+            quat=[1, 0, 0, 0],
+            size=[1e-2*units.meters]*3,
+        )
+        mjcf_map['sites'][site.name] = site
 
     # Visual and collisions (geoms)
     for element in sdf_link.collisions + sdf_link.visuals:
@@ -261,18 +271,18 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                     # oclDevideID=0,
                     # Parameters
                     resolution=int(1e5),
-                    concavity=1e-8,
-                    planeDownsampling=1,
-                    convexhullDownsampling=1,
+                    concavity=1e-6,
+                    planeDownsampling=4,
+                    convexhullDownsampling=4,
                     alpha=0.05,
                     beta=0.05,
                     gamma=0.00125,
                     delta=0.05,
-                    maxhulls=int(1e4),
+                    maxhulls=1024,
                     pca=0,
-                    mode=1,
-                    maxNumVerticesPerCH=int(1e4),
-                    minVolumePerCH=1e-10,
+                    mode=0,
+                    maxNumVerticesPerCH=1024,
+                    minVolumePerCH=1e-6,
                     convexhullApproximation=1,
                     oclAcceleration=1,
                 )
@@ -309,7 +319,6 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                     file=mesh_path,
                     scale=[s*units.meters for s in element.geometry.scale],
                 )
-
                 geom = body.add(
                     'geom',
                     type='mesh',
@@ -378,6 +387,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 **collision_kwargs,
             )
 
+        # Plane
         elif isinstance(element.geometry, Plane):
 
             material, _ = grid_material(mjcf_model)
@@ -461,7 +471,7 @@ def add_link_recursive(mjcf_model, mjcf_map, sdf, **kwargs):
     """Add link recursive"""
 
     # Handle kwargs
-    sdf_link = kwargs.pop('sdf_link', None)
+    sdf_link = kwargs.pop('sdf_link')
     sdf_parent = kwargs.pop('sdf_parent', None)
     sdf_joint = kwargs.pop('sdf_joint', None)
     free = kwargs.pop('free', False)
@@ -504,7 +514,12 @@ def sdf2mjcf(sdf, **kwargs):
     concave = kwargs.pop('concave', False)
     use_site = kwargs.pop('use_site', False)
     use_sensors = kwargs.pop('use_sensors', False)
+    use_link_sensors = kwargs.pop('use_link_sensors', True)
+    use_link_vel_sensors = kwargs.pop('use_link_vel_sensors', True)
+    use_joint_sensors = kwargs.pop('use_joint_sensors', True)
+    use_actuator_sensors = kwargs.pop('use_actuator_sensors', True)
     use_actuators = kwargs.pop('use_actuators', False)
+
     # Position
     act_pos_gain = kwargs.pop('act_pos_gain', 1)
     act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
@@ -542,6 +557,19 @@ def sdf2mjcf(sdf, **kwargs):
         ]
     }
 
+    # Add model root link
+    mjc_add_link(
+        mjcf_model=mjcf_model,
+        mjcf_map=mjcf_map,
+        sdf_link=sdf,
+        sdf_parent=None,
+        sdf_joint=None,
+        directory=sdf.directory,
+        free=not fixed_base,
+        mjc_parent=None,
+        **kwargs,
+    )
+
     # Add trees from roots
     for root in roots:
         add_link_recursive(
@@ -549,6 +577,7 @@ def sdf2mjcf(sdf, **kwargs):
             mjcf_map=mjcf_map,
             sdf=sdf,
             sdf_link=root,
+            sdf_parent=sdf,
             free=not fixed_base,
             use_site=use_site,
             self_collisions=fixed_base,
@@ -604,39 +633,49 @@ def sdf2mjcf(sdf, **kwargs):
 
     # Sensors
     if use_sensors:
+
         for link_name in mjcf_map['links']:
-            for link_sensor in (
-                    'framepos', 'framequat',
-                    'framelinvel', 'frameangvel',
-            ):
-                mjcf_model.sensor.add(
-                    link_sensor,
-                    name=f'{link_sensor}_{link_name}',
-                    objname=link_name,
-                    objtype='body',
-                )
-            if use_site:
-                for link_sensor in ('touch',):  # 'velocimeter', 'gyro',
+            if use_link_sensors:
+                for link_sensor in ('framepos', 'framequat'):
                     mjcf_model.sensor.add(
                         link_sensor,
                         name=f'{link_sensor}_{link_name}',
-                        site=f'site_{link_name}',
+                        objname=link_name,
+                        objtype='body',
                     )
-        for joint_name in mjcf_map['joints']:
-            for joint_sensor in ('jointpos', 'jointvel'):
-                mjcf_model.sensor.add(
-                    joint_sensor,
-                    name=f'{joint_sensor}_{joint_name}',
-                    joint=joint_name,
-                )
-        for actuator_name, actuator in mjcf_map['actuators'].items():
-            mjcf_model.sensor.add(
-                'actuatorfrc',
-                name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
-                actuator=actuator_name,
-            )
+                if use_site:
+                    for link_sensor in ('touch',):  # 'velocimeter', 'gyro',
+                        mjcf_model.sensor.add(
+                            link_sensor,
+                            name=f'{link_sensor}_{link_name}',
+                            site=f'site_{link_name}',
+                        )
+            if use_link_vel_sensors:
+                for link_sensor in ('framelinvel', 'frameangvel'):
+                    mjcf_model.sensor.add(
+                        link_sensor,
+                        name=f'{link_sensor}_{link_name}',
+                        objname=link_name,
+                        objtype='body',
+                    )
+        if use_joint_sensors:
+            for joint_name in mjcf_map['joints']:
+                for joint_sensor in ('jointpos', 'jointvel'):
+                    mjcf_model.sensor.add(
+                        joint_sensor,
+                        name=f'{joint_sensor}_{joint_name}',
+                        joint=joint_name,
+                    )
 
-    return mjcf_model
+        if use_actuator_sensors:
+            for actuator_name, actuator in mjcf_map['actuators'].items():
+                mjcf_model.sensor.add(
+                    'actuatorfrc',
+                    name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
+                    actuator=actuator_name,
+                )
+
+    return mjcf_model, mjcf_map
 
 
 def mjcf2str(mjcf_model, remove_temp=True):
@@ -706,7 +745,6 @@ def add_particles(mjcf_model):
 
 def add_lights(mjcf_model, link, meters=1):
     """Add lights"""
-    mjcf_model.visual.quality.shadowsize = 32*1024
     for i, pos in enumerate([[-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1]]):
         link.add(
             'light',
@@ -729,7 +767,6 @@ def add_lights(mjcf_model, link, meters=1):
 
 def add_cameras(mjcf_model, link, meters=1, dist=0.3):
     """Add cameras"""
-    mjcf_model.visual.quality.shadowsize = 32*1024
     for i, (mode, pose) in enumerate([
             ['trackcom', [0.0, 0.0, dist, 0.0, 0.0, 0.0]],
             ['trackcom', [0.0, -dist, 0.2*dist, 0.4*np.pi, 0.0, 0.0]],
@@ -748,9 +785,11 @@ def add_cameras(mjcf_model, link, meters=1, dist=0.3):
         )
 
 
-def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
+def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     """Setup MJCF XML"""
 
+    hfield = None
+    mjcf_model = None
     animat_options = kwargs.pop('animat_options', None)
     simulation_options = kwargs.pop('simulation_options', None)
     units = kwargs.pop('units', (
@@ -766,36 +805,42 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
     )
 
     # Arena
-    mjcf_model = sdf2mjcf(
-        sdf=ModelSDF.read(filename=os.path.expandvars(sdf_path_arena))[0],
-        # mjcf_model=mjcf_model,
-        fixed_base=True,
-        concave=False,
-        simulation_options=simulation_options,
-    )
+    for arena in arena_options:
+        mjcf_model, info = sdf2mjcf(
+            sdf=ModelSDF.read(filename=os.path.expandvars(arena['sdf_path']))[0],
+            mjcf_model=mjcf_model,
+            fixed_base=True,
+            concave=False,
+            simulation_options=simulation_options,
+            friction=[0, 0, 0],
+        )
+        arena_base_link = mjcf_model.worldbody.body[-1]
+        arena_base_link.pos = arena.get('position', [0, 0, 0])
+        arena_base_link.quat = quat2mjcquat(arena.get('rotation', [0, 0, 0, 1]))
     # add_plane(mjcf_model)
 
     # Animat
+    animat_kwargs = animat_options.mujoco if animat_options is not None else {}
     sdf_animat = ModelSDF.read(filename=os.path.expandvars(sdf_path_animat))[0]
-    mjcf_model = sdf2mjcf(
+    mjcf_model, _ = sdf2mjcf(
         sdf=sdf_animat,
         mjcf_model=mjcf_model,
         use_sensors=True,
+        use_link_sensors=False,
+        use_link_vel_sensors=True,
+        use_joint_sensors=False,
         use_actuators=True,
         animat_options=animat_options,
         simulation_options=simulation_options,
-        # Links
-        friction=[1.0, 1e-3, 1e-4],
-        # Joints
-        damping=1e-4,
-        act_pos_gain=5e-3,
-        act_vel_gain=1e-4,
+        friction=[0.3, 0, 0],
+        solimp=[0.9, 1.0, 1e-3, 0.5, 2],
+        **animat_kwargs,
     )
+    # sdf_base_link = sdf_animat.get_base_link()
+    base_link = mjcf_model.worldbody.body[-1]
 
     # Spawn options
-    sdf_base_link = sdf_animat.get_base_link()
-    base_link = mjcf_model.worldbody.body[-1]
-    assert base_link.name == sdf_base_link.name
+    # assert base_link.name == sdf_base_link.name
     base_link.pos = kwargs.pop('spawn_position', [0, 0, 0])
     base_link.quat = euler2mjcquat(kwargs.pop('spawn_rotation', [0, 0, 0]))
 
@@ -844,8 +889,8 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
     mjcf_model.option.gravity = kwargs.pop('gravity', [0, 0, -9.81])
     mjcf_model.option.timestep = timestep
     mjcf_model.option.iterations = kwargs.pop('solver_iterations', 100)
-    mjcf_model.option.solver = 'Newton'  # PGS, CG, Newton
-    mjcf_model.option.integrator = 'Euler'  # Euler, RK4
+    mjcf_model.option.solver = kwargs.pop('solver', 'Newton')  # PGS, CG
+    mjcf_model.option.integrator = kwargs.pop('integrator', 'Euler')  # RK4
     mjcf_model.option.mpr_iterations = kwargs.pop('mpr_iterations', 50)
 
     # Animat options
@@ -884,6 +929,20 @@ def setup_mjcf_xml(sdf_path_animat, sdf_path_arena, **kwargs):
                 joint.damping = (
                     joint_options.passive.damping_coefficient
                 )*units.torques/units.angular_velocity
+
+        # # Muscles
+        # for muscle_options in animat_options.control.muscles:
+        #     joint = mjcf_model.find(
+        #         namespace='joint',
+        #         identifier=muscle_options.joint_name,
+        #     )
+        #     if 'ekeberg' in joints_equations[muscle_options.joint_name]:
+        #         joint.stiffness = (
+        #             muscle_options.gamma
+        #         )*units.torques
+        #         joint.damping = (
+        #             muscle_options.delta
+        #         )*units.torques/units.angular_velocity
 
     if simulation_options is not None:
         mjcf_model.option.gravity = [
