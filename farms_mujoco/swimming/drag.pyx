@@ -2,7 +2,6 @@
 
 include 'types.pxd'
 
-import pybullet
 import numpy as np
 cimport numpy as np
 
@@ -269,138 +268,6 @@ cpdef bint drag_forces(
     return 1
 
 
-cpdef void swimming_apply_forces(
-        unsigned int iteration,
-        HydrodynamicsArrayCy data_hydrodynamics,
-        unsigned int hydro_index,
-        int model,
-        int link_id,
-        int frame=pybullet.LINK_FRAME,
-        double newtons=1.0,
-        double torques=1.0,
-        np.ndarray pos=np.zeros(3),
-):
-    """Swimming motion
-
-    :param iteration: Simulation iterations
-    :param data_hydrodynamics: Hydrodynamics data
-    :param hydro_index: Hydrodynamics data index
-    :param model: Model identity
-    :param link_id: Link identity
-    :param frame: Force application frame (LINK_FRAME or WORLD_FRAME)
-    :param newtons: Newtons scaling
-    :param torques: Torques scaling
-    :param pos: Position where to apply the force
-
-    """
-    cdef unsigned int i  # , sensor_i, flags
-    cdef np.ndarray hydro_force=np.zeros(3), hydro_torque=np.zeros(3)
-    cdef DTYPEv1 hydro = data_hydrodynamics.array[iteration, hydro_index]
-    for i in range(3):
-        hydro_force[i] = hydro[i]*newtons
-        hydro_torque[i] = hydro[i+3]*torques
-    # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
-    pybullet.applyExternalForce(
-        model,
-        link_id,
-        forceObj=hydro_force.tolist(),
-        posObj=pos.tolist(),
-        flags=frame,
-    )
-    pybullet.applyExternalTorque(
-        model,
-        link_id,
-        torqueObj=hydro_torque.tolist(),
-        flags=frame,
-    )
-
-
-cpdef swimming_debug(iteration, data_links, links):
-    """Swimming debug
-
-    :param iteration: Simulation iterations
-    :param data_links: Links data
-    :param links: Links options
-
-    """
-    for link in links:
-        sensor_i = data_links.index(link.name)
-        joint = np.array(data_links.urdf_position(iteration, sensor_i))
-        joint_ori = np.array(data_links.urdf_orientation(iteration, sensor_i))
-        # com_ori = np.array(data_links.com_orientation(iteration, sensor_i))
-        ori_joint = np.array(
-            pybullet.getMatrixFromQuaternion(joint_ori)
-        ).reshape([3, 3])
-        # ori_com = np.array(
-        #     pybullet.getMatrixFromQuaternion(com_ori)
-        # ).reshape([3, 3])
-        # ori = np.dot(ori_joint, ori_com)
-        axis = 0.05
-        offset_x = np.dot(ori_joint, np.array([axis, 0, 0]))
-        offset_y = np.dot(ori_joint, np.array([0, axis, 0]))
-        offset_z = np.dot(ori_joint, np.array([0, 0, axis]))
-        for i, offset in enumerate([offset_x, offset_y, offset_z]):
-            color = np.zeros(3)
-            color[i] = 1
-            pybullet.addUserDebugLine(
-                joint,
-                joint + offset,
-                lineColorRGB=color,
-                lineWidth=5,
-                lifeTime=1,
-            )
-
-
-cdef draw_hydrodynamics(
-    unsigned int iteration,
-    int model,
-    int link_id,
-    HydrodynamicsArrayCy data_hydrodynamics,
-    unsigned int hydro_index,
-    object hydrodynamics_plot,
-    bint new_active,
-    double meters,
-    double scale=1,
-):
-    """Draw hydrodynamics forces
-
-    :param iteration: Simulation iteration
-    :param model: Model identity
-    :param link_id: Link identity
-    :param data_hydrodynamics: Hydrodynamics data
-    :param hydro_index: Hydrodynamics data index
-    :param hydrodynamics_plot: Hydrodynamcis plotting objects
-    :param new_active: Bool to decalre if recently active
-    :param meters: Meters scaling
-    :param scale: Plot scaling factor
-
-    """
-    cdef bint old_active = hydrodynamics_plot[hydro_index][0]
-    cdef DTYPEv1 force = data_hydrodynamics.array[iteration, hydro_index, :3]
-    if new_active:
-        hydrodynamics_plot[hydro_index][0] = True
-        hydrodynamics_plot[hydro_index][1] = pybullet.addUserDebugLine(
-            lineFromXYZ=[0, 0, 0],
-            lineToXYZ=scale*np.array(force),
-            lineColorRGB=[0, 0, 1],
-            lineWidth=7*meters,
-            parentObjectUniqueId=model,
-            parentLinkIndex=link_id,
-            replaceItemUniqueId=hydrodynamics_plot[hydro_index][1],
-        )
-    elif old_active and not new_active:
-        hydrodynamics_plot[hydro_index][0] = False
-        hydrodynamics_plot[hydro_index][1] = pybullet.addUserDebugLine(
-            lineFromXYZ=[0, 0, 0],
-            lineToXYZ=[0, 0, 0],
-            lineColorRGB=[0, 0, 1],
-            lineWidth=0,
-            parentObjectUniqueId=model,
-            parentLinkIndex=0,
-            replaceItemUniqueId=hydrodynamics_plot[hydro_index][1],
-        )
-
-
 cdef class WaterProperties:
     """Water properties"""
 
@@ -442,22 +309,17 @@ cdef class WaterProperties:
 cdef class SwimmingHandler:
     """Swimming handler"""
 
-    cdef object animat
     cdef object links
     cdef object hydro
-    cdef int model
-    cdef int frame
+    cdef object animat_options
     cdef unsigned int n_links
     cdef bint drag
     cdef bint sph
     cdef bint buoyancy
-    cdef bint show_hydrodynamics
     cdef WaterProperties water
     cdef double meters
     cdef double newtons
     cdef double torques
-    cdef double hydrodynamics_scale
-    cdef int[:] links_ids
     cdef int[:] links_swimming
     cdef unsigned int[:] links_indices
     cdef unsigned int[:] hydro_indices
@@ -468,49 +330,47 @@ cdef class SwimmingHandler:
     cdef DTYPEv2 z4
     cdef DTYPEv3 links_coefficients
 
-    def __init__(self, animat):
+    def __init__(self, data, animat_options, units, physics):
         super(SwimmingHandler, self).__init__()
-        self.animat = animat
-        self.links = animat.data.sensors.links
-        self.hydro = animat.data.sensors.hydrodynamics
-        self.model = animat.identity()
-        physics_options = animat.options.physics
+        self.animat_options = animat_options
+        self.links = data.sensors.links
+        self.hydro = data.sensors.hydrodynamics
+        physics_options = animat_options.physics
         self.drag = bool(physics_options.drag)
         self.sph = bool(physics_options.sph)
         self.buoyancy = bool(physics_options.buoyancy)
-        self.show_hydrodynamics = bool(animat.options.show_hydrodynamics)
-        self.meters = float(animat.units.meters)
-        self.newtons = float(animat.units.newtons)
-        self.torques = float(animat.units.torques)
+        self.meters = float(units.meters)
+        self.newtons = float(units.newtons)
+        self.torques = float(units.torques)
         self.water = WaterProperties(
             surface=float(physics_options.water_height),
             density=float(physics_options.water_density),
             velocity=np.array(physics_options.water_velocity, dtype=float),
             viscosity=float(physics_options.viscosity),
         )
-        # pybullet.LINK_FRAME applies force in inertial frame, not URDF frame
-        self.frame = pybullet.LINK_FRAME  # pybullet.WORLD_FRAME
-        self.hydrodynamics_scale = 1*self.meters
         self.z3 = np.zeros([7, 3])
         self.z4 = np.zeros([7, 4])
         links = [
             link
-            for link in self.animat.options.morphology.links
+            for link in self.animat_options.morphology.links
             if link.swimming
         ]
         self.n_links = len(links)
-        self.masses = np.array([self.animat.masses[link.name] for link in links])
-        aabb = [
-            pybullet.getAABB(
-                bodyUniqueId=animat.identity(),
-                linkIndex=self.animat.links_map[link.name],
-            )
+        links_row = physics.named.model.body_mass.axes.row
+        self.masses = np.array([
+            physics.model.body_mass[links_row.convert_key_item(link.name)]
             for link in links
-        ]
+        ], dtype=float)/units.kilograms
         self.heights = np.array([
-            0.5*(_aabb[1][2] -_aabb[0][2])
-            for _aabb in aabb
-        ])/self.meters
+            [
+                0.5*physics.model.geom_rbound[geom_i]
+                for geom_i in range(len(physics.model.geom_bodyid))
+                if links_row.names[physics.named.model.geom_bodyid[geom_i]]
+                == link.name
+            ][0]
+            for link in links
+        ], dtype=float)/self.meters
+        print(f'Links heights for hydrodynamics:\n{np.array(self.heights)}')
         self.densities = np.array([link.density for link in links])
         self.hydro_indices = np.array([
             self.hydro.names.index(link.name)
@@ -524,10 +384,6 @@ cdef class SwimmingHandler:
             np.array(link.drag_coefficients)
             for link in links
         ])
-        self.links_ids = np.array([
-            self.animat.links_map[link.name]
-            for link in links
-        ], dtype=np.intc)
         if self.sph:
             self.water._surface = 1e8
 
@@ -554,39 +410,6 @@ cdef class SwimmingHandler:
                         gravity=-9.81,
                         use_buoyancy=self.buoyancy,
                     )
-                if apply_force:
-                    swimming_apply_forces(
-                        iteration=iteration,
-                        data_hydrodynamics=self.hydro,
-                        hydro_index=self.hydro_indices[i],
-                        model=self.model,
-                        link_id=self.links_ids[i],
-                        frame=self.frame,
-                        newtons=self.newtons,
-                        torques=self.torques,
-                    )
-                    if False:
-                        swimming_debug(
-                            iteration=iteration,
-                            data_links=self.links,
-                            link=link,
-                        )
-                if self.show_hydrodynamics:
-                    draw_hydrodynamics(
-                        iteration=iteration,
-                        model=self.model,
-                        link_id=self.links_ids[i],
-                        data_hydrodynamics=self.hydro,
-                        hydro_index=self.hydro_indices[i],
-                        hydrodynamics_plot=self.animat.hydrodynamics_plot,
-                        new_active=apply_force,
-                        meters=self.meters,
-                        scale=self.hydrodynamics_scale,
-                    )
-
-    cpdef set_hydrodynamics_scale(self, double value):
-        """Set hydrodynamics scale"""
-        self.hydrodynamics_scale = value*self.meters
 
     cpdef set_frame(self, int frame):
         """Set frame"""
