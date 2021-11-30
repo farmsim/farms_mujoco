@@ -862,10 +862,19 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     # mjcf_model.statistic.extent = 100*units.meters
 
     # Visual
-    mjcf_model.visual.map.znear = 1e-3*units.meters
-    mjcf_model.visual.map.zfar = 100*units.meters
-    mjcf_model.visual.map.force = 1*units.meters/units.newtons*scale
+    mjcf_model.visual.map.stiffness = 100
+    mjcf_model.visual.map.stiffnessrot = 500
+    mjcf_model.visual.map.force = 10*units.meters/units.newtons*scale
     mjcf_model.visual.map.torque = 1*units.meters/units.torques*scale
+    mjcf_model.visual.map.znear = 1e-5*units.meters
+    mjcf_model.visual.map.zfar = 10*units.meters
+    mjcf_model.visual.map.alpha = 0.3
+    mjcf_model.visual.map.fogstart = 3
+    mjcf_model.visual.map.fogend = 10
+    mjcf_model.visual.map.haze = 0.3
+    mjcf_model.visual.map.shadowclip = 1
+    mjcf_model.visual.map.shadowscale = 0.6
+    mjcf_model.visual.map.actuatortendon = 2
     mjcf_model.visual.scale.forcewidth = 0.001*units.meters*scale
     mjcf_model.visual.scale.contactwidth = 0.01*units.meters*scale
     mjcf_model.visual.scale.contactheight = 0.001*units.meters*scale
@@ -882,6 +891,11 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     mjcf_model.visual.scale.framewidth = 0.001*units.meters*scale
     mjcf_model.visual.scale.constraint = 0.01*units.meters*scale
     mjcf_model.visual.scale.slidercrank = 0.01*units.meters*scale
+    mjcf_model.visual.quality.shadowsize = 1024  # 32*1024
+    mjcf_model.visual.quality.offsamples = 4
+    mjcf_model.visual.quality.numslices = 28
+    mjcf_model.visual.quality.numstacks = 16
+    mjcf_model.visual.quality.numquads = 4
 
     # Simulation options
     mjcf_model.size.njmax = 2**12
