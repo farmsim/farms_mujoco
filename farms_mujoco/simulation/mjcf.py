@@ -6,7 +6,9 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 import trimesh as tri
+from imageio import imread
 from scipy.spatial.transform import Rotation
+from scipy.ndimage.filters import gaussian_filter
 
 from dm_control import mjcf
 
@@ -14,7 +16,7 @@ import farms_pylog as pylog
 from farms_data.units import SimulationUnitScaling
 from farms_sdf.sdf import (
     ModelSDF, Mesh, Visual, Collision,
-    Box, Cylinder, Capsule, Sphere, Plane,
+    Box, Cylinder, Capsule, Sphere, Plane, Heightmap,
 )
 
 MIN_MASS = 1e-12
@@ -396,6 +398,45 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 type='plane',
                 size=element.geometry.size,
                 material=material.name,
+                **geom_kwargs,
+                **visual_kwargs,
+                **collision_kwargs,
+            )
+
+        # Heightmap
+        elif isinstance(element.geometry, Heightmap):
+
+            material, _ = grid_material(mjcf_model)
+            path = os.path.join(directory, element.geometry.uri)
+            assert os.path.isfile(path), path
+            img = imread(path).astype(np.double)  # Read PNG image
+            img = img[:, :, 0] if img.ndim == 3 else img[:, :]  # RGB vs Grey
+            img = gaussian_filter(input=img, sigma=[2, 2], mode='reflect')
+            img = (img - np.min(img))/(np.max(img)-np.min(img))  # Normalize
+            img = np.flip(img, axis=0)  # Cartesian coordinates
+            mjcf_map['hfield'] = {
+                'data': img,
+                'asset': mjcf_model.asset.add(
+                    'hfield',
+                    name=element.name,
+                    nrow=img.shape[0],
+                    ncol=img.shape[1],
+                    size=(
+                        0.5*element.geometry.size[0]*units.meters,
+                        0.5*element.geometry.size[1]*units.meters,
+                        0.5*element.geometry.size[2]*units.meters,
+                        0.5*element.geometry.size[2]*units.meters,
+                    )
+                )
+            }
+            # geom_kwargs['pos'] += mjcf_map['hfield']['asset'].size[:3]
+            collision_kwargs['group'] = 3
+            geom = body.add(
+                'geom',
+                type='hfield',
+                size=element.geometry.size,
+                material=material.name,
+                hfield=mjcf_map['hfield']['asset'].name,
                 **geom_kwargs,
                 **visual_kwargs,
                 **collision_kwargs,
@@ -814,6 +855,8 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
             simulation_options=simulation_options,
             friction=[0, 0, 0],
         )
+        if 'hfield' in info:
+            hfield = info['hfield']
         arena_base_link = mjcf_model.worldbody.body[-1]
         arena_base_link.pos = arena.get('position', [0, 0, 0])
         arena_base_link.quat = quat2mjcquat(arena.get('rotation', [0, 0, 0, 1]))
@@ -987,4 +1030,4 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
             xml_file.write(mjcf_xml_str)
 
     assert not kwargs, kwargs
-    return mjcf_model, base_link
+    return mjcf_model, base_link, hfield
