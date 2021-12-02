@@ -122,7 +122,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     overwrite = kwargs.pop('overwrite', True)
     solref = kwargs.pop('solref', None)  # [0.02, 1]
     solimp = kwargs.pop('solimp', None)  # [0.9, 0.95, 0.001, 0.5, 2]
-    friction = kwargs.pop('friction', [1.0, 0, 0])
+    friction = kwargs.pop('friction', [1, 0, 0])
     frictionloss = kwargs.pop('frictionloss', 1e-5)
     damping = kwargs.pop('damping', 0)
     use_site = kwargs.pop('use_site', False)
@@ -875,7 +875,7 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
         use_actuators=True,
         animat_options=animat_options,
         simulation_options=simulation_options,
-        friction=[0.3, 0, 0],
+        friction=[0, 0, 0],
         solimp=[0.9, 1.0, 1e-3, 0.5, 2],
         **animat_kwargs,
     )
@@ -959,17 +959,17 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
 
         # Links
         for link in animat_options.morphology.links:
-            mjcf_model.find(
-                namespace='body',
-                identifier=link.name,
-            )
+            mjcf_link = mjcf_model.find(namespace='body', identifier=link.name)
+            for geom in mjcf_link.geom:
+                if geom.contype:
+                    assert len(geom.friction) == 3, len(geom.friction)
+                    geom.friction[0] = link.pybullet_dynamics['lateralFriction']
+                    geom.friction[1] = link.pybullet_dynamics['spinningFriction']
+                    geom.friction[2] = link.pybullet_dynamics['rollingFriction']
 
         # Joints
         for joint in animat_options.morphology.joints:
-            mjcf_model.find(
-                namespace='joint',
-                identifier=joint.name,
-            )
+            mjcf_model.find(namespace='joint', identifier=joint.name)
 
         # Joints control
         joints_equations = {}
