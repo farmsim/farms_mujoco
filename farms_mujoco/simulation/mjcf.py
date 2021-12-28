@@ -81,7 +81,7 @@ def grid_material(mjcf_model):
         identifier='texture_grid',
     )
     if texture is None:
-        texture = mjcf_model.asset.add(  # Add grid texture to assets
+        texture = mjcf_model.asset.add(
             'texture',
             name='texture_grid',
             type='2d',
@@ -98,7 +98,7 @@ def grid_material(mjcf_model):
         identifier='material_grid',
     )
     if material is None:
-        material = mjcf_model.asset.add(  # Add grid material to assets
+        material = mjcf_model.asset.add(
             'material',
             name='material_grid',
             texture='texture_grid',
@@ -119,9 +119,9 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     free = kwargs.pop('free', False)
     self_collisions = kwargs.pop('self_collisions', False)
     concave = kwargs.pop('concave', False)
-    overwrite = kwargs.pop('overwrite', True)
-    solref = kwargs.pop('solref', None)  # [0.02, 1]
-    solimp = kwargs.pop('solimp', None)  # [0.9, 0.95, 0.001, 0.5, 2]
+    overwrite = kwargs.pop('overwrite', False)
+    solref = kwargs.pop('solref', None)
+    solimp = kwargs.pop('solimp', None)
     friction = kwargs.pop('friction', [1, 0, 0])
     frictionloss = kwargs.pop('frictionloss', 1e-5)
     damping = kwargs.pop('damping', 0)
@@ -295,7 +295,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                     path = f'{original_path}_convex_{mesh_i}{extension}'
                     pylog.info('Exporting and loading %s', path)
                     mesh.export(path)
-                    mjcf_model.asset.add(  # Add mesh to assets
+                    mjcf_model.asset.add(
                         'mesh',
                         name=f'mesh_{element.name}_convex_{mesh_i}',
                         file=path,
@@ -315,7 +315,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                         geom = _geom
             else:
                 # Add mesh asset
-                mjcf_model.asset.add(  # Add mesh to assets
+                mjcf_model.asset.add(
                     'mesh',
                     name=f'mesh_{element.name}',
                     file=mesh_path,
@@ -472,7 +472,7 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         body.add(
             'inertial',
             pos=[pos*units.meters for pos in inertial.pose[:3]],
-            # quat=euler2mjcquat(inertial.pose[3:]),  # Not working??
+            # quat=euler2mjcquat(inertial.pose[3:]),  # Not working in MuJoCo?
             mass=inertial.mass*units.kilograms,
             # diaginertia=np.clip([
             #     inertial.inertias[0],
