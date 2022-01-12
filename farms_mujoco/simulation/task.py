@@ -115,6 +115,13 @@ class ExperimentTask(Task):
                 physics=physics,
             )
 
+        # Initialize joints
+        for joint in self.animat_options.morphology.joints:
+            assert joint.name in self.maps['qpos']['names']
+            physics.data.qpos[
+                self.maps['qpos']['names'].index(joint.name)+6
+            ] = joint.initial_position
+
     def before_step(self, action, physics):
         """Operations before physics step"""
 
