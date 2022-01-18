@@ -116,8 +116,13 @@ class Simulation:
                 app.toggle_pause()
             app.launch(environment_loader=self._env)
         else:
+            _iterator = (
+                tqdm(range(self.task.n_iterations))
+                if self.options.show_progress
+                else range(self.task.n_iterations)
+            )
             try:
-                for _ in tqdm(range(self.task.n_iterations)):
+                for _ in _iterator:
                     self._env.step(action=None)
             except PhysicsError as err:
                 pylog.error(traceback.format_exc())
