@@ -117,9 +117,9 @@ class Simulation:
             app.launch(environment_loader=self._env)
         else:
             _iterator = (
-                tqdm(range(self.task.n_iterations))
+                tqdm(range(self.task.n_iterations+1))
                 if self.options.show_progress
-                else range(self.task.n_iterations)
+                else range(self.task.n_iterations+1)
             )
             try:
                 for _ in _iterator:
@@ -143,7 +143,7 @@ class Simulation:
         times = np.arange(
             0,
             self.task.timestep*self.task.n_iterations,
-            self.task.timestep
+            self.task.timestep,
         )[:iteration]
 
         # Log
