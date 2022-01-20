@@ -3,8 +3,6 @@
 import numpy as np
 cimport numpy as np
 
-import pybullet
-
 from dm_control.mujoco.wrapper.core import mjlib
 
 from libc.math cimport sqrt
