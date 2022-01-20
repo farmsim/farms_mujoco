@@ -15,18 +15,12 @@ from farms_data.sensors.sensor_convention import sc
 from farms_data.amphibious.animat_data import ModelData
 
 from ..swimming.drag import SwimmingHandler
+from ..model.control import ControlType
 from .physics import (
     get_sensor_maps,
     get_physics2data_maps,
     physics2data,
 )
-
-
-class ControlType(IntEnum):
-    """Control type"""
-    POSITION = 0
-    VELOCITY = 1
-    TORQUE = 2
 
 
 def duration2nit(duration: float, timestep: float) -> int:
@@ -225,12 +219,12 @@ class ExperimentTask(Task):
             animat_options = self.animat_options
             for jnt_opts in animat_options.control.joints:
                 jnt_name = jnt_opts['joint_name']
-                if ControlType.POSITION not in jnt_opts.control_types:
+                if 'position' not in jnt_opts.control_types:
                     for act_type in ('pos', 'vel'):
                         if act_type in jntname2actid[jnt_name]:
                             physics.named.model.actuator_forcelimited[
                                 jntname2actid[jnt_name][act_type]
-                            ] = 1
+                            ] = True
                             physics.named.model.actuator_forcerange[
                                 jntname2actid[jnt_name][act_type]
                             ] = [0, 0]
@@ -276,7 +270,7 @@ class ExperimentTask(Task):
                 for joint
                 in self._controller.joints_names[ControlType.POSITION]
             ]
-        else:
+        if self._controller.joints_names[ControlType.TORQUE]:
             joints_torques = self._controller.torques(
                 iteration=self.iteration,
                 time=current_time,
