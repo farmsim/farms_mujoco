@@ -64,6 +64,11 @@ class Simulation:
             **env_kwargs,
         )
 
+    @property
+    def iteration(self):
+        """Iteration"""
+        return self.task.iteration
+
     @classmethod
     def from_sdf(cls, sdf_path_animat, arena_options, timestep, **kwargs):
         """From SDF"""
@@ -128,6 +133,22 @@ class Simulation:
                 pylog.error(traceback.format_exc())
                 raise err
         pylog.info('Closing simulation')
+
+    def iterator(self, show_progress=True, verbose=True):
+        """Run simulation"""
+        _iterator = (
+            tqdm(range(self.task.n_iterations+1))
+            if show_progress
+            else range(self.task.n_iterations+1)
+        )
+        try:
+            for iteration in _iterator:
+                yield iteration
+                self._env.step(action=None)
+        except PhysicsError as err:
+            if verbose:
+                pylog.error(traceback.format_exc())
+            raise err
 
     def postprocess(
             self,
