@@ -20,7 +20,7 @@ from farms_sdf.sdf import (
 )
 
 MIN_MASS = 1e-12
-MIN_INERTIA = 0
+MIN_INERTIA = 1e-15
 
 
 def quat2mjcquat(quat):
@@ -466,7 +466,11 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
         inertia_mat[1][2] = inertial.inertias[4]
         inertia_mat[2][1] = inertial.inertias[4]
         eigvals = np.linalg.eigvals(inertia_mat)
-        assert (eigvals > 0).all(), f'Eigen values <= 0: {eigvals}\n{inertia_mat}'
+        assert (eigvals > 0).all(), (
+            f'Eigen values <= 0 for link {sdf_link.name}'
+            f'\nEigenvalues: {eigvals}'
+            f'\nInertia:\n{inertia_mat}'
+        )
         rot_mat = euler2mat(inertial.pose[3:])
         inertia_mat = rot_mat @ inertia_mat @ rot_mat.T  # Rotate inertia tensor
         body.add(
