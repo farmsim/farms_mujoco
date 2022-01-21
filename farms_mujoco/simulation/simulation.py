@@ -95,10 +95,11 @@ class Simulation:
             **kwargs,
         )
 
-    def save_mjcf_xml(self, path):
+    def save_mjcf_xml(self, path, verbose=False):
         """Save simulation to mjcf xml"""
         mjcf_xml_str = mjcf2str(mjcf_model=self._mjcf_model)
-        pylog.info(mjcf_xml_str)
+        if verbose:
+            pylog.info(mjcf_xml_str)
         with open(path, 'w+') as xml_file:
             xml_file.write(mjcf_xml_str)
 
