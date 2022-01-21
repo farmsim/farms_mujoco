@@ -2,7 +2,7 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
-from ..model.control import ModelController, ControlType
+from farms_data.model.control import ModelController, ControlType
 
 
 def kinematics_interpolation(

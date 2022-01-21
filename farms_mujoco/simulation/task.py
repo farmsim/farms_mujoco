@@ -10,12 +10,12 @@ from dm_control.rl.control import Task
 from dm_control.mujoco.wrapper import mjbindings
 
 import farms_pylog as pylog
+from farms_data.model.control import ControlType
 from farms_data.units import SimulationUnitScaling
 from farms_data.sensors.sensor_convention import sc
 from farms_data.amphibious.animat_data import ModelData
 
 from ..swimming.drag import SwimmingHandler
-from ..model.control import ControlType
 from .physics import (
     get_sensor_maps,
     get_physics2data_maps,
