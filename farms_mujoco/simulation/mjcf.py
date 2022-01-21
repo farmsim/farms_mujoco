@@ -20,7 +20,7 @@ from farms_sdf.sdf import (
 )
 
 MIN_MASS = 1e-12
-MIN_INERTIA = 1e-12
+MIN_INERTIA = 0
 
 
 def quat2mjcquat(quat):
