@@ -1,7 +1,6 @@
 """Task"""
 
 from typing import Dict
-from enum import IntEnum
 
 import numpy as np
 
@@ -10,10 +9,11 @@ from dm_control.rl.control import Task
 from dm_control.mujoco.wrapper import mjbindings
 
 import farms_pylog as pylog
-from farms_data.model.control import ControlType
-from farms_data.units import SimulationUnitScaling
-from farms_data.sensors.sensor_convention import sc
+from farms_data.model.options import ModelOptions
+from farms_data.model.control import ControlType, ModelController
 from farms_data.amphibious.animat_data import ModelData
+from farms_data.sensors.sensor_convention import sc
+from farms_data.units import SimulationUnitScaling
 
 from ..swimming.drag import SwimmingHandler
 from .physics import (
@@ -31,7 +31,13 @@ def duration2nit(duration: float, timestep: float) -> int:
 class ExperimentTask(Task):
     """FARMS experiment"""
 
-    def __init__(self, base_link, n_iterations, timestep, **kwargs):
+    def __init__(
+            self,
+            base_link: str,
+            n_iterations: int,
+            timestep: float,
+            **kwargs,
+    ):
         super().__init__()
         self._app = None
         self.iteration: int = 0
@@ -39,8 +45,8 @@ class ExperimentTask(Task):
         self.n_iterations: int = n_iterations
         self.base_link: str = base_link
         self.data: ModelData = kwargs.pop('data', None)
-        self._controller = kwargs.pop('controller', None)
-        self.animat_options = kwargs.pop('animat_options', None)
+        self._controller: ModelController = kwargs.pop('controller', None)
+        self.animat_options: ModelOptions = kwargs.pop('animat_options', None)
         self.maps: Dict = {
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'xfrc': {}, 'geoms': {},
@@ -50,9 +56,11 @@ class ExperimentTask(Task):
         self._restart: bool = kwargs.pop('restart', True)
         self._plot: bool = kwargs.pop('plot', False)
         self._save: str = kwargs.pop('save', '')
-        self._units = kwargs.pop('units', SimulationUnitScaling)
         self._swimming_handler: SwimmingHandler = None
-        self._hfield = kwargs.pop('hfield', None)
+        self._hfield: Dict = kwargs.pop('hfield', None)
+        self._units: SimulationUnitScaling = (
+            kwargs.pop('units', SimulationUnitScaling())
+        )
         assert not kwargs, kwargs
 
     def set_app(self, app: viewer.application.Application):
@@ -93,6 +101,7 @@ class ExperimentTask(Task):
         # Maps, data and sensors
         self.initialize_maps(physics)
         if self.data is None:
+            pylog.info('No data provided, initialising default')
             self.initialize_data()
         self.initialize_sensors(physics)
 
@@ -141,25 +150,15 @@ class ExperimentTask(Task):
 
     def initialize_maps(self, physics):
         """Initialise data"""
+        physics_named = physics.named.data
         # Links indices
-        self.maps['xpos']['names'] = list(
-            physics.named.data.xpos.axes.row.names
-        )
-
+        self.maps['xpos']['names'] = physics_named.xpos.axes.row.names
         # Joints indices
-        self.maps['qpos']['names'] = list(
-            physics.named.data.qpos.axes.row.names
-        )
-
+        self.maps['qpos']['names'] = physics_named.qpos.axes.row.names
         # External forces indices
-        self.maps['xfrc']['names'] = (
-            physics.named.data.xfrc_applied.axes.row.names
-        )
-
+        self.maps['xfrc']['names'] = physics_named.xfrc_applied.axes.row.names
         # Geoms indices
-        self.maps['geoms']['names'] = (
-            physics.named.data.geom_xpos.axes.row.names
-        )
+        self.maps['geoms']['names'] = physics_named.geom_xpos.axes.row.names
 
     def initialize_data(self):
         """Initialise data"""
