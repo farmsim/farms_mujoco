@@ -12,6 +12,8 @@ from dm_control import viewer
 from dm_control.rl.control import Environment, PhysicsError
 
 import farms_pylog as pylog
+from farms_data.model.options import ModelOptions
+from farms_data.simulation.options import SimulationOptions
 
 from .mjcf import setup_mjcf_xml, mjcf2str
 from .task import ExperimentTask
@@ -30,19 +32,22 @@ def extract_sub_dict(dictionary, keys):
 class Simulation:
     """Simulation"""
 
-    def __init__(self, mjcf_model, base_link, n_iterations, timestep, **kwargs):
+    def __init__(
+            self,
+            mjcf_model: mjcf.element.RootElement,
+            base_link: str,
+            simulation_options: SimulationOptions,
+            **kwargs,
+    ):
         super().__init__()
-        self._mjcf_model = mjcf_model
-        self.fast = kwargs.pop('fast', False)
-        self.pause = kwargs.pop('pause', True)
-        self.headless = kwargs.pop('headless', False)
-        self.options = kwargs.pop('simulation_options', None)
-        if self.options is not None:
-            kwargs['units'] = self.options.units
+        self._mjcf_model: mjcf.element.RootElement = mjcf_model
+        self.options: SimulationOptions = simulation_options
+        self.pause: bool = not self.options.play
+        self._physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
 
         # Simulator configuration
-        viewer.util._MAX_TIME_MULTIPLIER = 2**15  # pylint: disable=protected-access
-        os.environ['MUJOCO_GL'] = 'egl' if self.headless else 'glfw'  # 'osmesa'
+        viewer.util._MAX_TIME_MULTIPLIER = 2**10  # pylint: disable=protected-access
+        os.environ['MUJOCO_GL'] = 'egl' if self.options.headless else 'glfw'  # 'osmesa'
         warnings.filterwarnings('ignore', category=DeprecationWarning)
 
         # Simulation
@@ -50,17 +55,17 @@ class Simulation:
             dictionary=kwargs,
             keys=('control_timestep', 'n_sub_steps', 'flat_observation'),
         )
-        self._physics = mjcf.Physics.from_mjcf_model(mjcf_model)
-        self.task = ExperimentTask(
-            base_link=base_link.name,
-            n_iterations=n_iterations,
-            timestep=timestep,
+        self.task: ExperimentTask = ExperimentTask(
+            base_link=base_link,
+            n_iterations=self.options.n_iterations,
+            timestep=self.options.timestep,
+            units=self.options.units,
             **kwargs,
         )
-        self._env = Environment(
+        self._env: Environment = Environment(
             physics=self._physics,
             task=self.task,
-            time_limit=n_iterations*timestep,
+            time_limit=self.options.n_iterations*self.options.timestep,
             **env_kwargs,
         )
 
@@ -70,15 +75,22 @@ class Simulation:
         return self.task.iteration
 
     @classmethod
-    def from_sdf(cls, sdf_path_animat, arena_options, timestep, **kwargs):
+    def from_sdf(
+            cls,
+            sdf_path_animat: str,
+            arena_options,
+            simulation_options: SimulationOptions,
+            animat_options: ModelOptions,
+            **kwargs,
+    ):
         """From SDF"""
         mjcf_model, base_link, hfield = setup_mjcf_xml(
             sdf_path_animat=sdf_path_animat,
             arena_options=arena_options,
-            timestep=timestep,
-            discardvisual=kwargs.get('headless', False),
-            animat_options=kwargs.get('animat_options', None),
-            simulation_options=kwargs.get('simulation_options', None),
+            timestep=simulation_options.timestep,
+            discardvisual=simulation_options.headless,
+            simulation_options=simulation_options,
+            animat_options=animat_options,
             **extract_sub_dict(
                 dictionary=kwargs,
                 keys=(
@@ -89,8 +101,9 @@ class Simulation:
         )
         return cls(
             mjcf_model=mjcf_model,
-            base_link=base_link,
-            timestep=timestep,
+            base_link=base_link.name,
+            simulation_options=simulation_options,
+            animat_options=animat_options,
             hfield=hfield,
             **kwargs,
         )
@@ -109,12 +122,12 @@ class Simulation:
 
     def run(self):
         """Run simulation"""
-        if not self.headless:
+        if not self.options.headless:
             app = FarmsApplication()
             app.set_speed(multiplier=(
                 # pylint: disable=protected-access
                 viewer.util._MAX_TIME_MULTIPLIER
-                if self.fast
+                if self.options.fast
                 else 1
             ))
             self.task.set_app(app=app)
