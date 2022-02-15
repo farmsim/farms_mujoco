@@ -13,7 +13,7 @@ from farms_data.model.options import ModelOptions
 from farms_data.model.control import ControlType, ModelController
 from farms_data.amphibious.animat_data import ModelData
 from farms_data.sensors.sensor_convention import sc
-from farms_data.units import SimulationUnitScaling
+from farms_data.units import SimulationUnitScaling as SimulationUnits
 
 from ..swimming.drag import SwimmingHandler
 from .physics import (
@@ -54,13 +54,9 @@ class ExperimentTask(Task):
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
-        self._plot: bool = kwargs.pop('plot', False)
-        self._save: str = kwargs.pop('save', '')
         self._swimming_handler: SwimmingHandler = None
-        self._hfield: Dict = kwargs.pop('hfield', None)
-        self._units: SimulationUnitScaling = (
-            kwargs.pop('units', SimulationUnitScaling())
-        )
+        self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
+        self._units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         assert not kwargs, kwargs
 
     def set_app(self, app: viewer.application.Application):
@@ -81,9 +77,9 @@ class ExperimentTask(Task):
         self.iteration = 0
 
         # Initialise terrain
-        if self._hfield is not None:
-            data = self._hfield['data']
-            hfield = self._hfield['asset']
+        if self._extras['hfield'] is not None:
+            data = self._extras['hfield']['data']
+            hfield = self._extras['hfield']['asset']
             nrow = physics.bind(hfield).nrow
             ncol = physics.bind(hfield).ncol
             idx0 = physics.bind(hfield).adr
