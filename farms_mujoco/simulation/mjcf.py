@@ -502,13 +502,14 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 inertia_mat[1][2]*units.inertia,
             ],
         )
-    elif not free:
+
+    else:
         body.add(
             'inertial',
             pos=[0, 0, 0],
             quat=[1, 0, 0, 0],
-            mass=1,
-            diaginertia=[1, 1, 1],
+            mass=1e-10,
+            diaginertia=[1e-12]*3,
         )
 
     return body, joint
