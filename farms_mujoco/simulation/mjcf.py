@@ -675,10 +675,10 @@ def sdf2mjcf(sdf, **kwargs):
                 forcelimited=act_pos_forcelimited,
                 forcerange=[val*units.torques for val in act_pos_forcerange],
             )
-            name = f'actuator_velocity_{joint_name}'
-            mjcf_map['actuators'][name] = mjcf_model.actuator.add(
+            name_vel = f'actuator_velocity_{joint_name}'
+            mjcf_map['actuators'][name_vel] = mjcf_model.actuator.add(
                 'velocity',
-                name=name,
+                name=name_vel,
                 joint=joint_name,
                 kv=act_vel_gain*units.torques/units.angular_velocity,
                 ctrllimited=act_vel_ctrllimited,
@@ -686,12 +686,17 @@ def sdf2mjcf(sdf, **kwargs):
                 forcelimited=act_vel_forcelimited,
                 forcerange=[val*units.torques for val in act_vel_forcerange],
             )
-            name = f'actuator_torque_{joint_name}'
-            mjcf_map['actuators'][name] = mjcf_model.actuator.add(
+            name_trq = f'actuator_torque_{joint_name}'
+            mjcf_map['actuators'][name_trq] = mjcf_model.actuator.add(
                 'motor',
-                name=name,
+                name=name_trq,
                 joint=joint_name,
             )
+            max_trq = joints_ctrl[joint_name].max_torque*units.torques
+            if animat_options is not None and max_trq < np.inf:
+                for name in [name_pos, name_vel, name_trq]:
+                    mjcf_map['actuators'][name].forcelimited = True
+                    mjcf_map['actuators'][name].forcerange = [-max_trq, max_trq]
         assert mjcf_map['actuators'], mjcf_map['actuators']
 
     # Sensors
