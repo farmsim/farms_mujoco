@@ -439,7 +439,9 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
             )
 
         else:
-            raise NotImplementedError(f'{type(element.geometry)} not supported')
+            raise NotImplementedError(
+                f'{type(element.geometry)} not supported'
+            )
 
         if geom is not None:
             if isinstance(element, Visual):
@@ -880,6 +882,7 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
         mjcf_model, info = sdf2mjcf(
             sdf=ModelSDF.read(filename=os.path.expandvars(arena['sdf_path']))[0],
             mjcf_model=mjcf_model,
+            model_name='arena',
             fixed_base=True,
             concave=False,
             simulation_options=simulation_options,
@@ -946,7 +949,7 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     mjcf_model.visual.map.fogstart = 3
     mjcf_model.visual.map.fogend = 10
     mjcf_model.visual.map.haze = 0.3
-    mjcf_model.visual.map.shadowclip = 100
+    mjcf_model.visual.map.shadowclip = 1
     mjcf_model.visual.map.shadowscale = 3e-1
     mjcf_model.visual.map.actuatortendon = 2
     mjcf_model.visual.scale.forcewidth = 0.01*scale
@@ -1061,7 +1064,7 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     mjcf_xml_str = mjcf2str(mjcf_model=mjcf_model)
     pylog.info(mjcf_xml_str)
     if kwargs.pop('save_mjcf', False):
-        with open('simulation_mjcf.xml', 'w+') as xml_file:
+        with open('simulation_mjcf.xml', 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)
 
     assert not kwargs, kwargs
