@@ -1,6 +1,7 @@
+build
+ducks/_build
 *~
 *.directory
-build/*
 bin/*
 GPATH
 GRTAGS
@@ -14,6 +15,7 @@ __pycache__
 *.json
 *.html
 *.npy
+*.pickle
 *.profile
 *.avi
 *.png
@@ -28,3 +30,8 @@ scripts/*test*
 *.gz
 *.pbs
 *.org
+*.yaml
+*.h5
+*.hdf5
+*.log
+*.dot
