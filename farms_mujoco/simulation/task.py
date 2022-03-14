@@ -1,6 +1,6 @@
 """Task"""
 
-from typing import Dict
+from typing import List, Dict
 
 import numpy as np
 
@@ -26,6 +26,37 @@ from .physics import (
 def duration2nit(duration: float, timestep: float) -> int:
     """Number of iterations from duration"""
     return int(duration/timestep)
+
+
+class TaskCallback:
+    """Task callback"""
+
+    def initialize_episode(self, task, physics):
+        """Initialize episode"""
+
+    def before_step(self, task, action, physics):
+        """Before step"""
+
+    def after_step(self, task, physics):
+        """After step"""
+
+    def action_spec(self, task, physics):
+        """Action specifications"""
+
+    def step_spec(self, task, physics):
+        """Timestep specifications"""
+
+    def get_observation(self, task, physics):
+        """Environment observation"""
+
+    def get_reward(self, task, physics):
+        """Reward"""
+
+    def get_termination(self, task, physics):
+        """Return final discount if episode should end, else None"""
+
+    def observation_spec(self, task, physics):
+        """Observation specifications"""
 
 
 class ExperimentTask(Task):
@@ -55,6 +86,7 @@ class ExperimentTask(Task):
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
         self._swimming_handler: SwimmingHandler = None
+        self._callbacks: List[TaskCallback] = kwargs.pop('callbacks', [])
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
         self._units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         assert not kwargs, kwargs
@@ -121,6 +153,18 @@ class ExperimentTask(Task):
             physics.data.qpos[index] = joint.initial_position
             physics.data.qvel[index-1] = joint.initial_velocity
 
+        if self._app is not None:
+            cam = self._app._viewer.camera
+            links = self.data.sensors.links
+            cam.look_at(
+                position=links.urdf_position(iteration=0, link_i=0),
+                distance=3,
+            )
+
+        # Callbacks
+        for callback in self._callbacks:
+            callback.initialize_episode(task=self, physics=physics)
+
     def before_step(self, action, physics):
         """Operations before physics step"""
 
@@ -139,6 +183,10 @@ class ExperimentTask(Task):
         # Hydrodynamics
         if self._swimming_handler is not None:
             self.step_hydrodynamics(physics)
+
+        # Callbacks
+        for callback in self._callbacks:
+            callback.before_step(task=self, action=action, physics=physics)
 
         # Control
         if self._controller is not None:
@@ -293,23 +341,49 @@ class ExperimentTask(Task):
             else:
                 pylog.info('Simulation can be restarted')
 
+        # Callbacks
+        for callback in self._callbacks:
+            callback.after_step(task=self, physics=physics)
+
     def action_spec(self, physics):
         """Action specifications"""
-        return []
+        specs = []
+        for callback in self._callbacks:
+            spec = callback.action_spec(task=self, physics=physics)
+            if spec is not None:
+                specs += spec
+        return specs
 
     def step_spec(self, physics):
         """Timestep specifications"""
+        for callback in self._callbacks:
+            callback.step_spec(task=self, physics=physics)
 
     def get_observation(self, physics):
         """Environment observation"""
+        for callback in self._callbacks:
+            callback.get_observation(task=self, physics=physics)
 
     def get_reward(self, physics):
         """Reward"""
-        return 0
+        reward = 0
+        for callback in self._callbacks:
+            callback_reward = callback.get_reward(task=self, physics=physics)
+            if callback_reward is not None:
+                reward += callback_reward
+        return reward
 
     def get_termination(self, physics):
         """Return final discount if episode should end, else None"""
-        return 1 if self.iteration >= self.n_iterations else None
+        terminate = None
+        for callback in self._callbacks:
+            if callback.get_termination(task=self, physics=physics):
+                terminate = 1
+        if self.iteration >= self.n_iterations:
+            terminate = 1
+        return terminate
 
     def observation_spec(self, physics):
         """Observation specifications"""
+        for callback in self._callbacks:
+            callback.observation_spec(task=self, physics=physics)
