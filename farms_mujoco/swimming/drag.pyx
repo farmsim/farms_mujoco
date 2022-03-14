@@ -6,7 +6,7 @@ import numpy as np
 cimport numpy as np
 
 from farms_data.sensors.data_cy cimport HydrodynamicsArrayCy, LinkSensorArrayCy
-from ..utils.transform cimport quat_conj, quat_mult, quat_rot
+from farms_data.utils.transform cimport quat_conj, quat_mult, quat_rot
 
 
 cdef void link_swimming_info(
