@@ -6,15 +6,35 @@ from setuptools.extension import Extension
 from setuptools import dist
 
 dist.Distribution().fetch_build_eggs(['numpy'])
-import numpy as np
+import numpy as np  # pylint: disable=wrong-import-position
 
 dist.Distribution().fetch_build_eggs(['Cython>=0.15.1'])
-from Cython.Build import cythonize
+from Cython.Build import cythonize  # pylint: disable=wrong-import-position
+from Cython.Compiler import Options  # pylint: disable=wrong-import-position
 
 dist.Distribution().fetch_build_eggs(['farms_data'])
-from farms_data import get_include_paths
+from farms_data import get_include_paths  # pylint: disable=wrong-import-position
 
-DEBUG = False
+
+# Cython options
+DEBUG = True
+Options.docstrings = True
+Options.embed_pos_in_docstring = False
+Options.generate_cleanup_code = False
+Options.clear_to_none = True
+Options.annotate = False
+Options.fast_fail = False
+Options.warning_errors = False
+Options.error_on_unknown_names = True
+Options.error_on_uninitialized = True
+Options.convert_range = True
+Options.cache_builtins = True
+Options.gcc_branch_hints = True
+Options.lookup_module_cpdef = False
+Options.embed = None
+Options.cimport_from_pyx = False
+Options.buffer_max_dims = 8
+Options.closure_freelist_size = 8
 
 
 setup(
@@ -22,20 +42,20 @@ setup(
     version='0.1',
     author='farmsdev',
     author_email='biorob-farms@groupes.epfl.ch',
-    description='FARMS package for running simulations with the Mujoco simulator',
+    description='FARMS package for running simulations with MuJoCo',
     keywords='farms simulation mujoco',
     packages=find_packages(),
     include_package_data=True,
-    include_dirs=[np.get_include()],
+    include_dirs=[np.get_include()] + get_include_paths(),
     ext_modules=cythonize(
         [
             Extension(
-                'farms_mujoco.{}*'.format(folder.replace('/', '_') + '.' if folder else ''),
-                sources=['farms_mujoco/{}*.pyx'.format(folder + '/' if folder else '')],
+                f'farms_mujoco.{folder}.*',
+                sources=[f'farms_mujoco/{folder}/*.pyx'],
                 extra_compile_args=['-O3'],  # , '-fopenmp'
                 extra_link_args=['-O3']  # , '-fopenmp'
             )
-            for folder in ['sensors', 'swimming', 'utils']
+            for folder in ['sensors', 'swimming']
         ],
         include_path=[np.get_include()] + get_include_paths(),
         compiler_directives={
