@@ -1,7 +1,6 @@
 cython
 numpy
 scipy
-matplotlib
 tqdm
 trimesh
 dm_control

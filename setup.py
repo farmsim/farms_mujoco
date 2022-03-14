@@ -73,10 +73,11 @@ setup(
     ),
     zip_safe=False,
     install_requires=[
+        'farms_pylog',
+        'farms_data',
         'cython',
         'numpy',
         'trimesh',
         'dm_control',
-        'deepdish',
     ],
 )
