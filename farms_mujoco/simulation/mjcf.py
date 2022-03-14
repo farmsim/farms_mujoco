@@ -811,44 +811,47 @@ def add_particles(mjcf_model):
     composite.geom.rgba = [0.8, 0.2, 0.1, 1.0]
 
 
-def add_lights(mjcf_model, link, meters=1):
+def add_lights(link, rot=[0, 0, 0]):
     """Add lights"""
-    for i, pos in enumerate([[-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1]]):
-        link.add(
-            'light',
-            name=f'light_{link.name}_{i}',
-            mode='trackcom',
-            # target='targetbody',
-            active=str(True).lower(),
-            pos=[val*meters for val in pos],
-            castshadow=str(not i).lower(),
-            directional=str(False).lower(),
-            dir=[0, 0, -1.0],
-            attenuation=[2.0, 0.0, 0.0],
-            cutoff=120,
-            exponent=10,
-            ambient=[0.0, 0.0, 0.0],
-            diffuse=[0.7, 0.7, 0.7],
-            specular=[0.3, 0.3, 0.3],
-        )
+    rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
+    link.add(
+        'light',
+        name='light_animat',
+        mode='trackcom',  # 'targetbody'
+        active=str(True).lower(),
+        pos=rot_inv.as_matrix() @ [-1, 1, 3],
+        dir=rot_inv.as_matrix() @ [1.0, -1.0, -3.0],
+        castshadow=str(True).lower(),
+        directional=str(False).lower(),
+        attenuation=[1.0, 0.0, 0.0],
+        cutoff=100,
+        exponent=1.0,
+        ambient=[0.0, 0.0, 0.0],
+        diffuse=[0.7, 0.7, 0.7],
+        specular=[0.3, 0.3, 0.3],
+    )
 
 
-def add_cameras(mjcf_model, link, meters=1, dist=0.3):
+def add_cameras(link, dist=3, rot=[0, 0, 0]):
     """Add cameras"""
+    rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
     for i, (mode, pose) in enumerate([
             ['trackcom', [0.0, 0.0, dist, 0.0, 0.0, 0.0]],
             ['trackcom', [0.0, -dist, 0.2*dist, 0.4*np.pi, 0.0, 0.0]],
-            ['trackcom', [dist, 0.0, 0.2*dist, 0.0, 0.4*np.pi, 0.5*np.pi]],
-            ['targetbodycom', [dist, 0.0, 0.2*dist, 0.0, 0.4*np.pi, 0.5*np.pi]],
+            ['trackcom', [-dist, 0.0, 0.2*dist, 0.4*np.pi, 0, -0.5*np.pi]],
+            # ['targetbodycom', [dist, 0.0, 0.2*dist, 0, 0, 0]],
     ]):
         link.add(
             'camera',
             name=f'camera_{link.name}_{i}',
             mode=mode,
-            pos=[pos*meters for pos in pose[:3]],
-            quat=euler2mjcquat(pose[3:]),
-            # target='',
-            fovy=45,
+            pos=rot_inv.as_matrix() @ pose[:3],
+            quat=quat2mjcquat((
+                rot_inv
+                * Rotation.from_euler(angles=pose[3:], seq='xyz')
+            ).as_quat()),
+            # target=link.name,
+            fovy=70,
             ipd=0.068,
         )
 
@@ -1045,10 +1048,11 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
         add_particles(mjcf_model)
 
     # Light and shadows
-    add_lights(mjcf_model=mjcf_model, link=base_link, meters=units.meters)
+    add_lights(link=base_link, rot=animat_options.spawn.orientation)
 
     # Add cameras
-    add_cameras(mjcf_model=mjcf_model, link=base_link, meters=units.meters)
+    # assert False, (sdf_animat.pose, sdf_animat.get_base_link().pose)
+    add_cameras(link=base_link, rot=animat_options.spawn.orientation)
 
     # Night sky
     night_sky(mjcf_model)
