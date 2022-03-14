@@ -1012,23 +1012,25 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
                 joint.stiffness = (
                     joint_options.passive.stiffness_coefficient
                 )*units.torques
-                joint.damping = (
+                joint.damping += (
                     joint_options.passive.damping_coefficient
                 )*units.torques/units.angular_velocity
 
-        # # Muscles
-        # for muscle_options in animat_options.control.muscles:
-        #     joint = mjcf_model.find(
-        #         namespace='joint',
-        #         identifier=muscle_options.joint_name,
-        #     )
-        #     if 'ekeberg' in joints_equations[muscle_options.joint_name]:
-        #         joint.stiffness = (
-        #             muscle_options.gamma
-        #         )*units.torques
-        #         joint.damping = (
-        #             muscle_options.delta
-        #         )*units.torques/units.angular_velocity
+        # Muscles
+        if animat_options.control.muscles is not None:
+            for muscle_options in animat_options.control.muscles:
+                joint = mjcf_model.find(
+                    namespace='joint',
+                    identifier=muscle_options.joint_name,
+                )
+                assert joint, f'Joint {muscle_options.joint_name} not found'
+                if 'ekeberg' in joints_equations[muscle_options.joint_name]:
+                    # joint.stiffness = (
+                    #     muscle_options.gamma
+                    # )*units.torques
+                    joint.damping += (
+                        muscle_options.delta
+                    )*units.torques/units.angular_velocity
 
     if simulation_options is not None:
         mjcf_model.option.gravity = [
