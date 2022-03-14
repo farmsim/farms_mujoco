@@ -558,6 +558,7 @@ def sdf2mjcf(sdf, **kwargs):
     """Export to MJCF string"""
 
     mjcf_model = kwargs.pop('mjcf_model', None)
+    model_name = kwargs.pop('model_name', None)
     fixed_base = kwargs.pop('fixed_base', False)
     concave = kwargs.pop('concave', False)
     use_site = kwargs.pop('use_site', False)
@@ -591,6 +592,10 @@ def sdf2mjcf(sdf, **kwargs):
 
     if mjcf_model is None:
         mjcf_model = mjcf.RootElement()
+
+    # Name
+    if model_name:
+        mjcf_model.model = model_name
 
     # Base link
     roots = sdf.get_base_links()
@@ -641,18 +646,28 @@ def sdf2mjcf(sdf, **kwargs):
             if animat_options is not None
             else mjcf_map['joints']
         )
+        if animat_options is not None:
+            joints_ctrl = {
+                joint.joint_name: joint
+                for joint in animat_options.control.joints
+            }
         for joint_name in joints_names:
-            if mjcf_model.find('joint', joint_name).type != 'hinge':
-                continue
+            joint = mjcf_model.find('joint', joint_name)
+            assert joint, f'Joint {joint_name} not found'
+            if joint.type != 'hinge':
+                # continue
+                raise Exception(
+                    f'Actuator is not of type hinge but of type {joint.type}'
+                )
             # mjcf_model.actuator.add(
             #     'general',
             #     name=f'act_pos_{joint_name}',
             #     joint=joint_name,
             # )
-            name = f'actuator_position_{joint_name}'
-            mjcf_map['actuators'][name] = mjcf_model.actuator.add(
+            name_pos = f'actuator_position_{joint_name}'
+            mjcf_map['actuators'][name_pos] = mjcf_model.actuator.add(
                 'position',
-                name=name,
+                name=name_pos,
                 joint=joint_name,
                 kp=act_pos_gain*units.torques,
                 ctrllimited=act_pos_ctrllimited,
@@ -870,11 +885,12 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     # add_plane(mjcf_model)
 
     # Animat
-    animat_kwargs = animat_options.mujoco if animat_options is not None else {}
+    mujoco_kwargs = animat_options.mujoco if animat_options is not None else {}
     sdf_animat = ModelSDF.read(filename=os.path.expandvars(sdf_path_animat))[0]
     mjcf_model, _ = sdf2mjcf(
         sdf=sdf_animat,
         mjcf_model=mjcf_model,
+        model_name=animat_options.name,
         use_sensors=True,
         use_link_sensors=False,
         use_link_vel_sensors=True,
@@ -884,7 +900,7 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
         simulation_options=simulation_options,
         friction=[0, 0, 0],
         solimp=[0.9, 1.0, 1e-3, 0.5, 2],
-        **animat_kwargs,
+        **mujoco_kwargs,
     )
     # sdf_base_link = sdf_animat.get_base_link()
     base_link = mjcf_model.worldbody.body[-1]
@@ -967,6 +983,7 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
         # Links
         for link in animat_options.morphology.links:
             mjcf_link = mjcf_model.find(namespace='body', identifier=link.name)
+            assert mjcf_link, f'Link {link.name} not found'
             for geom in mjcf_link.geom:
                 if geom.contype:
                     assert len(geom.friction) == 3, len(geom.friction)
