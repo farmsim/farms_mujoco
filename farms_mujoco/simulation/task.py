@@ -12,7 +12,6 @@ import farms_pylog as pylog
 from farms_data.model.options import ModelOptions
 from farms_data.model.control import ControlType, ModelController
 from farms_data.amphibious.animat_data import ModelData
-from farms_data.sensors.sensor_convention import sc
 from farms_data.units import SimulationUnitScaling as SimulationUnits
 
 from .physics import (
@@ -86,7 +85,7 @@ class ExperimentTask(Task):
         self._restart: bool = kwargs.pop('restart', True)
         self._callbacks: List[TaskCallback] = kwargs.pop('callbacks', [])
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
-        self._units: SimulationUnits = kwargs.pop('units', SimulationUnits())
+        self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         assert not kwargs, kwargs
 
     def set_app(self, app: viewer.application.Application):
@@ -143,7 +142,7 @@ class ExperimentTask(Task):
             physics.data.qvel[index-1] = joint.initial_velocity
 
         if self._app is not None:
-            cam = self._app._viewer.camera
+            cam = self._app._viewer.camera  # pylint: disable=protected-access
             links = self.data.sensors.links
             cam.look_at(
                 position=links.urdf_position(iteration=0, link_i=0),
@@ -166,9 +165,8 @@ class ExperimentTask(Task):
             iteration=self.iteration,
             data=self.data,
             maps=self.maps,
-            units=self._units,
+            units=self.units,
         )
-
 
         # Callbacks
         for callback in self._callbacks:
@@ -283,7 +281,7 @@ class ExperimentTask(Task):
                 time=current_time,
                 timestep=self.timestep,
             )
-            torques = self._units.torques
+            torques = self.units.torques
             physics.data.ctrl[self.maps['ctrl']['trq']] = [
                 joints_torques[joint]*torques
                 for joint
