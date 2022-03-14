@@ -8,7 +8,7 @@ from dm_control.mujoco.wrapper.core import mjlib
 from libc.math cimport sqrt
 
 
-cdef double norm3d(double[3] vector) nogil:
+cdef inline double norm3d(double[3] vector) nogil:
     """Compute 3D norm"""
     return sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2])
 
@@ -60,10 +60,8 @@ cdef void cycontact2data(
     int sign,
 ):
     """Extract force"""
-    cdef double[9] frame
-    cdef double[3] pos
-    frame[:] = contact.frame
-    pos[:] = contact.pos
+    cdef double[3] pos = contact.pos
+    cdef double[9] frame = contact.frame
     mjlib.mj_contactForce(model_ptr, data_ptr, contact_i, forcetorque)
     norm_sum[index] += store_forces(
         iteration=iteration, index=index, cdata=cdata,
@@ -85,7 +83,7 @@ cdef void normalize_forces_pos(
         cdata[iteration, index, CONTACT_POSITION_Z] /= norm_sum[index]
 
 
-cdef void scale_forces(
+cdef inline void scale_forces(
     unsigned int iteration,
     unsigned int index,
     DTYPEv3 cdata,
@@ -107,6 +105,33 @@ cdef void scale_forces(
     cdata[iteration, index, CONTACT_POSITION_Z] *= imeters
 
 
+cdef void postprocess_contacts(
+    unsigned int iteration,
+    DTYPEv3 cdata,
+    unsigned int n_contact_sensors,
+    DTYPEv1 norm_sum,
+    double meters,
+    double newtons,
+) nogil:
+    cdef unsigned int index
+    cdef double imeters = 1./meters
+    cdef double inewtons = 1./newtons
+    for index in range(n_contact_sensors):
+        normalize_forces_pos(
+            iteration=iteration,
+            index=index,
+            cdata=cdata,
+            norm_sum=norm_sum,
+        )
+        scale_forces(
+            iteration=iteration,
+            index=index,
+            cdata=cdata,
+            imeters=imeters,
+            inewtons=inewtons,
+        )
+
+
 cpdef cycontacts2data(
     object physics,
     unsigned int iteration,
@@ -117,18 +142,17 @@ cpdef cycontacts2data(
     double newtons,
 ):
     """Contacts to data"""
-    cdef unsigned int contact_i, index, n_contacts=len(data.names)
+    cdef unsigned int contact_i, index, n_contact_sensors=len(data.names)
     cdef unsigned int geom1, geom2
     cdef DTYPEv3 cdata = data.array
     cdef object model_ptr = physics.model.ptr
     cdef object data_ptr = physics.data.ptr
     cdef object contacts = physics.data.contact
-    cdef double imeters = 1./meters
-    cdef double inewtons = 1./newtons
     cdef DTYPEv1 norm_sum = np.zeros(data.array.shape[1], dtype=np.double)
     cdef np.ndarray[double, ndim=1] forcetorque = np.empty(6, dtype=np.double)
-    for contact_i, contact in enumerate(physics.data.contact):
+    for contact_i in range(len(contacts)):
         # Extract body index
+        contact = contacts[contact_i]
         geom1 = contact.geom1
         geom2 = contact.geom2
         if geom1 in geom_set:
@@ -157,17 +181,11 @@ cpdef cycontacts2data(
                 norm_sum=norm_sum,
                 sign=1,
             )
-    for index in range(n_contacts):
-        normalize_forces_pos(
-            iteration=iteration,
-            index=index,
-            cdata=cdata,
-            norm_sum=norm_sum,
-        )
-        scale_forces(
-            iteration=iteration,
-            index=index,
-            cdata=cdata,
-            imeters=imeters,
-            inewtons=inewtons,
-        )
+    postprocess_contacts(
+        iteration=iteration,
+        cdata=cdata,
+        n_contact_sensors=n_contact_sensors,
+        norm_sum=norm_sum,
+        meters=meters,
+        newtons=newtons,
+    )
