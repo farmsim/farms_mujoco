@@ -15,7 +15,6 @@ from farms_data.amphibious.animat_data import ModelData
 from farms_data.sensors.sensor_convention import sc
 from farms_data.units import SimulationUnitScaling as SimulationUnits
 
-from ..swimming.drag import SwimmingHandler
 from .physics import (
     get_sensor_maps,
     get_physics2data_maps,
@@ -85,7 +84,6 @@ class ExperimentTask(Task):
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
-        self._swimming_handler: SwimmingHandler = None
         self._callbacks: List[TaskCallback] = kwargs.pop('callbacks', [])
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
         self._units: SimulationUnits = kwargs.pop('units', SimulationUnits())
@@ -137,15 +135,6 @@ class ExperimentTask(Task):
         if self._controller is not None:
             self.initialize_control(physics)
 
-        # Hydrodynamics
-        if self.animat_options.physics.drag or self.animat_options.physics.sph:
-            self._swimming_handler = SwimmingHandler(
-                data=self.data,
-                animat_options=self.animat_options,
-                units=self._units,
-                physics=physics,
-            )
-
         # Initialize joints
         for joint in self.animat_options.morphology.joints:
             assert joint.name in self.maps['qpos']['names']
@@ -180,9 +169,6 @@ class ExperimentTask(Task):
             units=self._units,
         )
 
-        # Hydrodynamics
-        if self._swimming_handler is not None:
-            self.step_hydrodynamics(physics)
 
         # Callbacks
         for callback in self._callbacks:
@@ -271,28 +257,6 @@ class ExperimentTask(Task):
                             physics.named.model.actuator_forcerange[
                                 jntname2actid[jnt_name][act_type]
                             ] = [0, 0]
-
-    def step_hydrodynamics(self, physics):
-        """Step hydrodynamics"""
-        self._swimming_handler.step(self.iteration)
-        # physics.data.xfrc_applied[:, :] = 0  # Reset all forces
-        indices = self.maps['sensors']['data2xfrc2']
-        physics.data.xfrc_applied[indices, :] = (
-            self.data.sensors.hydrodynamics.array[
-                self.iteration, :,
-                sc.hydrodynamics_force_x:sc.hydrodynamics_torque_z+1,
-            ]
-        )
-        for force_i, (rotation_mat, force_local) in enumerate(zip(
-                physics.data.xmat[indices],
-                physics.data.xfrc_applied[indices],
-        )):
-            physics.data.xfrc_applied[indices[force_i]] = (
-                rotation_mat.reshape([3, 3])  # Local to global frame
-                @ force_local.reshape([3, 2], order='F')
-            ).flatten(order='F')
-        physics.data.xfrc_applied[indices, :3] *= self._units.newtons
-        physics.data.xfrc_applied[indices, 3:] *= self._units.torques
 
     def step_control(self, physics):
         """Step control"""
