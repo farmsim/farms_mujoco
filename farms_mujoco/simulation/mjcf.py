@@ -144,7 +144,6 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     )
     mjcf_map['links'][sdf_link.name] = body
 
-
     # joints
     joint = None
     if isinstance(sdf_link, ModelSDF):
@@ -233,13 +232,10 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
                 if overwrite or not os.path.isfile(stl_path):
                     mesh = tri.load_mesh(mesh_path)
                     if isinstance(mesh, tri.Scene):
-                        mesh = tri.util.concatenate(
-                            tuple(tri.Trimesh(
-                                vertices=g.vertices,
-                                faces=g.faces,
-                            )
-                            for g in mesh.geometry.values())
-                        )
+                        mesh = tri.util.concatenate(tuple(
+                            tri.Trimesh(vertices=g.vertices, faces=g.faces)
+                            for g in mesh.geometry.values()
+                        ))
                     if not mesh.convex_hull.vertices.any():
                         continue
                     mesh.export(stl_path)
@@ -454,6 +450,8 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     # Inertial
     inertial = sdf_link.inertial
     if inertial is not None:
+
+        # Extract and validate inertia
         inertia_mat = np.diag([
             max(MIN_INERTIA, inertial.inertias[0]),
             max(MIN_INERTIA, inertial.inertias[3]),
@@ -471,8 +469,12 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
             f'\nEigenvalues: {eigvals}'
             f'\nInertia:\n{inertia_mat}'
         )
+
+        # Rotate inertia tensor
         rot_mat = euler2mat(inertial.pose[3:])
-        inertia_mat = rot_mat @ inertia_mat @ rot_mat.T  # Rotate inertia tensor
+        inertia_mat = rot_mat @ inertia_mat @ rot_mat.T
+
+        # Add inertial
         body.add(
             'inertial',
             pos=[pos*units.meters for pos in inertial.pose[:3]],
@@ -1007,8 +1009,8 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
 
     if simulation_options is not None:
         mjcf_model.option.gravity = [
-            garvity*units.acceleration
-            for garvity in simulation_options.gravity
+            gravity*units.acceleration
+            for gravity in simulation_options.gravity
         ]
         mjcf_model.option.timestep = timestep
         mjcf_model.option.iterations = simulation_options.n_solver_iters
