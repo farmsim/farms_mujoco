@@ -14,6 +14,7 @@ from dm_control import mjcf
 
 import farms_pylog as pylog
 from farms_data.units import SimulationUnitScaling
+from farms_data.model.options import ArenaOptions
 from farms_sdf.sdf import (
     ModelSDF, Mesh, Visual, Collision,
     Box, Cylinder, Capsule, Sphere, Plane, Heightmap,
@@ -858,7 +859,11 @@ def add_cameras(link, dist=3, rot=[0, 0, 0]):
         )
 
 
-def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
+def setup_mjcf_xml(
+        sdf_path_animat: str,
+        arena_options: ArenaOptions,
+        **kwargs,
+):
     """Setup MJCF XML"""
 
     hfield = None
@@ -878,21 +883,35 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     )
 
     # Arena
-    for arena in arena_options:
+    mjcf_model, info = sdf2mjcf(
+        sdf=ModelSDF.read(filename=os.path.expandvars(arena_options.sdf))[0],
+        mjcf_model=mjcf_model,
+        model_name='arena',
+        fixed_base=True,
+        concave=False,
+        simulation_options=simulation_options,
+        friction=[0, 0, 0],
+    )
+    if 'hfield' in info:
+        hfield = info['hfield']
+    arena_base_link = mjcf_model.worldbody.body[-1]
+    arena_base_link.pos = [pos*units.meters for pos in arena_options.position]
+    arena_base_link.quat = euler2mjcquat(euler=arena_options.orientation)
+    if arena_options.ground_height is not None:
+        arena_base_link.pos += arena_options.ground_height*units.meters
+    if arena_options.water.height is not None:
         mjcf_model, info = sdf2mjcf(
-            sdf=ModelSDF.read(filename=os.path.expandvars(arena['sdf_path']))[0],
+            sdf=ModelSDF.read(arena_options.water.sdf)[0],
             mjcf_model=mjcf_model,
-            model_name='arena',
+            model_name='water',
             fixed_base=True,
             concave=False,
             simulation_options=simulation_options,
             friction=[0, 0, 0],
         )
-        if 'hfield' in info:
-            hfield = info['hfield']
-        arena_base_link = mjcf_model.worldbody.body[-1]
-        arena_base_link.pos = arena.get('position', [0, 0, 0])
-        arena_base_link.quat = quat2mjcquat(arena.get('rotation', [0, 0, 0, 1]))
+        water = mjcf_model.worldbody.body[-1]
+        water.pos = [0, 0, arena_options.water.height*units.meters]
+        water.quat = [1, 0, 0, 0]
     # add_plane(mjcf_model)
 
     # Animat
@@ -943,7 +962,7 @@ def setup_mjcf_xml(sdf_path_animat, arena_options, **kwargs):
     mjcf_model.visual.map.stiffnessrot = 500
     mjcf_model.visual.map.force = 1*units.meters/units.newtons*scale
     mjcf_model.visual.map.torque = 1*units.meters/units.torques*scale
-    mjcf_model.visual.map.znear = 1e-3*units.meters
+    mjcf_model.visual.map.znear = 1e-4*units.meters
     mjcf_model.visual.map.zfar = 3e0*units.meters
     mjcf_model.visual.map.alpha = 0.3
     mjcf_model.visual.map.fogstart = 3
