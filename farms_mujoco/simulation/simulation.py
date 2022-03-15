@@ -12,7 +12,7 @@ from dm_control import viewer
 from dm_control.rl.control import Environment, PhysicsError
 
 import farms_pylog as pylog
-from farms_data.model.options import ModelOptions
+from farms_data.model.options import ModelOptions, ArenaOptions
 from farms_data.simulation.options import SimulationOptions
 
 from .mjcf import setup_mjcf_xml, mjcf2str
@@ -46,8 +46,13 @@ class Simulation:
         self._physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
 
         # Simulator configuration
-        viewer.util._MAX_TIME_MULTIPLIER = 2**10  # pylint: disable=protected-access
-        os.environ['MUJOCO_GL'] = 'egl' if self.options.headless else 'glfw'  # 'osmesa'
+        # pylint: disable=protected-access
+        viewer.util._MAX_TIME_MULTIPLIER = 2**10
+        os.environ['MUJOCO_GL'] = (
+            'egl'
+            if self.options.headless
+            else 'glfw'  # 'osmesa'
+        )
         warnings.filterwarnings('ignore', category=DeprecationWarning)
 
         # Simulation
@@ -78,19 +83,19 @@ class Simulation:
     def from_sdf(
             cls,
             sdf_path_animat: str,
-            arena_options,
             simulation_options: SimulationOptions,
             animat_options: ModelOptions,
+            arena_options: ArenaOptions,
             **kwargs,
     ):
         """From SDF"""
         mjcf_model, base_link, hfield = setup_mjcf_xml(
             sdf_path_animat=sdf_path_animat,
-            arena_options=arena_options,
             timestep=simulation_options.timestep,
             discardvisual=simulation_options.headless,
             simulation_options=simulation_options,
             animat_options=animat_options,
+            arena_options=arena_options,
             **extract_sub_dict(
                 dictionary=kwargs,
                 keys=(
@@ -113,7 +118,7 @@ class Simulation:
         mjcf_xml_str = mjcf2str(mjcf_model=self._mjcf_model)
         if verbose:
             pylog.info(mjcf_xml_str)
-        with open(path, 'w+') as xml_file:
+        with open(path, 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)
 
     def physics(self):

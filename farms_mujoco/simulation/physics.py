@@ -282,7 +282,7 @@ def physicslinkssensors2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
     data.sensors.links.array[iteration, :,
         sc.link_urdf_position_x:sc.link_urdf_position_z+1,
-    ] = physics.data.sensordata[sensor_maps['framepos2data']]
+    ] = physics.data.sensordata[sensor_maps['framepos2data']]/units.meters
     data.sensors.links.array[iteration, :,
         sc.link_urdf_orientation_x:sc.link_urdf_orientation_w+1,
     ] = physics.data.sensordata[sensor_maps['framequat2data']]

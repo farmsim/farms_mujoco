@@ -814,8 +814,10 @@ def add_particles(mjcf_model):
     composite.geom.rgba = [0.8, 0.2, 0.1, 1.0]
 
 
-def add_lights(link, rot=[0, 0, 0]):
+def add_lights(link, rot=None):
     """Add lights"""
+    if rot is None:
+        rot = [0, 0, 0]
     rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
     link.add(
         'light',
@@ -835,8 +837,10 @@ def add_lights(link, rot=[0, 0, 0]):
     )
 
 
-def add_cameras(link, dist=3, rot=[0, 0, 0]):
+def add_cameras(link, dist=3, rot=None):
     """Add cameras"""
+    if rot is None:
+        rot = [0, 0, 0]
     rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
     for i, (mode, pose) in enumerate([
             ['trackcom', [0.0, 0.0, dist, 0.0, 0.0, 0.0]],
@@ -1007,19 +1011,21 @@ def setup_mjcf_xml(
     if animat_options is not None:
 
         # Spawn
-        base_link.pos = [pos*units.meters for pos in animat_options.spawn.position]
-        base_link.quat = euler2mjcquat(animat_options.spawn.orientation)
+        animat_spawn = animat_options.spawn
+        base_link.pos = [pos*units.meters for pos in animat_spawn.position]
+        base_link.quat = euler2mjcquat(animat_spawn.orientation)
 
         # Links
         for link in animat_options.morphology.links:
             mjcf_link = mjcf_model.find(namespace='body', identifier=link.name)
             assert mjcf_link, f'Link {link.name} not found'
+            pybullet_dynamics = link.pybullet_dynamics
             for geom in mjcf_link.geom:
                 if geom.contype:
                     assert len(geom.friction) == 3, len(geom.friction)
-                    geom.friction[0] = link.pybullet_dynamics['lateralFriction']
-                    geom.friction[1] = link.pybullet_dynamics['spinningFriction']
-                    geom.friction[2] = link.pybullet_dynamics['rollingFriction']
+                    geom.friction[0] = pybullet_dynamics['lateralFriction']
+                    geom.friction[1] = pybullet_dynamics['spinningFriction']
+                    geom.friction[2] = pybullet_dynamics['rollingFriction']
 
         # Joints
         for joint in animat_options.morphology.joints:
