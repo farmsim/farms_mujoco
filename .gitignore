@@ -18,7 +18,6 @@ __pycache__
 *.pickle
 *.profile
 *.avi
-*.png
 *.csv
 *scripts/benchmark*
 *old*
