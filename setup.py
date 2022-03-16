@@ -17,7 +17,7 @@ from farms_data import get_include_paths  # pylint: disable=wrong-import-positio
 
 
 # Cython options
-DEBUG = True
+DEBUG = False
 Options.docstrings = True
 Options.embed_pos_in_docstring = False
 Options.generate_cleanup_code = False
@@ -75,6 +75,7 @@ setup(
     install_requires=[
         'farms_pylog',
         'farms_data',
+        'farms_sdf',
         'cython',
         'numpy',
         'trimesh',
