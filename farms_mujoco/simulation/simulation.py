@@ -82,7 +82,6 @@ class Simulation:
     @classmethod
     def from_sdf(
             cls,
-            sdf_path_animat: str,
             simulation_options: SimulationOptions,
             animat_options: ModelOptions,
             arena_options: ArenaOptions,
@@ -90,7 +89,6 @@ class Simulation:
     ):
         """From SDF"""
         mjcf_model, base_link, hfield = setup_mjcf_xml(
-            sdf_path_animat=sdf_path_animat,
             timestep=simulation_options.timestep,
             discardvisual=simulation_options.headless,
             simulation_options=simulation_options,
