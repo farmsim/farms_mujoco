@@ -3,6 +3,7 @@
 import os
 import warnings
 import traceback
+from typing import List, Dict
 
 import numpy as np
 from tqdm import tqdm
@@ -20,7 +21,7 @@ from .task import ExperimentTask
 from .application import FarmsApplication
 
 
-def extract_sub_dict(dictionary, keys):
+def extract_sub_dict(dictionary: Dict, keys: List[str]) -> Dict:
     """Extract sub-dictionary"""
     return {
         key: dictionary.pop(key)
@@ -111,7 +112,7 @@ class Simulation:
             **kwargs,
         )
 
-    def save_mjcf_xml(self, path, verbose=False):
+    def save_mjcf_xml(self, path: str, verbose: bool = False):
         """Save simulation to mjcf xml"""
         mjcf_xml_str = mjcf2str(mjcf_model=self._mjcf_model)
         if verbose:
@@ -151,7 +152,7 @@ class Simulation:
                 raise err
         pylog.info('Closing simulation')
 
-    def iterator(self, show_progress=True, verbose=True):
+    def iterator(self, show_progress: bool = True, verbose: bool = True):
         """Run simulation"""
         _iterator = (
             tqdm(range(self.task.n_iterations+1))

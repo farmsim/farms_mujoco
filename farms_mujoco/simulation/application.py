@@ -20,7 +20,7 @@ class FarmsApplication(viewer.application.Application):
         """Toggle pause"""
         self._pause_subject.toggle()
 
-    def set_speed(self, multiplier):
+    def set_speed(self, multiplier: float):
         """Simulation speed multiplier"""
         self._time_multiplier.set(multiplier)
 
