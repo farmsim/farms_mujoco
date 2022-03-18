@@ -3,8 +3,10 @@
 import os
 import xml.dom.minidom
 import xml.etree.ElementTree as ET
+from typing import Dict
 
 import numpy as np
+from nptyping import NDArray
 import trimesh as tri
 from imageio import imread
 from scipy.spatial.transform import Rotation
@@ -16,7 +18,7 @@ import farms_pylog as pylog
 from farms_data.units import SimulationUnitScaling
 from farms_data.model.options import ArenaOptions
 from farms_sdf.sdf import (
-    ModelSDF, Mesh, Visual, Collision,
+    ModelSDF, Link, Mesh, Visual, Collision,
     Box, Cylinder, Capsule, Sphere, Plane, Heightmap,
 )
 
@@ -24,14 +26,14 @@ MIN_MASS = 1e-12
 MIN_INERTIA = 1e-15
 
 
-def quat2mjcquat(quat):
+def quat2mjcquat(quat: NDArray[(6,), float]) -> NDArray[(4,), float]:
     """Quaternion to MuJoCo quaternion"""
     quat_type = np.array if isinstance(quat, np.ndarray) else type(quat)
     quat = np.array(quat)[[3, 0, 1, 2]]
     return quat_type(quat)
 
 
-def euler2mjcquat(euler):
+def euler2mjcquat(euler: NDArray[(3,), float]) -> NDArray[(4,), float]:
     """Euler to MuJoCo quaternion"""
     return quat2mjcquat(Rotation.from_euler(
         angles=euler,
@@ -39,7 +41,7 @@ def euler2mjcquat(euler):
     ).as_quat())
 
 
-def euler2mat(euler):
+def euler2mat(euler: NDArray[(3,), float]) -> NDArray[(3, 3), float]:
     """Euler to 3D matrix"""
     return Rotation.from_euler(
         angles=euler,
@@ -47,7 +49,10 @@ def euler2mat(euler):
     ).as_matrix()
 
 
-def poseul2mat4d(position, euler):
+def poseul2mat4d(
+        position: NDArray[(3,), float],
+        euler: NDArray[(3,), float],
+) -> NDArray[(4, 4), float]:
     """4D transform"""
     transform = np.eye(4)
     transform[:3, -1] = position
@@ -55,7 +60,10 @@ def poseul2mat4d(position, euler):
     return transform
 
 
-def get_local_transform(parent_pose, child_pose):
+def get_local_transform(
+        parent_pose: NDArray[(6,), float],
+        child_pose: NDArray[(6,), float],
+):
     """Get link local transform"""
     parent_transform = (
         np.eye(4)
@@ -75,7 +83,7 @@ def get_local_transform(parent_pose, child_pose):
     ).as_euler('xyz')
 
 
-def grid_material(mjcf_model):
+def grid_material(mjcf_model: mjcf.Element) -> (mjcf.Element, mjcf.Element):
     """Get grid texture"""
     texture = mjcf_model.asset.find(
         namespace='texture',
@@ -110,7 +118,12 @@ def grid_material(mjcf_model):
     return material, texture
 
 
-def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
+def mjc_add_link(
+        mjcf_model: mjcf.RootElement,
+        mjcf_map: Dict,
+        sdf_link: Link,
+        **kwargs,
+) -> (mjcf.Element, mjcf.Element):
     """Add link to world"""
 
     sdf_parent = kwargs.pop('sdf_parent', None)
@@ -518,7 +531,12 @@ def mjc_add_link(mjcf_model, mjcf_map, sdf_link, **kwargs):
     return body, joint
 
 
-def add_link_recursive(mjcf_model, mjcf_map, sdf, **kwargs):
+def add_link_recursive(
+        mjcf_model: mjcf.RootElement,
+        mjcf_map: Dict,
+        sdf: str,
+        **kwargs,
+):
     """Add link recursive"""
 
     # Handle kwargs
@@ -557,7 +575,10 @@ def add_link_recursive(mjcf_model, mjcf_map, sdf, **kwargs):
         )
 
 
-def sdf2mjcf(sdf, **kwargs):
+def sdf2mjcf(
+        sdf: str,
+        **kwargs,
+) -> (mjcf.RootElement, Dict):
     """Export to MJCF string"""
 
     mjcf_model = kwargs.pop('mjcf_model', None)
@@ -749,7 +770,10 @@ def sdf2mjcf(sdf, **kwargs):
     return mjcf_model, mjcf_map
 
 
-def mjcf2str(mjcf_model, remove_temp=True):
+def mjcf2str(
+        mjcf_model: mjcf.RootElement,
+        remove_temp: bool = True,
+) -> str:
     """Export to MJCF string"""
     # XML
     mjcf_xml = mjcf_model.to_xml()
@@ -769,7 +793,7 @@ def mjcf2str(mjcf_model, remove_temp=True):
     return dom.toprettyxml(indent=2*' ')
 
 
-def night_sky(mjcf_model):
+def night_sky(mjcf_model: mjcf.RootElement):
     """Night sky"""
     mjcf_model.asset.add(  # Add night sky texture to assets
         'texture',
@@ -785,7 +809,9 @@ def night_sky(mjcf_model):
     )
 
 
-def add_plane(mjcf_model):
+def add_plane(
+        mjcf_model: mjcf.RootElement,
+) -> (mjcf.RootElement, mjcf.RootElement, mjcf.RootElement):
     """Add plane"""
     material, texture = grid_material(mjcf_model)
     geometry = mjcf_model.worldbody.add(  # Add floor
@@ -800,7 +826,7 @@ def add_plane(mjcf_model):
     return geometry, material, texture
 
 
-def add_particles(mjcf_model):
+def add_particles(mjcf_model: mjcf.RootElement):
     """Add particles"""
     composite = mjcf_model.worldbody.add(
         'composite',
@@ -814,7 +840,7 @@ def add_particles(mjcf_model):
     composite.geom.rgba = [0.8, 0.2, 0.1, 1.0]
 
 
-def add_lights(link, rot=None):
+def add_lights(link: mjcf.RootElement, rot: NDArray[(3,), float] = None):
     """Add lights"""
     if rot is None:
         rot = [0, 0, 0]
@@ -837,7 +863,11 @@ def add_lights(link, rot=None):
     )
 
 
-def add_cameras(link, dist=3, rot=None):
+def add_cameras(
+        link: mjcf.RootElement,
+        dist: float = 3,
+        rot: NDArray[(3,), float] = None,
+):
     """Add cameras"""
     if rot is None:
         rot = [0, 0, 0]
@@ -866,7 +896,7 @@ def add_cameras(link, dist=3, rot=None):
 def setup_mjcf_xml(
         arena_options: ArenaOptions,
         **kwargs,
-):
+) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     """Setup MJCF XML"""
 
     hfield = None
@@ -935,11 +965,7 @@ def setup_mjcf_xml(
         solimp=[0.9, 1.0, 1e-3, 0.5, 2],
         **mujoco_kwargs,
     )
-    # sdf_base_link = sdf_animat.get_base_link()
     base_link = mjcf_model.worldbody.body[-1]
-
-    # Spawn options
-    # assert base_link.name == sdf_base_link.name
     base_link.pos = kwargs.pop('spawn_position', [0, 0, 0])
     base_link.quat = euler2mjcquat(kwargs.pop('spawn_rotation', [0, 0, 0]))
 
