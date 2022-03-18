@@ -4,9 +4,10 @@ from typing import List, Dict
 
 import numpy as np
 
-from dm_control import viewer
 from dm_control.rl.control import Task
 from dm_control.mujoco.wrapper import mjbindings
+from dm_control.viewer.application import Application
+from dm_control.mjcf.physics import Physics
 
 import farms_pylog as pylog
 from farms_data.model.options import ModelOptions
@@ -26,37 +27,6 @@ def duration2nit(duration: float, timestep: float) -> int:
     return int(duration/timestep)
 
 
-class TaskCallback:
-    """Task callback"""
-
-    def initialize_episode(self, task, physics):
-        """Initialize episode"""
-
-    def before_step(self, task, action, physics):
-        """Before step"""
-
-    def after_step(self, task, physics):
-        """After step"""
-
-    def action_spec(self, task, physics):
-        """Action specifications"""
-
-    def step_spec(self, task, physics):
-        """Timestep specifications"""
-
-    def get_observation(self, task, physics):
-        """Environment observation"""
-
-    def get_reward(self, task, physics):
-        """Reward"""
-
-    def get_termination(self, task, physics):
-        """Return final discount if episode should end, else None"""
-
-    def observation_spec(self, task, physics):
-        """Observation specifications"""
-
-
 class ExperimentTask(Task):
     """FARMS experiment"""
 
@@ -68,7 +38,7 @@ class ExperimentTask(Task):
             **kwargs,
     ):
         super().__init__()
-        self._app = None
+        self._app: Application = None
         self.iteration: int = 0
         self.timestep: float = timestep
         self.n_iterations: int = n_iterations
@@ -88,12 +58,12 @@ class ExperimentTask(Task):
         self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         assert not kwargs, kwargs
 
-    def set_app(self, app: viewer.application.Application):
+    def set_app(self, app: Application):
         """Set application"""
-        assert isinstance(app, viewer.application.Application)
+        assert isinstance(app, Application)
         self._app = app
 
-    def initialize_episode(self, physics):
+    def initialize_episode(self, physics: Physics):
         """Sets the state of the environment at the start of each episode"""
 
         # Checks
@@ -153,7 +123,7 @@ class ExperimentTask(Task):
         for callback in self._callbacks:
             callback.initialize_episode(task=self, physics=physics)
 
-    def before_step(self, action, physics):
+    def before_step(self, action, physics: Physics):
         """Operations before physics step"""
 
         # Checks
@@ -176,7 +146,7 @@ class ExperimentTask(Task):
         if self._controller is not None:
             self.step_control(physics)
 
-    def initialize_maps(self, physics):
+    def initialize_maps(self, physics: Physics):
         """Initialise data"""
         physics_named = physics.named.data
         # Links indices
@@ -199,7 +169,7 @@ class ExperimentTask(Task):
             # hydrodynamics=[],
         )
 
-    def initialize_sensors(self, physics):
+    def initialize_sensors(self, physics: Physics):
         """Initialise sensors"""
         self.maps['sensors'] = get_sensor_maps(physics)
         get_physics2data_maps(
@@ -208,7 +178,7 @@ class ExperimentTask(Task):
             sensor_maps=self.maps['sensors'],
         )
 
-    def initialize_control(self, physics):
+    def initialize_control(self, physics: Physics):
         """Initialise controller"""
         ctrl_names = np.array(physics.named.data.ctrl.axes.row.names)
         for joint in self._controller.joints_names[ControlType.POSITION]:
@@ -256,7 +226,7 @@ class ExperimentTask(Task):
                                 jntname2actid[jnt_name][act_type]
                             ] = [0, 0]
 
-    def step_control(self, physics):
+    def step_control(self, physics: Physics):
         """Step control"""
         current_time = self.iteration*self.timestep
         self._controller.step(
@@ -288,7 +258,7 @@ class ExperimentTask(Task):
                 in self._controller.joints_names[ControlType.TORQUE]
             ]
 
-    def after_step(self, physics):
+    def after_step(self, physics: Physics):
         """Operations after physics step"""
 
         # Checks
@@ -307,7 +277,7 @@ class ExperimentTask(Task):
         for callback in self._callbacks:
             callback.after_step(task=self, physics=physics)
 
-    def action_spec(self, physics):
+    def action_spec(self, physics: Physics):
         """Action specifications"""
         specs = []
         for callback in self._callbacks:
@@ -316,17 +286,17 @@ class ExperimentTask(Task):
                 specs += spec
         return specs
 
-    def step_spec(self, physics):
+    def step_spec(self, physics: Physics):
         """Timestep specifications"""
         for callback in self._callbacks:
             callback.step_spec(task=self, physics=physics)
 
-    def get_observation(self, physics):
+    def get_observation(self, physics: Physics):
         """Environment observation"""
         for callback in self._callbacks:
             callback.get_observation(task=self, physics=physics)
 
-    def get_reward(self, physics):
+    def get_reward(self, physics: Physics):
         """Reward"""
         reward = 0
         for callback in self._callbacks:
@@ -335,7 +305,7 @@ class ExperimentTask(Task):
                 reward += callback_reward
         return reward
 
-    def get_termination(self, physics):
+    def get_termination(self, physics: Physics):
         """Return final discount if episode should end, else None"""
         terminate = None
         for callback in self._callbacks:
@@ -345,7 +315,38 @@ class ExperimentTask(Task):
             terminate = 1
         return terminate
 
-    def observation_spec(self, physics):
+    def observation_spec(self, physics: Physics):
         """Observation specifications"""
         for callback in self._callbacks:
             callback.observation_spec(task=self, physics=physics)
+
+
+class TaskCallback:
+    """Task callback"""
+
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialize episode"""
+
+    def before_step(self, task: ExperimentTask, action, physics: Physics):
+        """Before step"""
+
+    def after_step(self, task: ExperimentTask, physics: Physics):
+        """After step"""
+
+    def action_spec(self, task: ExperimentTask, physics: Physics):
+        """Action specifications"""
+
+    def step_spec(self, task: ExperimentTask, physics: Physics):
+        """Timestep specifications"""
+
+    def get_observation(self, task: ExperimentTask, physics: Physics):
+        """Environment observation"""
+
+    def get_reward(self, task: ExperimentTask, physics: Physics):
+        """Reward"""
+
+    def get_termination(self, task: ExperimentTask, physics: Physics):
+        """Return final discount if episode should end, else None"""
+
+    def observation_spec(self, task: ExperimentTask, physics: Physics):
+        """Observation specifications"""
