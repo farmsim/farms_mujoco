@@ -13,7 +13,7 @@ from dm_control import viewer
 from dm_control.rl.control import Environment, PhysicsError
 
 import farms_pylog as pylog
-from farms_data.model.options import ModelOptions, ArenaOptions
+from farms_data.model.options import AnimatOptions, ArenaOptions
 from farms_data.simulation.options import SimulationOptions
 
 from .mjcf import setup_mjcf_xml, mjcf2str
@@ -84,7 +84,7 @@ class Simulation:
     def from_sdf(
             cls,
             simulation_options: SimulationOptions,
-            animat_options: ModelOptions,
+            animat_options: AnimatOptions,
             arena_options: ArenaOptions,
             **kwargs,
     ):

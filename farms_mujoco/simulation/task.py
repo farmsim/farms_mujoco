@@ -10,9 +10,9 @@ from dm_control.viewer.application import Application
 from dm_control.mjcf.physics import Physics
 
 import farms_pylog as pylog
-from farms_data.model.options import ModelOptions
-from farms_data.model.control import ControlType, ModelController
-from farms_data.model.data import ModelData
+from farms_data.model.options import AnimatOptions
+from farms_data.model.control import ControlType, AnimatController
+from farms_data.model.data import AnimatData
 from farms_data.units import SimulationUnitScaling as SimulationUnits
 
 from .physics import (
@@ -43,9 +43,9 @@ class ExperimentTask(Task):
         self.timestep: float = timestep
         self.n_iterations: int = n_iterations
         self.base_link: str = base_link
-        self.data: ModelData = kwargs.pop('data', None)
-        self._controller: ModelController = kwargs.pop('controller', None)
-        self.animat_options: ModelOptions = kwargs.pop('animat_options', None)
+        self.data: AnimatData = kwargs.pop('data', None)
+        self._controller: AnimatController = kwargs.pop('controller', None)
+        self.animat_options: AnimatOptions = kwargs.pop('animat_options', None)
         self.maps: Dict = {
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'xfrc': {}, 'geoms': {},
@@ -160,7 +160,7 @@ class ExperimentTask(Task):
 
     def initialize_data(self):
         """Initialise data"""
-        self.data = ModelData.from_sensors_names(
+        self.data = AnimatData.from_sensors_names(
             timestep=self.timestep,
             n_iterations=self.n_iterations,
             links=self.maps['xpos']['names'],
