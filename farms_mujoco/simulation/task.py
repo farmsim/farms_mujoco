@@ -12,7 +12,7 @@ from dm_control.mjcf.physics import Physics
 import farms_pylog as pylog
 from farms_data.model.options import ModelOptions
 from farms_data.model.control import ControlType, ModelController
-from farms_data.amphibious.animat_data import ModelData
+from farms_data.model.data import ModelData
 from farms_data.units import SimulationUnitScaling as SimulationUnits
 
 from .physics import (
