@@ -75,7 +75,6 @@ setup(
     install_requires=[
         'farms_pylog',
         'farms_data',
-        'farms_sdf',
         'cython',
         'numpy',
         'trimesh',
