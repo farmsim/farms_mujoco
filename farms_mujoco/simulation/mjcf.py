@@ -1112,7 +1112,8 @@ def setup_mjcf_xml(
 
     # XML string
     mjcf_xml_str = mjcf2str(mjcf_model=mjcf_model)
-    pylog.info(mjcf_xml_str)
+    if kwargs.pop('show_mjcf', False):
+        pylog.info(mjcf_xml_str)
     if kwargs.pop('save_mjcf', False):
         with open('simulation_mjcf.xml', 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)

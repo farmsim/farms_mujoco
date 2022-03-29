@@ -65,7 +65,8 @@ def get_sensor_maps(physics, verbose=True):
     """Sensors information"""
     sensors_row = physics.named.data.sensordata.axes.row
     sensors_names = sensors_row.names
-    pylog.info('Sensors data:\n%s', physics.named.data.sensordata)
+    if verbose:
+        pylog.info('Sensors data:\n%s', physics.named.data.sensordata)
     sensors = [
         # Links
         'framepos', 'framequat', 'framelinvel', 'frameangvel',

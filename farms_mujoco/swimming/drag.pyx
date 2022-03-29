@@ -370,7 +370,6 @@ cdef class SwimmingHandler:
             ][0]
             for link in links
         ], dtype=float)/self.meters
-        print(f'Links heights for hydrodynamics:\n{np.array(self.heights)}')
         self.densities = np.array([link.density for link in links])
         self.hydro_indices = np.array([
             self.hydro.names.index(link.name)
