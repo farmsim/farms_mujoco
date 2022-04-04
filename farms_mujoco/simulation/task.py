@@ -108,8 +108,8 @@ class ExperimentTask(Task):
         for joint in self.animat_options.morphology.joints:
             assert joint.name in self.maps['qpos']['names']
             index = self.maps['qpos']['names'].index(joint.name)+6
-            physics.data.qpos[index] = joint.initial_position
-            physics.data.qvel[index-1] = joint.initial_velocity
+            physics.data.qpos[index] = joint.initial[0]
+            physics.data.qvel[index-1] = joint.initial[1]
 
         if self._app is not None:
             cam = self._app._viewer.camera  # pylint: disable=protected-access

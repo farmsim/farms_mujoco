@@ -136,8 +136,8 @@ def mjc_add_link(
     overwrite = kwargs.pop('overwrite', False)
     solref = kwargs.pop('solref', None)
     solimp = kwargs.pop('solimp', None)
-    friction = kwargs.pop('friction', [1, 0, 0])
-    frictionloss = kwargs.pop('frictionloss', 1e-5)
+    friction = kwargs.pop('friction', [0, 0, 0])
+    frictionloss = kwargs.pop('frictionloss', 0)
     damping = kwargs.pop('damping', 0)
     use_site = kwargs.pop('use_site', False)
     units = kwargs.pop('units', SimulationUnitScaling())
@@ -704,7 +704,7 @@ def sdf2mjcf(
                 'velocity',
                 name=name_vel,
                 joint=joint_name,
-                kv=act_vel_gain*units.torques/units.angular_velocity,
+                kv=act_vel_gain*units.angular_damping,
                 ctrllimited=act_vel_ctrllimited,
                 ctrlrange=[val*units.angular_velocity for val in act_vel_ctrlrange],
                 forcelimited=act_vel_forcelimited,
@@ -716,11 +716,17 @@ def sdf2mjcf(
                 name=name_trq,
                 joint=joint_name,
             )
-            max_trq = joints_ctrl[joint_name].max_torque*units.torques
-            if animat_options is not None and max_trq < np.inf:
+            if (
+                    animat_options is not None
+                    and joints_ctrl[joint_name].limits_torque is not None
+            ):
+                torque_limits = [
+                    trq*units.torques
+                    for trq in joints_ctrl[joint_name].limits_torque
+                ]
                 for name in [name_pos, name_vel, name_trq]:
                     mjcf_map['actuators'][name].forcelimited = True
-                    mjcf_map['actuators'][name].forcerange = [-max_trq, max_trq]
+                    mjcf_map['actuators'][name].forcerange = torque_limits
         assert mjcf_map['actuators'], mjcf_map['actuators']
 
     # Sensors
@@ -961,8 +967,6 @@ def setup_mjcf_xml(
         use_actuators=True,
         animat_options=animat_options,
         simulation_options=simulation_options,
-        friction=[0, 0, 0],
-        solimp=[0.9, 1.0, 1e-3, 0.5, 2],
         **mujoco_kwargs,
     )
     base_link = mjcf_model.worldbody.body[-1]
@@ -1044,13 +1048,13 @@ def setup_mjcf_xml(
         for link in animat_options.morphology.links:
             mjcf_link = mjcf_model.find(namespace='body', identifier=link.name)
             assert mjcf_link, f'Link {link.name} not found'
-            pybullet_dynamics = link.pybullet_dynamics
             for geom in mjcf_link.geom:
                 if geom.contype:
+                    assert len(link.friction) == 3, len(geom.friction)
                     assert len(geom.friction) == 3, len(geom.friction)
-                    geom.friction[0] = pybullet_dynamics['lateralFriction']
-                    geom.friction[1] = pybullet_dynamics['spinningFriction']
-                    geom.friction[2] = pybullet_dynamics['rollingFriction']
+                    geom.friction = link.friction
+                    geom.fluidshape = None
+                    geom.fluidcoef = [0, 0, 0, 0, 0]
 
         # Joints
         for joint in animat_options.morphology.joints:
@@ -1070,7 +1074,7 @@ def setup_mjcf_xml(
                 )*units.torques
                 joint.damping += (
                     joint_options.passive.damping_coefficient
-                )*units.torques/units.angular_velocity
+                )*units.angular_damping
 
         # Muscles
         if animat_options.control.muscles is not None:
@@ -1086,7 +1090,7 @@ def setup_mjcf_xml(
                     # )*units.torques
                     joint.damping += (
                         muscle_options.delta
-                    )*units.torques/units.angular_velocity
+                    )*units.angular_damping
 
     if simulation_options is not None:
         mjcf_model.option.gravity = [

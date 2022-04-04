@@ -238,7 +238,9 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     # Joints - sensors
     for identifier in [
             'jointpos', 'jointvel',
-            'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque',
+            'actuatorfrc_position',
+            'actuatorfrc_velocity',
+            'actuatorfrc_torque',
     ]:
         sensor_maps[f'{identifier}2data'] = np.array([
             sensor_maps[identifier]['indices'][
@@ -281,20 +283,24 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
 
 def physicslinkssensors2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_urdf_position_x:sc.link_urdf_position_z+1,
     ] = physics.data.sensordata[sensor_maps['framepos2data']]/units.meters
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_urdf_orientation_x:sc.link_urdf_orientation_w+1,
     ] = physics.data.sensordata[sensor_maps['framequat2data']]
 
 
 def physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_com_velocity_lin_x:sc.link_com_velocity_lin_z+1,
     ] = physics.data.sensordata[sensor_maps['framelinvel2data']]/units.velocity
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_com_velocity_ang_x:sc.link_com_velocity_ang_z+1,
     ] = (
         physics.data.sensordata[sensor_maps['frameangvel2data']]
@@ -303,26 +309,32 @@ def physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units):
 
 def physicslinks2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_urdf_position_x:sc.link_urdf_position_z+1,
     ] = physics.data.xpos[sensor_maps['xpos2data']]/units.meters
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_urdf_orientation_x:sc.link_urdf_orientation_w+1,
     ] = physics.data.xquat[sensor_maps['xquat2data']][:, [1, 2, 3, 0]]
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_com_position_x:sc.link_com_position_z+1,
     ] = physics.data.xipos[sensor_maps['xipos2data']]/units.meters
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_com_orientation_x:sc.link_com_orientation_w+1,
     ] = physics.data.xquat[sensor_maps['xquat2data']][:, [1, 2, 3, 0]]
 
 
 def physicslinksvel2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_com_velocity_lin_x:sc.link_com_velocity_lin_z+1,
     ] = physics.data.cvel[sensor_maps['cvel2data'], 3:]/units.velocity
-    data.sensors.links.array[iteration, :,
+    data.sensors.links.array[
+        iteration, :,
         sc.link_com_velocity_ang_x:sc.link_com_velocity_ang_z+1,
     ] = physics.data.cvel[sensor_maps['cvel2data'], :3]/units.angular_velocity
 
