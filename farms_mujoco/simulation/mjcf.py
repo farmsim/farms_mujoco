@@ -934,8 +934,9 @@ def setup_mjcf_xml(
     if 'hfield' in info:
         hfield = info['hfield']
     arena_base_link = mjcf_model.worldbody.body[-1]
-    arena_base_link.pos = [pos*units.meters for pos in arena_options.position]
-    arena_base_link.quat = euler2mjcquat(euler=arena_options.orientation)
+    arena_pose = arena_options.spawn.pose
+    arena_base_link.pos = [pos*units.meters for pos in arena_pose[:3]]
+    arena_base_link.quat = euler2mjcquat(euler=arena_pose[3:])
     if arena_options.ground_height is not None:
         arena_base_link.pos += arena_options.ground_height*units.meters
     if arena_options.water.height is not None:
@@ -1041,8 +1042,8 @@ def setup_mjcf_xml(
 
         # Spawn
         animat_spawn = animat_options.spawn
-        base_link.pos = [pos*units.meters for pos in animat_spawn.position]
-        base_link.quat = euler2mjcquat(animat_spawn.orientation)
+        base_link.pos = [pos*units.meters for pos in animat_spawn.pose[:3]]
+        base_link.quat = euler2mjcquat(animat_spawn.pose[3:])
 
         # Links
         for link in animat_options.morphology.links:
@@ -1105,11 +1106,10 @@ def setup_mjcf_xml(
         add_particles(mjcf_model)
 
     # Light and shadows
-    add_lights(link=base_link, rot=animat_options.spawn.orientation)
+    add_lights(link=base_link, rot=animat_options.spawn.pose[3:])
 
     # Add cameras
-    # assert False, (sdf_animat.pose, sdf_animat.get_base_link().pose)
-    add_cameras(link=base_link, rot=animat_options.spawn.orientation)
+    add_cameras(link=base_link, rot=animat_options.spawn.pose[3:])
 
     # Night sky
     night_sky(mjcf_model)
