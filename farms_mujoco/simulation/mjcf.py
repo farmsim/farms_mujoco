@@ -666,14 +666,14 @@ def sdf2mjcf(
     # Actuators
     if use_actuators:
         joints_names = (
-            [joint.joint_name for joint in animat_options.control.joints]
+            animat_options.control.joints_names()
             if animat_options is not None
             else mjcf_map['joints']
         )
         if animat_options is not None:
-            joints_ctrl = {
-                joint.joint_name: joint
-                for joint in animat_options.control.joints
+            motors_ctrl = {
+                motor.joint_name: motor
+                for motor in animat_options.control.motors
             }
         for joint_name in joints_names:
             joint = mjcf_model.find('joint', joint_name)
@@ -718,11 +718,11 @@ def sdf2mjcf(
             )
             if (
                     animat_options is not None
-                    and joints_ctrl[joint_name].limits_torque is not None
+                    and motors_ctrl[joint_name].limits_torque is not None
             ):
                 torque_limits = [
                     trq*units.torques
-                    for trq in joints_ctrl[joint_name].limits_torque
+                    for trq in motors_ctrl[joint_name].limits_torque
                 ]
                 for name in [name_pos, name_vel, name_trq]:
                     mjcf_map['actuators'][name].forcelimited = True
@@ -1063,18 +1063,18 @@ def setup_mjcf_xml(
 
         # Joints control
         joints_equations = {}
-        for joint_options in animat_options.control.joints:
+        for motor_options in animat_options.control.motors:
             joint = mjcf_model.find(
                 namespace='joint',
-                identifier=joint_options.joint_name,
+                identifier=motor_options.joint_name,
             )
-            joints_equations[joint_options.joint_name] = joint_options.equation
-            if joint_options.passive.is_passive:
+            joints_equations[motor_options.joint_name] = motor_options.equation
+            if motor_options.passive.is_passive:
                 joint.stiffness = (
-                    joint_options.passive.stiffness_coefficient
+                    motor_options.passive.stiffness_coefficient
                 )*units.torques
                 joint.damping += (
-                    joint_options.passive.damping_coefficient
+                    motor_options.passive.damping_coefficient
                 )*units.angular_damping
 
         # Muscles

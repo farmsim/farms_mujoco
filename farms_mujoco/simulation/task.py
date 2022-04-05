@@ -214,9 +214,9 @@ class ExperimentTask(Task):
         # Actuator limits
         if self.animat_options is not None:
             animat_options = self.animat_options
-            for jnt_opts in animat_options.control.joints:
-                jnt_name = jnt_opts['joint_name']
-                if 'position' not in jnt_opts.control_types:
+            for mtr_opts in animat_options.control.motors:
+                jnt_name = mtr_opts['joint_name']
+                if 'position' not in mtr_opts.control_types:
                     for act_type in ('pos', 'vel'):
                         if act_type in jntname2actid[jnt_name]:
                             physics.named.model.actuator_forcelimited[
