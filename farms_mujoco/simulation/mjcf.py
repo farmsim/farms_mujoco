@@ -956,7 +956,7 @@ def setup_mjcf_xml(
 
     # Animat
     mujoco_kwargs = animat_options.mujoco if animat_options is not None else {}
-    sdf_animat = ModelSDF.read(os.path.expandvars(animat_options.sdf_path))[0]
+    sdf_animat = ModelSDF.read(os.path.expandvars(animat_options.sdf))[0]
     mjcf_model, _ = sdf2mjcf(
         sdf=sdf_animat,
         mjcf_model=mjcf_model,
