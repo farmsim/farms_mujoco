@@ -15,9 +15,9 @@ from scipy.ndimage.filters import gaussian_filter
 from dm_control import mjcf
 
 import farms_pylog as pylog
-from farms_data.units import SimulationUnitScaling
-from farms_data.model.options import ArenaOptions
-from farms_data.io.sdf import (
+from farms_core.units import SimulationUnitScaling
+from farms_core.model.options import ArenaOptions
+from farms_core.io.sdf import (
     ModelSDF, Link, Mesh, Visual, Collision,
     Box, Cylinder, Capsule, Sphere, Plane, Heightmap,
 )

@@ -1,5 +1,5 @@
 farms_pylog
-farms_data
+farms_core
 cython
 numpy
 scipy

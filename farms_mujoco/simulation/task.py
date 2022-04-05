@@ -10,10 +10,10 @@ from dm_control.viewer.application import Application
 from dm_control.mjcf.physics import Physics
 
 import farms_pylog as pylog
-from farms_data.model.options import AnimatOptions
-from farms_data.model.control import ControlType, AnimatController
-from farms_data.model.data import AnimatData
-from farms_data.units import SimulationUnitScaling as SimulationUnits
+from farms_core.model.options import AnimatOptions
+from farms_core.model.control import ControlType, AnimatController
+from farms_core.model.data import AnimatData
+from farms_core.units import SimulationUnitScaling as SimulationUnits
 
 from .physics import (
     get_sensor_maps,
