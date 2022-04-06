@@ -49,7 +49,7 @@ class ExperimentTask(Task):
         self.maps: Dict = {
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'xfrc': {}, 'geoms': {},
-            'links': {}, 'joints': {}, 'contacts': {}, 'hydrodynamics': {},
+            'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
@@ -166,7 +166,7 @@ class ExperimentTask(Task):
             links=self.maps['xpos']['names'],
             joints=self.maps['qpos']['names'],
             # contacts=[],
-            # hydrodynamics=[],
+            # xfrc=[],
         )
 
     def initialize_sensors(self, physics: Physics):

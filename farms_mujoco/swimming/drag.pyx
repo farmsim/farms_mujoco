@@ -5,7 +5,7 @@ include 'types.pxd'
 import numpy as np
 cimport numpy as np
 
-from farms_core.sensors.data_cy cimport HydrodynamicsArrayCy, LinkSensorArrayCy
+from farms_core.sensors.data_cy cimport LinkSensorArrayCy, XfrcArrayCy
 from farms_core.utils.transform cimport quat_conj, quat_mult, quat_rot
 
 
@@ -153,8 +153,8 @@ cpdef bint drag_forces(
         unsigned int iteration,
         LinkSensorArrayCy data_links,
         unsigned int links_index,
-        HydrodynamicsArrayCy data_hydrodynamics,
-        unsigned int hydro_index,
+        XfrcArrayCy data_xfrc,
+        unsigned int xfrc_index,
         DTYPEv2 coefficients,
         DTYPEv2 z3,
         DTYPEv2 z4,
@@ -167,14 +167,14 @@ cpdef bint drag_forces(
 ) nogil:
     """Drag swimming
 
-    The forces and torques are stored into data_hydrodynamics.array in
+    The forces and torques are stored into data_xfrc.array in
     the CoM frame
 
     :param iteration: Simulation iteration
     :param data_links: Links data
     :param links_index: Link data index
-    :param data_hydrodynamics: Hydrodynamics data
-    :param hydro_index: Hydrodynamics data index
+    :param data_xfrc: Xfrc data
+    :param xfrc_index: Xfrc data index
     :param coefficients: Drag coefficients
     :param z3: Temporary array
     :param z4: Temporary array
@@ -263,8 +263,8 @@ cpdef bint drag_forces(
 
     # Store data
     for i in range(3):
-        data_hydrodynamics.array[iteration, hydro_index, i] = force[i]
-        data_hydrodynamics.array[iteration, hydro_index, i+3] = torque[i]
+        data_xfrc.array[iteration, xfrc_index, i] = force[i]
+        data_xfrc.array[iteration, xfrc_index, i+3] = torque[i]
     return 1
 
 
@@ -310,7 +310,7 @@ cdef class SwimmingHandler:
     """Swimming handler"""
 
     cdef object links
-    cdef object hydro
+    cdef object xfrc
     cdef object animat_options
     cdef unsigned int n_links
     cdef bint drag
@@ -322,7 +322,7 @@ cdef class SwimmingHandler:
     cdef double torques
     cdef int[:] links_swimming
     cdef unsigned int[:] links_indices
-    cdef unsigned int[:] hydro_indices
+    cdef unsigned int[:] xfrc_indices
     cdef DTYPEv1 masses
     cdef DTYPEv1 heights
     cdef DTYPEv1 densities
@@ -334,7 +334,7 @@ cdef class SwimmingHandler:
         super(SwimmingHandler, self).__init__()
         self.animat_options = animat_options
         self.links = data.sensors.links
-        self.hydro = data.sensors.hydrodynamics
+        self.xfrc = data.sensors.xfrc
         physics_options = animat_options.physics
         self.drag = bool(physics_options.drag)
         self.sph = bool(physics_options.sph)
@@ -371,8 +371,8 @@ cdef class SwimmingHandler:
             for link in links
         ], dtype=float)/self.meters
         self.densities = np.array([link.density for link in links])
-        self.hydro_indices = np.array([
-            self.hydro.names.index(link.name)
+        self.xfrc_indices = np.array([
+            self.xfrc.names.index(link.name)
             for link in links
         ], dtype=np.uintc)
         self.links_indices = np.array([
@@ -397,8 +397,8 @@ cdef class SwimmingHandler:
                         iteration=iteration,
                         data_links=self.links,
                         links_index=self.links_indices[i],
-                        data_hydrodynamics=self.hydro,
-                        hydro_index=self.hydro_indices[i],
+                        data_xfrc=self.xfrc,
+                        xfrc_index=self.xfrc_indices[i],
                         coefficients=self.links_coefficients[i],
                         z3=self.z3,
                         z4=self.z4,
