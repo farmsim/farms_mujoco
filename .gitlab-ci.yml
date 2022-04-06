@@ -1,0 +1,31 @@
+image: python:latest
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+
+before_script:
+  - python --version
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+
+pages:
+  script:
+    - pip install sphinx sphinx-rtd-theme sphinx-autodoc-typehints numpydoc -vvv
+    - pip install git+https://gitlab.com/FARMSIM/farms_core.git -vvv
+    - pip install -r requirements.txt -vvv
+    - pip install -e . -vvv
+    - cd ducks ; make html
+    - mv _build/html/ ../public/
+
+  artifacts:
+    paths:
+    - public
+
+  rules:
+   - when: manual
