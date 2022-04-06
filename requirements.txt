@@ -1,4 +1,3 @@
-farms_pylog
 farms_core
 cython
 numpy

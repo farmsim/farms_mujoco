@@ -2,7 +2,7 @@
 
 import numpy as np
 
-import farms_pylog as pylog
+from farms_core import pylog
 # pylint: disable=no-name-in-module
 from farms_core.sensors.sensor_convention import sc
 from ..sensors.sensors import cycontacts2data

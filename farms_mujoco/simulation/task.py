@@ -9,7 +9,7 @@ from dm_control.mujoco.wrapper import mjbindings
 from dm_control.viewer.application import Application
 from dm_control.mjcf.physics import Physics
 
-import farms_pylog as pylog
+from farms_core import pylog
 from farms_core.model.options import AnimatOptions
 from farms_core.model.control import ControlType, AnimatController
 from farms_core.model.data import AnimatData

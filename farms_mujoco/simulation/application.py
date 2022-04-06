@@ -3,7 +3,7 @@
 import glfw
 from dm_control import viewer
 
-import farms_pylog as pylog
+from farms_core import pylog
 
 
 class FarmsApplication(viewer.application.Application):
