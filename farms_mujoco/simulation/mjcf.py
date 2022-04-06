@@ -1064,6 +1064,8 @@ def setup_mjcf_xml(
         # Joints control
         joints_equations = {}
         for motor_options in animat_options.control.motors:
+            if not hasattr(motor_options, 'equation'):
+                continue
             joint = mjcf_model.find(
                 namespace='joint',
                 identifier=motor_options.joint_name,
@@ -1078,7 +1080,10 @@ def setup_mjcf_xml(
                 )*units.angular_damping
 
         # Muscles
-        if animat_options.control.muscles is not None:
+        if (
+                hasattr(animat_options.control, 'muscles')
+                and animat_options.control.muscles is not None
+        ):
             for muscle_options in animat_options.control.muscles:
                 joint = mjcf_model.find(
                     namespace='joint',
