@@ -82,7 +82,7 @@ setup(
         'cython',
         'numpy',
         'scipy',
-        'tqdm'
+        'tqdm',
         'trimesh',
         'dm_control',
         'imageio',
