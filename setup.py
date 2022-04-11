@@ -81,7 +81,10 @@ setup(
         'farms_core',
         'cython',
         'numpy',
+        'scipy',
+        'tqdm'
         'trimesh',
         'dm_control',
+        'imageio',
     ],
 )
