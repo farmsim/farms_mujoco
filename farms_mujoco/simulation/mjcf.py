@@ -594,17 +594,19 @@ def sdf2mjcf(
     use_actuators = kwargs.pop('use_actuators', False)
 
     # Position
-    act_pos_gain = kwargs.pop('act_pos_gain', 1)
+    act_pos_gain = kwargs.pop('act_pos_gain', 0)
     act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
-    act_pos_ctrlrange = kwargs.pop('act_pos_ctrlrange', [0, 0])
+    act_pos_ctrlrange = kwargs.pop('act_pos_ctrlrange', [-1e6, 1e6])
     act_pos_forcelimited = kwargs.pop('act_pos_forcelimited', False)
-    act_pos_forcerange = kwargs.pop('act_pos_forcerange', [0, 0])
+    act_pos_forcerange = kwargs.pop('act_pos_forcerange', [-1e6, 1e6])
+
     # Velocity
-    act_vel_gain = kwargs.pop('act_vel_gain', 1)
+    act_vel_gain = kwargs.pop('act_vel_gain', 0)
     act_vel_ctrllimited = kwargs.pop('act_vel_ctrllimited', False)
-    act_vel_ctrlrange = kwargs.pop('act_vel_ctrlrange', [0, 0])
+    act_vel_ctrlrange = kwargs.pop('act_vel_ctrlrange', [-1e6, 1e6])
     act_vel_forcelimited = kwargs.pop('act_vel_forcelimited', False)
-    act_vel_forcerange = kwargs.pop('act_vel_forcerange', [0, 0])
+    act_vel_forcerange = kwargs.pop('act_vel_forcerange', [-1e6, 1e6])
+
     # Animat options
     animat_options = kwargs.pop('animat_options', None)
     simulation_options = kwargs.pop('simulation_options', None)
