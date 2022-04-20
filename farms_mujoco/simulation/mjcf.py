@@ -6,7 +6,6 @@ import xml.etree.ElementTree as ET
 from typing import Dict
 
 import numpy as np
-from nptyping import NDArray
 import trimesh as tri
 from imageio import imread
 from scipy.spatial.transform import Rotation
@@ -17,23 +16,31 @@ from dm_control import mjcf
 from farms_core import pylog
 from farms_core.units import SimulationUnitScaling
 from farms_core.model.options import ArenaOptions
+from farms_core.array.types import (
+    NDARRAY_3,
+    NDARRAY_4,
+    NDARRAY_6,
+    NDARRAY_33,
+    NDARRAY_44,
+)
 from farms_core.io.sdf import (
     ModelSDF, Link, Mesh, Visual, Collision,
     Box, Cylinder, Capsule, Sphere, Plane, Heightmap,
 )
 
+
 MIN_MASS = 1e-12
 MIN_INERTIA = 1e-15
 
 
-def quat2mjcquat(quat: NDArray[(6,), float]) -> NDArray[(4,), float]:
+def quat2mjcquat(quat: NDARRAY_6) -> NDARRAY_4:
     """Quaternion to MuJoCo quaternion"""
     quat_type = np.array if isinstance(quat, np.ndarray) else type(quat)
     quat = np.array(quat)[[3, 0, 1, 2]]
     return quat_type(quat)
 
 
-def euler2mjcquat(euler: NDArray[(3,), float]) -> NDArray[(4,), float]:
+def euler2mjcquat(euler: NDARRAY_3) -> NDARRAY_4:
     """Euler to MuJoCo quaternion"""
     return quat2mjcquat(Rotation.from_euler(
         angles=euler,
@@ -41,7 +48,7 @@ def euler2mjcquat(euler: NDArray[(3,), float]) -> NDArray[(4,), float]:
     ).as_quat())
 
 
-def euler2mat(euler: NDArray[(3,), float]) -> NDArray[(3, 3), float]:
+def euler2mat(euler: NDARRAY_3) -> NDARRAY_33:
     """Euler to 3D matrix"""
     return Rotation.from_euler(
         angles=euler,
@@ -50,9 +57,9 @@ def euler2mat(euler: NDArray[(3,), float]) -> NDArray[(3, 3), float]:
 
 
 def poseul2mat4d(
-        position: NDArray[(3,), float],
-        euler: NDArray[(3,), float],
-) -> NDArray[(4, 4), float]:
+        position: NDARRAY_3,
+        euler: NDARRAY_3,
+) -> NDARRAY_44:
     """4D transform"""
     transform = np.eye(4)
     transform[:3, -1] = position
@@ -61,8 +68,8 @@ def poseul2mat4d(
 
 
 def get_local_transform(
-        parent_pose: NDArray[(6,), float],
-        child_pose: NDArray[(6,), float],
+        parent_pose: NDARRAY_6,
+        child_pose: NDARRAY_6,
 ):
     """Get link local transform"""
     parent_transform = (
@@ -848,7 +855,7 @@ def add_particles(mjcf_model: mjcf.RootElement):
     composite.geom.rgba = [0.8, 0.2, 0.1, 1.0]
 
 
-def add_lights(link: mjcf.RootElement, rot: NDArray[(3,), float] = None):
+def add_lights(link: mjcf.RootElement, rot: NDARRAY_3 = None):
     """Add lights"""
     if rot is None:
         rot = [0, 0, 0]
@@ -874,7 +881,7 @@ def add_lights(link: mjcf.RootElement, rot: NDArray[(3,), float] = None):
 def add_cameras(
         link: mjcf.RootElement,
         dist: float = 3,
-        rot: NDArray[(3,), float] = None,
+        rot: NDARRAY_3 = None,
 ):
     """Add cameras"""
     if rot is None:
