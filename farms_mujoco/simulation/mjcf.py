@@ -23,6 +23,7 @@ from farms_core.array.types import (
     NDARRAY_33,
     NDARRAY_44,
 )
+from farms_core.io.yaml import read_yaml
 from farms_core.io.sdf import (
     ModelSDF, Link, Mesh, Visual, Collision,
     Box, Cylinder, Capsule, Sphere, Plane, Heightmap,
@@ -992,6 +993,8 @@ def setup_mjcf_xml(
     mjcf_model.compiler.inertiafromgeom = False
     mjcf_model.compiler.convexhull = False
     mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
+    # Disable lengthrange computation for muscles
+    mjcf_model.compiler.lengthrange.mode = "none"
 
     # Statistic
     scale = 1
@@ -1137,4 +1140,47 @@ def setup_mjcf_xml(
             xml_file.write(mjcf_xml_str)
 
     assert not kwargs, kwargs
+
+    # Test code for adding muscles
+    # Disable lengthrange computation
+    mjcf_model.compiler.lengthrange.mode = "none"
+    # Add sites from muscle config file
+    config_path = "/home/tatarama/projects/work/phd/collaborations/simon_danner/spinal_locomotion_v1/simulations/quadruped_locomotion/config/hindlimb_muscles_test.yaml"
+    muscle_config = read_yaml(config_path)
+    for muscle_name, muscle in muscle_config["muscles"].items():
+        # Add tendon
+        print(muscle_name)
+        mjcf_tendon = mjcf_model.tendon.add(
+            "spatial",
+            name=muscle_name,
+            group=3,
+            width=1e-2,
+            rgba=[0.0, 0.0, 1.0, 1],
+        )
+        # Add actuator
+        mjcf_model.actuator.add(
+            "general",
+            name=muscle_name,
+            tendon=muscle_name,
+            dyntype="none"
+        )
+        for pindex, waypoint in enumerate(muscle["waypoints"]):
+            body_name = waypoint[0]['link']
+            position = (np.array(waypoint[1]['point'])).tolist()
+            # Add sites
+            body = mjcf_model.worldbody.find("body", body_name)
+            site_name = f'{muscle_name}_P{pindex}'
+            body.add(
+                'site',
+                name=site_name,
+                pos=position,
+                group=3,
+                size=[1e-3]*3,
+                rgba=[1.0, 0, 0, 1]
+            )
+            # Attach site to tendon
+            mjcf_tendon.add(
+                "site",
+                site=site_name
+            )
     return mjcf_model, base_link, hfield
