@@ -199,17 +199,24 @@ class ExperimentTask(Task):
             np.argwhere(ctrl_names == f'actuator_torque_{joint}')[0, 0]
             for joint in self._controller.joints_names[ControlType.TORQUE]
         ]
+        self.maps['ctrl']['mus'] = [
+            np.argwhere(ctrl_names == muscle)[0, 0]
+            for muscle in self._controller.muscle_names
+        ]
+        # Filter only actuated joints
         act_trnid = physics.named.model.actuator_trnid
+        act_trntype = physics.named.model.actuator_trntype
         jnt_names = physics.named.model.jnt_type.axes.row.names
         jntname2actid = {name: {} for name in jnt_names}
         for act_i, act_bias in enumerate(physics.model.actuator_biasprm):
-            act_type = (
-                'pos' if act_bias[1] != 0
-                else 'vel' if act_bias[2] != 0
-                else 'trq'
-            )
-            jnt_name = jnt_names[act_trnid[act_i][0]]
-            jntname2actid[jnt_name][act_type] = act_i
+            if act_trntype[act_i] < 2:
+                act_type = (
+                    'pos' if act_bias[1] != 0
+                    else 'vel' if act_bias[2] != 0
+                    else 'trq'
+                )
+                jnt_name = jnt_names[act_trnid[act_i][0]]
+                jntname2actid[jnt_name][act_type] = act_i
 
         # Actuator limits
         if self.animat_options is not None:
