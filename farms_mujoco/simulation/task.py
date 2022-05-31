@@ -50,6 +50,7 @@ class ExperimentTask(Task):
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'xfrc': {}, 'geoms': {},
             'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
+            'muscles': {}
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
@@ -157,6 +158,8 @@ class ExperimentTask(Task):
         self.maps['xfrc']['names'] = physics_named.xfrc_applied.axes.row.names
         # Geoms indices
         self.maps['geoms']['names'] = physics_named.geom_xpos.axes.row.names
+        # Muscles indices
+        self.maps['muscles']['names'] = physics_named.ten_length.axes.row.names
 
     def initialize_data(self):
         """Initialise data"""
@@ -165,6 +168,7 @@ class ExperimentTask(Task):
             n_iterations=self.n_iterations,
             links=self.maps['xpos']['names'],
             joints=self.maps['qpos']['names'],
+            muscles=self.maps['muscles']['names']
             # contacts=[],
             # xfrc=[],
         )
@@ -200,8 +204,8 @@ class ExperimentTask(Task):
             for joint in self._controller.joints_names[ControlType.TORQUE]
         ]
         self.maps['ctrl']['mus'] = [
-            np.argwhere(ctrl_names == muscle)[0, 0]
-            for muscle in self._controller.muscle_names
+            np.argwhere(ctrl_names == f'actuator_muscle_{name}')[0, 0]
+            for name in self._controller.muscle_names
         ]
         # Filter only actuated joints
         act_trnid = physics.named.model.actuator_trnid
@@ -264,6 +268,13 @@ class ExperimentTask(Task):
                 for joint
                 in self._controller.joints_names[ControlType.TORQUE]
             ]
+        if self._controller.muscle_names:
+            muscles_excitations = self._controller.excitations(
+                iteration=self.iteration,
+                time=current_time,
+                timestep=self.timestep
+            )
+            physics.data.ctrl[self.maps['ctrl']['mus']] = muscles_excitations
 
     def after_step(self, physics: Physics):
         """Operations after physics step"""
