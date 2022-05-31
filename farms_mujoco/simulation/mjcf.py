@@ -428,7 +428,6 @@ def mjc_add_link(
             assert os.path.isfile(path), path
             img = imread(path).astype(np.double)  # Read PNG image
             img = img[:, :, 0] if img.ndim == 3 else img[:, :]  # RGB vs Grey
-            img = gaussian_filter(input=img, sigma=[2, 2], mode='reflect')
             img = (img - np.min(img))/(np.max(img)-np.min(img))  # Normalize
             img = np.flip(img, axis=0)  # Cartesian coordinates
             mjcf_map['hfield'] = {
