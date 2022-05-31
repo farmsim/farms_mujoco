@@ -640,7 +640,7 @@ def sdf2mjcf(
         for element in [
                 'links', 'joints',
                 'sites', 'visuals', 'collisions',
-                'actuators',
+                'actuators', 'tendons'
         ]
     }
 
@@ -739,6 +739,50 @@ def sdf2mjcf(
                     mjcf_map['actuators'][name].forcerange = torque_limits
         assert mjcf_map['actuators'], mjcf_map['actuators']
 
+        # Muscles
+        if use_muscles:
+            # Disable lengthrange computation
+            mjcf_model.compiler.lengthrange.mode = "none"
+            # Add sites from muscle config file
+            for muscle in animat_options.control.hill_muscles:
+                # Add tendon
+                tendon_name = f'{muscle["muscle_name"].lower()}'
+                mjcf_map['tendons'][tendon_name] = mjcf_model.tendon.add(
+                    "spatial",
+                    name=tendon_name,
+                    group=4,
+                    width=1e-3,
+                    rgba=[1.0, 0.0, 0.0, 1],
+                )
+                # Add actuator
+                muscle_name = f'actuator_muscle_{muscle["muscle_name"].lower()}'
+                mjcf_map['actuators'][muscle_name] = mjcf_model.actuator.add(
+                    "general",
+                    name=muscle_name,
+                    tendon=tendon_name,
+                    dyntype='filter',
+                    gaintype='user',
+                    biastype='user'
+                )
+                for pindex, waypoint in enumerate(muscle['waypoints']):
+                    body_name = waypoint[0]
+                    position = waypoint[1]
+                    # Add sites
+                    body = mjcf_model.worldbody.find('body', body_name)
+                    site_name = f'{muscle_name}_P{pindex}'
+                    body.add(
+                        'site',
+                        name=site_name,
+                        pos=position,
+                        group=3,
+                        size=[1e-3]*3,
+                        rgba=[1.0, 0, 0, 1]
+                    )
+                    # Attach site to tendon
+                    mjcf_map['tendons'][tendon_name].add(
+                        'site', site=site_name
+                    )
+
     # Sensors
     if use_sensors:
 
@@ -779,8 +823,22 @@ def sdf2mjcf(
             for actuator_name, actuator in mjcf_map['actuators'].items():
                 mjcf_model.sensor.add(
                     'actuatorfrc',
-                    name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
+                    # Adapted for muscles
+                    # name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
+                    name=f'actuatorfrc{actuator.name.replace("actuator", "")}',
                     actuator=actuator_name,
+                )
+        if use_muscle_sensors:
+            for tendon_name, tendon in mjcf_map['tendons'].items():
+                mjcf_model.sensor.add(
+                    'tendonpos',
+                    name=f'tendonpos_{tendon.name}',
+                    tendon=tendon_name
+                )
+                mjcf_model.sensor.add(
+                    'tendonvel',
+                    name=f'tendonvel_{tendon.name}',
+                    tendon=tendon_name
                 )
 
     return mjcf_model, mjcf_map
@@ -1140,43 +1198,4 @@ def setup_mjcf_xml(
             xml_file.write(mjcf_xml_str)
 
     assert not kwargs, kwargs
-
-    # Test code for adding muscles
-    # Disable lengthrange computation
-    mjcf_model.compiler.lengthrange.mode = "none"
-    # Add sites from muscle config file
-    for muscle in animat_options.control.hill_muscles:
-        # Add tendon
-        mjcf_tendon = mjcf_model.tendon.add(
-            "spatial",
-            name=muscle['muscle_name'],
-            group=4,
-            width=1e-3,
-            rgba=[1.0, 0.0, 0.0, 1],
-        )
-        # Add actuator
-        mjcf_model.actuator.add(
-            "general",
-            name=muscle['muscle_name'],
-            tendon=muscle['muscle_name'],
-            dyntype='user',
-            gaintype='user',
-            biastype='user'
-        )
-        for pindex, waypoint in enumerate(muscle['waypoints']):
-            body_name = waypoint[0]
-            position = waypoint[1]
-            # Add sites
-            body = mjcf_model.worldbody.find("body", body_name)
-            site_name = f'{muscle["muscle_name"]}_P{pindex}'
-            body.add(
-                'site',
-                name=site_name,
-                pos=position,
-                group=3,
-                size=[1e-3]*3,
-                rgba=[1.0, 0, 0, 1]
-            )
-            # Attach site to tendon
-            mjcf_tendon.add("site", site=site_name)
     return mjcf_model, base_link, hfield

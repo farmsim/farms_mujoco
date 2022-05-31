@@ -73,7 +73,9 @@ def get_sensor_maps(physics, verbose=True):
         # Joints
         'jointpos', 'jointvel',
         # Joints control
-        'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque',
+        'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque', 'actuatorfrc_muscle',
+        # Muscles
+        'tendonpos', 'tendonvel',
         # Contacts
         'touch',
     ]
@@ -182,6 +184,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     # Names from data
     links_names = sensor_data.links.names
     joints_names = sensor_data.joints.names
+    muscles_names = sensor_data.muscles.names
 
     # Links from physics
     xpos_row = physics.named.data.xpos.axes.row
@@ -254,6 +257,26 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
             for joint_name in joints_names
         ) else []
 
+    # Muscles - sensors
+    for identifier in ['tendonpos', 'tendonvel']:
+        sensor_maps[f'{identifier}2data'] = np.array([
+            sensor_maps[identifier]['indices'][
+                sensor_maps[identifier]['names'].index(
+                    f'{identifier}_{muscle_name}'
+                )
+            ][0]
+            for muscle_name in muscles_names
+        ]) if all(
+            f'{identifier}_{muscle_name}' in sensor_maps[identifier]['names']
+            for muscle_name in muscles_names
+        ) else []
+    # Muscle activation
+    muscleact_row = physics.named.data.act.axes.row
+    sensor_maps['muscleact2data'] = np.array([
+        row2index(row=muscleact_row, name=f'actuator_muscle_{muscle_name}')
+        for muscle_name in muscles_names
+    ])
+
     # Contacts
     data_names = sensor_data.contacts.names
     body_names = physics.named.model.body_pos.axes.row.names
@@ -279,6 +302,25 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         row2index(row=row, name=name, single=True)
         for name in sensor_data.links.names
     ])
+
+
+def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
+    """ Sensor data collection for muscles """
+    # muscle activations
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_activation,
+    ] = physics.data.act[sensor_maps['muscleact2data']]
+    # tendon lengths
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_tendon_length,
+    ] = physics.data.sensordata[sensor_maps['tendonpos2data']]/units.meters
+    # tendon velocities
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_tendon_velocity,
+    ] = physics.data.sensordata[sensor_maps['tendonvel2data']]/units.velocity
 
 
 def physicslinkssensors2data(physics, iteration, data, sensor_maps, units):
@@ -383,6 +425,7 @@ def physics2data(physics, iteration, data, maps, units):
     physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units)
     physicsjoints2data(physics, iteration, data, sensor_maps, units)
     physicsactuators2data(physics, iteration, data, sensor_maps, units)
+    physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
     cycontacts2data(
         physics=physics,
         iteration=iteration,
