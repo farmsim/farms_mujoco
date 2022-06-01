@@ -760,10 +760,32 @@ def sdf2mjcf(
                     "general",
                     name=muscle_name,
                     tendon=tendon_name,
-                    dyntype='filter',
-                    gaintype='user',
-                    biastype='user'
+                    dyntype='muscle',
+                    gaintype='muscle',
+                    biastype='affine',
+                    dynprm=[0.01, 0.04], # act-deact time constants
+                    gainprm=[
+                        0.75, 1.05, # fiber length operation range
+                        muscle['max_force'],
+                        1.0, # force scaling
+                        0.5, # lmin
+                        1.6, # lmax
+                        muscle['max_velocity']*muscle['optimal_fiber'], # vmax
+                        1.3, # fpmax
+                        1.2, # fvmax
+                    ],
+                    # biasprm=[
+                    #     0.75, 1.05, # fiber length operation range
+                    #     muscle['max_force'],
+                    #     1.0, # force scaling
+                    #     0.5, # lmin
+                    #     1.6, # lmax
+                    #     muscle['max_velocity']*muscle['optimal_fiber'], # vmax
+                    #     1.3, # fpmax
+                    #     1.2, # fvmax
+                    # ],
                 )
+                # Define waypoints
                 for pindex, waypoint in enumerate(muscle['waypoints']):
                     body_name = waypoint[0]
                     position = waypoint[1]
