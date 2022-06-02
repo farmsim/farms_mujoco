@@ -48,7 +48,7 @@ class ExperimentTask(Task):
         self.animat_options: AnimatOptions = kwargs.pop('animat_options', None)
         self.maps: Dict = {
             'sensors': {}, 'ctrl': {},
-            'xpos': {}, 'qpos': {}, 'xfrc': {}, 'geoms': {},
+            'xpos': {}, 'qpos': {}, 'geoms': {},
             'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
         }
         self.external_force: float = kwargs.pop('external_force', 0.2)
@@ -103,6 +103,9 @@ class ExperimentTask(Task):
         # Control
         if self._controller is not None:
             self.initialize_control(physics)
+
+        # Intitialize base link
+        physics.data.qvel[:6] = self.animat_options.spawn.velocity
 
         # Initialize joints
         for joint in self.animat_options.morphology.joints:
