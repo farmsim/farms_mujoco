@@ -72,6 +72,13 @@ class ExperimentTask(Task):
                 'Simulation can not be restarted without application interface'
             )
 
+        # Links masses
+        links_row = physics.named.model.body_mass.axes.row
+        self.data.sensors.links.masses = np.array([
+            physics.model.body_mass[links_row.convert_key_item(link_name)]
+            for link_name in self.data.sensors.links.names
+        ], dtype=float)/self.units.kilograms
+
         # Initialise iterations
         self.iteration = 0
 
