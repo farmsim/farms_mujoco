@@ -48,6 +48,7 @@ class Simulation:
 
         # Simulator configuration
         # pylint: disable=protected-access
+        viewer.util._MIN_TIME_MULTIPLIER = 2**-10
         viewer.util._MAX_TIME_MULTIPLIER = 2**10
         os.environ['MUJOCO_GL'] = (
             'egl'
