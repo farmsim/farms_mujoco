@@ -755,35 +755,27 @@ def sdf2mjcf(
                     rgba=[1.0, 0.0, 0.0, 1],
                 )
                 # Add actuator
-                muscle_name = f'actuator_muscle_{muscle["muscle_name"].lower()}'
+                muscle_name = f'actuator_muscle_{muscle.name.lower()}'
+                prms = [
+                    muscle['max_force'],
+                    muscle['optimal_fiber'],
+                    muscle['tendon_slack'],
+                    muscle['max_velocity'], # vmax
+                    np.deg2rad(muscle['pennation_angle']), # vmax
+                ]
                 mjcf_map['actuators'][muscle_name] = mjcf_model.actuator.add(
                     "general",
                     name=muscle_name,
                     tendon=tendon_name,
+                    lengthrange=[muscle['lmtu_min'], muscle['lmtu_max']],
+                    forcelimited=True,
+                    forcerange=[-2*muscle['max_force'], 2*muscle['max_force']],
                     dyntype='muscle',
-                    gaintype='muscle',
-                    biastype='affine',
+                    gaintype='user',
+                    biastype='user',
                     dynprm=[0.01, 0.04], # act-deact time constants
-                    gainprm=[
-                        0.75, 1.05, # fiber length operation range
-                        muscle['max_force'],
-                        1.0, # force scaling
-                        0.5, # lmin
-                        1.6, # lmax
-                        muscle['max_velocity']*muscle['optimal_fiber'], # vmax
-                        1.3, # fpmax
-                        1.2, # fvmax
-                    ],
-                    # biasprm=[
-                    #     0.75, 1.05, # fiber length operation range
-                    #     muscle['max_force'],
-                    #     1.0, # force scaling
-                    #     0.5, # lmin
-                    #     1.6, # lmax
-                    #     muscle['max_velocity']*muscle['optimal_fiber'], # vmax
-                    #     1.3, # fpmax
-                    #     1.2, # fvmax
-                    # ],
+                    gainprm=prms,
+                    biasprm=prms
                 )
                 # Define waypoints
                 for pindex, waypoint in enumerate(muscle['waypoints']):
@@ -1075,6 +1067,7 @@ def setup_mjcf_xml(
     mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
     # Disable lengthrange computation for muscles
     mjcf_model.compiler.lengthrange.mode = "none"
+    mjcf_model.compiler.lengthrange.useexisting = True
 
     # Statistic
     scale = 1

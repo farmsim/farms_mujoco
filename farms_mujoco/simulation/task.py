@@ -8,12 +8,15 @@ from dm_control.rl.control import Task
 from dm_control.mujoco.wrapper import mjbindings
 from dm_control.viewer.application import Application
 from dm_control.mjcf.physics import Physics
+from dm_control.mujoco.wrapper import set_callback
 
 from farms_core import pylog
 from farms_core.model.options import AnimatOptions
 from farms_core.model.control import ControlType, AnimatController
 from farms_core.model.data import AnimatData
 from farms_core.units import SimulationUnitScaling as SimulationUnits
+
+from farms_muscle.mujoco_callback import mjcb_muscle_gain, mjcb_muscle_bias
 
 from .physics import (
     get_sensor_maps,
@@ -123,6 +126,10 @@ class ExperimentTask(Task):
         # Callbacks
         for callback in self._callbacks:
             callback.initialize_episode(task=self, physics=physics)
+
+        # Mujoco callbacks for muscle
+        set_callback("mjcb_act_gain", mjcb_muscle_gain)
+        set_callback("mjcb_act_bias", mjcb_muscle_bias)
 
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
