@@ -743,12 +743,10 @@ def sdf2mjcf(
 
         # Muscles
         if use_muscles:
-            # Disable lengthrange computation
-            mjcf_model.compiler.lengthrange.mode = "none"
             # Add sites from muscle config file
             for muscle in animat_options.control.hill_muscles:
                 # Add tendon
-                tendon_name = f'{muscle["muscle_name"].lower()}'
+                tendon_name = f'{muscle.name.lower()}'
                 mjcf_map['tendons'][tendon_name] = mjcf_model.tendon.add(
                     "spatial",
                     name=tendon_name,
