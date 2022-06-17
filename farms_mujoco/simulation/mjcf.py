@@ -601,7 +601,9 @@ def sdf2mjcf(
     use_link_vel_sensors = kwargs.pop('use_link_vel_sensors', True)
     use_joint_sensors = kwargs.pop('use_joint_sensors', True)
     use_actuator_sensors = kwargs.pop('use_actuator_sensors', True)
+    use_muscle_sensors = kwargs.pop('use_muscle_sensors', True)
     use_actuators = kwargs.pop('use_actuators', False)
+    use_muscles = kwargs.pop('use_muscles', True)
 
     # Position
     act_pos_gain = kwargs.pop('act_pos_gain', 0)
