@@ -183,6 +183,8 @@ def mjc_add_link(
                 type='hinge',
                 damping=damping*units.damping,
                 frictionloss=frictionloss,
+                limited=True,
+                range=sdf_joint.axis.limits[:2]
             )
             mjcf_map['joints'][sdf_joint.name] = joint
 
