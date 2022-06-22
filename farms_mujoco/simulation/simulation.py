@@ -45,6 +45,7 @@ class Simulation:
         self.options: SimulationOptions = simulation_options
         self.pause: bool = not self.options.play
         self._physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
+        self.handle_exceptions = kwargs.pop('handle_exceptions', False)
 
         # Simulator configuration
         # pylint: disable=protected-access
@@ -150,6 +151,8 @@ class Simulation:
                     self._env.step(action=None)
             except PhysicsError as err:
                 pylog.error(traceback.format_exc())
+                if self.handle_exceptions:
+                    return
                 raise err
         pylog.info('Closing simulation')
 
