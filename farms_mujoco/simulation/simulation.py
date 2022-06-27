@@ -142,9 +142,9 @@ class Simulation:
             app.launch(environment_loader=self._env)
         else:
             _iterator = (
-                tqdm(range(self.task.n_iterations+1))
+                tqdm(range(self.task.sim_iterations))
                 if self.options.show_progress
-                else range(self.task.n_iterations+1)
+                else range(self.task.sim_iterations)
             )
             try:
                 for _ in _iterator:
