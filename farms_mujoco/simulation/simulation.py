@@ -122,10 +122,6 @@ class Simulation:
         with open(path, 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)
 
-    def physics(self):
-        """Physics"""
-        return self.physics
-
     def run(self):
         """Run simulation"""
         if not self.options.headless:

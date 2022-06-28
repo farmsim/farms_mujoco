@@ -9,7 +9,6 @@ import numpy as np
 import trimesh as tri
 from imageio import imread
 from scipy.spatial.transform import Rotation
-from scipy.ndimage.filters import gaussian_filter
 
 from dm_control import mjcf
 
