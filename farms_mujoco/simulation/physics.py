@@ -266,11 +266,11 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
 
     # External forces
     row = physics.named.data.xfrc_applied.axes.row
-    sensor_maps['data2xfrc2'] = np.array([
+    sensor_maps['data2xfrc'] = np.array([
         row2index(row=row, name=name, single=True)
         for name in sensor_data.xfrc.names
     ])
-    sensor_maps['datalinks2xfrc2'] = np.array([
+    sensor_maps['datalinks2xfrc'] = np.array([
         row2index(row=row, name=name, single=True)
         for name in sensor_data.links.names
     ])
