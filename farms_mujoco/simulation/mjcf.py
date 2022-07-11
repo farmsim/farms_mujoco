@@ -156,7 +156,7 @@ def mjc_add_link(
         parent_pose=None if sdf_parent is None else sdf_parent.pose,
         child_pose=sdf_link.pose,
     )
-    body = mjc_parent.add(
+    body = mjcf_model.worldbody if sdf_link.name == 'world' else mjc_parent.add(
         'body',
         name=sdf_link.name,
         pos=[pos*units.meters for pos in link_local_pos],
@@ -469,7 +469,7 @@ def mjc_add_link(
                 mjcf_map['collisions'][element.name] = geom
 
     # Inertial
-    inertial = sdf_link.inertial
+    inertial = None if sdf_link.name == 'world' else sdf_link.inertial
     if inertial is not None:
 
         # Extract and validate inertia
@@ -524,7 +524,7 @@ def mjc_add_link(
             ],
         )
 
-    else:
+    elif body is not mjcf_model.worldbody:
         body.add(
             'inertial',
             pos=[0, 0, 0],
