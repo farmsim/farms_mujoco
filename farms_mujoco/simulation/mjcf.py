@@ -1070,12 +1070,12 @@ def setup_mjcf_xml(
     mjcf_model.size.nconmax = 2**12  # 4096
     mjcf_model.option.gravity = kwargs.pop('gravity', [0, 0, -9.81])
     mjcf_model.option.timestep = timestep
-    mjcf_model.option.iterations = kwargs.pop('solver_iterations', 100)
+    mjcf_model.option.iterations = kwargs.pop('solver_iterations', 1000)
     mjcf_model.option.solver = kwargs.pop('solver', 'Newton')  # PGS, CG
     mjcf_model.option.integrator = kwargs.pop('integrator', 'Euler')  # RK4
-    mjcf_model.option.mpr_iterations = kwargs.pop('mpr_iterations', 50)
-    mjcf_model.option.noslip_iterations = kwargs.pop('npslip_iterations', 10)
-    mjcf_model.option.noslip_tolerance = kwargs.pop('npslip_tolerance', 1e-6)
+    mjcf_model.option.mpr_iterations = kwargs.pop('mpr_iterations', 100)  # 50
+    mjcf_model.option.noslip_iterations = kwargs.pop('npslip_iterations', 100)
+    mjcf_model.option.noslip_tolerance = kwargs.pop('npslip_tolerance', 1e-8)
     mjcf_model.option.tolerance = kwargs.pop('tolerance', 1e-12)
 
     # Animat options
