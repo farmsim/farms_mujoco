@@ -1014,11 +1014,12 @@ def setup_mjcf_xml(
     # Compiler
     mjcf_model.compiler.angle = 'radian'
     mjcf_model.compiler.eulerseq = 'xyz'
-    mjcf_model.compiler.boundmass = MIN_MASS
-    mjcf_model.compiler.boundinertia = MIN_INERTIA
+    mjcf_model.compiler.boundmass = MIN_MASS*units.kilograms
+    mjcf_model.compiler.boundinertia = MIN_INERTIA*units.inertia
     mjcf_model.compiler.balanceinertia = False
     mjcf_model.compiler.inertiafromgeom = False
-    mjcf_model.compiler.convexhull = False
+    mjcf_model.compiler.convexhull = True
+    mjcf_model.compiler.fusestatic = True
     mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
 
     # Statistic
