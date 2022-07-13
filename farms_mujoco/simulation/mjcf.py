@@ -596,6 +596,7 @@ def sdf2mjcf(
     use_joint_sensors = kwargs.pop('use_joint_sensors', True)
     use_actuator_sensors = kwargs.pop('use_actuator_sensors', True)
     use_actuators = kwargs.pop('use_actuators', False)
+    solref = kwargs.get('solref', None)
 
     # Position
     act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
