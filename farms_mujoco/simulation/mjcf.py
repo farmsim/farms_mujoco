@@ -137,7 +137,7 @@ def mjc_add_link(
     sdf_joint = kwargs.pop('sdf_joint', None)
     directory = kwargs.pop('directory', '')
     free = kwargs.pop('free', False)
-    self_collisions = kwargs.pop('self_collisions', False)
+    all_collisions = kwargs.pop('all_collisions', False)
     concave = kwargs.pop('concave', False)
     overwrite = kwargs.pop('overwrite', False)
     solref = kwargs.pop('solref', None)
@@ -225,7 +225,7 @@ def mjc_add_link(
             collision_kwargs['friction'] = friction
             collision_kwargs['margin'] = 0
             collision_kwargs['contype'] = 1  # World collisions
-            collision_kwargs['conaffinity'] = self_collisions
+            collision_kwargs['conaffinity'] = all_collisions
             collision_kwargs['condim'] = 3
             collision_kwargs['group'] = 2
             if solref is not None:
@@ -664,7 +664,6 @@ def sdf2mjcf(
             sdf_parent=sdf,
             free=not fixed_base,
             use_site=use_site,
-            self_collisions=fixed_base,
             concave=concave,
             units=units,
             **kwargs
@@ -779,6 +778,30 @@ def sdf2mjcf(
                     name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
                     actuator=actuator_name,
                 )
+
+    # Contacts
+    if animat_options is not None:
+        collision_map = {
+            link.name: [col.name for col in link.collisions]
+            for link in sdf.links
+        }
+        pair_options = {}
+        if solref is not None:
+            pair_options['solref'] = solref
+        for pair_i, (link1, link2) in enumerate(
+                animat_options.morphology.self_collisions
+        ):
+            for col1_i, col1_name in enumerate(collision_map[link1]):
+                for col2_i, col2_name in enumerate(collision_map[link2]):
+                    mjcf_model.contact.add(
+                        'pair',
+                        name=f'contact_pair_{pair_i}_{col1_i}_{col2_i}',
+                        geom1=col1_name,
+                        geom2=col2_name,
+                        condim=3,
+                        friction=[0]*5,
+                        **pair_options,
+                    )
 
     return mjcf_model, mjcf_map
 
@@ -937,6 +960,7 @@ def setup_mjcf_xml(
         concave=False,
         simulation_options=simulation_options,
         friction=[0, 0, 0],
+        all_collisions=True,
     )
     if 'hfield' in info:
         hfield = info['hfield']
