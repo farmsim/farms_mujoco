@@ -1099,8 +1099,12 @@ def setup_mjcf_xml(
                     geom.fluidcoef = [0, 0, 0, 0, 0]
 
         # Joints
-        for joint in animat_options.morphology.joints:
-            mjcf_model.find(namespace='joint', identifier=joint.name)
+        for joint_options in animat_options.morphology.joints:
+            joint = mjcf_model.find(
+                namespace='joint',
+                identifier=joint_options.name,
+            )
+            joint.damping += joint_options.damping*units.damping
 
         # Joints control
         joints_equations = {}
