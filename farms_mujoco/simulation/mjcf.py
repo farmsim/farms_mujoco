@@ -143,32 +143,31 @@ def mjc_add_link(
     solref = kwargs.pop('solref', None)
     solimp = kwargs.pop('solimp', None)
     friction = kwargs.pop('friction', [0, 0, 0])
-    frictionloss = kwargs.pop('frictionloss', 0)
-    damping = kwargs.pop('damping', 0)
     use_site = kwargs.pop('use_site', False)
     units = kwargs.pop('units', SimulationUnitScaling())
     assert not kwargs, kwargs
 
     # Links (bodies)
+    link_name = sdf_link.name
     if mjc_parent is None or sdf_parent is None:
         mjc_parent = mjcf_model.worldbody
     link_local_pos, link_local_euler = get_local_transform(
         parent_pose=None if sdf_parent is None else sdf_parent.pose,
         child_pose=sdf_link.pose,
     )
-    body = mjcf_model.worldbody if sdf_link.name == 'world' else mjc_parent.add(
+    body = mjcf_model.worldbody if link_name == 'world' else mjc_parent.add(
         'body',
-        name=sdf_link.name,
+        name=link_name,
         pos=[pos*units.meters for pos in link_local_pos],
         quat=euler2mjcquat(link_local_euler),
     )
-    mjcf_map['links'][sdf_link.name] = body
+    mjcf_map['links'][link_name] = body
 
     # joints
     joint = None
     if isinstance(sdf_link, ModelSDF):
         if free:  # Freejoint
-            joint = body.add('freejoint', name=f'root_{sdf_link.name}')
+            joint = body.add('freejoint', name=f'root_{link_name}')
         return body, joint
     if not free and sdf_joint is not None:
         if sdf_joint.type in ('revolute', 'continuous'):
@@ -179,8 +178,8 @@ def mjc_add_link(
                 pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
                 # euler=sdf_joint.pose[3:],  # Euler not supported in joint
                 type='hinge',
-                damping=damping*units.damping,
-                frictionloss=frictionloss,
+                damping=0,
+                frictionloss=0,
             )
             mjcf_map['joints'][sdf_joint.name] = joint
 
@@ -189,7 +188,7 @@ def mjc_add_link(
         site = body.add(
             'site',
             type='box',
-            name=f'site_{sdf_link.name}',
+            name=f'site_{link_name}',
             group=1,
             pos=[0, 0, 0],
             quat=[1, 0, 0, 0],
@@ -469,7 +468,7 @@ def mjc_add_link(
                 mjcf_map['collisions'][element.name] = geom
 
     # Inertial
-    inertial = None if sdf_link.name == 'world' else sdf_link.inertial
+    inertial = None if link_name == 'world' else sdf_link.inertial
     if inertial is not None:
 
         # Extract and validate inertia
@@ -486,7 +485,7 @@ def mjc_add_link(
         inertia_mat[2][1] = inertial.inertias[4]
         eigvals = np.linalg.eigvals(inertia_mat)
         assert (eigvals > 0).all(), (
-            f'Eigen values <= 0 for link {sdf_link.name}'
+            f'Eigen values <= 0 for link {link_name}'
             f'\nEigenvalues: {eigvals}'
             f'\nInertia:\n{inertia_mat}'
         )
@@ -599,14 +598,12 @@ def sdf2mjcf(
     use_actuators = kwargs.pop('use_actuators', False)
 
     # Position
-    act_pos_gain = kwargs.pop('act_pos_gain', 0)
     act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
     act_pos_ctrlrange = kwargs.pop('act_pos_ctrlrange', [-1e6, 1e6])
     act_pos_forcelimited = kwargs.pop('act_pos_forcelimited', False)
     act_pos_forcerange = kwargs.pop('act_pos_forcerange', [-1e6, 1e6])
 
     # Velocity
-    act_vel_gain = kwargs.pop('act_vel_gain', 0)
     act_vel_ctrllimited = kwargs.pop('act_vel_ctrllimited', False)
     act_vel_ctrlrange = kwargs.pop('act_vel_ctrlrange', [-1e6, 1e6])
     act_vel_forcelimited = kwargs.pop('act_vel_forcelimited', False)
@@ -699,7 +696,11 @@ def sdf2mjcf(
                 'position',
                 name=name_pos,
                 joint=joint_name,
-                kp=act_pos_gain*units.torques,
+                kp=(
+                    motors_ctrl[joint_name].gains[0]*units.torques
+                    if animat_options and motors_ctrl[joint_name].gains
+                    else 0
+                ),
                 ctrllimited=act_pos_ctrllimited,
                 ctrlrange=act_pos_ctrlrange,
                 forcelimited=act_pos_forcelimited,
@@ -710,7 +711,11 @@ def sdf2mjcf(
                 'velocity',
                 name=name_vel,
                 joint=joint_name,
-                kv=act_vel_gain*units.angular_damping,
+                kv=(
+                    motors_ctrl[joint_name].gains[1]*units.angular_damping
+                    if animat_options and motors_ctrl[joint_name].gains
+                    else 0
+                ),
                 ctrllimited=act_vel_ctrllimited,
                 ctrlrange=[val*units.angular_velocity for val in act_vel_ctrlrange],
                 forcelimited=act_vel_forcelimited,
