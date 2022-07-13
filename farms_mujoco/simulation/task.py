@@ -46,16 +46,20 @@ class ExperimentTask(Task):
         self.data: AnimatData = kwargs.pop('data', None)
         self._controller: AnimatController = kwargs.pop('controller', None)
         self.animat_options: AnimatOptions = kwargs.pop('animat_options', None)
-        self.maps: Dict = {
-            'sensors': {}, 'ctrl': {},
-            'xpos': {}, 'qpos': {}, 'geoms': {},
-            'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
-        }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
         self._callbacks: List[TaskCallback] = kwargs.pop('callbacks', [])
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
         self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
+        self.substeps = max(1, kwargs.pop('substeps', 1))
+        self.sim_iteration = 0
+        self.sim_iterations = self.n_iterations*self.substeps
+        self.sim_timestep = self.timestep/self.substeps
+        self.maps: Dict = {
+            'sensors': {}, 'ctrl': {},
+            'xpos': {}, 'qpos': {}, 'geoms': {},
+            'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
+        }
         assert not kwargs, kwargs
 
     def set_app(self, app: Application):
@@ -81,6 +85,7 @@ class ExperimentTask(Task):
 
         # Initialise iterations
         self.iteration = 0
+        self.sim_iteration = 0
 
         # Initialise terrain
         if self._extras['hfield'] is not None:
@@ -139,22 +144,24 @@ class ExperimentTask(Task):
         # Checks
         assert self.iteration < self.n_iterations
 
-        # Sensors
-        physics2data(
-            physics=physics,
-            iteration=self.iteration,
-            data=self.data,
-            maps=self.maps,
-            units=self.units,
-        )
+        if not self.sim_iteration % self.substeps:
 
-        # Callbacks
-        for callback in self._callbacks:
-            callback.before_step(task=self, action=action, physics=physics)
+            # Sensors
+            physics2data(
+                physics=physics,
+                iteration=self.iteration,
+                data=self.data,
+                maps=self.maps,
+                units=self.units,
+            )
 
-        # Control
-        if self._controller is not None:
-            self.step_control(physics)
+            # Callbacks
+            for callback in self._callbacks:
+                callback.before_step(task=self, action=action, physics=physics)
+
+            # Control
+            if self._controller is not None:
+                self.step_control(physics)
 
     def initialize_maps(self, physics: Physics):
         """Initialise data"""
@@ -272,7 +279,9 @@ class ExperimentTask(Task):
         """Operations after physics step"""
 
         # Checks
-        self.iteration += 1
+        self.sim_iteration += 1
+        if not (self.sim_iteration + 1) % self.substeps:
+            self.iteration += 1
         assert self.iteration <= self.n_iterations
 
         # Simulation complete
