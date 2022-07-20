@@ -136,8 +136,7 @@ cpdef cycontacts2data(
     object physics,
     unsigned int iteration,
     ContactsArrayCy data,
-    dict geom2data,
-    set geom_set,
+    dict geompair2data,
     double meters,
     double newtons,
 ):
@@ -155,32 +154,25 @@ cpdef cycontacts2data(
         contact = contacts[contact_i]
         geom1 = contact.geom1
         geom2 = contact.geom2
-        if geom1 in geom_set:
-            cycontact2data(
-                iteration=iteration,
-                contact_i=contact_i,
-                index=geom2data[geom1],
-                model_ptr=model_ptr,
-                data_ptr=data_ptr,
-                contact=contact,
-                cdata=cdata,
-                forcetorque=forcetorque,
-                norm_sum=norm_sum,
-                sign=-1,
-            )
-        if geom2 in geom_set:
-            cycontact2data(
-                iteration=iteration,
-                contact_i=contact_i,
-                index=geom2data[geom2],
-                model_ptr=model_ptr,
-                data_ptr=data_ptr,
-                contact=contact,
-                cdata=cdata,
-                forcetorque=forcetorque,
-                norm_sum=norm_sum,
-                sign=1,
-            )
+        for pair, sign in [
+                [(geom1, geom2), -1],
+                [(geom2, geom1), +1],
+                [(geom1, -1), -1],
+                [(geom2, -1), +1],
+        ]:
+            if pair in geompair2data:
+                cycontact2data(
+                    iteration=iteration,
+                    contact_i=contact_i,
+                    index=geompair2data[pair],
+                    model_ptr=model_ptr,
+                    data_ptr=data_ptr,
+                    contact=contact,
+                    cdata=cdata,
+                    forcetorque=forcetorque,
+                    norm_sum=norm_sum,
+                    sign=sign,
+                )
     postprocess_contacts(
         iteration=iteration,
         cdata=cdata,

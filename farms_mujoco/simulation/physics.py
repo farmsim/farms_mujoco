@@ -255,14 +255,29 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         ) else []
 
     # Contacts
-    data_names = sensor_data.contacts.names
+    contacts_pairs = sensor_data.contacts.names
     body_names = physics.named.model.body_pos.axes.row.names
-    sensor_maps['geom2data'] = {
-        geom_id: data_names.index(body_names[body_id])
+    sensor_maps['geompair2data'] = {
+        (geom_id, -1): contacts_pairs.index((body_names[body_id], ''))
         for geom_id, body_id in enumerate(physics.model.geom_bodyid)
-        if body_names[body_id] in data_names
+        if (body_names[body_id], '') in contacts_pairs
     }
-    sensor_maps['geom_set'] = set(sensor_maps['geom2data'].keys())
+    sensor_maps['geompair2data'].update({
+        (geom_id1, geom_id2): contacts_pairs.index(
+            (body_names[body_id1], body_names[body_id2])
+        )
+        for geom_id1, body_id1 in enumerate(physics.model.geom_bodyid)
+        for geom_id2, body_id2 in enumerate(physics.model.geom_bodyid)
+        if (body_names[body_id1], body_names[body_id2]) in contacts_pairs
+    })
+    geompair2data_values = sensor_maps['geompair2data'].values()
+    for pair_i, pair in enumerate(contacts_pairs):
+        assert not isinstance(pair, str) and len(pair) == 2, (
+            f'Contact "{pair}" should be a pair of strings'
+        )
+        assert pair_i in geompair2data_values, (
+            f'Missing pair: {pair} ({body_names=})'
+        )
 
     # External forces
     row = physics.named.data.xfrc_applied.axes.row
@@ -382,8 +397,7 @@ def physics2data(physics, iteration, data, maps, units):
         physics=physics,
         iteration=iteration,
         data=data.sensors.contacts,
-        geom2data=sensor_maps['geom2data'],
-        geom_set=sensor_maps['geom_set'],
+        geompair2data=sensor_maps['geompair2data'],
         meters=units.meters,
         newtons=units.newtons,
     )

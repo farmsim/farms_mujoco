@@ -11,7 +11,6 @@ cpdef cycontacts2data(
     unsigned int iteration,
     ContactsArrayCy data,
     dict geom2data,
-    set geom_set,
     double meters,
     double newtons,
 )
