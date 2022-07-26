@@ -44,7 +44,7 @@ class Simulation:
         self._mjcf_model: mjcf.element.RootElement = mjcf_model
         self.options: SimulationOptions = simulation_options
         self.pause: bool = not self.options.play
-        self._physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
+        self.physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
         self.handle_exceptions = kwargs.pop('handle_exceptions', False)
 
         # Simulator configuration
@@ -72,7 +72,7 @@ class Simulation:
             **kwargs,
         )
         self._env: Environment = Environment(
-            physics=self._physics,
+            physics=self.physics,
             task=self.task,
             time_limit=self.options.n_iterations*self.options.timestep,
             **env_kwargs,
