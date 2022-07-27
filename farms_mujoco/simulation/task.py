@@ -138,6 +138,16 @@ class ExperimentTask(Task):
         for callback in self._callbacks:
             callback.initialize_episode(task=self, physics=physics)
 
+    def update_sensors(self, physics: Physics):
+        """Update sensors"""
+        physics2data(
+            physics=physics,
+            iteration=self.iteration,
+            data=self.data,
+            maps=self.maps,
+            units=self.units,
+        )
+
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
 
@@ -147,13 +157,7 @@ class ExperimentTask(Task):
         if not self.sim_iteration % self.substeps:
 
             # Sensors
-            physics2data(
-                physics=physics,
-                iteration=self.iteration,
-                data=self.data,
-                maps=self.maps,
-                units=self.units,
-            )
+            self.update_sensors(physics=physics)
 
             # Callbacks
             for callback in self._callbacks:
