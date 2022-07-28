@@ -935,16 +935,14 @@ def add_cameras(
         )
 
 
-def setup_mjcf_xml(
-        arena_options: ArenaOptions,
-        **kwargs,
-) -> (mjcf.RootElement, mjcf.RootElement, Dict):
+def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     """Setup MJCF XML"""
 
     hfield = None
     mjcf_model = None
-    animat_options = kwargs.pop('animat_options', None)
     simulation_options = kwargs.pop('simulation_options', None)
+    animat_options = kwargs.pop('animat_options', None)
+    arena_options = kwargs.pop('arena_options', None)
     units = kwargs.pop('units', (
         simulation_options.units
         if simulation_options is not None
@@ -975,7 +973,7 @@ def setup_mjcf_xml(
     arena_base_link.pos = [pos*units.meters for pos in arena_pose[:3]]
     arena_base_link.quat = euler2mjcquat(euler=arena_pose[3:])
     if arena_options.ground_height is not None:
-        arena_base_link.pos += arena_options.ground_height*units.meters
+        arena_base_link.pos[2] += arena_options.ground_height*units.meters
     if arena_options.water.height is not None:
         mjcf_model, info = sdf2mjcf(
             sdf=ModelSDF.read(arena_options.water.sdf)[0],
