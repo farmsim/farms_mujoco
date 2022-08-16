@@ -179,6 +179,8 @@ def mjc_add_link(
                 # euler=sdf_joint.pose[3:],  # Euler not supported in joint
                 type='hinge',
                 damping=0,
+                stiffness=0,
+                springref=0,
                 frictionloss=0,
             )
             mjcf_map['joints'][sdf_joint.name] = joint
@@ -1102,7 +1104,8 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
                 namespace='joint',
                 identifier=joint_options.name,
             )
-            joint.damping += joint_options.damping*units.damping
+            joint.stiffness += joint_options.stiffness*units.angular_stiffness
+            joint.damping += joint_options.damping*units.angular_damping
 
         # Joints control
         joints_equations = {}
@@ -1115,9 +1118,9 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
             )
             joints_equations[motor_options.joint_name] = motor_options.equation
             if motor_options.passive.is_passive:
-                joint.stiffness = (
+                joint.stiffness += (
                     motor_options.passive.stiffness_coefficient
-                )*units.torques
+                )*units.angular_stiffness
                 joint.damping += (
                     motor_options.passive.damping_coefficient
                 )*units.angular_damping
@@ -1134,9 +1137,9 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
                 )
                 assert joint, f'Joint {muscle_options.joint_name} not found'
                 if 'ekeberg' in joints_equations[muscle_options.joint_name]:
-                    # joint.stiffness = (
-                    #     muscle_options.gamma
-                    # )*units.torques
+                    joint.stiffness += (
+                        muscle_options.beta*muscle_options.gamma
+                    )*units.angular_stiffness
                     joint.damping += (
                         muscle_options.delta
                     )*units.angular_damping
