@@ -164,7 +164,8 @@ class Simulation:
         try:
             for iteration in _iterator:
                 yield iteration
-                self._env.step(action=None)
+                for _ in range(self.task.substeps):
+                    self._env.step(action=None)
         except PhysicsError as err:
             if verbose:
                 pylog.error(traceback.format_exc())
