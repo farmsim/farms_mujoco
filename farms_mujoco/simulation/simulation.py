@@ -157,9 +157,9 @@ class Simulation:
     def iterator(self, show_progress: bool = True, verbose: bool = True):
         """Run simulation"""
         _iterator = (
-            tqdm(range(self.task.n_iterations+1))
+            tqdm(range(self.task.n_iterations))
             if show_progress
-            else range(self.task.n_iterations+1)
+            else range(self.task.n_iterations)
         )
         try:
             for iteration in _iterator:
