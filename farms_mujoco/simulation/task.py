@@ -256,6 +256,7 @@ class ExperimentTask(Task):
             timestep=self.timestep,
         )
         if self._controller.joints_names[ControlType.POSITION]:
+            # Position
             joints_positions = self._controller.positions(
                 iteration=self.iteration,
                 time=current_time,
@@ -267,6 +268,7 @@ class ExperimentTask(Task):
                 in self._controller.joints_names[ControlType.POSITION]
             ]
         if self._controller.joints_names[ControlType.TORQUE]:
+            # Torque
             joints_torques = self._controller.torques(
                 iteration=self.iteration,
                 time=current_time,
@@ -278,6 +280,15 @@ class ExperimentTask(Task):
                 for joint
                 in self._controller.joints_names[ControlType.TORQUE]
             ]
+            # Spring reference
+            qpos_spring = physics.named.model.qpos_spring
+            springrefs = self._controller.springrefs(
+                iteration=self.iteration,
+                time=current_time,
+                timestep=self.timestep,
+            )
+            for joint, value in springrefs.items():
+                qpos_spring[joint] = value
 
     def after_step(self, physics: Physics):
         """Operations after physics step"""
