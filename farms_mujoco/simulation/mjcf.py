@@ -384,7 +384,7 @@ def mjc_add_link(
                 size=[  # Radius, length, unused
                     element.geometry.radius*units.meters,
                     max(
-                        element.geometry.length-2*element.geometry.radius,
+                        element.geometry.length-2.5*element.geometry.radius,
                         element.geometry.radius,
                     )*units.meters,
                     element.geometry.radius*units.meters,
