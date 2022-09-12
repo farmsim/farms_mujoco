@@ -176,7 +176,6 @@ class Simulation:
             iteration: int,
             log_path: str = '',
             plot: bool = False,
-            video: str = '',
             **kwargs,
     ):
         """Postprocessing after simulation"""
@@ -205,11 +204,3 @@ class Simulation:
         # Plot
         if plot:
             self.task.data.plot(times)
-
-        # # Record video
-        # if video and self.interface is not None:
-        #     self.interface.video.save(
-        #         video,
-        #         iteration=iteration,
-        #         writer=kwargs.pop('writer', 'ffmpeg')
-        #     )
