@@ -911,12 +911,25 @@ def add_cameras(
         link: mjcf.RootElement,
         dist: float = 3,
         rot: NDARRAY_3 = None,
+        simulation_options: SimulationOptions = None,
 ):
     """Add cameras"""
     if rot is None:
         rot = [0, 0, 0]
     rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
-    for i, (mode, pose) in enumerate([
+    if simulation_options is not None:
+        dist = simulation_options.video_distance
+        pitch = np.deg2rad(-90+simulation_options.video_pitch)
+        yaw = np.deg2rad(-simulation_options.video_yaw)
+        sim_options_camera = [['trackcom', [
+            dist*np.sin(pitch)*np.sin(yaw) + simulation_options.video_offset[0],
+            dist*np.sin(pitch)*np.cos(yaw) + simulation_options.video_offset[1],
+            dist*np.cos(pitch) + simulation_options.video_offset[2],
+            -pitch, 0, -yaw,
+        ]]]
+    else:
+        sim_options_camera = []
+    for i, (mode, pose) in enumerate(sim_options_camera + [
             ['trackcom', [0.0, 0.0, dist, 0.0, 0.0, 0.0]],
             ['trackcom', [0.0, -dist, 0.2*dist, 0.4*np.pi, 0.0, 0.0]],
             ['trackcom', [-dist, 0.0, 0.2*dist, 0.4*np.pi, 0, -0.5*np.pi]],
@@ -1069,6 +1082,17 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.visual.quality.numslices = 28
     mjcf_model.visual.quality.numstacks = 16
     mjcf_model.visual.quality.numquads = 4
+    glob = mjcf_model.visual.get_children('global')  # Global reserved in Python
+    glob.offwidth = (
+        simulation_options.video_resolution[0]
+        if simulation_options is not None
+        else 1280
+    )
+    glob.offheight = (
+        simulation_options.video_resolution[1]
+        if simulation_options is not None
+        else 720
+    )
 
     # Simulation options
     mjcf_model.size.njmax = 2**12  # 4096
@@ -1168,7 +1192,11 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     add_lights(link=base_link, rot=animat_options.spawn.pose[3:])
 
     # Add cameras
-    add_cameras(link=base_link, rot=animat_options.spawn.pose[3:])
+    add_cameras(
+        link=base_link,
+        rot=animat_options.spawn.pose[3:],
+        simulation_options=simulation_options,
+    )
 
     # Night sky
     night_sky(mjcf_model)
