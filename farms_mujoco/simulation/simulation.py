@@ -92,10 +92,7 @@ class Simulation:
             **kwargs,
     ):
         """From SDF"""
-        substeps = max(1, simulation_options.num_sub_steps)
         mjcf_model, base_link, hfield = setup_mjcf_xml(
-            timestep=simulation_options.timestep/substeps,
-            discardvisual=simulation_options.headless,
             simulation_options=simulation_options,
             animat_options=animat_options,
             arena_options=arena_options,

@@ -14,7 +14,7 @@ from dm_control import mjcf
 
 from farms_core import pylog
 from farms_core.units import SimulationUnitScaling
-from farms_core.model.options import ArenaOptions
+from farms_core.simulation.options import SimulationOptions
 from farms_core.array.types import (
     NDARRAY_3,
     NDARRAY_4,
@@ -952,7 +952,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     ))
     timestep = kwargs.pop(
         'timestep',
-        simulation_options.timestep
+        simulation_options.timestep/max(1, simulation_options.num_sub_steps)
         if simulation_options is not None
         else 1e-3,
     )
@@ -1020,7 +1020,12 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.compiler.inertiafromgeom = False
     mjcf_model.compiler.convexhull = True
     mjcf_model.compiler.fusestatic = True
-    mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
+    mjcf_model.compiler.discardvisual = kwargs.pop(
+        'discardvisual',
+        simulation_options.headless and not simulation_options.video
+        if simulation_options is not None
+        else False
+    )
 
     # Statistic
     scale = 1
@@ -1068,9 +1073,19 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     # Simulation options
     mjcf_model.size.njmax = 2**12  # 4096
     mjcf_model.size.nconmax = 2**12  # 4096
-    mjcf_model.option.gravity = kwargs.pop('gravity', [0, 0, -9.81])
     mjcf_model.option.timestep = timestep
-    mjcf_model.option.iterations = kwargs.pop('solver_iterations', 1000)
+    mjcf_model.option.gravity = kwargs.pop(
+        'gravity',
+        [gravity*units.acceleration for gravity in simulation_options.gravity]
+        if simulation_options is not None
+        else [0, 0, -9.81]
+    )
+    mjcf_model.option.iterations = kwargs.pop(
+        'solver_iterations',
+        simulation_options.n_solver_iters
+        if simulation_options is not None
+        else 1000,
+    )
     mjcf_model.option.solver = kwargs.pop('solver', 'Newton')  # PGS, CG
     mjcf_model.option.integrator = kwargs.pop('integrator', 'Euler')  # RK4
     mjcf_model.option.mpr_iterations = kwargs.pop('mpr_iterations', 100)  # 50
@@ -1144,13 +1159,6 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
                         muscle_options.delta
                     )*units.angular_damping
 
-    if simulation_options is not None:
-        mjcf_model.option.gravity = [
-            gravity*units.acceleration
-            for gravity in simulation_options.gravity
-        ]
-        mjcf_model.option.timestep = timestep
-        mjcf_model.option.iterations = simulation_options.n_solver_iters
 
     # Add particles
     if kwargs.pop('use_particles', False):
