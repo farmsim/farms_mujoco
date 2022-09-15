@@ -381,13 +381,10 @@ def mjc_add_link(
             geom = body.add(
                 'geom',
                 type='capsule',
-                size=[  # Radius, length, unused
-                    element.geometry.radius*units.meters,
-                    max(
-                        element.geometry.length-2.5*element.geometry.radius,
-                        element.geometry.radius,
-                    )*units.meters,
-                    element.geometry.radius*units.meters,
+                size=[
+                    element.geometry.radius*units.meters,  # Radius
+                    0.5*element.geometry.length*units.meters,  # Half-length
+                    0,  # Unused
                 ],
                 **geom_kwargs,
                 **visual_kwargs,
