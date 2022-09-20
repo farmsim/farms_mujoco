@@ -220,6 +220,11 @@ class ExperimentTask(Task):
             np.argwhere(ctrl_names == f'actuator_torque_{joint}')[0, 0]
             for joint in self._controller.joints_names[ControlType.TORQUE]
         ]
+        qpos_spring = physics.named.model.qpos_spring
+        self.maps['ctrl']['springref'] = {
+            joint: qpos_spring.axes.row.convert_key_item(joint)
+            for joint_i, joint in enumerate(qpos_spring.axes.row.names)
+        }
         act_trnid = physics.named.model.actuator_trnid
         jnt_names = physics.named.model.jnt_type.axes.row.names
         jntname2actid = {name: {} for name in jnt_names}
@@ -256,46 +261,54 @@ class ExperimentTask(Task):
             timestep=self.timestep,
         )
         if self._controller.joints_names[ControlType.POSITION]:
-            # Position
-            joints_positions = self._controller.positions(
-                iteration=self.iteration,
-                time=current_time,
-                timestep=self.timestep,
-            )
-            physics.data.ctrl[self.maps['ctrl']['pos']] = [
-                joints_positions[joint]
-                for joint
-                in self._controller.joints_names[ControlType.POSITION]
-            ]
+            self.step_joints_control_position(physics, current_time)
         if self._controller.joints_names[ControlType.TORQUE]:
-            # Torque
-            joints_torques = self._controller.torques(
-                iteration=self.iteration,
-                time=current_time,
-                timestep=self.timestep,
-            )
-            torques = self.units.torques
-            physics.data.ctrl[self.maps['ctrl']['trq']] = [
-                joints_torques[joint]*torques
-                for joint
-                in self._controller.joints_names[ControlType.TORQUE]
-            ]
-            # Spring reference
-            qpos_spring = physics.named.model.qpos_spring
-            springrefs = self._controller.springrefs(
-                iteration=self.iteration,
-                time=current_time,
-                timestep=self.timestep,
-            )
-            for joint, value in springrefs.items():
-                qpos_spring[joint] = value
+            self.step_joints_control_torque(physics, current_time)
+
+    def step_joints_control_position(self, physics: Physics, time: float):
+        """Step position control"""
+        joints_positions = self._controller.positions(
+            iteration=self.iteration,
+            time=time,
+            timestep=self.timestep,
+        )
+        physics.data.ctrl[self.maps['ctrl']['pos']] = [
+            joints_positions[joint]
+            for joint
+            in self._controller.joints_names[ControlType.POSITION]
+        ]
+
+    def step_joints_control_torque(self, physics: Physics, time: float):
+        """Step torque control"""
+        joints_torques = self._controller.torques(
+            iteration=self.iteration,
+            time=time,
+            timestep=self.timestep,
+        )
+        torques = self.units.torques
+        physics.data.ctrl[self.maps['ctrl']['trq']] = [
+            joints_torques[joint]*torques
+            for joint
+            in self._controller.joints_names[ControlType.TORQUE]
+        ]
+        # Spring reference
+        springrefs = self._controller.springrefs(
+            iteration=self.iteration,
+            time=time,
+            timestep=self.timestep,
+        )
+        qpos_spring = physics.model.qpos_spring
+        springref_map = self.maps['ctrl']['springref']
+        for joint, value in springrefs.items():
+            qpos_spring[springref_map[joint]] = value
 
     def after_step(self, physics: Physics):
         """Operations after physics step"""
 
         # Checks
         self.sim_iteration += 1
-        if not (self.sim_iteration + 1) % self.substeps:
+        fullstep = not (self.sim_iteration + 1) % self.substeps
+        if fullstep:
             self.iteration += 1
         assert self.iteration <= self.n_iterations
 
@@ -308,8 +321,9 @@ class ExperimentTask(Task):
                 pylog.info('Simulation can be restarted')
 
         # Callbacks
-        for callback in self._callbacks:
-            callback.after_step(task=self, physics=physics)
+        if fullstep:
+            for callback in self._callbacks:
+                callback.after_step(task=self, physics=physics)
 
     def action_spec(self, physics: Physics):
         """Action specifications"""
