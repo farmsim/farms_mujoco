@@ -423,9 +423,10 @@ def mjc_add_link(
             material, _ = grid_material(mjcf_model)
             path = os.path.join(directory, element.geometry.uri)
             assert os.path.isfile(path), path
-            img = imread(path).astype(np.double)  # Read PNG image
+            img = imread(path)  # Read PNG image
             img = img[:, :, 0] if img.ndim == 3 else img[:, :]  # RGB vs Grey
-            img = (img - np.min(img))/(np.max(img)-np.min(img))  # Normalize
+            vmin, vmax = (np.iinfo(img.dtype).min, np.iinfo(img.dtype).max)
+            img = (img - vmin)/(vmax-vmin)  # Normalize
             img = np.flip(img, axis=0)  # Cartesian coordinates
             mjcf_map['hfield'] = {
                 'data': img,
