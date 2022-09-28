@@ -187,6 +187,20 @@ def mjc_add_link(
                 range=sdf_joint.axis.limits[:2]
             )
             mjcf_map['joints'][sdf_joint.name] = joint
+        elif sdf_joint.type in ('prismatic'):
+            joint = body.add(
+                'joint',
+                name=sdf_joint.name,
+                axis=sdf_joint.axis.xyz,
+                pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
+                # euler=sdf_joint.pose[3:],  # Euler not supported in joint
+                type='slide',
+                damping=damping*units.damping,
+                frictionloss=frictionloss,
+                limited=True,
+                range=sdf_joint.axis.limits[:2]
+            )
+            mjcf_map['joints'][sdf_joint.name] = joint
 
     # Site
     if use_site:
