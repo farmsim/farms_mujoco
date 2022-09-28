@@ -1071,8 +1071,8 @@ def setup_mjcf_xml(
         **mujoco_kwargs,
     )
     base_link = mjcf_model.worldbody.body[-1]
-    base_link.pos = kwargs.pop('spawn_position', [0, 0, 0])
-    base_link.quat = euler2mjcquat(kwargs.pop('spawn_rotation', [0, 0, 0]))
+    base_link.pos = animat_options.spawn.pose[:3]
+    base_link.quat = euler2mjcquat(animat_options.spawn.pose[3:])
 
     # Compiler
     mjcf_model.compiler.angle = 'radian'
