@@ -258,7 +258,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         ) else []
 
     # Muscles - sensors
-    for identifier in ['tendonpos', 'tendonvel']:
+    for identifier in ['tendonpos', 'tendonvel', 'actuatorfrc_muscle']:
         sensor_maps[f'{identifier}2data'] = np.array([
             sensor_maps[identifier]['indices'][
                 sensor_maps[identifier]['names'].index(
@@ -321,6 +321,13 @@ def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
         iteration, :,
         sc.muscle_tendon_velocity,
     ] = physics.data.sensordata[sensor_maps['tendonvel2data']]/units.velocity
+    # tendon force
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_tendon_force,
+    ] = physics.data.sensordata[sensor_maps['actuatorfrc_muscle2data']]/units.newtons
+
+
 
 
 def physicslinkssensors2data(physics, iteration, data, sensor_maps, units):
