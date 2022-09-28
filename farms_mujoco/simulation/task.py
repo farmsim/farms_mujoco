@@ -111,7 +111,9 @@ class ExperimentTask(Task):
         # Initialize joints
         for joint in self.animat_options.morphology.joints:
             assert joint.name in self.maps['qpos']['names']
-            index = self.maps['qpos']['names'].index(joint.name)+6
+            index = self.maps['qpos']['names'].index(joint.name) + (
+                0 if self.animat_options.mujoco["fixed_base"] else 6
+            )
             physics.data.qpos[index] = joint.initial[0]
             physics.data.qvel[index-1] = joint.initial[1]
 
