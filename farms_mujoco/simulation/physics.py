@@ -277,6 +277,22 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         for muscle_name in muscles_names
     ])
 
+    # Actuator - sensors
+    actuator_momentrow = physics.named.data.actuator_moment.axes.row
+    actuator_momentcol = physics.named.data.actuator_moment.axes.col
+    actuator_moment_numrows = len(actuator_momentrow.names)
+    actuator_moment_numcols = len(actuator_momentcol.names)
+    for identifier in ['actuator_moment',]:
+        sensor_maps[f'{identifier}2data'] = np.concatenate([
+            row2index(
+                actuator_momentrow, name=actuator_name
+            )*actuator_moment_numcols + row2index(
+                actuator_momentcol, name=joint_name
+            )
+            for actuator_name in actuator_momentrow.names
+            for joint_name in actuator_momentcol.names
+        ]).ravel()
+
     # Contacts
     data_names = sensor_data.contacts.names
     body_names = physics.named.model.body_pos.axes.row.names
@@ -328,6 +344,13 @@ def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
     ] = physics.data.sensordata[sensor_maps['actuatorfrc_muscle2data']]/units.newtons
 
 
+def physics_actuators_sensors2data(physics, iteration, data, sensor_maps, units):
+    """ Sensor data collection for actuators """
+    # actuator moments
+    data.sensors.actuators.array[
+        iteration, :,
+        sc.actuator_moment,
+    ] = physics.data.actuator_moment.ravel()[sensor_maps['actuator_moment2data']]
 
 
 def physicslinkssensors2data(physics, iteration, data, sensor_maps, units):
@@ -433,6 +456,7 @@ def physics2data(physics, iteration, data, maps, units):
     physicsjoints2data(physics, iteration, data, sensor_maps, units)
     physicsactuators2data(physics, iteration, data, sensor_maps, units)
     physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
+    # physics_actuators_sensors2data(physics, iteration, data, sensor_maps, units)
     cycontacts2data(
         physics=physics,
         iteration=iteration,
