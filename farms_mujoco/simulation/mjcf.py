@@ -608,6 +608,7 @@ def sdf2mjcf(
     mjcf_model = kwargs.pop('mjcf_model', None)
     model_name = kwargs.pop('model_name', None)
     fixed_base = kwargs.pop('fixed_base', False)
+    self_collisions = kwargs.pop('self_collisions', False)
     concave = kwargs.pop('concave', False)
     use_site = kwargs.pop('use_site', False)
     use_sensors = kwargs.pop('use_sensors', False)
@@ -685,7 +686,7 @@ def sdf2mjcf(
             sdf_parent=sdf,
             free=not fixed_base,
             use_site=use_site,
-            self_collisions=fixed_base,
+            self_collisions=self_collisions,
             concave=concave,
             units=units,
             **kwargs
@@ -1025,6 +1026,7 @@ def setup_mjcf_xml(
         mjcf_model=mjcf_model,
         model_name='arena',
         fixed_base=True,
+        self_collisions=True,
         concave=False,
         simulation_options=simulation_options,
         friction=[0, 0, 0],
