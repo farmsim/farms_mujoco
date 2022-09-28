@@ -1064,7 +1064,6 @@ def setup_mjcf_xml(
         use_sensors=True,
         use_link_sensors=False,
         use_link_vel_sensors=True,
-        use_joint_sensors=False,
         use_actuators=True,
         animat_options=animat_options,
         simulation_options=simulation_options,
