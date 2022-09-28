@@ -201,7 +201,7 @@ class Simulation:
 
         # Plot
         if plot:
-            self.task.data.plot(times)
+            self.task.data.plot_sensors(times)
 
         # # Record video
         # if video and self.interface is not None:
