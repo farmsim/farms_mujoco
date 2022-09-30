@@ -778,19 +778,25 @@ def sdf2mjcf(
                 # Add actuator
                 muscle_name = f'actuator_muscle_{muscle.name.lower()}'
                 prms = [
-                    muscle['max_force'],
-                    muscle['optimal_fiber'],
-                    muscle['tendon_slack'],
-                    muscle['max_velocity'], # vmax
-                    np.deg2rad(muscle['pennation_angle']), # vmax
+                    muscle['max_force']*units.newtons,
+                    muscle['optimal_fiber']*units.meters,
+                    muscle['tendon_slack']*units.meters,
+                    muscle['max_velocity']*units.velocity, # vmax
+                    np.deg2rad(muscle['pennation_angle']),
                 ]
                 mjcf_map['actuators'][muscle_name] = mjcf_model.actuator.add(
                     "general",
                     name=muscle_name,
                     tendon=tendon_name,
-                    lengthrange=[muscle['lmtu_min'], muscle['lmtu_max']],
+                    lengthrange=[
+                        muscle['lmtu_min']*units.meters,
+                        muscle['lmtu_max']*units.meters,
+                    ],
                     forcelimited=True,
-                    forcerange=[-2*muscle['max_force'], 2*muscle['max_force']],
+                    forcerange=[
+                        -2*muscle['max_force']*units.newtons,
+                        2*muscle['max_force']*units.newtons,
+                    ],
                     dyntype='muscle',
                     gaintype='user',
                     biastype='user',
@@ -801,7 +807,7 @@ def sdf2mjcf(
                 # Define waypoints
                 for pindex, waypoint in enumerate(muscle['waypoints']):
                     body_name = waypoint[0]
-                    position = waypoint[1]
+                    position = [pos*units.meters for pos in waypoint[1]]
                     # Add sites
                     body = mjcf_model.worldbody.find('body', body_name)
                     site_name = f'{muscle_name}_P{pindex}'
@@ -810,7 +816,7 @@ def sdf2mjcf(
                         name=site_name,
                         pos=position,
                         group=3,
-                        size=[1e-3]*3,
+                        size=[1e-3*units.meters]*3,
                         rgba=[1.0, 0, 0, 1]
                     )
                     # Attach site to tendon
