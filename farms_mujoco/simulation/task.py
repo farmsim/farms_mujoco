@@ -49,17 +49,21 @@ class ExperimentTask(Task):
         self.data: AnimatData = kwargs.pop('data', None)
         self._controller: AnimatController = kwargs.pop('controller', None)
         self.animat_options: AnimatOptions = kwargs.pop('animat_options', None)
-        self.maps: Dict = {
-            'sensors': {}, 'ctrl': {},
-            'xpos': {}, 'qpos': {}, 'xfrc': {}, 'geoms': {},
-            'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
-            'muscles': {}
-        }
         self.external_force: float = kwargs.pop('external_force', 0.2)
         self._restart: bool = kwargs.pop('restart', True)
         self._callbacks: List[TaskCallback] = kwargs.pop('callbacks', [])
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
         self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
+        self.substeps = max(1, kwargs.pop('substeps', 1))
+        self.sim_iteration = 0
+        self.sim_iterations = self.n_iterations*self.substeps
+        self.sim_timestep = self.timestep/self.substeps
+        self.maps: Dict = {
+            'sensors': {}, 'ctrl': {},
+            'xpos': {}, 'qpos': {}, 'geoms': {},
+            'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
+            'muscles': {}
+        }
         assert not kwargs, kwargs
 
     def set_app(self, app: Application):
@@ -76,8 +80,16 @@ class ExperimentTask(Task):
                 'Simulation can not be restarted without application interface'
             )
 
+        # Links masses
+        links_row = physics.named.model.body_mass.axes.row
+        self.data.sensors.links.masses = np.array([
+            physics.model.body_mass[links_row.convert_key_item(link_name)]
+            for link_name in self.data.sensors.links.names
+        ], dtype=float)/self.units.kilograms
+
         # Initialise iterations
         self.iteration = 0
+        self.sim_iteration = 0
 
         # Initialise terrain
         if self._extras['hfield'] is not None:
@@ -108,6 +120,9 @@ class ExperimentTask(Task):
         if self._controller is not None:
             self.initialize_control(physics)
 
+        # Intitialize base link
+        physics.data.qvel[:6] = self.animat_options.spawn.velocity
+
         # Initialize joints
         for joint in self.animat_options.morphology.joints:
             assert joint.name in self.maps['qpos']['names']
@@ -133,13 +148,8 @@ class ExperimentTask(Task):
         set_callback("mjcb_act_gain", mjcb_muscle_gain)
         set_callback("mjcb_act_bias", mjcb_muscle_bias)
 
-    def before_step(self, action, physics: Physics):
-        """Operations before physics step"""
-
-        # Checks
-        assert self.iteration < self.n_iterations
-
-        # Sensors
+    def update_sensors(self, physics: Physics):
+        """Update sensors"""
         physics2data(
             physics=physics,
             iteration=self.iteration,
@@ -148,13 +158,24 @@ class ExperimentTask(Task):
             units=self.units,
         )
 
-        # Callbacks
-        for callback in self._callbacks:
-            callback.before_step(task=self, action=action, physics=physics)
+    def before_step(self, action, physics: Physics):
+        """Operations before physics step"""
 
-        # Control
-        if self._controller is not None:
-            self.step_control(physics)
+        # Checks
+        assert self.iteration < self.n_iterations
+
+        if not self.sim_iteration % self.substeps:
+
+            # Sensors
+            self.update_sensors(physics=physics)
+
+            # Callbacks
+            for callback in self._callbacks:
+                callback.before_step(task=self, action=action, physics=physics)
+
+            # Control
+            if self._controller is not None:
+                self.step_control(physics)
 
     def initialize_maps(self, physics: Physics):
         """Initialise data"""
@@ -214,9 +235,14 @@ class ExperimentTask(Task):
         ]
         self.maps['ctrl']['mus'] = [
             np.argwhere(ctrl_names == f'actuator_muscle_{name}')[0, 0]
-            for name in self._controller.muscle_names
+            for name in self._controller.muscles_names
         ]
         # Filter only actuated joints
+        qpos_spring = physics.named.model.qpos_spring
+        self.maps['ctrl']['springref'] = {
+            joint: qpos_spring.axes.row.convert_key_item(joint)
+            for joint_i, joint in enumerate(qpos_spring.axes.row.names)
+        }
         act_trnid = physics.named.model.actuator_trnid
         act_trntype = physics.named.model.actuator_trntype
         jnt_names = physics.named.model.jnt_type.axes.row.names
@@ -255,29 +281,10 @@ class ExperimentTask(Task):
             timestep=self.timestep,
         )
         if self._controller.joints_names[ControlType.POSITION]:
-            joints_positions = self._controller.positions(
-                iteration=self.iteration,
-                time=current_time,
-                timestep=self.timestep,
-            )
-            physics.data.ctrl[self.maps['ctrl']['pos']] = [
-                joints_positions[joint]
-                for joint
-                in self._controller.joints_names[ControlType.POSITION]
-            ]
+            self.step_joints_control_position(physics, current_time)
         if self._controller.joints_names[ControlType.TORQUE]:
-            joints_torques = self._controller.torques(
-                iteration=self.iteration,
-                time=current_time,
-                timestep=self.timestep,
-            )
-            torques = self.units.torques
-            physics.data.ctrl[self.maps['ctrl']['trq']] = [
-                joints_torques[joint]*torques
-                for joint
-                in self._controller.joints_names[ControlType.TORQUE]
-            ]
-        if self._controller.muscle_names:
+            self.step_joints_control_torque(physics, current_time)
+        if self._controller.muscles_names:
             muscles_excitations = self._controller.excitations(
                 iteration=self.iteration,
                 time=current_time,
@@ -285,11 +292,51 @@ class ExperimentTask(Task):
             )
             physics.data.ctrl[self.maps['ctrl']['mus']] = muscles_excitations
 
+    def step_joints_control_position(self, physics: Physics, time: float):
+        """Step position control"""
+        joints_positions = self._controller.positions(
+            iteration=self.iteration,
+            time=time,
+            timestep=self.timestep,
+        )
+        physics.data.ctrl[self.maps['ctrl']['pos']] = [
+            joints_positions[joint]
+            for joint
+            in self._controller.joints_names[ControlType.POSITION]
+        ]
+
+    def step_joints_control_torque(self, physics: Physics, time: float):
+        """Step torque control"""
+        joints_torques = self._controller.torques(
+            iteration=self.iteration,
+            time=time,
+            timestep=self.timestep,
+        )
+        torques = self.units.torques
+        physics.data.ctrl[self.maps['ctrl']['trq']] = [
+            joints_torques[joint]*torques
+            for joint
+            in self._controller.joints_names[ControlType.TORQUE]
+        ]
+        # Spring reference
+        springrefs = self._controller.springrefs(
+            iteration=self.iteration,
+            time=time,
+            timestep=self.timestep,
+        )
+        qpos_spring = physics.model.qpos_spring
+        springref_map = self.maps['ctrl']['springref']
+        for joint, value in springrefs.items():
+            qpos_spring[springref_map[joint]] = value
+
     def after_step(self, physics: Physics):
         """Operations after physics step"""
 
         # Checks
-        self.iteration += 1
+        self.sim_iteration += 1
+        fullstep = not (self.sim_iteration + 1) % self.substeps
+        if fullstep:
+            self.iteration += 1
         assert self.iteration <= self.n_iterations
 
         # Simulation complete
@@ -301,8 +348,9 @@ class ExperimentTask(Task):
                 pylog.info('Simulation can be restarted')
 
         # Callbacks
-        for callback in self._callbacks:
-            callback.after_step(task=self, physics=physics)
+        if fullstep:
+            for callback in self._callbacks:
+                callback.after_step(task=self, physics=physics)
 
     def action_spec(self, physics: Physics):
         """Action specifications"""

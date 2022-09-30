@@ -44,10 +44,12 @@ class Simulation:
         self._mjcf_model: mjcf.element.RootElement = mjcf_model
         self.options: SimulationOptions = simulation_options
         self.pause: bool = not self.options.play
-        self._physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
+        self.physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
+        self.handle_exceptions = kwargs.pop('handle_exceptions', False)
 
         # Simulator configuration
         # pylint: disable=protected-access
+        viewer.util._MIN_TIME_MULTIPLIER = 2**-10
         viewer.util._MAX_TIME_MULTIPLIER = 2**10
         os.environ['MUJOCO_GL'] = (
             'egl'
@@ -66,10 +68,11 @@ class Simulation:
             n_iterations=self.options.n_iterations,
             timestep=self.options.timestep,
             units=self.options.units,
+            substeps=self.options.num_sub_steps,
             **kwargs,
         )
         self._env: Environment = Environment(
-            physics=self._physics,
+            physics=self.physics,
             task=self.task,
             time_limit=self.options.n_iterations*self.options.timestep,
             **env_kwargs,
@@ -90,8 +93,6 @@ class Simulation:
     ):
         """From SDF"""
         mjcf_model, base_link, hfield = setup_mjcf_xml(
-            timestep=simulation_options.timestep,
-            discardvisual=simulation_options.headless,
             simulation_options=simulation_options,
             animat_options=animat_options,
             arena_options=arena_options,
@@ -120,10 +121,6 @@ class Simulation:
         with open(path, 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)
 
-    def physics(self):
-        """Physics"""
-        return self.physics
-
     def run(self):
         """Run simulation"""
         if not self.options.headless:
@@ -140,29 +137,32 @@ class Simulation:
             app.launch(environment_loader=self._env)
         else:
             _iterator = (
-                tqdm(range(self.task.n_iterations+1))
+                tqdm(range(self.task.sim_iterations))
                 if self.options.show_progress
-                else range(self.task.n_iterations+1)
+                else range(self.task.sim_iterations)
             )
             try:
                 for _ in _iterator:
                     self._env.step(action=None)
             except PhysicsError as err:
                 pylog.error(traceback.format_exc())
+                if self.handle_exceptions:
+                    return
                 raise err
         pylog.info('Closing simulation')
 
     def iterator(self, show_progress: bool = True, verbose: bool = True):
         """Run simulation"""
         _iterator = (
-            tqdm(range(self.task.n_iterations+1))
+            tqdm(range(self.task.n_iterations))
             if show_progress
-            else range(self.task.n_iterations+1)
+            else range(self.task.n_iterations)
         )
         try:
             for iteration in _iterator:
                 yield iteration
-                self._env.step(action=None)
+                for _ in range(self.task.substeps):
+                    self._env.step(action=None)
         except PhysicsError as err:
             if verbose:
                 pylog.error(traceback.format_exc())
@@ -173,7 +173,6 @@ class Simulation:
             iteration: int,
             log_path: str = '',
             plot: bool = False,
-            video: str = '',
             **kwargs,
     ):
         """Postprocessing after simulation"""
@@ -202,11 +201,3 @@ class Simulation:
         # Plot
         if plot:
             self.task.data.plot_sensors(times)
-
-        # # Record video
-        # if video and self.interface is not None:
-        #     self.interface.video.save(
-        #         video,
-        #         iteration=iteration,
-        #         writer=kwargs.pop('writer', 'ffmpeg')
-        #     )

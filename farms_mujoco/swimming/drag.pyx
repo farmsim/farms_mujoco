@@ -330,23 +330,23 @@ cdef class SwimmingHandler:
     cdef DTYPEv2 z4
     cdef DTYPEv3 links_coefficients
 
-    def __init__(self, data, animat_options, units, physics):
+    def __init__(self, data, animat_options, arena_options, units, physics):
         super(SwimmingHandler, self).__init__()
         self.animat_options = animat_options
         self.links = data.sensors.links
         self.xfrc = data.sensors.xfrc
-        physics_options = animat_options.physics
-        self.drag = bool(physics_options.drag)
-        self.sph = bool(physics_options.sph)
-        self.buoyancy = bool(physics_options.buoyancy)
+        water_options = arena_options.water
+        self.drag = bool(water_options.drag)
+        self.sph = getattr(water_options, 'sph', False)
+        self.buoyancy = bool(water_options.buoyancy)
         self.meters = float(units.meters)
         self.newtons = float(units.newtons)
         self.torques = float(units.torques)
         self.water = WaterProperties(
-            surface=float(physics_options.water_height),
-            density=float(physics_options.water_density),
-            velocity=np.array(physics_options.water_velocity, dtype=float),
-            viscosity=float(physics_options.viscosity),
+            surface=float(water_options.height),
+            density=float(water_options.density),
+            velocity=np.array(water_options.velocity, dtype=float),
+            viscosity=float(water_options.viscosity),
         )
         self.z3 = np.zeros([7, 3])
         self.z4 = np.zeros([7, 4])
