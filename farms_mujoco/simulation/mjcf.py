@@ -1162,7 +1162,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.visual.map.haze = 0.3
     mjcf_model.visual.map.shadowclip = 1
     mjcf_model.visual.map.shadowscale = 3e-1
-    mjcf_model.visual.map.actuatortendon = 2
+    mjcf_model.visual.map.actuatortendon = 2*scale
     mjcf_model.visual.scale.forcewidth = 0.01*scale
     mjcf_model.visual.scale.contactwidth = 0.03*scale
     mjcf_model.visual.scale.contactheight = 0.01*scale
