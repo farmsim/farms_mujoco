@@ -1133,7 +1133,11 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.compiler.lengthrange.useexisting = True
 
     # Statistic
-    scale = 1
+    scale = (
+        1.0
+        if not simulation_options
+        else simulation_options.visual_scale
+    )
     mjcf_model.statistic.meansize = 1
     mjcf_model.statistic.meanmass = 1
     mjcf_model.statistic.meaninertia = 1
