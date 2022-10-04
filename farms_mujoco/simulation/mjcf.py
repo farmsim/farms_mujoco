@@ -800,7 +800,9 @@ def sdf2mjcf(
                     dyntype='muscle',
                     gaintype='user',
                     biastype='user',
-                    dynprm=[0.01, 0.04], # act-deact time constants
+                    dynprm=[
+                        0.01*units.seconds, 0.04*units.seconds
+                    ], # act-deact time constants
                     gainprm=prms,
                     biasprm=prms
                 )
