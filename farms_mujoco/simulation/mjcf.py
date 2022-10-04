@@ -1249,6 +1249,17 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
             )
             joint.stiffness += joint_options.stiffness*units.angular_stiffness
             joint.damping += joint_options.damping*units.angular_damping
+            if _solreflimit := joint_options.extras.get('solreflimit'):
+                if all(sol < 0 for sol in _solreflimit):
+                    _solreflimit[0] *= units.newtons/units.meters
+                    _solreflimit[1] *= units.newtons/units.velocity
+                else:
+                    _solreflimit[0] *= units.seconds
+                joint.solreflimit = joint_options.extras['solreflimit']
+            if _solimplimit := joint_options.extras.get('solimplimit'):
+                joint.solimplimit = _solimplimit
+            if _margin := joint_options.extras.get('margin'):
+                joint.margin = _margin # radians
 
         # Joints control
         joints_equations = {}
