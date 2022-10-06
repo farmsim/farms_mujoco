@@ -1220,6 +1220,11 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.option.noslip_iterations = kwargs.pop('npslip_iterations', 100)
     mjcf_model.option.noslip_tolerance = kwargs.pop('npslip_tolerance', 1e-8)
     mjcf_model.option.tolerance = kwargs.pop('tolerance', 1e-12)
+    mjcf_model.option.cone = (
+        simulation_options.pop('cone')
+        if simulation_options is not None
+        else 'pyramidal'
+    )
 
     # Animat options
     if animat_options is not None:
