@@ -22,6 +22,7 @@ from farms_core.array.types import (
     NDARRAY_33,
     NDARRAY_44,
 )
+from farms_core.sensors.sensor_convention import sc
 from farms_core.io.yaml import read_yaml
 from farms_core.io.sdf import (
     ModelSDF, Link, Mesh, Visual, Collision,
@@ -656,7 +657,7 @@ def sdf2mjcf(
         for element in [
                 'links', 'joints',
                 'sites', 'visuals', 'collisions',
-                'actuators', 'tendons'
+                'actuators', 'tendons', 'muscles'
         ]
     }
 
@@ -776,7 +777,7 @@ def sdf2mjcf(
                     rgba=[1.0, 0.0, 0.0, 1],
                 )
                 # Add actuator
-                muscle_name = f'actuator_muscle_{muscle.name.lower()}'
+                muscle_name = f'{muscle.name.lower()}'
                 prms = [
                     muscle['max_force']*units.newtons,
                     muscle['optimal_fiber']*units.meters,
@@ -784,7 +785,7 @@ def sdf2mjcf(
                     muscle['max_velocity']*units.velocity, # vmax
                     np.deg2rad(muscle['pennation_angle']),
                 ]
-                mjcf_map['actuators'][muscle_name] = mjcf_model.actuator.add(
+                mjcf_map['muscles'][muscle_name] = mjcf_model.actuator.add(
                     "general",
                     name=muscle_name,
                     tendon=tendon_name,
@@ -804,7 +805,21 @@ def sdf2mjcf(
                         0.01*units.seconds, 0.04*units.seconds
                     ], # act-deact time constants
                     gainprm=prms,
-                    biasprm=prms
+                    biasprm=prms,
+                    user=[
+                        # Type Ia
+                        muscle['type_I_kv'],
+                        muscle['type_I_pv'],
+                        muscle['type_I_k_dI'],
+                        muscle['type_I_k_nI'],
+                        muscle['type_I_const_I'],
+                        # Type II
+                        muscle['type_II_k_dII'],
+                        muscle['type_II_k_nII'],
+                        muscle['type_II_const_II'],
+                        # Type Ib
+                        muscle['type_Ib_kF'],
+                    ],
                 )
                 # Define waypoints
                 for pindex, waypoint in enumerate(muscle['waypoints']):
@@ -867,8 +882,7 @@ def sdf2mjcf(
                 mjcf_model.sensor.add(
                     'actuatorfrc',
                     # Adapted for muscles
-                    # name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
-                    name=f'actuatorfrc{actuator.name.replace("actuator", "")}',
+                    name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
                     actuator=actuator_name,
                 )
         if use_muscle_sensors:
@@ -883,6 +897,34 @@ def sdf2mjcf(
                     name=f'tendonvel_{tendon.name}',
                     tendon=tendon_name
                 )
+            for muscle_name, muscle in mjcf_map['muscles'].items():
+                mjcf_model.sensor.add(
+                    'actuatorfrc',
+                    name=f'musclefrc_{muscle_name}',
+                    actuator=muscle_name,
+                )
+            sensor_muscle_map = {
+                'musclefiberlen': sc.muscle_fiber_length,
+                'musclefibervel': sc.muscle_fiber_velocity,
+                'musclepenn': sc.muscle_pennation_angle,
+                'muscleactivefrc': sc.muscle_active_force,
+                'musclepassivefrc': sc.muscle_passive_force,
+                'muscleIa': sc.muscle_Ia_feedback,
+                'muscleII': sc.muscle_II_feedback,
+                'muscleIb': sc.muscle_Ib_feedback,
+            }
+            for muscle_name, _ in mjcf_map['muscles'].items():
+                for sensor_name, muscle_sensor_type in sensor_muscle_map.items():
+                    mjcf_model.sensor.add(
+                        'user',
+                        name=f'{sensor_name}_{muscle_name}',
+                        objtype='actuator',
+                        objname=muscle_name,
+                        datatype='real',
+                        needstage='acc',
+                        dim=1,
+                        user=(muscle_sensor_type,)
+                    )
 
     # Contacts
     if animat_options is not None:

@@ -16,13 +16,14 @@ from farms_core.model.control import ControlType, AnimatController
 from farms_core.model.data import AnimatData
 from farms_core.units import SimulationUnitScaling as SimulationUnits
 
-from farms_muscle.mujoco_callback import mjcb_muscle_gain, mjcb_muscle_bias
+from farms_muscle.rigid_tendon import mjcb_muscle_gain, mjcb_muscle_bias
 
 from .physics import (
     get_sensor_maps,
     get_physics2data_maps,
     physics2data,
 )
+from ..sensors.callbacks import mjcb_sensor
 
 
 def duration2nit(duration: float, timestep: float) -> int:
@@ -147,6 +148,7 @@ class ExperimentTask(Task):
         # Mujoco callbacks for muscle
         set_callback("mjcb_act_gain", mjcb_muscle_gain)
         set_callback("mjcb_act_bias", mjcb_muscle_bias)
+        set_callback("mjcb_sensor", mjcb_sensor)
 
     def update_sensors(self, physics: Physics):
         """Update sensors"""
@@ -234,7 +236,7 @@ class ExperimentTask(Task):
             for joint in self._controller.joints_names[ControlType.TORQUE]
         ]
         self.maps['ctrl']['mus'] = [
-            np.argwhere(ctrl_names == f'actuator_muscle_{name}')[0, 0]
+            np.argwhere(ctrl_names == f'{name}')[0, 0]
             for name in self._controller.muscles_names
         ]
         # Filter only actuated joints

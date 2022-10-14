@@ -73,9 +73,12 @@ def get_sensor_maps(physics, verbose=True):
         # Joints
         'jointpos', 'jointvel',
         # Joints control
-        'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque', 'actuatorfrc_muscle',
+        'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque',
         # Muscles
-        'tendonpos', 'tendonvel',
+        'musclefrc', 'tendonpos', 'tendonvel',
+        'musclefiberlen', 'musclefibervel',
+        'musclepenn', 'muscleactivefrc', 'musclepassivefrc',
+        'muscleIa', 'muscleII', 'muscleIb',
         # Contacts
         'touch',
     ]
@@ -258,7 +261,12 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         ) else []
 
     # Muscles - sensors
-    for identifier in ['tendonpos', 'tendonvel', 'actuatorfrc_muscle']:
+    for identifier in [
+            'tendonpos', 'tendonvel', 'musclefrc',
+            'musclefiberlen', 'musclefibervel', 'musclepenn',
+            'muscleactivefrc', 'musclepassivefrc',
+            'muscleIa', 'muscleII', 'muscleIb'
+    ]:
         sensor_maps[f'{identifier}2data'] = np.array([
             sensor_maps[identifier]['indices'][
                 sensor_maps[identifier]['names'].index(
@@ -273,10 +281,9 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     # Muscle activation
     muscleact_row = physics.named.data.act.axes.row
     sensor_maps['muscleact2data'] = np.array([
-        row2index(row=muscleact_row, name=f'actuator_muscle_{muscle_name}')
+        row2index(row=muscleact_row, name=f'{muscle_name}')
         for muscle_name in muscles_names
     ])
-
     # Actuator - sensors
     actuator_momentrow = physics.named.data.actuator_moment.axes.row
     actuator_momentcol = physics.named.data.actuator_moment.axes.col
@@ -340,18 +347,52 @@ def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
     # tendon lengths
     data.sensors.muscles.array[
         iteration, :,
-        sc.muscle_tendon_length,
+        sc.muscle_tendon_unit_length,
     ] = physics.data.sensordata[sensor_maps['tendonpos2data']]/units.meters
     # tendon velocities
     data.sensors.muscles.array[
         iteration, :,
-        sc.muscle_tendon_velocity,
+        sc.muscle_tendon_unit_velocity,
     ] = physics.data.sensordata[sensor_maps['tendonvel2data']]/units.velocity
-    # tendon force
     data.sensors.muscles.array[
         iteration, :,
-        sc.muscle_tendon_force,
-    ] = physics.data.sensordata[sensor_maps['actuatorfrc_muscle2data']]/units.newtons
+        sc.muscle_tendon_unit_force,
+    ] = physics.data.sensordata[sensor_maps['musclefrc2data']]/units.newtons
+    # TODO: Check unit scaling. For now the no scaling is applied
+    # assuming the muscle sensors are computed with normalized terms
+    # Update internal muscle sensor data
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_fiber_length,
+    ] = physics.data.sensordata[sensor_maps['musclefiberlen2data']]
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_fiber_velocity,
+    ] = physics.data.sensordata[sensor_maps['musclefibervel2data']]
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_pennation_angle,
+    ] = physics.data.sensordata[sensor_maps['musclepenn2data']]
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_active_force,
+    ] = physics.data.sensordata[sensor_maps['muscleactivefrc2data']]
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_passive_force,
+    ] = physics.data.sensordata[sensor_maps['musclepassivefrc2data']]
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_Ia_feedback,
+    ] = physics.data.sensordata[sensor_maps['muscleIa2data']]
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_II_feedback,
+    ] = physics.data.sensordata[sensor_maps['muscleII2data']]
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_Ib_feedback,
+    ] = physics.data.sensordata[sensor_maps['muscleIb2data']]
 
 
 def physics_actuators_sensors2data(physics, iteration, data, sensor_maps, units):
