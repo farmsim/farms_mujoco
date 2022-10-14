@@ -64,4 +64,4 @@ def mjcb_sensor(mj_model, mj_data, stage):
         #     l_ce = rt.c_fiber_length(l_mtu, l_slack, alpha)/l_opt
         #     v_ce = rt.c_fiber_velocity(v_mtu, alpha)/v_max
         #     Ia_aff = Ia_kv*abs(v_ce)**Ia_pv + Ia_k_dI*l_ce + Ia_k_nI*stim + Ia_const_I
-        #     mj_data.sensordata[sensor_adr] = Ia_aff
+            #     mj_data.sensordata[sensor_adr] = Ia_aff
