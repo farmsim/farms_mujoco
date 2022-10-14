@@ -5,7 +5,7 @@ import numpy as np
 from farms_core import pylog
 # pylint: disable=no-name-in-module
 from farms_core.sensors.sensor_convention import sc
-from ..sensors.sensors import cycontacts2data
+from ..sensors.sensors import cycontacts2data, cymusclesensors2data
 
 
 def links_data(physics, sensor_maps):
@@ -278,12 +278,37 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
             f'{identifier}_{muscle_name}' in sensor_maps[identifier]['names']
             for muscle_name in muscles_names
         ) else []
-    # Muscle activation
-    muscleact_row = physics.named.data.act.axes.row
-    sensor_maps['muscleact2data'] = np.array([
-        row2index(row=muscleact_row, name=f'{muscle_name}')
+    # Muscle sensors
+    sensor_maps['musclesensors2data'] = np.array([
+        [
+            row2index(
+                row=physics.named.data.act.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.data.actuator_length.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.data.actuator_velocity.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.data.actuator_force.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.model.actuator_gainprm.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.model.actuator_user.axes.row,
+                name=f'{muscle_name}'
+            ),
+        ]
         for muscle_name in muscles_names
     ])
+
     # Actuator - sensors
     actuator_momentrow = physics.named.data.actuator_moment.axes.row
     actuator_momentcol = physics.named.data.actuator_moment.axes.col
@@ -339,11 +364,6 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
 
 def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
     """ Sensor data collection for muscles """
-    # muscle activations
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_activation,
-    ] = physics.data.act[sensor_maps['muscleact2data']]
     # tendon lengths
     data.sensors.muscles.array[
         iteration, :,
@@ -358,50 +378,15 @@ def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
         iteration, :,
         sc.muscle_tendon_unit_force,
     ] = physics.data.sensordata[sensor_maps['musclefrc2data']]/units.newtons
-    # TODO: Check unit scaling. For now the no scaling is applied
-    # assuming the muscle sensors are computed with normalized terms
-    # Update internal muscle sensor data
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_fiber_length,
-    ] = physics.data.sensordata[sensor_maps['musclefiberlen2data']]
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_fiber_velocity,
-    ] = physics.data.sensordata[sensor_maps['musclefibervel2data']]
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_pennation_angle,
-    ] = physics.data.sensordata[sensor_maps['musclepenn2data']]
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_active_force,
-    ] = physics.data.sensordata[sensor_maps['muscleactivefrc2data']]
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_passive_force,
-    ] = physics.data.sensordata[sensor_maps['musclepassivefrc2data']]
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_Ia_feedback,
-    ] = physics.data.sensordata[sensor_maps['muscleIa2data']]
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_II_feedback,
-    ] = physics.data.sensordata[sensor_maps['muscleII2data']]
-    data.sensors.muscles.array[
-        iteration, :,
-        sc.muscle_Ib_feedback,
-    ] = physics.data.sensordata[sensor_maps['muscleIb2data']]
-
-
-def physics_actuators_sensors2data(physics, iteration, data, sensor_maps, units):
-    """ Sensor data collection for actuators """
-    # actuator moments
-    data.sensors.actuators.array[
-        iteration, :,
-        sc.actuator_moment,
-    ] = physics.data.actuator_moment.ravel()[sensor_maps['actuator_moment2data']]
+    cymusclesensors2data(
+        physics=physics,
+        iteration=iteration,
+        data=data.sensors.muscles,
+        musclesensor2data=sensor_maps['musclesensors2data'],
+        meters=units.meters,
+        velocity=units.velocity,
+        newtons=units.newtons
+    )
 
 
 def physicslinkssensors2data(physics, iteration, data, sensor_maps, units):
@@ -507,7 +492,6 @@ def physics2data(physics, iteration, data, maps, units):
     physicsjoints2data(physics, iteration, data, sensor_maps, units)
     physicsactuators2data(physics, iteration, data, sensor_maps, units)
     physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
-    # physics_actuators_sensors2data(physics, iteration, data, sensor_maps, units)
     cycontacts2data(
         physics=physics,
         iteration=iteration,
