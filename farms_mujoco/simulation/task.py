@@ -23,7 +23,6 @@ from .physics import (
     get_physics2data_maps,
     physics2data,
 )
-from ..sensors.callbacks import mjcb_sensor
 
 
 def duration2nit(duration: float, timestep: float) -> int:
@@ -148,7 +147,6 @@ class ExperimentTask(Task):
         # Mujoco callbacks for muscle
         set_callback("mjcb_act_gain", mjcb_muscle_gain)
         set_callback("mjcb_act_bias", mjcb_muscle_bias)
-        set_callback("mjcb_sensor", mjcb_sensor)
 
     def update_sensors(self, physics: Physics):
         """Update sensors"""
