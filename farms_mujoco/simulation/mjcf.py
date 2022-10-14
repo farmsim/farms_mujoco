@@ -903,28 +903,6 @@ def sdf2mjcf(
                     name=f'musclefrc_{muscle_name}',
                     actuator=muscle_name,
                 )
-            sensor_muscle_map = {
-                'musclefiberlen': sc.muscle_fiber_length,
-                'musclefibervel': sc.muscle_fiber_velocity,
-                'musclepenn': sc.muscle_pennation_angle,
-                'muscleactivefrc': sc.muscle_active_force,
-                'musclepassivefrc': sc.muscle_passive_force,
-                'muscleIa': sc.muscle_Ia_feedback,
-                'muscleII': sc.muscle_II_feedback,
-                'muscleIb': sc.muscle_Ib_feedback,
-            }
-            for muscle_name, _ in mjcf_map['muscles'].items():
-                for sensor_name, muscle_sensor_type in sensor_muscle_map.items():
-                    mjcf_model.sensor.add(
-                        'user',
-                        name=f'{sensor_name}_{muscle_name}',
-                        objtype='actuator',
-                        objname=muscle_name,
-                        datatype='real',
-                        needstage='acc',
-                        dim=1,
-                        user=(muscle_sensor_type,)
-                    )
 
     # Contacts
     if animat_options is not None:
