@@ -386,18 +386,19 @@ def physicsactuators2data(physics, iteration, data, sensor_maps, units):
         )*itorques
 
 
-def physics2data(physics, iteration, data, maps, units):
+def physics2data(physics, iteration, data, maps, units, links_only=False):
     """Sensors data collection"""
     sensor_maps = maps['sensors']
     physicslinks2data(physics, iteration, data, sensor_maps, units)
     physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units)
-    physicsjoints2data(physics, iteration, data, sensor_maps, units)
-    physicsactuators2data(physics, iteration, data, sensor_maps, units)
-    cycontacts2data(
-        physics=physics,
-        iteration=iteration,
-        data=data.sensors.contacts,
-        geompair2data=sensor_maps['geompair2data'],
-        meters=units.meters,
-        newtons=units.newtons,
-    )
+    if not links_only:
+        physicsjoints2data(physics, iteration, data, sensor_maps, units)
+        physicsactuators2data(physics, iteration, data, sensor_maps, units)
+        cycontacts2data(
+            physics=physics,
+            iteration=iteration,
+            data=data.sensors.contacts,
+            geompair2data=sensor_maps['geompair2data'],
+            meters=units.meters,
+            newtons=units.newtons,
+        )
