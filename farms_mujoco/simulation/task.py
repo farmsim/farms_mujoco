@@ -66,6 +66,13 @@ class ExperimentTask(Task):
         }
         assert not kwargs, kwargs
 
+    def __del__(self):
+        """ Destructor """
+        # It is necessary to remove the callbacks to avoid crashes in
+        # mujoco reruns
+        set_callback("mjcb_act_gain", None)
+        set_callback("mjcb_act_bias", None)
+
     def set_app(self, app: Application):
         """Set application"""
         assert isinstance(app, Application)
