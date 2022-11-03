@@ -1131,7 +1131,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         use_sensors=True,
         use_link_sensors=False,
         use_link_vel_sensors=True,
-        use_joint_sensors=False,
+        use_joint_sensors=True,
         use_actuators=True,
         animat_options=animat_options,
         simulation_options=simulation_options,
