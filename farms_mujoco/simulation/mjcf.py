@@ -870,7 +870,7 @@ def sdf2mjcf(
                     )
         if use_joint_sensors:
             for joint_name in mjcf_map['joints']:
-                for joint_sensor in ('jointpos', 'jointvel'):
+                for joint_sensor in ('jointpos', 'jointvel', 'jointlimitfrc'):
                     mjcf_model.sensor.add(
                         joint_sensor,
                         name=f'{joint_sensor}_{joint_name}',
