@@ -456,9 +456,9 @@ def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
     data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
         physics.data.sensordata[sensor_maps['jointvel2data']]
     )/units.angular_velocity
-    data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
+    data.sensors.joints.array[iteration, :, sc.joint_limit_force] = (
         physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
-    )/units.force
+    )/units.newtons
 
 
 def physicsjoints2data(physics, iteration, data, sensor_maps, units):
@@ -494,6 +494,7 @@ def physics2data(physics, iteration, data, maps, units):
     physicslinks2data(physics, iteration, data, sensor_maps, units)
     physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units)
     physicsjoints2data(physics, iteration, data, sensor_maps, units)
+    physicsjointssensors2data(physics, iteration, data, sensor_maps, units)
     physicsactuators2data(physics, iteration, data, sensor_maps, units)
     physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
     cycontacts2data(
