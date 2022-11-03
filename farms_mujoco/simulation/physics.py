@@ -71,7 +71,7 @@ def get_sensor_maps(physics, verbose=True):
         # Links
         'framepos', 'framequat', 'framelinvel', 'frameangvel',
         # Joints
-        'jointpos', 'jointvel',
+        'jointpos', 'jointvel', 'jointlimitfrc',
         # Joints control
         'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque',
         # Muscles
@@ -139,6 +139,7 @@ def get_sensor_maps(physics, verbose=True):
                     ['torques (position)', 'actuatorfrc_position'],
                     ['torques (velocity)', 'actuatorfrc_velocity'],
                     ['torques (torque)', 'actuatorfrc_torque'],
+                    ['limits', 'jointlimitfrc'],
                 ],
                 joints_data(physics, sensor_maps),
         ):
@@ -243,7 +244,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
 
     # Joints - sensors
     for identifier in [
-            'jointpos', 'jointvel',
+            'jointpos', 'jointvel', 'jointlimitfrc',
             'actuatorfrc_position',
             'actuatorfrc_velocity',
             'actuatorfrc_torque',
@@ -455,6 +456,9 @@ def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
     data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
         physics.data.sensordata[sensor_maps['jointvel2data']]
     )/units.angular_velocity
+    data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
+        physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
+    )/units.force
 
 
 def physicsjoints2data(physics, iteration, data, sensor_maps, units):
