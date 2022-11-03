@@ -185,7 +185,7 @@ def mjc_add_link(
                 springref=0,
                 frictionloss=0,
                 limited=True if sdf_joint.axis.limits else False,
-                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [-1.0, 1.0]
+                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]
             )
             mjcf_map['joints'][sdf_joint.name] = joint
         elif sdf_joint.type in ('prismatic'):
@@ -201,7 +201,7 @@ def mjc_add_link(
                 springref=0,
                 frictionloss=0,
                 limited=True if sdf_joint.axis.limits else False,
-                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [-1.0, 1.0]
+                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]
             )
             mjcf_map['joints'][sdf_joint.name] = joint
 
