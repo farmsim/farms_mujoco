@@ -1096,6 +1096,12 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.size.njmax = 2**12  # 4096
     mjcf_model.size.nconmax = 2**12  # 4096
     mjcf_model.option.timestep = timestep
+    mjcf_model.option.impratio = kwargs.pop(
+        'impratio',
+        simulation_options.impratio
+        if simulation_options is not None
+        else 1,
+    )
     mjcf_model.option.gravity = kwargs.pop(
         'gravity',
         [gravity*units.acceleration for gravity in simulation_options.gravity]
