@@ -456,6 +456,7 @@ def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
     data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
         physics.data.sensordata[sensor_maps['jointvel2data']]
     )/units.angular_velocity
+    # TODO: Check the units
     data.sensors.joints.array[iteration, :, sc.joint_limit_force] = (
         physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
     )/units.newtons
