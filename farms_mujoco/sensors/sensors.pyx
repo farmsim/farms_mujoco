@@ -3,7 +3,7 @@
 import numpy as np
 cimport numpy as np
 
-from dm_control.mujoco.wrapper.core import mjlib
+from mujoco import mj_contactForce
 
 from libc.math cimport sqrt
 
@@ -62,7 +62,7 @@ cdef void cycontact2data(
     """Extract force"""
     cdef double[3] pos = contact.pos
     cdef double[9] frame = contact.frame
-    mjlib.mj_contactForce(model_ptr, data_ptr, contact_i, forcetorque)
+    mj_contactForce(model_ptr, data_ptr, contact_i, forcetorque)
     norm_sum[index] += store_forces(
         iteration=iteration, index=index, cdata=cdata,
         forcetorque=forcetorque,
