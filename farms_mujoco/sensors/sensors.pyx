@@ -23,6 +23,7 @@ cdef double store_forces(
     int sign,
 ) nogil:
     """Store forces"""
+    cdef unsigned int i
     cdef double norm
     cdef double[3] reaction, friction, friction1, friction2, total
     for i in range(3):
@@ -143,6 +144,7 @@ cpdef cycontacts2data(
     """Contacts to data"""
     cdef unsigned int contact_i, index, n_contact_sensors=len(data.names)
     cdef unsigned int geom1, geom2
+    cdef int sign
     cdef DTYPEv3 cdata = data.array
     cdef object model_ptr = physics.model.ptr
     cdef object data_ptr = physics.data.ptr
@@ -161,10 +163,11 @@ cpdef cycontacts2data(
                 [(geom2, -1), +1],
         ]:
             if pair in geompair2data:
+                index = geompair2data[pair]
                 cycontact2data(
                     iteration=iteration,
                     contact_i=contact_i,
-                    index=geompair2data[pair],
+                    index=index,
                     model_ptr=model_ptr,
                     data_ptr=data_ptr,
                     contact=contact,
