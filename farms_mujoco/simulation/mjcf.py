@@ -1040,9 +1040,6 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
 
     # Statistic
     scale = 1
-    mjcf_model.statistic.meansize = 1
-    mjcf_model.statistic.meanmass = 1
-    mjcf_model.statistic.meaninertia = 1
     # mjcf_model.statistic.extent = 100*units.meters
 
     # Visual
