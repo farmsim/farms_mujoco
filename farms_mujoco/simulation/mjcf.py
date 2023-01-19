@@ -775,9 +775,9 @@ def sdf2mjcf(
                 mjcf_map['tendons'][tendon_name] = mjcf_model.tendon.add(
                     "spatial",
                     name=tendon_name,
-                    group=4,
+                    group=1,
                     width=1e-3,
-                    rgba=[1.0, 0.0, 0.0, 1],
+                    rgba=[0.0, 0.0, 1.0, 1],
                 )
                 # Add actuator
                 muscle_name = f'{muscle.name.lower()}'
@@ -791,6 +791,7 @@ def sdf2mjcf(
                 mjcf_map['muscles'][muscle_name] = mjcf_model.actuator.add(
                     "general",
                     name=muscle_name,
+                    group=1, # To make sure they are always visible,
                     tendon=tendon_name,
                     lengthrange=[
                         muscle['lmtu_min']*units.meters,
@@ -835,9 +836,9 @@ def sdf2mjcf(
                         'site',
                         name=site_name,
                         pos=position,
-                        group=3,
-                        size=[1e-3*units.meters]*3,
-                        rgba=[1.0, 0, 0, 1]
+                        group=1,
+                        size=[5e-4*units.meters]*3,
+                        rgba=[0.0, 1, 0, 0.5]
                     )
                     # Attach site to tendon
                     mjcf_map['tendons'][tendon_name].add(
