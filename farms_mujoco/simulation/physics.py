@@ -497,7 +497,8 @@ def physics2data(physics, iteration, data, maps, units):
     physicsjoints2data(physics, iteration, data, sensor_maps, units)
     physicsjointssensors2data(physics, iteration, data, sensor_maps, units)
     physicsactuators2data(physics, iteration, data, sensor_maps, units)
-    physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
+    if data.sensors.muscles.names:
+        physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
     cycontacts2data(
         physics=physics,
         iteration=iteration,
