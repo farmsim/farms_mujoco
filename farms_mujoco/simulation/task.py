@@ -196,7 +196,11 @@ class ExperimentTask(Task):
         # Geoms indices
         self.maps['geoms']['names'] = physics_named.geom_xpos.axes.row.names
         # Muscles indices
-        self.maps['muscles']['names'] = physics_named.ten_length.axes.row.names
+        # Check if any muscles present in the model
+        if len(physics.model.tendon_adr) > 0:
+            self.maps['muscles']['names'] = physics_named.ten_length.axes.row.names
+        else:
+            self.maps['muscles']['names'] = []
 
     def initialize_data(self):
         """Initialise data"""
@@ -240,10 +244,11 @@ class ExperimentTask(Task):
             np.argwhere(ctrl_names == f'actuator_torque_{joint}')[0, 0]
             for joint in self._controller.joints_names[ControlType.TORQUE]
         ]
-        self.maps['ctrl']['mus'] = [
-            np.argwhere(ctrl_names == f'{name}')[0, 0]
-            for name in self._controller.muscles_names
-        ]
+        if self._controller.muscles_names:
+            self.maps['ctrl']['mus'] = [
+                np.argwhere(ctrl_names == f'{name}')[0, 0]
+                for name in self._controller.muscles_names
+            ]
         # Filter only actuated joints
         qpos_spring = physics.named.model.qpos_spring
         self.maps['ctrl']['springref'] = {
