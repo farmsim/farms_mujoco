@@ -200,4 +200,4 @@ class Simulation:
 
         # Plot
         if plot:
-            self.task.data.plot(times)
+            self.task.data.plot_sensors(times)

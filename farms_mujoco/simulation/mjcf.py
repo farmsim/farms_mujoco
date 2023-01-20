@@ -22,6 +22,8 @@ from farms_core.array.types import (
     NDARRAY_33,
     NDARRAY_44,
 )
+from farms_core.sensors.sensor_convention import sc
+from farms_core.io.yaml import read_yaml
 from farms_core.io.sdf import (
     ModelSDF, Link, Mesh, Visual, Collision,
     Box, Cylinder, Capsule, Sphere, Plane, Heightmap,
@@ -182,6 +184,24 @@ def mjc_add_link(
                 stiffness=0,
                 springref=0,
                 frictionloss=0,
+                limited=True if sdf_joint.axis.limits else False,
+                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]
+            )
+            mjcf_map['joints'][sdf_joint.name] = joint
+        elif sdf_joint.type in ('prismatic'):
+            joint = body.add(
+                'joint',
+                name=sdf_joint.name,
+                axis=sdf_joint.axis.xyz,
+                pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
+                # euler=sdf_joint.pose[3:],  # Euler not supported in joint
+                type='slide',
+                damping=0,
+                stiffness=0,
+                springref=0,
+                frictionloss=0,
+                limited=True if sdf_joint.axis.limits else False,
+                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]
             )
             mjcf_map['joints'][sdf_joint.name] = joint
 
@@ -596,6 +616,11 @@ def sdf2mjcf(
     use_joint_sensors = kwargs.pop('use_joint_sensors', True)
     use_actuator_sensors = kwargs.pop('use_actuator_sensors', True)
     use_actuators = kwargs.pop('use_actuators', False)
+    use_muscles = kwargs.pop('use_muscles', False)
+    use_muscle_sensors = kwargs.pop(
+        'use_muscle_sensors',
+        True if use_muscles else False
+    )
     solref = kwargs.get('solref', None)
 
     # Position
@@ -635,7 +660,7 @@ def sdf2mjcf(
         for element in [
                 'links', 'joints',
                 'sites', 'visuals', 'collisions',
-                'actuators',
+                'actuators', 'tendons', 'muscles'
         ]
     }
 
@@ -741,6 +766,85 @@ def sdf2mjcf(
                     mjcf_map['actuators'][name].forcerange = torque_limits
         assert mjcf_map['actuators'], mjcf_map['actuators']
 
+        # Muscles
+        if use_muscles:
+            # Add sites from muscle config file
+            for muscle in animat_options.control.hill_muscles:
+                # Add tendon
+                tendon_name = f'{muscle.name.lower()}'
+                mjcf_map['tendons'][tendon_name] = mjcf_model.tendon.add(
+                    "spatial",
+                    name=tendon_name,
+                    group=1,
+                    width=1e-3,
+                    rgba=[0.0, 0.0, 1.0, 1],
+                )
+                # Add actuator
+                muscle_name = f'{muscle.name.lower()}'
+                prms = [
+                    muscle['max_force']*units.newtons,
+                    muscle['optimal_fiber']*units.meters,
+                    muscle['tendon_slack']*units.meters,
+                    muscle['max_velocity']*units.velocity, # vmax
+                    np.deg2rad(muscle['pennation_angle']),
+                ]
+                mjcf_map['muscles'][muscle_name] = mjcf_model.actuator.add(
+                    "general",
+                    name=muscle_name,
+                    group=1, # To make sure they are always visible,
+                    tendon=tendon_name,
+                    lengthrange=[
+                        muscle['lmtu_min']*units.meters,
+                        muscle['lmtu_max']*units.meters,
+                    ],
+                    forcelimited=True,
+                    forcerange=[
+                        -2*muscle['max_force']*units.newtons,
+                        2*muscle['max_force']*units.newtons,
+                    ],
+                    dyntype='muscle',
+                    gaintype='user',
+                    biastype='user',
+                    dynprm=[
+                        0.01*units.seconds, 0.04*units.seconds
+                    ], # act-deact time constants
+                    gainprm=prms,
+                    biasprm=prms,
+                    user=[
+                        # Type Ia
+                        muscle['type_I_kv'],
+                        muscle['type_I_pv'],
+                        muscle['type_I_k_dI'],
+                        muscle['type_I_k_nI'],
+                        muscle['type_I_const_I'],
+                        # Type II
+                        muscle['type_II_k_dII'],
+                        muscle['type_II_k_nII'],
+                        muscle['type_II_const_II'],
+                        # Type Ib
+                        muscle['type_Ib_kF'],
+                    ],
+                )
+                # Define waypoints
+                for pindex, waypoint in enumerate(muscle['waypoints']):
+                    body_name = waypoint[0]
+                    position = [pos*units.meters for pos in waypoint[1]]
+                    # Add sites
+                    body = mjcf_model.worldbody.find('body', body_name)
+                    site_name = f'{muscle_name}_P{pindex}'
+                    body.add(
+                        'site',
+                        name=site_name,
+                        pos=position,
+                        group=1,
+                        size=[5e-4*units.meters]*3,
+                        rgba=[0.0, 1, 0, 0.5]
+                    )
+                    # Attach site to tendon
+                    mjcf_map['tendons'][tendon_name].add(
+                        'site', site=site_name
+                    )
+
     # Sensors
     if use_sensors:
 
@@ -770,7 +874,7 @@ def sdf2mjcf(
                     )
         if use_joint_sensors:
             for joint_name in mjcf_map['joints']:
-                for joint_sensor in ('jointpos', 'jointvel'):
+                for joint_sensor in ('jointpos', 'jointvel', 'jointlimitfrc'):
                     mjcf_model.sensor.add(
                         joint_sensor,
                         name=f'{joint_sensor}_{joint_name}',
@@ -781,8 +885,27 @@ def sdf2mjcf(
             for actuator_name, actuator in mjcf_map['actuators'].items():
                 mjcf_model.sensor.add(
                     'actuatorfrc',
+                    # Adapted for muscles
                     name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
                     actuator=actuator_name,
+                )
+        if use_muscle_sensors:
+            for tendon_name, tendon in mjcf_map['tendons'].items():
+                mjcf_model.sensor.add(
+                    'tendonpos',
+                    name=f'tendonpos_{tendon.name}',
+                    tendon=tendon_name
+                )
+                mjcf_model.sensor.add(
+                    'tendonvel',
+                    name=f'tendonvel_{tendon.name}',
+                    tendon=tendon_name
+                )
+            for muscle_name, muscle in mjcf_map['muscles'].items():
+                mjcf_model.sensor.add(
+                    'actuatorfrc',
+                    name=f'musclefrc_{muscle_name}',
+                    actuator=muscle_name,
                 )
 
     # Contacts
@@ -1012,15 +1135,15 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         use_sensors=True,
         use_link_sensors=False,
         use_link_vel_sensors=True,
-        use_joint_sensors=False,
+        use_joint_sensors=True,
         use_actuators=True,
         animat_options=animat_options,
         simulation_options=simulation_options,
         **mujoco_kwargs,
     )
     base_link = mjcf_model.worldbody.body[-1]
-    base_link.pos = kwargs.pop('spawn_position', [0, 0, 0])
-    base_link.quat = euler2mjcquat(kwargs.pop('spawn_rotation', [0, 0, 0]))
+    base_link.pos = animat_options.spawn.pose[:3]
+    base_link.quat = euler2mjcquat(animat_options.spawn.pose[3:])
 
     # Compiler
     mjcf_model.compiler.angle = 'radian'
@@ -1037,9 +1160,16 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         if simulation_options is not None
         else False
     )
+    # Disable lengthrange computation for muscles
+    mjcf_model.compiler.lengthrange.mode = "none"
+    mjcf_model.compiler.lengthrange.useexisting = True
 
     # Statistic
-    scale = 1
+    scale = (
+        1.0
+        if not simulation_options
+        else simulation_options.visual_scale
+    )
     mjcf_model.statistic.meansize = 1
     mjcf_model.statistic.meanmass = 1
     mjcf_model.statistic.meaninertia = 1
@@ -1058,7 +1188,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.visual.map.haze = 0.3
     mjcf_model.visual.map.shadowclip = 1
     mjcf_model.visual.map.shadowscale = 3e-1
-    mjcf_model.visual.map.actuatortendon = 2
+    mjcf_model.visual.map.actuatortendon = 2*scale
     mjcf_model.visual.scale.forcewidth = 0.01*scale
     mjcf_model.visual.scale.contactwidth = 0.03*scale
     mjcf_model.visual.scale.contactheight = 0.01*scale
@@ -1126,12 +1256,6 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         if simulation_options is not None
         else 1000,
     )
-    mjcf_model.option.tolerance = kwargs.pop(
-        'tolerance',
-        simulation_options.residual_threshold
-        if simulation_options is not None
-        else 1e-8,
-    )
     mjcf_model.option.integrator = kwargs.pop(
         'integrator',
         simulation_options.integrator
@@ -1191,6 +1315,17 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
             )
             joint.stiffness += joint_options.stiffness*units.angular_stiffness
             joint.damping += joint_options.damping*units.angular_damping
+            if _solreflimit := joint_options.extras.get('solreflimit'):
+                if all(sol < 0 for sol in _solreflimit):
+                    _solreflimit[0] *= units.newtons/units.meters
+                    _solreflimit[1] *= units.newtons/units.velocity
+                else:
+                    _solreflimit[0] *= units.seconds
+                joint.solreflimit = joint_options.extras['solreflimit']
+            if _solimplimit := joint_options.extras.get('solimplimit'):
+                joint.solimplimit = _solimplimit
+            if _margin := joint_options.extras.get('margin'):
+                joint.margin = _margin # radians
 
         # Joints control
         joints_equations = {}

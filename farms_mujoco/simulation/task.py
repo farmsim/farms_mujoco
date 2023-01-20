@@ -8,12 +8,19 @@ from dm_control.rl.control import Task
 from dm_control.mujoco.wrapper import mjbindings
 from dm_control.viewer.application import Application
 from dm_control.mjcf.physics import Physics
+from dm_control.mujoco.wrapper import set_callback
 
 from farms_core import pylog
 from farms_core.model.options import AnimatOptions
 from farms_core.model.control import ControlType, AnimatController
 from farms_core.model.data import AnimatData
 from farms_core.units import SimulationUnitScaling as SimulationUnits
+
+try:
+    from farms_muscle import rigid_tendon as rt_muscle
+except:
+    rt_muscle = None
+    pylog.warning("farms_muscle not installed!")
 
 from .physics import (
     get_sensor_maps,
@@ -60,8 +67,16 @@ class ExperimentTask(Task):
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'geoms': {},
             'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
+            'muscles': {}
         }
         assert not kwargs, kwargs
+
+    def __del__(self):
+        """ Destructor """
+        # It is necessary to remove the callbacks to avoid crashes in
+        # mujoco reruns
+        set_callback("mjcb_act_gain", None)
+        set_callback("mjcb_act_bias", None)
 
     def set_app(self, app: Application):
         """Set application"""
@@ -123,7 +138,9 @@ class ExperimentTask(Task):
         # Initialize joints
         for joint in self.animat_options.morphology.joints:
             assert joint.name in self.maps['qpos']['names']
-            index = self.maps['qpos']['names'].index(joint.name)+6
+            index = self.maps['qpos']['names'].index(joint.name) + (
+                0 if self.animat_options.mujoco["fixed_base"] else 6
+            )
             physics.data.qpos[index] = joint.initial[0]
             physics.data.qvel[index-1] = joint.initial[1]
 
@@ -138,6 +155,11 @@ class ExperimentTask(Task):
         # Callbacks
         for callback in self._callbacks:
             callback.initialize_episode(task=self, physics=physics)
+
+        # Mujoco callbacks for muscle
+        if rt_muscle:
+            set_callback("mjcb_act_gain", rt_muscle.mjcb_muscle_gain)
+            set_callback("mjcb_act_bias", rt_muscle.mjcb_muscle_bias)
 
     def update_sensors(self, physics: Physics, links_only=False):
         """Update sensors"""
@@ -181,6 +203,12 @@ class ExperimentTask(Task):
         self.maps['xfrc']['names'] = physics_named.xfrc_applied.axes.row.names
         # Geoms indices
         self.maps['geoms']['names'] = physics_named.geom_xpos.axes.row.names
+        # Muscles indices
+        # Check if any muscles present in the model
+        if len(physics.model.tendon_adr) > 0:
+            self.maps['muscles']['names'] = physics_named.ten_length.axes.row.names
+        else:
+            self.maps['muscles']['names'] = []
 
     def initialize_data(self):
         """Initialise data"""
@@ -189,6 +217,7 @@ class ExperimentTask(Task):
             n_iterations=self.n_iterations,
             links=self.maps['xpos']['names'],
             joints=self.maps['qpos']['names'],
+            muscles=self.maps['muscles']['names']
             # contacts=[],
             # xfrc=[],
         )
@@ -223,22 +252,30 @@ class ExperimentTask(Task):
             np.argwhere(ctrl_names == f'actuator_torque_{joint}')[0, 0]
             for joint in self._controller.joints_names[ControlType.TORQUE]
         ]
+        if self._controller.muscles_names:
+            self.maps['ctrl']['mus'] = [
+                np.argwhere(ctrl_names == f'{name}')[0, 0]
+                for name in self._controller.muscles_names
+            ]
+        # Filter only actuated joints
         qpos_spring = physics.named.model.qpos_spring
         self.maps['ctrl']['springref'] = {
             joint: qpos_spring.axes.row.convert_key_item(joint)
             for joint_i, joint in enumerate(qpos_spring.axes.row.names)
         }
         act_trnid = physics.named.model.actuator_trnid
+        act_trntype = physics.named.model.actuator_trntype
         jnt_names = physics.named.model.jnt_type.axes.row.names
         jntname2actid = {name: {} for name in jnt_names}
         for act_i, act_bias in enumerate(physics.model.actuator_biasprm):
-            act_type = (
-                'pos' if act_bias[1] != 0
-                else 'vel' if act_bias[2] != 0
-                else 'trq'
-            )
-            jnt_name = jnt_names[act_trnid[act_i][0]]
-            jntname2actid[jnt_name][act_type] = act_i
+            if act_trntype[act_i] < 2:
+                act_type = (
+                    'pos' if act_bias[1] != 0
+                    else 'vel' if act_bias[2] != 0
+                    else 'trq'
+                )
+                jnt_name = jnt_names[act_trnid[act_i][0]]
+                jntname2actid[jnt_name][act_type] = act_i
 
         # Actuator limits
         if self.animat_options is not None:
@@ -267,6 +304,13 @@ class ExperimentTask(Task):
             self.step_joints_control_position(physics, current_time)
         if self._controller.joints_names[ControlType.TORQUE]:
             self.step_joints_control_torque(physics, current_time)
+        if self._controller.muscles_names:
+            muscles_excitations = self._controller.excitations(
+                iteration=self.iteration,
+                time=current_time,
+                timestep=self.timestep
+            )
+            physics.data.ctrl[self.maps['ctrl']['mus']] = muscles_excitations
 
     def step_joints_control_position(self, physics: Physics, time: float):
         """Step position control"""

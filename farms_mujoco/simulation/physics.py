@@ -5,7 +5,7 @@ import numpy as np
 from farms_core import pylog
 # pylint: disable=no-name-in-module
 from farms_core.sensors.sensor_convention import sc
-from ..sensors.sensors import cycontacts2data
+from ..sensors.sensors import cycontacts2data, cymusclesensors2data
 
 
 def links_data(physics, sensor_maps):
@@ -71,9 +71,14 @@ def get_sensor_maps(physics, verbose=True):
         # Links
         'framepos', 'framequat', 'framelinvel', 'frameangvel',
         # Joints
-        'jointpos', 'jointvel',
+        'jointpos', 'jointvel', 'jointlimitfrc',
         # Joints control
         'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque',
+        # Muscles
+        'musclefrc', 'tendonpos', 'tendonvel',
+        'musclefiberlen', 'musclefibervel',
+        'musclepenn', 'muscleactivefrc', 'musclepassivefrc',
+        'muscleIa', 'muscleII', 'muscleIb',
         # Contacts
         'touch',
     ]
@@ -134,6 +139,7 @@ def get_sensor_maps(physics, verbose=True):
                     ['torques (position)', 'actuatorfrc_position'],
                     ['torques (velocity)', 'actuatorfrc_velocity'],
                     ['torques (torque)', 'actuatorfrc_torque'],
+                    ['limits', 'jointlimitfrc'],
                 ],
                 joints_data(physics, sensor_maps),
         ):
@@ -182,6 +188,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     # Names from data
     links_names = sensor_data.links.names
     joints_names = sensor_data.joints.names
+    muscles_names = sensor_data.muscles.names
 
     # Links from physics
     xpos_row = physics.named.data.xpos.axes.row
@@ -237,7 +244,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
 
     # Joints - sensors
     for identifier in [
-            'jointpos', 'jointvel',
+            'jointpos', 'jointvel', 'jointlimitfrc',
             'actuatorfrc_position',
             'actuatorfrc_velocity',
             'actuatorfrc_torque',
@@ -253,6 +260,71 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
             f'{identifier}_{joint_name}' in sensor_maps[identifier]['names']
             for joint_name in joints_names
         ) else []
+
+    # Muscles - sensors
+    for identifier in [
+            'tendonpos', 'tendonvel', 'musclefrc',
+            'musclefiberlen', 'musclefibervel', 'musclepenn',
+            'muscleactivefrc', 'musclepassivefrc',
+            'muscleIa', 'muscleII', 'muscleIb'
+    ]:
+        sensor_maps[f'{identifier}2data'] = np.array([
+            sensor_maps[identifier]['indices'][
+                sensor_maps[identifier]['names'].index(
+                    f'{identifier}_{muscle_name}'
+                )
+            ][0]
+            for muscle_name in muscles_names
+        ]) if all(
+            f'{identifier}_{muscle_name}' in sensor_maps[identifier]['names']
+            for muscle_name in muscles_names
+        ) else []
+    # Muscle sensors
+    sensor_maps['musclesensors2data'] = np.array([
+        [
+            row2index(
+                row=physics.named.data.act.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.data.actuator_length.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.data.actuator_velocity.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.data.actuator_force.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.model.actuator_gainprm.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
+                row=physics.named.model.actuator_user.axes.row,
+                name=f'{muscle_name}'
+            ),
+        ]
+        for muscle_name in muscles_names
+    ])
+
+    # Actuator - sensors
+    actuator_momentrow = physics.named.data.actuator_moment.axes.row
+    actuator_momentcol = physics.named.data.actuator_moment.axes.col
+    actuator_moment_numrows = len(actuator_momentrow.names)
+    actuator_moment_numcols = len(actuator_momentcol.names)
+    for identifier in ['actuator_moment',]:
+        sensor_maps[f'{identifier}2data'] = np.concatenate([
+            row2index(
+                actuator_momentrow, name=actuator_name
+            )*actuator_moment_numcols + row2index(
+                actuator_momentcol, name=joint_name
+            )
+            for actuator_name in actuator_momentrow.names
+            for joint_name in actuator_momentcol.names
+        ]).ravel()
 
     # Contacts
     contacts_pairs = sensor_data.contacts.names
@@ -289,6 +361,33 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         row2index(row=row, name=name, single=True)
         for name in sensor_data.links.names
     ])
+
+
+def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
+    """ Sensor data collection for muscles """
+    # tendon lengths
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_tendon_unit_length,
+    ] = physics.data.sensordata[sensor_maps['tendonpos2data']]/units.meters
+    # tendon velocities
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_tendon_unit_velocity,
+    ] = physics.data.sensordata[sensor_maps['tendonvel2data']]/units.velocity
+    data.sensors.muscles.array[
+        iteration, :,
+        sc.muscle_tendon_unit_force,
+    ] = physics.data.sensordata[sensor_maps['musclefrc2data']]/units.newtons
+    cymusclesensors2data(
+        physics=physics,
+        iteration=iteration,
+        data=data.sensors.muscles,
+        musclesensor2data=sensor_maps['musclesensors2data'],
+        meters=units.meters,
+        velocity=units.velocity,
+        newtons=units.newtons
+    )
 
 
 def physicslinkssensors2data(physics, iteration, data, sensor_maps, units):
@@ -351,12 +450,10 @@ def physicslinksvel2data(physics, iteration, data, sensor_maps, units):
 
 def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
-    data.sensors.joints.array[iteration, :, sc.joint_position] = (
-        physics.data.sensordata[sensor_maps['jointpos2data']]
-    )
-    data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
-        physics.data.sensordata[sensor_maps['jointvel2data']]
-    )/units.angular_velocity
+    # TODO: Check the units
+    data.sensors.joints.array[iteration, :, sc.joint_limit_force] = (
+        physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
+    )/units.torques
 
 
 def physicsjoints2data(physics, iteration, data, sensor_maps, units):
@@ -392,6 +489,7 @@ def physics2data(physics, iteration, data, maps, units, links_only=False):
     physicslinks2data(physics, iteration, data, sensor_maps, units)
     physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units)
     if not links_only:
+        physicsjointssensors2data(physics, iteration, data, sensor_maps, units)
         physicsjoints2data(physics, iteration, data, sensor_maps, units)
         physicsactuators2data(physics, iteration, data, sensor_maps, units)
         cycontacts2data(
@@ -402,3 +500,5 @@ def physics2data(physics, iteration, data, maps, units, links_only=False):
             meters=units.meters,
             newtons=units.newtons,
         )
+        if data.sensors.muscles.names:
+            physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
