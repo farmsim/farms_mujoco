@@ -3,7 +3,11 @@
 import numpy as np
 cimport numpy as np
 
-from farms_muscle import rigid_tendon as rt
+try:
+    from farms_muscle import rigid_tendon as rt
+except:
+    from libc import printf
+    printf("farms_muscle not installed")
 from mujoco import mj_contactForce
 
 from libc.math cimport sqrt, abs

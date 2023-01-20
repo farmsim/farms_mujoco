@@ -16,7 +16,11 @@ from farms_core.model.control import ControlType, AnimatController
 from farms_core.model.data import AnimatData
 from farms_core.units import SimulationUnitScaling as SimulationUnits
 
-from farms_muscle.rigid_tendon import mjcb_muscle_gain, mjcb_muscle_bias
+try:
+    from farms_muscle import rigid_tendon as rt_muscle
+except:
+    rt_muscle = None
+    pylog.warning("farms_muscle not installed!")
 
 from .physics import (
     get_sensor_maps,
@@ -153,8 +157,9 @@ class ExperimentTask(Task):
             callback.initialize_episode(task=self, physics=physics)
 
         # Mujoco callbacks for muscle
-        set_callback("mjcb_act_gain", mjcb_muscle_gain)
-        set_callback("mjcb_act_bias", mjcb_muscle_bias)
+        if rt_muscle:
+            set_callback("mjcb_act_gain", rt_muscle.mjcb_muscle_gain)
+            set_callback("mjcb_act_bias", rt_muscle.mjcb_muscle_bias)
 
     def update_sensors(self, physics: Physics, links_only=False):
         """Update sensors"""
