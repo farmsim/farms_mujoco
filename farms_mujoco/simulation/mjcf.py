@@ -1226,11 +1226,29 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.size.njmax = 2**12  # 4096
     mjcf_model.size.nconmax = 2**12  # 4096
     mjcf_model.option.timestep = timestep
+    mjcf_model.option.impratio = kwargs.pop(
+        'impratio',
+        simulation_options.impratio
+        if simulation_options is not None
+        else 1,
+    )
     mjcf_model.option.gravity = kwargs.pop(
         'gravity',
         [gravity*units.acceleration for gravity in simulation_options.gravity]
         if simulation_options is not None
         else [0, 0, -9.81]
+    )
+    mjcf_model.option.cone = kwargs.pop(
+        'cone',
+        simulation_options.cone
+        if simulation_options is not None
+        else 'pyramidal',
+    )
+    mjcf_model.option.solver = kwargs.pop(
+        'solver',
+        simulation_options.solver
+        if simulation_options is not None
+        else 'Newton',
     )
     mjcf_model.option.iterations = kwargs.pop(
         'solver_iterations',
@@ -1238,16 +1256,35 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         if simulation_options is not None
         else 1000,
     )
-    mjcf_model.option.solver = kwargs.pop('solver', 'Newton')  # PGS, CG
-    mjcf_model.option.integrator = kwargs.pop('integrator', 'Euler')  # RK4
-    mjcf_model.option.mpr_iterations = kwargs.pop('mpr_iterations', 100)  # 50
-    mjcf_model.option.noslip_iterations = kwargs.pop('npslip_iterations', 100)
-    mjcf_model.option.noslip_tolerance = kwargs.pop('npslip_tolerance', 1e-8)
-    mjcf_model.option.tolerance = kwargs.pop('tolerance', 1e-12)
-    mjcf_model.option.cone = (
-        simulation_options.pop('cone')
+    mjcf_model.option.integrator = kwargs.pop(
+        'integrator',
+        simulation_options.integrator
         if simulation_options is not None
-        else 'pyramidal'
+        else 'Euler',
+    )
+    mjcf_model.option.mpr_iterations = kwargs.pop(
+        'mpr_iterations',
+        simulation_options.mpr_iterations
+        if simulation_options is not None
+        else 1000,
+    )
+    mjcf_model.option.mpr_tolerance = kwargs.pop(
+        'mpr_tolerance',
+        simulation_options.mpr_tolerance
+        if simulation_options is not None
+        else 1e-6,
+    )
+    mjcf_model.option.noslip_iterations = kwargs.pop(
+        'noslip_iterations',
+        simulation_options.noslip_iterations
+        if simulation_options is not None
+        else 0
+    )
+    mjcf_model.option.noslip_tolerance = kwargs.pop(
+        'noslip_tolerance',
+        simulation_options.noslip_tolerance
+        if simulation_options is not None
+        else 1e-6,
     )
 
     # Animat options

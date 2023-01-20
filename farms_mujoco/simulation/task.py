@@ -55,6 +55,7 @@ class ExperimentTask(Task):
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
         self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         self.substeps = max(1, kwargs.pop('substeps', 1))
+        self.substeps_links = any(cb.substep for cb in self._callbacks)
         self.sim_iteration = 0
         self.sim_iterations = self.n_iterations*self.substeps
         self.sim_timestep = self.timestep/self.substeps
@@ -155,7 +156,7 @@ class ExperimentTask(Task):
         set_callback("mjcb_act_gain", mjcb_muscle_gain)
         set_callback("mjcb_act_bias", mjcb_muscle_bias)
 
-    def update_sensors(self, physics: Physics):
+    def update_sensors(self, physics: Physics, links_only=False):
         """Update sensors"""
         physics2data(
             physics=physics,
@@ -163,6 +164,7 @@ class ExperimentTask(Task):
             data=self.data,
             maps=self.maps,
             units=self.units,
+            links_only=links_only,
         )
 
     def before_step(self, action, physics: Physics):
@@ -171,18 +173,19 @@ class ExperimentTask(Task):
         # Checks
         assert self.iteration < self.n_iterations
 
-        if not self.sim_iteration % self.substeps:
+        # Sensors
+        full_step = not self.sim_iteration % self.substeps
+        if full_step or self.substeps_links:
+            self.update_sensors(physics=physics, links_only=not full_step)
 
-            # Sensors
-            self.update_sensors(physics=physics)
-
-            # Callbacks
-            for callback in self._callbacks:
+        # Callbacks
+        for callback in self._callbacks:
+            if full_step or callback.substep:
                 callback.before_step(task=self, action=action, physics=physics)
 
-            # Control
-            if self._controller is not None:
-                self.step_control(physics)
+        # Control
+        if full_step and self._controller is not None:
+            self.step_control(physics)
 
     def initialize_maps(self, physics: Physics):
         """Initialise data"""
@@ -410,6 +413,9 @@ class ExperimentTask(Task):
 
 class TaskCallback:
     """Task callback"""
+
+    def __init__(self, substep=False):
+        self.substep = substep
 
     def initialize_episode(self, task: ExperimentTask, physics: Physics):
         """Initialize episode"""

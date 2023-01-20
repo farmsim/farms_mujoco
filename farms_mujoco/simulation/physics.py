@@ -450,16 +450,10 @@ def physicslinksvel2data(physics, iteration, data, sensor_maps, units):
 
 def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
-    data.sensors.joints.array[iteration, :, sc.joint_position] = (
-        physics.data.sensordata[sensor_maps['jointpos2data']]
-    )
-    data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
-        physics.data.sensordata[sensor_maps['jointvel2data']]
-    )/units.angular_velocity
     # TODO: Check the units
     data.sensors.joints.array[iteration, :, sc.joint_limit_force] = (
         physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
-    )/units.newtons
+    )/units.torques
 
 
 def physicsjoints2data(physics, iteration, data, sensor_maps, units):
@@ -489,21 +483,22 @@ def physicsactuators2data(physics, iteration, data, sensor_maps, units):
         )*itorques
 
 
-def physics2data(physics, iteration, data, maps, units):
+def physics2data(physics, iteration, data, maps, units, links_only=False):
     """Sensors data collection"""
     sensor_maps = maps['sensors']
     physicslinks2data(physics, iteration, data, sensor_maps, units)
     physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units)
-    physicsjoints2data(physics, iteration, data, sensor_maps, units)
-    physicsjointssensors2data(physics, iteration, data, sensor_maps, units)
-    physicsactuators2data(physics, iteration, data, sensor_maps, units)
-    if data.sensors.muscles.names:
-        physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
-    cycontacts2data(
-        physics=physics,
-        iteration=iteration,
-        data=data.sensors.contacts,
-        geompair2data=sensor_maps['geompair2data'],
-        meters=units.meters,
-        newtons=units.newtons,
-    )
+    if not links_only:
+        physicsjointssensors2data(physics, iteration, data, sensor_maps, units)
+        physicsjoints2data(physics, iteration, data, sensor_maps, units)
+        physicsactuators2data(physics, iteration, data, sensor_maps, units)
+        cycontacts2data(
+            physics=physics,
+            iteration=iteration,
+            data=data.sensors.contacts,
+            geompair2data=sensor_maps['geompair2data'],
+            meters=units.meters,
+            newtons=units.newtons,
+        )
+        if data.sensors.muscles.names:
+            physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
