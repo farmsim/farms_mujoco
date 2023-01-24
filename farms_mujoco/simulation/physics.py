@@ -283,6 +283,10 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     sensor_maps['musclesensors2data'] = np.array([
         [
             row2index(
+                row=physics.named.data.ctrl.axes.row,
+                name=f'{muscle_name}'
+            ),
+            row2index(
                 row=physics.named.data.act.axes.row,
                 name=f'{muscle_name}'
             ),

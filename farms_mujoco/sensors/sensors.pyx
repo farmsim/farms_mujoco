@@ -207,7 +207,7 @@ cpdef cymusclesensors2data(
     cdef object data_ptr = physics.data.ptr
     cdef unsigned int n_muscles = len(data.names)
     cdef unsigned int mindex
-    cdef int[6] objids
+    cdef int[7] objids
     for mindex in range(n_muscles):
         objids = musclesensor2data[mindex]
         cymusclesensor2data(
@@ -226,7 +226,7 @@ cpdef cymusclesensors2data(
 cdef void cymusclesensor2data(
     unsigned int iteration,
     unsigned int index,
-    int [6] objids,
+    int [7] objids,
     object model_ptr,
     object data_ptr,
     DTYPEv3 cdata,
@@ -245,12 +245,13 @@ cdef void cymusclesensor2data(
     cdef double l_opt, l_slack, v_max, f_max, alpha_opt
     # muscle states
     cdef double alpha, l_ce, v_ce
-    cdef double act = data_ptr.act[objids[0]]
-    cdef double l_mtu = data_ptr.actuator_length[objids[1]]*imeters
-    cdef double v_mtu = data_ptr.actuator_velocity[objids[2]]*ivelocity
-    cdef double force = data_ptr.actuator_force[objids[3]]*inewtons
+    cdef double excitation = data_ptr.ctrl[objids[0]]
+    cdef double act = data_ptr.act[objids[1]]
+    cdef double l_mtu = data_ptr.actuator_length[objids[2]]*imeters
+    cdef double v_mtu = data_ptr.actuator_velocity[objids[3]]*ivelocity
+    cdef double force = data_ptr.actuator_force[objids[4]]*inewtons
     # muscle params
-    cdef double[:] gainprm = model_ptr.actuator_gainprm[objids[4]]
+    cdef double[:] gainprm = model_ptr.actuator_gainprm[objids[5]]
     f_max = gainprm[0]*inewtons
     l_opt = gainprm[1]*imeters
     l_slack = gainprm[2]*imeters
@@ -260,6 +261,7 @@ cdef void cymusclesensor2data(
     alpha = rt.c_pennation_angle(l_mtu, l_opt, l_slack, alpha_opt)
     l_ce = rt.c_fiber_length(l_mtu, l_slack, alpha)/l_opt
     v_ce = rt.c_fiber_velocity(v_mtu, alpha)/v_max
+    cdata[iteration, index, MUSCLE_EXCITATION] = excitation
     cdata[iteration, index, MUSCLE_ACTIVATION] = act
     cdata[iteration, index, MUSCLE_PENNATION_ANGLE] = alpha
     cdata[iteration, index, MUSCLE_FIBER_LENGTH] = l_ce
@@ -274,18 +276,18 @@ cdef void cymusclesensor2data(
     # muscle spindles and golgi tendon feedbacks
     # IA
     Ia_kv , Ia_pv , Ia_k_dI , Ia_k_nI , Ia_const_I = (
-        model_ptr.actuator_user[objids[5]][:5]
+        model_ptr.actuator_user[objids[6]][:5]
     )
     cdata[iteration, index, MUSCLE_IA_FEEDBACK] = (
         Ia_kv*abs(v_ce)**Ia_pv + Ia_k_dI*l_ce + Ia_k_nI*act + Ia_const_I
     )
     # II
     II_k_dII, II_k_nII, II_const_II = (
-        model_ptr.actuator_user[objids[5]][5:8]
+        model_ptr.actuator_user[objids[6]][5:8]
     )
     cdata[iteration, index, MUSCLE_II_FEEDBACK] = (
         II_k_dII*l_ce + II_k_nII*act + II_const_II
     )
     # IB
-    Ib_kF = model_ptr.actuator_user[objids[5]][8]
+    Ib_kF = model_ptr.actuator_user[objids[6]][8]
     cdata[iteration, index, MUSCLE_IB_FEEDBACK] = Ib_kF*-force/f_max
