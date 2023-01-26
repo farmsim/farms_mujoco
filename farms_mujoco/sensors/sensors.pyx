@@ -6,8 +6,7 @@ cimport numpy as np
 try:
     from farms_muscle import rigid_tendon as rt
 except:
-    from libc import printf
-    printf("farms_muscle not installed")
+    print("farms_muscle not installed")
 from mujoco import mj_contactForce
 
 from libc.math cimport sqrt, abs
