@@ -613,6 +613,7 @@ def sdf2mjcf(
     use_sensors = kwargs.pop('use_sensors', False)
     use_link_sensors = kwargs.pop('use_link_sensors', True)
     use_link_vel_sensors = kwargs.pop('use_link_vel_sensors', True)
+    use_link_frc_sensors = kwargs.pop('use_link_frc_sensors', False)
     use_joint_sensors = kwargs.pop('use_joint_sensors', True)
     use_actuator_sensors = kwargs.pop('use_actuator_sensors', True)
     use_actuators = kwargs.pop('use_actuators', False)
@@ -622,6 +623,8 @@ def sdf2mjcf(
         True if use_muscles else False
     )
     solref = kwargs.get('solref', None)
+    if use_link_frc_sensors:
+        assert use_site, 'Need to enable option use_site to use link force sensors'
 
     # Position
     act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
@@ -873,6 +876,16 @@ def sdf2mjcf(
                         objname=link_name,
                         objtype='body',
                     )
+
+        if use_link_frc_sensors and use_site:
+            for site_name, site in mjcf_map['sites'].items():
+                for link_sensor in ('force', 'torque'):
+                    mjcf_model.sensor.add(
+                        link_sensor,
+                        name=f'{link_sensor}_{site_name}',
+                        site=site
+                    )
+
         if use_joint_sensors:
             for joint_name in mjcf_map['joints']:
                 for joint_sensor in ('jointpos', 'jointvel', 'jointlimitfrc'):
