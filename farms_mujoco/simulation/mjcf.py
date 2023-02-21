@@ -211,10 +211,10 @@ def mjc_add_link(
             'site',
             type='box',
             name=f'site_{link_name}',
-            group=1,
+            group=4,
             pos=[0, 0, 0],
             quat=[1, 0, 0, 0],
-            size=[1e-2*units.meters]*3,
+            size=[1e-3*units.meters]*3,
         )
         mjcf_map['sites'][site.name] = site
 
