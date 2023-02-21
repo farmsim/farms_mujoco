@@ -211,10 +211,10 @@ def mjc_add_link(
             'site',
             type='box',
             name=f'site_{link_name}',
-            group=1,
+            group=4,
             pos=[0, 0, 0],
             quat=[1, 0, 0, 0],
-            size=[1e-2*units.meters]*3,
+            size=[1e-3*units.meters]*3,
         )
         mjcf_map['sites'][site.name] = site
 
@@ -614,6 +614,7 @@ def sdf2mjcf(
     use_link_sensors = kwargs.pop('use_link_sensors', True)
     use_link_vel_sensors = kwargs.pop('use_link_vel_sensors', True)
     use_joint_sensors = kwargs.pop('use_joint_sensors', True)
+    use_frc_trq_sensors = kwargs.pop('use_frc_trq_sensors', False)
     use_actuator_sensors = kwargs.pop('use_actuator_sensors', True)
     use_actuators = kwargs.pop('use_actuators', False)
     use_muscles = kwargs.pop('use_muscles', False)
@@ -621,6 +622,8 @@ def sdf2mjcf(
         'use_muscle_sensors',
         True if use_muscles else False
     )
+    if use_frc_trq_sensors:
+        assert use_site, "Enable use_site option to use force-torque sensors"
     solref = kwargs.get('solref', None)
 
     # Position
@@ -873,6 +876,7 @@ def sdf2mjcf(
                         objname=link_name,
                         objtype='body',
                     )
+
         if use_joint_sensors:
             for joint_name in mjcf_map['joints']:
                 for joint_sensor in ('jointpos', 'jointvel', 'jointlimitfrc'):
@@ -880,6 +884,15 @@ def sdf2mjcf(
                         joint_sensor,
                         name=f'{joint_sensor}_{joint_name}',
                         joint=joint_name,
+                    )
+
+        if use_frc_trq_sensors:
+            for joint_name, joint in mjcf_map['joints'].items():
+                for joint_sensor in ('force', 'torque'):
+                    mjcf_model.sensor.add(
+                        joint_sensor,
+                        name=f'{joint_sensor}_{joint_name}',
+                        site=joint.parent.site[0]
                     )
 
         if use_actuator_sensors:
