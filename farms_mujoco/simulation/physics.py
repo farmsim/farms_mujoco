@@ -72,6 +72,7 @@ def get_sensor_maps(physics, verbose=True):
         'framepos', 'framequat', 'framelinvel', 'frameangvel',
         # Joints
         'jointpos', 'jointvel', 'jointlimitfrc',
+        'force', 'torque',
         # Joints control
         'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque',
         # Muscles
@@ -140,6 +141,8 @@ def get_sensor_maps(physics, verbose=True):
                     ['torques (velocity)', 'actuatorfrc_velocity'],
                     ['torques (torque)', 'actuatorfrc_torque'],
                     ['limits', 'jointlimitfrc'],
+                    ['forces (total)', 'force'],
+                    ['torques (total)', 'torque'],
                 ],
                 joints_data(physics, sensor_maps),
         ):
@@ -260,6 +263,16 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
             f'{identifier}_{joint_name}' in sensor_maps[identifier]['names']
             for joint_name in joints_names
         ) else []
+    forces_row = physics.named.data.sensordata.axes.row
+    sensor_maps['force2data'] = np.array([
+        row2index(row=forces_row, name=f'force_{joint_name}')
+        for joint_name in joints_names
+    ])
+    torques_row = physics.named.data.sensordata.axes.row
+    sensor_maps['torque2data'] = np.array([
+        row2index(row=torques_row, name=f'torque_{joint_name}')
+        for joint_name in joints_names
+    ])
 
     # Muscles - sensors
     for identifier in [
@@ -457,6 +470,14 @@ def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
     # TODO: Check the units
     data.sensors.joints.array[iteration, :, sc.joint_limit_force] = (
         physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
+    )/units.torques
+    # Total forces
+    data.sensors.joints.array[iteration, :, sc.joint_force_x:sc.joint_force_z+1] = (
+        physics.data.sensordata[sensor_maps['force2data']]
+    )/units.newtons
+    # Total torques
+    data.sensors.joints.array[iteration, :, sc.joint_torque_x:sc.joint_torque_z+1] = (
+        physics.data.sensordata[sensor_maps['torque2data']]
     )/units.torques
 
 
