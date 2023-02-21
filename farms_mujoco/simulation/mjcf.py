@@ -613,8 +613,8 @@ def sdf2mjcf(
     use_sensors = kwargs.pop('use_sensors', False)
     use_link_sensors = kwargs.pop('use_link_sensors', True)
     use_link_vel_sensors = kwargs.pop('use_link_vel_sensors', True)
-    use_link_frc_sensors = kwargs.pop('use_link_frc_sensors', False)
     use_joint_sensors = kwargs.pop('use_joint_sensors', True)
+    use_frc_trq_sensors = kwargs.pop('use_frc_trq_sensors', False)
     use_actuator_sensors = kwargs.pop('use_actuator_sensors', True)
     use_actuators = kwargs.pop('use_actuators', False)
     use_muscles = kwargs.pop('use_muscles', False)
@@ -622,9 +622,9 @@ def sdf2mjcf(
         'use_muscle_sensors',
         True if use_muscles else False
     )
+    if use_frc_trq_sensors:
+        assert use_site, "Enable use_site option to use force-torque sensors"
     solref = kwargs.get('solref', None)
-    if use_link_frc_sensors:
-        assert use_site, 'Need to enable option use_site to use link force sensors'
 
     # Position
     act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
@@ -877,15 +877,6 @@ def sdf2mjcf(
                         objtype='body',
                     )
 
-        if use_link_frc_sensors and use_site:
-            for site_name, site in mjcf_map['sites'].items():
-                for link_sensor in ('force', 'torque'):
-                    mjcf_model.sensor.add(
-                        link_sensor,
-                        name=f'{link_sensor}_{site_name}',
-                        site=site
-                    )
-
         if use_joint_sensors:
             for joint_name in mjcf_map['joints']:
                 for joint_sensor in ('jointpos', 'jointvel', 'jointlimitfrc'):
@@ -893,6 +884,15 @@ def sdf2mjcf(
                         joint_sensor,
                         name=f'{joint_sensor}_{joint_name}',
                         joint=joint_name,
+                    )
+
+        if use_frc_trq_sensors:
+            for joint_name, joint in mjcf_map['joints'].items():
+                for joint_sensor in ('force', 'torque'):
+                    mjcf_model.sensor.add(
+                        joint_sensor,
+                        name=f'{joint_sensor}_{joint_name}',
+                        site=joint.parent.site[0]
                     )
 
         if use_actuator_sensors:
