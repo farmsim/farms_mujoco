@@ -9,7 +9,7 @@ except:
     print("farms_muscle not installed")
 from mujoco import mj_contactForce
 
-from libc.math cimport abs, max, sqrt
+from libc.math cimport abs, fmax, sqrt
 
 
 cdef inline double norm3d(double[3] vector) nogil:
@@ -235,9 +235,9 @@ cdef void cymusclesensor2data(
 ):
     # Declarations
     # type Ia feedback constants
-    cdef double Ia_kv, Ia_pv, Ia_k_dI, Ia_k_nI, Ia_const_I,
+    cdef double Ia_kv, Ia_pv, Ia_k_dI, Ia_k_nI, Ia_const_I, type_I_l_ce_th
     # type II feedback constants
-    cdef double II_k_dII, II_k_nII, II_const_II
+    cdef double II_k_dII, II_k_nII, II_const_II, type_II_l_ce_th
     # type Ib feedback constants
     cdef double Ib_kF
     # l_opt and v_max
@@ -274,21 +274,21 @@ cdef void cymusclesensor2data(
     )
     # muscle spindles and golgi tendon feedbacks
     # IA
-    Ia_kv , Ia_pv , Ia_k_dI , Ia_k_nI , Ia_const_I = (
-        model_ptr.actuator_user[objids[6]][:5]
+    Ia_kv , Ia_pv , Ia_k_dI , Ia_k_nI , Ia_const_I, type_I_l_ce_th = (
+        model_ptr.actuator_user[objids[6]][:6]
     )
-    cdata[iteration, index, MUSCLE_IA_FEEDBACK] = max(
-        0.0, Ia_kv*abs(v_ce)**Ia_pv + Ia_k_dI*l_ce + Ia_k_nI*act + Ia_const_I
+    cdata[iteration, index, MUSCLE_IA_FEEDBACK] = fmax(
+        0.0, Ia_kv*abs(v_ce)**Ia_pv + Ia_k_dI*(l_ce - type_I_l_ce_th) + Ia_k_nI*act
     )
     # II
-    II_k_dII, II_k_nII, II_const_II = (
-        model_ptr.actuator_user[objids[6]][5:8]
+    II_k_dII, II_k_nII, II_const_II, type_II_l_ce_th = (
+        model_ptr.actuator_user[objids[6]][6:10]
     )
-    cdata[iteration, index, MUSCLE_II_FEEDBACK] = max(
-        0.0, II_k_dII*l_ce + II_k_nII*act + II_const_II
+    cdata[iteration, index, MUSCLE_II_FEEDBACK] = fmax(
+        0.0, II_k_dII*(l_ce - type_II_l_ce_th) + II_k_nII*act
     )
     # IB
-    Ib_kF = model_ptr.actuator_user[objids[6]][8]
+    Ib_kF = model_ptr.actuator_user[objids[6]][10]
     # negative sign here is because muscles produces pulling force. Which is modeled to
     # be negative in the convention
     cdata[iteration, index, MUSCLE_IB_FEEDBACK] = max(

@@ -821,10 +821,12 @@ def sdf2mjcf(
                         muscle['type_I_k_dI'],
                         muscle['type_I_k_nI'],
                         muscle['type_I_const_I'],
+                        muscle['type_I_l_ce_th'],
                         # Type II
                         muscle['type_II_k_dII'],
                         muscle['type_II_k_nII'],
                         muscle['type_II_const_II'],
+                        muscle['type_II_l_ce_th'],
                         # Type Ib
                         muscle['type_Ib_kF'],
                     ],
