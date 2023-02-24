@@ -9,7 +9,7 @@ except:
     print("farms_muscle not installed")
 from mujoco import mj_contactForce
 
-from libc.math cimport sqrt, abs
+from libc.math cimport abs, max, sqrt
 
 
 cdef inline double norm3d(double[3] vector) nogil:
@@ -277,16 +277,20 @@ cdef void cymusclesensor2data(
     Ia_kv , Ia_pv , Ia_k_dI , Ia_k_nI , Ia_const_I = (
         model_ptr.actuator_user[objids[6]][:5]
     )
-    cdata[iteration, index, MUSCLE_IA_FEEDBACK] = (
-        Ia_kv*abs(v_ce)**Ia_pv + Ia_k_dI*l_ce + Ia_k_nI*act + Ia_const_I
+    cdata[iteration, index, MUSCLE_IA_FEEDBACK] = max(
+        0.0, Ia_kv*abs(v_ce)**Ia_pv + Ia_k_dI*l_ce + Ia_k_nI*act + Ia_const_I
     )
     # II
     II_k_dII, II_k_nII, II_const_II = (
         model_ptr.actuator_user[objids[6]][5:8]
     )
-    cdata[iteration, index, MUSCLE_II_FEEDBACK] = (
-        II_k_dII*l_ce + II_k_nII*act + II_const_II
+    cdata[iteration, index, MUSCLE_II_FEEDBACK] = max(
+        0.0, II_k_dII*l_ce + II_k_nII*act + II_const_II
     )
     # IB
     Ib_kF = model_ptr.actuator_user[objids[6]][8]
-    cdata[iteration, index, MUSCLE_IB_FEEDBACK] = Ib_kF*-force/f_max
+    # negative sign here is because muscles produces pulling force. Which is modeled to
+    # be negative in the convention
+    cdata[iteration, index, MUSCLE_IB_FEEDBACK] = max(
+        0.0, Ib_kF*-force/f_max
+    )
