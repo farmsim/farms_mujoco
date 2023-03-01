@@ -277,8 +277,9 @@ cdef void cymusclesensor2data(
     Ia_kv , Ia_pv , Ia_k_dI , Ia_k_nI , Ia_const_I, type_I_l_ce_th = (
         model_ptr.actuator_user[objids[6]][:6]
     )
+    cdef double v_ce_sign = 1.0 if v_ce >= 0.0 else -1.0
     cdata[iteration, index, MUSCLE_IA_FEEDBACK] = fmax(
-        0.0, Ia_kv*abs(v_ce)**Ia_pv + Ia_k_dI*(l_ce - type_I_l_ce_th) + Ia_k_nI*act
+        0.0, Ia_kv*v_ce_sign*abs(v_ce*v_max)**Ia_pv + Ia_k_dI*(l_ce - type_I_l_ce_th) + Ia_k_nI*act
     )
     # II
     II_k_dII, II_k_nII, II_const_II, type_II_l_ce_th = (
