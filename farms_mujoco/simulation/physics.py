@@ -276,7 +276,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
 
     # Muscles - sensors
     for identifier in [
-            'tendonpos', 'tendonvel', 'musclefrc',
+            'musclefrc',
             'musclefiberlen', 'musclefibervel', 'musclepenn',
             'muscleactivefrc', 'musclepassivefrc',
             'muscleIa', 'muscleII', 'muscleIb'
@@ -292,6 +292,17 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
             f'{identifier}_{muscle_name}' in sensor_maps[identifier]['names']
             for muscle_name in muscles_names
         ) else []
+
+    tendonlen_row = physics.named.data.ten_length.axes.row
+    sensor_maps['tendonpos2data'] = np.array([
+        row2index(row=tendonlen_row, name=f'{muscle_name}')
+        for muscle_name in muscles_names
+    ])
+    tendonvel_row = physics.named.data.ten_velocity.axes.row
+    sensor_maps['tendonvel2data'] = np.array([
+        row2index(row=tendonvel_row, name=f'{muscle_name}')
+        for muscle_name in muscles_names
+    ])
     # Muscle sensors
     sensor_maps['musclesensors2data'] = np.array([
         [
@@ -386,12 +397,12 @@ def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
     data.sensors.muscles.array[
         iteration, :,
         sc.muscle_tendon_unit_length,
-    ] = physics.data.sensordata[sensor_maps['tendonpos2data']]/units.meters
+    ] = physics.data.ten_length[sensor_maps['tendonpos2data']]/units.meters
     # tendon velocities
     data.sensors.muscles.array[
         iteration, :,
         sc.muscle_tendon_unit_velocity,
-    ] = physics.data.sensordata[sensor_maps['tendonvel2data']]/units.velocity
+    ] = physics.data.ten_velocity[sensor_maps['tendonvel2data']]/units.velocity
     data.sensors.muscles.array[
         iteration, :,
         sc.muscle_tendon_unit_force,
