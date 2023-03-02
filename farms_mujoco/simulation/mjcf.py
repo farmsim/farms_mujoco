@@ -906,17 +906,6 @@ def sdf2mjcf(
                     actuator=actuator_name,
                 )
         if use_muscle_sensors:
-            for tendon_name, tendon in mjcf_map['tendons'].items():
-                mjcf_model.sensor.add(
-                    'tendonpos',
-                    name=f'tendonpos_{tendon.name}',
-                    tendon=tendon_name
-                )
-                mjcf_model.sensor.add(
-                    'tendonvel',
-                    name=f'tendonvel_{tendon.name}',
-                    tendon=tendon_name
-                )
             for muscle_name, muscle in mjcf_map['muscles'].items():
                 mjcf_model.sensor.add(
                     'actuatorfrc',
