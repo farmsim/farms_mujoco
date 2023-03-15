@@ -459,7 +459,7 @@ def mjc_add_link(
                         0.5*element.geometry.size[0]*units.meters,
                         0.5*element.geometry.size[1]*units.meters,
                         0.5*element.geometry.size[2]*units.meters,
-                        0.5*element.geometry.size[2]*units.meters,
+                        element.geometry.size[2]*units.meters,
                     )
                 )
             }
