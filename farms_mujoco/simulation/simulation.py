@@ -51,11 +51,13 @@ class Simulation:
         # pylint: disable=protected-access
         viewer.util._MIN_TIME_MULTIPLIER = 2**-10
         viewer.util._MAX_TIME_MULTIPLIER = 2**10
-        os.environ['MUJOCO_GL'] = (
-            'egl'
-            if self.options.headless
-            else 'glfw'  # 'osmesa'
-        )
+        if 'MUJOCO_GL' not in os.environ:
+            os.environ['MUJOCO_GL'] = (
+                'egl'
+                if self.options.headless
+                else 'glfw'  # 'osmesa'
+            )
+        pylog.debug(f'Using env variable : MUJOCO_GL={os.environ["MUJOCO_GL"]}')
         warnings.filterwarnings('ignore', category=DeprecationWarning)
 
         # Simulation
