@@ -31,7 +31,7 @@ class CameraCallback(TaskCallback):
         self.motion_filter = kwargs.pop('motion_filter', 10*timestep)
         self.width = kwargs.pop('width', 640)
         self.height = kwargs.pop('height', 480)
-        self.skips = kwargs.pop('skips', max(0, int(1//(timestep*fps))-1))
+        self.skips = kwargs.pop('skips', max(0, int(speed//(timestep*fps))-1))
         self.fps = 1/(self.timestep*(self.skips+1))
         self.sample = 0
         self.data = np.zeros(
