@@ -695,6 +695,27 @@ def sdf2mjcf(
             **kwargs
         )
 
+    # Keyframes
+    if animat_options is not None:
+        joint_options = animat_options.morphology.joints
+        joint_name_index = {
+            joint.name: index
+            for index, joint in enumerate(mjcf_model.find_all('joint'))
+        }
+        # update qpos and qvel
+        qpos = [0.0]*len(joint_name_index)
+        qvel = [0.0]*len(joint_name_index)
+        for joint in joint_options:
+            index = joint_name_index[joint.name]
+            qpos[index], qvel[index] = str(joint.initial[0]), str(joint.initial[1])
+        mjcf_model.keyframe.add(
+            "key",
+            name="initial",
+            time=0.0,
+            qpos=" ".join(qpos),
+            qvel=" ".join(qvel)
+        )
+
     # Actuators
     if use_actuators:
         joints_names = (
@@ -768,7 +789,6 @@ def sdf2mjcf(
                     mjcf_map['actuators'][name].forcelimited = True
                     mjcf_map['actuators'][name].forcerange = torque_limits
         assert mjcf_map['actuators'], mjcf_map['actuators']
-
         # Muscles
         if use_muscles:
             # Add sites from muscle config file
@@ -1228,6 +1248,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     )
 
     # Simulation options
+    mjcf_model.size.nkey = 1
     mjcf_model.size.njmax = 2**12  # 4096
     mjcf_model.size.nconmax = 2**12  # 4096
     mjcf_model.option.timestep = timestep

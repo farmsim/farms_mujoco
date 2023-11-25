@@ -135,14 +135,8 @@ class ExperimentTask(Task):
         # Intitialize base link
         physics.data.qvel[:6] = self.animat_options.spawn.velocity
 
-        # Initialize joints
-        for joint in self.animat_options.morphology.joints:
-            assert joint.name in self.maps['qpos']['names']
-            index = self.maps['qpos']['names'].index(joint.name) + (
-                0 if self.animat_options.mujoco.get('fixed_base', False) else 6
-            )
-            physics.data.qpos[index] = joint.initial[0]
-            physics.data.qvel[index-1] = joint.initial[1]
+        # Initialize joints to keyframe 0
+        physics.reset(keyframe_id=0)
 
         if self._app is not None:
             cam = self._app._viewer.camera  # pylint: disable=protected-access
