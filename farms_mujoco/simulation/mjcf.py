@@ -703,8 +703,8 @@ def sdf2mjcf(
             for index, joint in enumerate(mjcf_model.find_all('joint'))
         }
         # update qpos and qvel
-        qpos = [0.0]*len(joint_name_index)
-        qvel = [0.0]*len(joint_name_index)
+        qpos = ['0.0']*len(joint_name_index)
+        qvel = ['0.0']*len(joint_name_index)
         for joint in joint_options:
             index = joint_name_index[joint.name]
             qpos[index], qvel[index] = str(joint.initial[0]), str(joint.initial[1])
