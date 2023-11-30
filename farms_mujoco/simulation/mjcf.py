@@ -702,12 +702,24 @@ def sdf2mjcf(
             joint.name: index
             for index, joint in enumerate(mjcf_model.find_all('joint'))
         }
+        # Check if base is fixed
+        if not animat_options.mujoco.get('fixed_base', False):
+            base_nq = 6
+            base_nv = 5
+        else:
+            base_nq = 0
+            base_nv = 0
         # update qpos and qvel
-        qpos = ['0.0']*len(joint_name_index)
-        qvel = ['0.0']*len(joint_name_index)
+        qpos = ['0.0']*(len(joint_name_index) + base_nq)
+        qvel = ['0.0']*(len(joint_name_index) + base_nv)
         for joint in joint_options:
             index = joint_name_index[joint.name]
-            qpos[index], qvel[index] = str(joint.initial[0]), str(joint.initial[1])
+            qpos[index+base_nq], qvel[index+base_nv] = (
+                str(joint.initial[0]), str(joint.initial[1])
+            )
+        if not animat_options.mujoco.get('fixed_base', False):
+            qpos[:base_nq] = animat_options.spawn.position
+            qpos[:base_nv] = animat_options.spawn.velocity[:base_nv]
         mjcf_model.keyframe.add(
             "key",
             name="initial",
