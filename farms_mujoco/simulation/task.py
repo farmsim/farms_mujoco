@@ -133,9 +133,6 @@ class ExperimentTask(Task):
             self.initialize_control(physics)
 
         # Intitialize base link
-        if not self.animat_options.mujoco.get('fixed_base', False):
-            physics.data.qvel[:6] = self.animat_options.spawn.velocity
-
         # Initialize joints to keyframe 0
         physics.reset(keyframe_id=0)
 
