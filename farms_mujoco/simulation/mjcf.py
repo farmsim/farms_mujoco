@@ -1182,9 +1182,6 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         simulation_options=simulation_options,
         **mujoco_kwargs,
     )
-    base_link = mjcf_model.worldbody.body[-1]
-    base_link.pos = animat_options.spawn.pose[:3]
-    base_link.quat = euler2mjcquat(animat_options.spawn.pose[3:])
 
     # Compiler
     mjcf_model.compiler.angle = 'radian'
@@ -1334,6 +1331,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
 
         # Spawn
         animat_spawn = animat_options.spawn
+        base_link = mjcf_model.find(namespace='body', identifier=sdf_animat.name)
         base_link.pos = [pos*units.meters for pos in animat_spawn.pose[:3]]
         base_link.quat = euler2mjcquat(animat_spawn.pose[3:])
 
