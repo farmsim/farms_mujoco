@@ -68,7 +68,7 @@ setup(
             'cdivision': True,
             'language_level': 3,
             'infer_types': True,
-            'profile': True,
+            'profile': False,
             'wraparound': False,
             'boundscheck': DEBUG,
             'nonecheck': DEBUG,
