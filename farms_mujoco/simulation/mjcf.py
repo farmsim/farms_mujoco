@@ -1306,7 +1306,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.visual.scale.framewidth = 0.01*scale
     mjcf_model.visual.scale.constraint = 0.01*scale
     mjcf_model.visual.scale.slidercrank = 0.01*scale
-    mjcf_model.visual.quality.shadowsize = 1024*32  # 32*1024 ################# Changed from 1024
+    mjcf_model.visual.quality.shadowsize = simulation_options.shadow_size  # 1024*32 # Changed from 1024
     mjcf_model.visual.quality.offsamples = 4
     mjcf_model.visual.quality.numslices = 28
     mjcf_model.visual.quality.numstacks = 16
