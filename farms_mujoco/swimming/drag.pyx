@@ -140,7 +140,7 @@ cdef void compute_buoyancy(
         tmp[0] = 0
         tmp[1] = 0
         tmp[2] = -1000*mass*gravity/density*min(
-            ( surface + height - position ) / height,
+            ( surface + height - position ) / (2 * height),
             1,
         )
         quat_rot(tmp, global2urdf, quat_c, tmp4, buoyancy)
