@@ -136,11 +136,11 @@ cdef void compute_buoyancy(
     :param tmp: Temporary quaternion
 
     """
-    if mass > 0 and position < surface:
+    if mass > 0 and position - height < surface:
         tmp[0] = 0
         tmp[1] = 0
         tmp[2] = -1000*mass*gravity/density*min(
-            max(surface-position, 0)/height,
+            ( surface + height - position ) / height,
             1,
         )
         quat_rot(tmp, global2urdf, quat_c, tmp4, buoyancy)
@@ -190,7 +190,7 @@ cpdef bint drag_forces(
     cdef double pos_y = data_links.array[iteration, links_index, 1]
     cdef double pos_z = data_links.array[iteration, links_index, 2]
     cdef double surface = water.surface(pos_x, pos_y)
-    if pos_z > surface:
+    if pos_z - height > surface:
         return 0
     cdef DTYPEv1 force=z3[0], torque=z3[1], buoyancy=z3[2], tmp=z3[3]
     cdef DTYPEv1 link_lin_velocity=z3[4], link_ang_velocity=z3[5]
