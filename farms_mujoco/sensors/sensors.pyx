@@ -12,7 +12,7 @@ from mujoco import mj_contactForce
 from libc.math cimport abs, fmax, sqrt
 
 
-cdef inline double norm3d(double[3] vector) nogil:
+cdef inline double norm3d(double[3] vector):
     """Compute 3D norm"""
     return sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2])
 
@@ -25,7 +25,7 @@ cdef double store_forces(
     double[9] frame,
     double[3] pos,
     int sign,
-) nogil:
+):
     """Store forces"""
     cdef unsigned int i
     cdef double norm
@@ -80,7 +80,7 @@ cdef void normalize_forces_pos(
     unsigned int index,
     DTYPEv3 cdata,
     DTYPEv1 norm_sum,
-) nogil:
+):
     """Normalize forces position"""
     if norm_sum[index] > 0:
         cdata[iteration, index, CONTACT_POSITION_X] /= norm_sum[index]
@@ -94,7 +94,7 @@ cdef inline void scale_forces(
     DTYPEv3 cdata,
     double imeters,
     double inewtons,
-) nogil:
+):
     """Scale forces"""
     cdata[iteration, index, CONTACT_REACTION_X] *= inewtons
     cdata[iteration, index, CONTACT_REACTION_Y] *= inewtons
@@ -117,7 +117,7 @@ cdef void postprocess_contacts(
     DTYPEv1 norm_sum,
     double meters,
     double newtons,
-) nogil:
+):
     cdef unsigned int index
     cdef double imeters = 1./meters
     cdef double inewtons = 1./newtons
