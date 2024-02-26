@@ -30,8 +30,8 @@ from farms_core.io.sdf import (
 )
 
 
-MIN_MASS = 1e-6
-MIN_INERTIA = 1e-12
+MIN_MASS = 0.0 #1e-6
+MIN_INERTIA = 0.0 #1e-12
 
 
 def quat2mjcquat(quat: NDARRAY_6) -> NDARRAY_4:
