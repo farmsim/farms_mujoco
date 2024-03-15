@@ -718,12 +718,22 @@ def sdf2mjcf(
                 str(joint.initial[0]), str(joint.initial[1])
             )
         if not animat_options.mujoco.get('fixed_base', False):
-            qpos[:3] = list(
-                map(lambda pos: str(pos*units.meters), animat_options.spawn.pose[:3])
-            )
+            # Position
+            qpos[:3] = [
+                str(pos*units.meters)
+                for pos in animat_options.spawn.pose[:3]
+            ]
+            # Orientation
             pose_quat = euler2mjcquat(animat_options.spawn.pose[3:])
             qpos[3:base_nq+1] = list(map(str, pose_quat))
-            qvel[:base_nv] = list(map(str, animat_options.spawn.velocity[:base_nv]))
+            qvel[:6] = [  # Velocity
+                str(vel*units.velocity)
+                for vel in animat_options.spawn.velocity[0:3]
+            ] + [  # Angular velocity
+                str(ang_vel*units.angular_velocity)
+                for ang_vel in animat_options.spawn.velocity[3:6]
+            ]
+
         mjcf_model.keyframe.add(
             "key",
             name="initial",

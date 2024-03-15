@@ -132,7 +132,6 @@ class ExperimentTask(Task):
         if self._controller is not None:
             self.initialize_control(physics)
 
-        # Intitialize base link
         # Initialize joints to keyframe 0
         physics.reset(keyframe_id=0)
 
