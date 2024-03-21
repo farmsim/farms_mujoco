@@ -7,6 +7,7 @@ from typing import Dict
 
 import numpy as np
 import trimesh as tri
+import pywavefront as pwf
 from imageio import imread
 from scipy.spatial.transform import Rotation
 
@@ -147,6 +148,9 @@ def mjc_add_link(
     friction = kwargs.pop('friction', [0, 0, 0])
     use_site = kwargs.pop('use_site', False)
     units = kwargs.pop('units', SimulationUnitScaling())
+    obj_use_composite = kwargs.pop('obj_use_composite', True)
+    # NOTE: obj_use_composite seems to be needed for Wavefront meshes which are
+    # not watertight or have disconnected parts.
     assert not kwargs, kwargs
 
     # Links (bodies)
@@ -268,9 +272,17 @@ def mjc_add_link(
 
             # Convert to STL if mesh in other format
             path, extension = os.path.splitext(mesh_path)
-            if extension != '.stl':
-                stl_path = f'{path}.stl'
-                if overwrite or not os.path.isfile(stl_path):
+            if (
+                    extension not in ('.stl', '.obj')
+                    or obj_use_composite and extension == '.obj'
+            ):
+                if extension in ('.obj',):
+                    extension = '.obj'
+                    new_path = f'{path}_composite.obj'
+                else:
+                    extension = '.stl'
+                    new_path = f'{path}.stl'
+                if overwrite or not os.path.isfile(new_path):
                     mesh = tri.load_mesh(mesh_path)
                     if isinstance(mesh, tri.Scene):
                         mesh = tri.util.concatenate(tuple(
@@ -279,8 +291,38 @@ def mjc_add_link(
                         ))
                     if not mesh.convex_hull.vertices.any():
                         continue
-                    mesh.export(stl_path)
-                mesh_path = stl_path
+                    mesh.export(
+                        new_path,
+                        include_color=True,
+                        include_texture=True,
+                    )
+                mesh_path = new_path
+
+            # Wavefront textures
+            if extension == '.obj':
+                wavefront = pwf.Wavefront(mesh_path)
+                for mat_id, mat in wavefront.materials.items():
+                    if mat.texture is None:
+                        continue
+                    if not mjcf_model.asset.texture.namescope.has_identifier(
+                            'texture',
+                            f'texture_{mat_id}',
+                    ):
+                        mjcf_model.compiler.texturedir = directory
+                        mjcf_model.asset.add(
+                            'texture',
+                            name=f'texture_{mat_id}',
+                            file=os.path.relpath(mat.texture.path, directory),
+                            type='2d',
+                        )
+                        mjcf_model.asset.add(
+                            'material',
+                            name=f'material_{mat_id}',
+                            texture=f'texture_{mat_id}',
+                            specular='1.0',
+                            shininess='1.0',
+                        )
+                    geom_kwargs['material'] = f'material_{mat_id}'
 
             # Convexify
             mesh = tri.load_mesh(mesh_path)
