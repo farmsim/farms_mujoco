@@ -30,8 +30,8 @@ from farms_core.io.sdf import (
 )
 
 
-MIN_MASS = 0.0 #1e-6
-MIN_INERTIA = 0.0 #1e-12
+MIN_MASS = 0  # 1e-6
+MIN_INERTIA = 0  # 1e-12
 
 
 def quat2mjcquat(quat: NDARRAY_6) -> NDARRAY_4:
@@ -1218,17 +1218,21 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         if not simulation_options
         else simulation_options.visual_scale
     )
-    mjcf_model.statistic.meansize = 1
-    mjcf_model.statistic.meanmass = 1
-    mjcf_model.statistic.meaninertia = 1
-    # mjcf_model.statistic.extent = 100*units.meters
+    mjcf_model.statistic.meansize = 0
+    mjcf_model.statistic.meanmass = 0
+    mjcf_model.statistic.meaninertia = 0
+    mjcf_model.statistic.extent = (
+        100*units.meters
+        if not simulation_options
+        else simulation_options.mujoco_extent
+    )
 
     # Visual
     mjcf_model.visual.map.stiffness = 100
     mjcf_model.visual.map.stiffnessrot = 500
     mjcf_model.visual.map.force = 1*units.meters/units.newtons*scale
     mjcf_model.visual.map.torque = 1*units.meters/units.torques*scale
-    mjcf_model.visual.map.znear = 1e-4*units.meters
+    mjcf_model.visual.map.znear = 1e-5*units.meters
     mjcf_model.visual.map.zfar = 3e0*units.meters
     mjcf_model.visual.map.alpha = 0.3
     mjcf_model.visual.map.fogstart = 3
