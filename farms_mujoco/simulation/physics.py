@@ -267,11 +267,13 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     sensor_maps['force2data'] = np.array([
         row2index(row=forces_row, name=f'force_{joint_name}')
         for joint_name in joints_names
+        if joint_name in forces_row.names
     ])
     torques_row = physics.named.data.sensordata.axes.row
     sensor_maps['torque2data'] = np.array([
         row2index(row=torques_row, name=f'torque_{joint_name}')
         for joint_name in joints_names
+        if joint_name in forces_row.names
     ])
 
     # Muscles - sensors
@@ -479,17 +481,20 @@ def physicslinksvel2data(physics, iteration, data, sensor_maps, units):
 def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
     # TODO: Check the units
-    data.sensors.joints.array[iteration, :, sc.joint_limit_force] = (
-        physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
-    )/units.torques
+    if len(sensor_maps['jointlimitfrc2data']) > 0:
+        data.sensors.joints.array[iteration, :, sc.joint_limit_force] = (
+            physics.data.sensordata[sensor_maps['jointlimitfrc2data']]
+        )/units.torques
     # Total forces
-    data.sensors.joints.array[iteration, :, sc.joint_force_x:sc.joint_force_z+1] = (
-        physics.data.sensordata[sensor_maps['force2data']]
-    )/units.newtons
+    if len(sensor_maps['force2data']) > 0:
+        data.sensors.joints.array[iteration, :, sc.joint_force_x:sc.joint_force_z+1] = (
+            physics.data.sensordata[sensor_maps['force2data']]
+        )/units.newtons
     # Total torques
-    data.sensors.joints.array[iteration, :, sc.joint_torque_x:sc.joint_torque_z+1] = (
-        physics.data.sensordata[sensor_maps['torque2data']]
-    )/units.torques
+    if len(sensor_maps['torque2data']) > 0:
+        data.sensors.joints.array[iteration, :, sc.joint_torque_x:sc.joint_torque_z+1] = (
+            physics.data.sensordata[sensor_maps['torque2data']]
+        )/units.torques
 
 
 def physicsjoints2data(physics, iteration, data, sensor_maps, units):
