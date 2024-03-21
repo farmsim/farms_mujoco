@@ -184,7 +184,7 @@ def mjc_add_link(
                 stiffness=0,
                 springref=0,
                 frictionloss=0,
-                limited=True if sdf_joint.axis.limits else False,
+                limited=bool(sdf_joint.axis.limits),
                 range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]
             )
             mjcf_map['joints'][sdf_joint.name] = joint
@@ -200,7 +200,7 @@ def mjc_add_link(
                 stiffness=0,
                 springref=0,
                 frictionloss=0,
-                limited=True if sdf_joint.axis.limits else False,
+                limited=bool(sdf_joint.axis.limits),
                 range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]
             )
             mjcf_map['joints'][sdf_joint.name] = joint
@@ -756,7 +756,11 @@ def sdf2mjcf(
             }
         for joint_name in joints_names:
             joint = mjcf_model.find('joint', joint_name)
-            assert joint, f'Joint {joint_name} not found'
+            assert joint, (
+                f'Joint "{joint_name}" required by animat options'
+                ' not found in newly created MJCF file.'
+                ' Was it part of the SDF?'
+            )
             if joint.type != 'hinge':
                 # continue
                 raise Exception(
