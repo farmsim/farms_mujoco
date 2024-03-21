@@ -1440,8 +1440,10 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_xml_str = mjcf2str(mjcf_model=mjcf_model)
     if kwargs.pop('show_mjcf', False):
         pylog.info(mjcf_xml_str)
-    if kwargs.pop('save_mjcf', False):
-        with open('simulation_mjcf.xml', 'w+', encoding='utf-8') as xml_file:
+    save_mjcf = kwargs.pop('save_mjcf', False)
+    if save_mjcf:
+        path = save_mjcf if isinstance(save_mjcf, str) else 'simulation_mjcf.xml'
+        with open(path, 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)
 
     assert not kwargs, kwargs
