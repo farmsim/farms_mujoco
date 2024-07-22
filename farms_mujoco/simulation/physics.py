@@ -267,13 +267,13 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     sensor_maps['force2data'] = np.array([
         row2index(row=forces_row, name=f'force_{joint_name}')
         for joint_name in joints_names
-        if joint_name in forces_row.names
+        if f"force_{joint_name}" in forces_row.names
     ])
     torques_row = physics.named.data.sensordata.axes.row
     sensor_maps['torque2data'] = np.array([
         row2index(row=torques_row, name=f'torque_{joint_name}')
         for joint_name in joints_names
-        if joint_name in forces_row.names
+        if f"torque_{joint_name}" in torques_row.names
     ])
 
     # Muscles - sensors
