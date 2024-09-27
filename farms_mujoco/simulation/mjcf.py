@@ -35,7 +35,7 @@ MIN_MASS = 0  # 1e-6
 MIN_INERTIA = 0  # 1e-12
 
 
-def quat2mjcquat(quat: NDARRAY_6) -> NDARRAY_4:
+def quat2mjcquat(quat: NDARRAY_4) -> NDARRAY_4:
     """Quaternion to MuJoCo quaternion"""
     quat_type = np.array if isinstance(quat, np.ndarray) else type(quat)
     quat = np.array(quat)[[3, 0, 1, 2]]
@@ -70,7 +70,7 @@ def poseul2mat4d(
 
 
 def get_local_transform(
-        parent_pose: NDARRAY_6,
+        parent_pose: NDARRAY_6 | None,
         child_pose: NDARRAY_6,
 ):
     """Get link local transform"""
@@ -139,7 +139,7 @@ def mjc_add_link(
     mjc_parent = kwargs.pop('mjc_parent', None)
     sdf_joint = kwargs.pop('sdf_joint', None)
     directory = kwargs.pop('directory', '')
-    free = kwargs.pop('free', False)
+    spawn_mode = kwargs.pop('spawn_mode', None)
     all_collisions = kwargs.pop('all_collisions', False)
     concave = kwargs.pop('concave', False)
     overwrite = kwargs.pop('overwrite', False)
@@ -169,13 +169,73 @@ def mjc_add_link(
     )
     mjcf_map['links'][link_name] = body
 
-    # joints
+    # Intitialise joint to None
     joint = None
+
+    # Joint for root / base link
     if isinstance(sdf_link, ModelSDF):
-        if free:  # Freejoint
-            joint = body.add('freejoint', name=f'root_{link_name}')
+
+        match spawn_mode:
+            case SpawnMode.FREE:  # Freejoint
+                joint = body.add('freejoint', name=f'root_{link_name}')
+            case (
+                SpawnMode.SAGITTAL
+                | SpawnMode.CORONAL
+                | SpawnMode.TRANSVERSE
+                | SpawnMode.SAGITTAL3
+                | SpawnMode.CORONAL3
+                | SpawnMode.TRANSVERSE3
+            ):
+                match spawn_mode:
+                    case SpawnMode.SAGITTAL:
+                        types = ['slide', 'slide', 'hinge']
+                        axes = [[1, 0, 0], [0, 0, 1], [0, 1, 0]]
+                    case SpawnMode.CORONAL:
+                        types = ['slide', 'slide', 'hinge']
+                        axes = [[0, 1, 0], [0, 0, 1], [1, 0, 0]]
+                    case SpawnMode.TRANSVERSE:
+                        types = ['slide', 'slide', 'hinge']
+                        axes = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+                    case SpawnMode.SAGITTAL3:
+                        types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
+                        axes = [[1,0,0], [0,0,1], [1,0,0], [0,1,0], [0,0,1]]
+                    case SpawnMode.CORONAL3:
+                        types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
+                        axes = [[0,1,0], [0,0,1], [1,0,0], [0,1,0], [0,0,1]]
+                    case SpawnMode.TRANSVERSE3:
+                        types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
+                        axes = [[1,0,0], [0,1,0], [1,0,0], [0,1,0], [0,0,1]]
+                for i, (joint_type, axis) in enumerate(zip(types, axes)):
+                    if i > 0:
+                        body = body.add(
+                            'body',
+                            name=f'root{i}_b_{link_name}',
+                            pos=[0, 0, 0],
+                            quat=[1, 0, 0, 0],
+                        )
+                        mjcf_map['links'][f'root{i}_b_{link_name}'] = body
+                    joint = body.add(
+                        'joint',
+                        name=f'root{i}_j_{link_name}',
+                        axis=axis,
+                        pos=[0, 0, 0],
+                        type=joint_type,
+                        damping=0,
+                        stiffness=0,
+                        springref=0,
+                        frictionloss=0,
+                        limited=False,
+                        range=[0.0, 0.0],
+                    )
+                    mjcf_map['joints'][f'root{i}_j_{link_name}'] = joint
+            case SpawnMode.FIXED:
+                pass  # Fixed base does not need handling
+
+        pylog.info('SPAWN: %s is using a %s base', link_name, spawn_mode)
         return body, joint
-    if not free and sdf_joint is not None:
+
+    # Joint from parent
+    if spawn_mode is None and sdf_joint is not None:
         if sdf_joint.type in ('revolute', 'continuous'):
             joint = body.add(
                 'joint',
@@ -600,7 +660,7 @@ def mjc_add_link(
 def add_link_recursive(
         mjcf_model: mjcf.RootElement,
         mjcf_map: Dict,
-        sdf: str,
+        sdf: ModelSDF,
         **kwargs,
 ):
     """Add link recursive"""
@@ -609,7 +669,15 @@ def add_link_recursive(
     sdf_link = kwargs.pop('sdf_link')
     sdf_parent = kwargs.pop('sdf_parent', None)
     sdf_joint = kwargs.pop('sdf_joint', None)
-    free = kwargs.pop('free', False)
+    spawn_mode = kwargs.pop('spawn_mode', None)
+    mjc_parent = kwargs.pop(
+        'mjc_parent',
+        (
+            mjcf_map['links'].get(sdf_parent.name)
+            if sdf_parent is not None
+            else None
+        )
+    )
 
     # Add link
     mjc_add_link(
@@ -619,12 +687,8 @@ def add_link_recursive(
         sdf_parent=sdf_parent,
         sdf_joint=sdf_joint,
         directory=sdf.directory,
-        free=free,
-        mjc_parent=(
-            mjcf_map['links'].get(sdf_parent.name)
-            if sdf_parent is not None
-            else None
-        ),
+        spawn_mode=spawn_mode,
+        mjc_parent=mjc_parent,
         **kwargs,
     )
 
@@ -637,12 +701,13 @@ def add_link_recursive(
             sdf_link=child,
             sdf_parent=sdf_link,
             sdf_joint=sdf.get_parent_joint(link=child),
+            spawn_mode=spawn_mode,
             **kwargs
         )
 
 
 def sdf2mjcf(
-        sdf: str,
+        sdf: ModelSDF,
         **kwargs,
 ) -> (mjcf.RootElement, Dict):
     """Export to MJCF string"""
@@ -696,7 +761,16 @@ def sdf2mjcf(
     if model_name:
         mjcf_model.model = model_name
 
-    # Base link
+    # Spawn
+    spawn_mode = (
+        SpawnMode.FIXED
+        if fixed_base
+        else animat_options.spawn.mode
+        if animat_options is not None
+        else None
+    )
+
+    # Base links
     roots = sdf.get_base_links()
 
     # Elements
@@ -709,15 +783,15 @@ def sdf2mjcf(
         ]
     }
 
-    # Add model root link
-    mjc_add_link(
+    # Add model root link (Connection to world)
+    mjc_root, _ = mjc_add_link(
         mjcf_model=mjcf_model,
         mjcf_map=mjcf_map,
         sdf_link=sdf,
         sdf_parent=None,
         sdf_joint=None,
         directory=sdf.directory,
-        free=not fixed_base,
+        spawn_mode=spawn_mode,
         mjc_parent=None,
         **kwargs,
     )
@@ -730,11 +804,12 @@ def sdf2mjcf(
             sdf=sdf,
             sdf_link=root,
             sdf_parent=sdf,
-            free=not fixed_base,
+            mjc_parent=mjc_root,
+            spawn_mode=None,
             use_site=use_site,
             concave=concave,
             units=units,
-            **kwargs
+            **kwargs,
         )
 
     # Keyframes
@@ -745,13 +820,18 @@ def sdf2mjcf(
             for index, joint in enumerate(mjcf_model.find_all('joint'))
         }
         # Check if base is fixed
-        if not animat_options.mujoco.get('fixed_base', False):
-            base_nq = 6
-            base_nv = 5
-        else:
+        special_base = (
+            animat_options.mujoco.get('fixed_base', False)
+            or animat_options.spawn.mode != SpawnMode.FREE
+        )
+        if special_base:
             base_nq = 0
             base_nv = 0
-        # update qpos and qvel
+        else:
+            base_nq = 6
+            base_nv = 5
+
+        # Update qpos and qvel
         qpos = ['0.0']*(len(joint_name_index) + base_nq)
         qvel = ['0.0']*(len(joint_name_index) + base_nv)
         for joint in joint_options:
@@ -759,7 +839,7 @@ def sdf2mjcf(
             qpos[index+base_nq], qvel[index+base_nv] = (
                 str(joint.initial[0]), str(joint.initial[1])
             )
-        if not animat_options.mujoco.get('fixed_base', False):
+        if not special_base:
             # Position
             qpos[:3] = [
                 str(pos*units.meters)
@@ -1225,10 +1305,19 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     # Animat
     mujoco_kwargs = animat_options.mujoco if animat_options is not None else {}
     sdf_animat = ModelSDF.read(os.path.expandvars(animat_options.sdf))[0]
+    animat_fixed_base = (
+        (
+            animat_options.mujoco.get('fixed_base', False)
+            or animat_options.spawn.mode == SpawnMode.FIXED
+        )
+        if animat_options is not None
+        else False
+    )
     mjcf_model, _ = sdf2mjcf(
         sdf=sdf_animat,
         mjcf_model=mjcf_model,
         model_name=animat_options.name,
+        fixed_base=animat_fixed_base,
         use_sensors=True,
         use_link_sensors=False,
         use_link_vel_sensors=True,
@@ -1387,6 +1476,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     )
 
     # Animat options
+    base_link = None
     if animat_options is not None:
 
         # Spawn
@@ -1469,15 +1559,17 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     if kwargs.pop('use_particles', False):
         add_particles(mjcf_model)
 
-    # Light and shadows
-    add_lights(link=base_link, rot=animat_options.spawn.pose[3:])
+    if base_link is not None:
 
-    # Add cameras
-    add_cameras(
-        link=base_link,
-        rot=animat_options.spawn.pose[3:],
-        simulation_options=simulation_options,
-    )
+        # Light and shadows
+        add_lights(link=base_link, rot=animat_options.spawn.pose[3:])
+
+        # Add cameras
+        add_cameras(
+            link=base_link,
+            rot=animat_options.spawn.pose[3:],
+            simulation_options=simulation_options,
+        )
 
     # Night sky
     night_sky(mjcf_model)
