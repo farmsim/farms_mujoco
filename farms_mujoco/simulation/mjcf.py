@@ -120,7 +120,7 @@ def grid_material(mjcf_model: mjcf.Element, n_repeat = 1) -> (mjcf.Element, mjcf
             'material',
             name='material_grid',
             texture='texture_grid',
-            texrepeat=[n_repeat, n_repeat],       ######### MODIFIED FROM [1, 1] TO [100,100]
+            texrepeat=[n_repeat, n_repeat], # Default [1, 1]
             texuniform=True,
             reflectance=0.2,
         )
@@ -1306,7 +1306,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.visual.scale.framewidth = 0.01*scale
     mjcf_model.visual.scale.constraint = 0.01*scale
     mjcf_model.visual.scale.slidercrank = 0.01*scale
-    mjcf_model.visual.quality.shadowsize = simulation_options.shadow_size  # 1024*32 # Changed from 1024
+    mjcf_model.visual.quality.shadowsize = simulation_options.shadow_size  # 1024
     mjcf_model.visual.quality.offsamples = 4
     mjcf_model.visual.quality.numslices = 28
     mjcf_model.visual.quality.numstacks = 16
