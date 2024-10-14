@@ -92,7 +92,7 @@ def get_local_transform(
     ).as_euler('xyz')
 
 
-def grid_material(mjcf_model: mjcf.Element) -> (mjcf.Element, mjcf.Element):
+def grid_material(mjcf_model: mjcf.Element, n_repeat = 1) -> (mjcf.Element, mjcf.Element):
     """Get grid texture"""
     texture = mjcf_model.asset.find(
         namespace='texture',
@@ -120,7 +120,7 @@ def grid_material(mjcf_model: mjcf.Element) -> (mjcf.Element, mjcf.Element):
             'material',
             name='material_grid',
             texture='texture_grid',
-            texrepeat=[1, 1],
+            texrepeat=[n_repeat, n_repeat], # Default [1, 1]
             texuniform=True,
             reflectance=0.2,
         )
@@ -151,6 +151,7 @@ def mjc_add_link(
     obj_use_composite = kwargs.pop('obj_use_composite', True)
     # NOTE: obj_use_composite seems to be needed for Wavefront meshes which are
     # not watertight or have disconnected parts.
+    texture_repeat = kwargs.pop('texture_repeat', 1)
     assert not kwargs, kwargs
 
     # Links (bodies)
@@ -528,7 +529,7 @@ def mjc_add_link(
         # Plane
         elif isinstance(element.geometry, Plane):
 
-            material, _ = grid_material(mjcf_model)
+            material, _ = grid_material(mjcf_model, n_repeat=texture_repeat)
             geom = body.add(
                 'geom',
                 type='plane',
@@ -753,6 +754,7 @@ def sdf2mjcf(
         if simulation_options is not None
         else SimulationUnitScaling()
     ))
+    texture_repeat = simulation_options.texture_repeat
 
     if mjcf_model is None:
         mjcf_model = mjcf.RootElement()
@@ -809,6 +811,7 @@ def sdf2mjcf(
             use_site=use_site,
             concave=concave,
             units=units,
+            texture_repeat=texture_repeat,
             **kwargs,
         )
 
@@ -1392,7 +1395,7 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.visual.scale.framewidth = 0.01*scale
     mjcf_model.visual.scale.constraint = 0.01*scale
     mjcf_model.visual.scale.slidercrank = 0.01*scale
-    mjcf_model.visual.quality.shadowsize = 1024  # 32*1024
+    mjcf_model.visual.quality.shadowsize = simulation_options.shadow_size  # 1024
     mjcf_model.visual.quality.offsamples = 4
     mjcf_model.visual.quality.numslices = 28
     mjcf_model.visual.quality.numstacks = 16
