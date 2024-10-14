@@ -20,16 +20,18 @@ class CameraCallback(TaskCallback):
             timestep: float,
             n_iterations: int,
             fps: float,
+            speed: float,
             **kwargs,
     ):
         super().__init__()
         self.camera_id = camera_id
-        self.timestep = timestep
+        self.speed = speed
+        self.timestep = timestep / speed
         self.n_iterations = n_iterations
         self.motion_filter = kwargs.pop('motion_filter', 10*timestep)
         self.width = kwargs.pop('width', 640)
         self.height = kwargs.pop('height', 480)
-        self.skips = kwargs.pop('skips', max(0, int(1//(timestep*fps))-1))
+        self.skips = kwargs.pop('skips', max(0, int(speed//(timestep*fps))-1))
         self.fps = 1/(self.timestep*(self.skips+1))
         self.sample = 0
         self.data = np.zeros(
@@ -77,10 +79,11 @@ class CameraCallback(TaskCallback):
         )
         ffmpegwriter = manimation.writers[writer]
         pylog.debug(
-            'Recording video to %s with %s (fps=%s, skips=%s, frame=%s/%s)',
+            'Recording video to %s with %s (fps=%s, speed=%s, skips=%s, frame=%s/%s)',
             filename,
             writer,
             self.fps,
+            self.speed,
             self.skips,
             iteration//(self.skips+1) if iteration is not None else self.sample,
             self.sample,
