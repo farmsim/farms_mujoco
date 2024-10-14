@@ -22,7 +22,7 @@ cdef void link_swimming_info(
     DTYPEv1 link_ang_velocity,
     DTYPEv1 quat_c,
     DTYPEv1 tmp4,
-) nogil:
+):
     """Link swimming information
 
     :param data_links: Links data
@@ -69,7 +69,7 @@ cdef void compute_force(
     DTYPEv1 coefficients,
     DTYPEv1 buoyancy,
     double viscosity,
-) nogil:
+):
     """Compute force and torque
 
     :param force: Returned force applied to the link in URDF frame
@@ -92,7 +92,7 @@ cdef void compute_torque(
     DTYPEv1 torque,
     DTYPEv1 link_ang_velocity,
     DTYPEv1 coefficients,
-) nogil:
+):
     """Compute force and torque
 
     :param torque: Returned torque applied to the link in CoM frame
@@ -120,7 +120,7 @@ cdef void compute_buoyancy(
     DTYPEv1 quat_c,
     DTYPEv1 tmp4,
     DTYPEv1 tmp,
-) nogil:
+):
     """Compute buoyancy
 
     :param density: Density of the link
@@ -165,7 +165,7 @@ cpdef bint drag_forces(
         double density,
         double gravity,
         bint use_buoyancy,
-) nogil:
+):
     """Drag swimming
 
     The forces and torques are stored into data_xfrc.array in
@@ -308,19 +308,19 @@ cdef class WaterPropertiesConstant(WaterProperties):
         self._velocity = velocity
         self._viscosity = viscosity
 
-    cdef double surface(self, double t, double x, double y):  # nogil
+    cdef double surface(self, double t, double x, double y):
         """Surface"""
         return self._surface
 
-    cdef double density(self, double t, double x, double y, double z):  # nogil
+    cdef double density(self, double t, double x, double y, double z):
         """Density"""
         return self._density
 
-    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):  # nogil
+    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):
         """Velocity in global frame"""
         return self._velocity
 
-    cdef double viscosity(self, double t, double x, double y, double z):  # nogil
+    cdef double viscosity(self, double t, double x, double y, double z):
         """Viscosity"""
         return self._viscosity
 
