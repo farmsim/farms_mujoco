@@ -179,7 +179,10 @@ def mjc_add_link(
             case SpawnMode.FREE:  # Freejoint
                 joint = body.add('freejoint', name=f'root_{link_name}')
             case (
-                SpawnMode.SAGITTAL
+                SpawnMode.ROTX
+                | SpawnMode.ROTY
+                | SpawnMode.ROTZ
+                | SpawnMode.SAGITTAL
                 | SpawnMode.CORONAL
                 | SpawnMode.TRANSVERSE
                 | SpawnMode.SAGITTAL1
@@ -190,6 +193,15 @@ def mjc_add_link(
                 | SpawnMode.TRANSVERSE3
             ):
                 match spawn_mode:
+                    case SpawnMode.ROTX:
+                        types = ['hinge']
+                        axes = [[1, 0, 0]]
+                    case SpawnMode.ROTY:
+                        types = ['hinge']
+                        axes = [[0, 1, 0]]
+                    case SpawnMode.ROTZ:
+                        types = ['hinge']
+                        axes = [[0, 0, 1]]
                     case SpawnMode.SAGITTAL:
                         types = ['slide', 'slide', 'hinge']
                         axes = [[1, 0, 0], [0, 0, 1], [0, 1, 0]]
