@@ -180,14 +180,29 @@ def mjc_add_link(
             case SpawnMode.FREE:  # Freejoint
                 joint = body.add('freejoint', name=f'root_{link_name}')
             case (
-                SpawnMode.SAGITTAL
+                SpawnMode.ROTX
+                | SpawnMode.ROTY
+                | SpawnMode.ROTZ
+                | SpawnMode.SAGITTAL
                 | SpawnMode.CORONAL
                 | SpawnMode.TRANSVERSE
+                | SpawnMode.SAGITTAL1
+                | SpawnMode.CORONAL1
+                | SpawnMode.TRANSVERSE1
                 | SpawnMode.SAGITTAL3
                 | SpawnMode.CORONAL3
                 | SpawnMode.TRANSVERSE3
             ):
                 match spawn_mode:
+                    case SpawnMode.ROTX:
+                        types = ['hinge']
+                        axes = [[1, 0, 0]]
+                    case SpawnMode.ROTY:
+                        types = ['hinge']
+                        axes = [[0, 1, 0]]
+                    case SpawnMode.ROTZ:
+                        types = ['hinge']
+                        axes = [[0, 0, 1]]
                     case SpawnMode.SAGITTAL:
                         types = ['slide', 'slide', 'hinge']
                         axes = [[1, 0, 0], [0, 0, 1], [0, 1, 0]]
@@ -197,6 +212,15 @@ def mjc_add_link(
                     case SpawnMode.TRANSVERSE:
                         types = ['slide', 'slide', 'hinge']
                         axes = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+                    case SpawnMode.SAGITTAL0:
+                        types = ['slide', 'slide']
+                        axes = [[1, 0, 0],  [0, 0, 1]]
+                    case SpawnMode.CORONAL0:
+                        types = ['slide',  'slide']
+                        axes = [[0, 1, 0],  [0, 0, 1]]
+                    case SpawnMode.TRANSVERSE0:
+                        types = ['slide',  'slide']
+                        axes = [[1, 0, 0],  [0, 1, 0]]
                     case SpawnMode.SAGITTAL3:
                         types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
                         axes = [[1,0,0], [0,0,1], [1,0,0], [0,1,0], [0,0,1]]
