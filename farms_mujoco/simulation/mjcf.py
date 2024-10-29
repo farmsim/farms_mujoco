@@ -185,9 +185,9 @@ def mjc_add_link(
                 | SpawnMode.SAGITTAL
                 | SpawnMode.CORONAL
                 | SpawnMode.TRANSVERSE
-                | SpawnMode.SAGITTAL1
-                | SpawnMode.CORONAL1
-                | SpawnMode.TRANSVERSE1
+                | SpawnMode.SAGITTAL0
+                | SpawnMode.CORONAL0
+                | SpawnMode.TRANSVERSE0
                 | SpawnMode.SAGITTAL3
                 | SpawnMode.CORONAL3
                 | SpawnMode.TRANSVERSE3
