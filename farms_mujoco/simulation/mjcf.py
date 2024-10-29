@@ -182,6 +182,9 @@ def mjc_add_link(
                 SpawnMode.SAGITTAL
                 | SpawnMode.CORONAL
                 | SpawnMode.TRANSVERSE
+                | SpawnMode.SAGITTAL1
+                | SpawnMode.CORONAL1
+                | SpawnMode.TRANSVERSE1
                 | SpawnMode.SAGITTAL3
                 | SpawnMode.CORONAL3
                 | SpawnMode.TRANSVERSE3
@@ -196,6 +199,15 @@ def mjc_add_link(
                     case SpawnMode.TRANSVERSE:
                         types = ['slide', 'slide', 'hinge']
                         axes = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+                    case SpawnMode.SAGITTAL1:
+                        types = ['slide', 'slide', 'hinge']
+                        axes = [[1, 0, 0],  [0, 0, 1],  [0, 1, 0]]
+                    case SpawnMode.CORONAL1:
+                        types = ['slide',  'slide',  'hinge']
+                        axes = [[0, 1, 0],  [0, 0, 1],  [1, 0, 0]]
+                    case SpawnMode.TRANSVERSE1:
+                        types = ['slide',  'slide',  'hinge']
+                        axes = [[1, 0, 0],  [0, 1, 0],  [0, 0, 1]]
                     case SpawnMode.SAGITTAL3:
                         types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
                         axes = [[1,0,0], [0,0,1], [1,0,0], [0,1,0], [0,0,1]]
