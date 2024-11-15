@@ -59,6 +59,7 @@ class ExperimentTask(Task):
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
         self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         self.substeps = max(1, kwargs.pop('substeps', 1))
+        self.buffer_size = max(1, kwargs.pop('buffer_size', 1))
         self.substeps_links = any(cb.substep for cb in self._callbacks)
         self.sim_iteration = 0
         self.sim_iterations = self.n_iterations*self.substeps
@@ -154,6 +155,7 @@ class ExperimentTask(Task):
 
     def update_sensors(self, physics: Physics, links_only=False):
         """Update sensors"""
+        index = self.iteration % self.buffer_size
         physics2data(
             physics=physics,
             iteration=self.iteration,
@@ -205,7 +207,7 @@ class ExperimentTask(Task):
         """Initialise data"""
         self.data = AnimatData.from_sensors_names(
             timestep=self.timestep,
-            n_iterations=self.n_iterations,
+            buffer_size=self.buffer_size,
             links=self.maps['xpos']['names'],
             joints=self.maps['qpos']['names'],
             muscles=self.maps['muscles']['names']
@@ -286,8 +288,9 @@ class ExperimentTask(Task):
     def step_control(self, physics: Physics):
         """Step control"""
         current_time = self.iteration*self.timestep
+        index = self.iteration % self.buffer_size
         self._controller.step(
-            iteration=self.iteration,
+            iteration=index,
             time=current_time,
             timestep=self.timestep,
         )
@@ -297,7 +300,7 @@ class ExperimentTask(Task):
             self.step_joints_control_torque(physics, current_time)
         if self._controller.muscles_names:
             muscles_excitations = self._controller.excitations(
-                iteration=self.iteration,
+                iteration=index,
                 time=current_time,
                 timestep=self.timestep
             )
@@ -305,8 +308,9 @@ class ExperimentTask(Task):
 
     def step_joints_control_position(self, physics: Physics, time: float):
         """Step position control"""
+        index = self.iteration % self.buffer_size
         joints_positions = self._controller.positions(
-            iteration=self.iteration,
+            iteration=index,
             time=time,
             timestep=self.timestep,
         )
@@ -318,8 +322,9 @@ class ExperimentTask(Task):
 
     def step_joints_control_torque(self, physics: Physics, time: float):
         """Step torque control"""
+        index = self.iteration % self.buffer_size
         joints_torques = self._controller.torques(
-            iteration=self.iteration,
+            iteration=index,
             time=time,
             timestep=self.timestep,
         )
@@ -331,7 +336,7 @@ class ExperimentTask(Task):
         ]
         # Spring reference
         springrefs = self._controller.springrefs(
-            iteration=self.iteration,
+            iteration=index,
             time=time,
             timestep=self.timestep,
         )
