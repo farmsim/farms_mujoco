@@ -158,7 +158,7 @@ class ExperimentTask(Task):
         index = self.iteration % self.buffer_size
         physics2data(
             physics=physics,
-            iteration=self.iteration,
+            iteration=index,
             data=self.data,
             maps=self.maps,
             units=self.units,
