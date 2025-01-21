@@ -1246,7 +1246,6 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
     mjcf_model.compiler.boundinertia = MIN_INERTIA*units.inertia
     mjcf_model.compiler.balanceinertia = False
     mjcf_model.compiler.inertiafromgeom = False
-    mjcf_model.compiler.convexhull = True
     mjcf_model.compiler.fusestatic = True
     mjcf_model.compiler.discardvisual = kwargs.pop(
         'discardvisual',
