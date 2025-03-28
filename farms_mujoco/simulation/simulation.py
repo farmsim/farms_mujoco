@@ -73,10 +73,14 @@ class Simulation:
             substeps=self.options.num_sub_steps,
             **kwargs,
         )
+        # Revert to using conventional full mj_step to update the physics.
+        # It will otherwise result in incorrect computations of contact forces
+        legacy_step = False
         self._env: Environment = Environment(
             physics=self.physics,
             task=self.task,
             time_limit=self.options.n_iterations*self.options.timestep,
+            legacy_step=legacy_step,
             **env_kwargs,
         )
 

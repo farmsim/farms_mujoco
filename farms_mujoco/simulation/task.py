@@ -87,11 +87,6 @@ class ExperimentTask(Task):
     def initialize_episode(self, physics: Physics):
         """Sets the state of the environment at the start of each episode"""
 
-        # Revert to using conventional full mj_step to update
-        # the physics. It will otherwise result in incorrect
-        # computations of contact forces
-        physics.legacy_step = False
-
         # Checks
         if self._restart:
             assert self._app is not None, (
