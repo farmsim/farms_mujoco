@@ -31,15 +31,21 @@ def extract_sub_dict(dictionary: Dict, keys: List[str]) -> Dict:
 
 
 class Simulation:
-    """Simulation"""
+    """ Simulation
+
+    Note: Set legacy_step to False to use conventional full mj_step to update the physics with dm_control.
+    It will otherwise result in incorrect computations of contact forces.
+    """
 
     def __init__(
             self,
             mjcf_model: mjcf.element.RootElement,
             base_link: str,
             simulation_options: SimulationOptions,
+            legacy_step: bool = False,
             **kwargs,
     ):
+
         super().__init__()
         self._mjcf_model: mjcf.element.RootElement = mjcf_model
         self.options: SimulationOptions = simulation_options
@@ -73,9 +79,7 @@ class Simulation:
             substeps=self.options.num_sub_steps,
             **kwargs,
         )
-        # Revert to using conventional full mj_step to update the physics.
-        # It will otherwise result in incorrect computations of contact forces
-        legacy_step = False
+
         self._env: Environment = Environment(
             physics=self.physics,
             task=self.task,
