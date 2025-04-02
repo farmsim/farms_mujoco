@@ -14,6 +14,7 @@ from scipy.spatial.transform import Rotation
 from dm_control import mjcf
 
 from farms_core import pylog
+from farms_core.model.control import ControlType
 from farms_core.units import SimulationUnitScaling
 from farms_core.simulation.options import SimulationOptions
 from farms_core.array.types import (
@@ -827,6 +828,7 @@ def sdf2mjcf(
                 ctrlrange=act_pos_ctrlrange,
                 forcelimited=act_pos_forcelimited,
                 forcerange=[val*units.torques for val in act_pos_forcerange],
+                group=ControlType.POSITION,
             )
             name_vel = f'actuator_velocity_{joint_name}'
             mjcf_map['actuators'][name_vel] = mjcf_model.actuator.add(
@@ -842,12 +844,14 @@ def sdf2mjcf(
                 ctrlrange=[val*units.angular_velocity for val in act_vel_ctrlrange],
                 forcelimited=act_vel_forcelimited,
                 forcerange=[val*units.torques for val in act_vel_forcerange],
+                group=ControlType.VELOCITY,
             )
             name_trq = f'actuator_torque_{joint_name}'
             mjcf_map['actuators'][name_trq] = mjcf_model.actuator.add(
                 'motor',
                 name=name_trq,
                 joint=joint_name,
+                group=ControlType.TORQUE,
             )
             if (
                     animat_options is not None
@@ -870,7 +874,7 @@ def sdf2mjcf(
                 mjcf_map['tendons'][tendon_name] = mjcf_model.tendon.add(
                     "spatial",
                     name=tendon_name,
-                    group=1,
+                    group=ControlType.MUSCLE,
                     width=1e-3,
                     rgba=[0.0, 0.0, 1.0, 1],
                 )
@@ -886,7 +890,7 @@ def sdf2mjcf(
                 mjcf_map['muscles'][muscle_name] = mjcf_model.actuator.add(
                     "general",
                     name=muscle_name,
-                    group=1, # To make sure they are always visible,
+                    group=ControlType.MUSCLE,
                     tendon=tendon_name,
                     lengthrange=[
                         muscle['lmtu_min']*units.meters,
@@ -934,7 +938,7 @@ def sdf2mjcf(
                         'site',
                         name=site_name,
                         pos=position,
-                        group=1,
+                        group=ControlType.MUSCLE,
                         size=[5e-4*units.meters]*3,
                         rgba=[0.0, 1, 0, 0.5]
                     )
