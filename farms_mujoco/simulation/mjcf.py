@@ -1155,6 +1155,7 @@ def add_cameras(
             ['trackcom', [0.0, 0.0, dist, 0.0, 0.0, 0.0]],
             ['trackcom', [0.0, -dist, 0.2*dist, 0.4*np.pi, 0.0, 0.0]],
             ['trackcom', [-dist, 0.0, 0.2*dist, 0.4*np.pi, 0, -0.5*np.pi]],
+            ['fixed', [-dist, 0.0, 0.2*dist, 0.4*np.pi, 0, -0.5*np.pi]],
             # ['targetbodycom', [dist, 0.0, 0.2*dist, 0, 0, 0]],
     ]):
         link.add(
