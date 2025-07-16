@@ -254,12 +254,13 @@ def mjc_add_link(
             collision_kwargs['condim'] = 3
             collision_kwargs['group'] = 2
             if solref is not None:
-                if all(sol < 0 for sol in solref):
-                    solref[0] *= units.newtons/units.meters
-                    solref[1] *= units.newtons/units.velocity
+                scaled_solref = solref.copy()
+                if all(sol < 0 for sol in scaled_solref):
+                    scaled_solref[0] *= units.newtons/units.meters
+                    scaled_solref[1] *= units.newtons/units.velocity
                 else:
-                    solref[0] *= units.seconds
-                collision_kwargs['solref'] = solref
+                    scaled_solref[0] *= units.seconds
+                collision_kwargs['solref'] = scaled_solref
             if solimp is not None:
                 collision_kwargs['solimp'] = solimp
 
