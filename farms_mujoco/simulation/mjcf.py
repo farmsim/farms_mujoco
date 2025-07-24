@@ -11,6 +11,8 @@ import pywavefront as pwf
 from imageio import imread
 from scipy.spatial.transform import Rotation
 
+import mujoco
+
 from dm_control import mjcf
 
 from farms_core import pylog
@@ -1361,18 +1363,32 @@ def setup_mjcf_xml(**kwargs) -> (mjcf.RootElement, mjcf.RootElement, Dict):
         if simulation_options is not None
         else 'Euler',
     )
-    mjcf_model.option.mpr_iterations = kwargs.pop(
-        'mpr_iterations',
-        simulation_options.mpr_iterations
-        if simulation_options is not None
-        else 1000,
-    )
-    mjcf_model.option.mpr_tolerance = kwargs.pop(
-        'mpr_tolerance',
-        simulation_options.mpr_tolerance
-        if simulation_options is not None
-        else 1e-6,
-    )
+    if mujoco.mj_version() >= 323:
+        mjcf_model.option.ccd_iterations = kwargs.pop(
+            'ccd_iterations',
+            simulation_options.ccd_iterations
+            if simulation_options is not None
+            else 1000,
+        )
+        mjcf_model.option.ccd_tolerance = kwargs.pop(
+            'ccd_tolerance ',
+            simulation_options.ccd_tolerance
+            if simulation_options is not None
+            else 1e-6,
+        )
+    else:
+        mjcf_model.option.mpr_iterations = kwargs.pop(
+            'mpr_iterations',
+            simulation_options.mpr_iterations
+            if simulation_options is not None
+            else 1000,
+        )
+        mjcf_model.option.mpr_tolerance = kwargs.pop(
+            'mpr_tolerance',
+            simulation_options.mpr_tolerance
+            if simulation_options is not None
+            else 1e-6,
+        )
     mjcf_model.option.noslip_iterations = kwargs.pop(
         'noslip_iterations',
         simulation_options.noslip_iterations
