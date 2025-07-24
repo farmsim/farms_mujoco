@@ -806,10 +806,10 @@ def sdf2mjcf(
                 ' not found in newly created MJCF file.'
                 ' Was it part of the SDF?'
             )
-            if joint.type != 'hinge':
+            if joint.type not in ['hinge', 'slide']:
                 # continue
                 raise Exception(
-                    f'Actuator is not of type hinge but of type {joint.type}'
+                    f'Actuator is not of type hinge/slide but of type {joint.type}'
                 )
             # mjcf_model.actuator.add(
             #     'general',
