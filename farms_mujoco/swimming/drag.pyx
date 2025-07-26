@@ -150,6 +150,7 @@ cdef void compute_buoyancy(
 
 
 cpdef bint drag_forces(
+        double time,
         unsigned int iteration,
         LinkSensorArrayCy data_links,
         unsigned int links_index,
@@ -170,6 +171,7 @@ cpdef bint drag_forces(
     The forces and torques are stored into data_xfrc.array in
     the CoM frame
 
+    :param time: Simulation time
     :param iteration: Simulation iteration
     :param data_links: Links data
     :param links_index: Link data index
@@ -189,7 +191,7 @@ cpdef bint drag_forces(
     cdef double pos_x = data_links.array[iteration, links_index, 0]
     cdef double pos_y = data_links.array[iteration, links_index, 1]
     cdef double pos_z = data_links.array[iteration, links_index, 2]
-    cdef double surface = water.surface(pos_x, pos_y)
+    cdef double surface = water.surface(time, pos_x, pos_y)
     if pos_z > surface:
         return 0
     cdef DTYPEv1 force=z3[0], torque=z3[1], buoyancy=z3[2], tmp=z3[3]
@@ -233,7 +235,7 @@ cpdef bint drag_forces(
 
     # Add fluid velocity
     quat_rot(
-        vector=water.velocity(pos_x, pos_y, pos_z),
+        vector=water.velocity(time, pos_x, pos_y, pos_z),
         quat=global2urdf,
         quat_c=quat_c,
         tmp4=tmp4,
@@ -249,7 +251,7 @@ cpdef bint drag_forces(
         link_velocity=link_lin_velocity,
         coefficients=coefficients[0],
         buoyancy=buoyancy,
-        viscosity=water.viscosity(pos_x, pos_y, pos_z),
+        viscosity=water.viscosity(time, pos_x, pos_y, pos_z),
     )
     compute_torque(
         torque=torque,
@@ -271,39 +273,94 @@ cpdef bint drag_forces(
 cdef class WaterProperties:
     """Water properties"""
 
+    def __init__(self):
+        super(WaterProperties, self).__init__()
+
+    cdef double surface(self, double t, double x, double y):  # nogil
+        """Surface"""
+        return 0
+
+    cdef double density(self, double t, double x, double y, double z):  # nogil
+        """Density"""
+        return 1000
+
+    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):  # nogil
+        """Velocity in global frame"""
+        return np.array([0, 0, 0])
+
+    cdef double viscosity(self, double t, double x, double y, double z):  # nogil
+        """Viscosity"""
+        return 1.0
+
+
+cdef class WaterPropertiesConstant(WaterProperties):
+    """Water properties"""
+
     cdef double _surface
     cdef double _density
     cdef double _viscosity
     cdef DTYPEv1 _velocity
 
     def __init__(self, surface, density, velocity, viscosity):
-        super(WaterProperties, self).__init__()
+        super(WaterPropertiesConstant, self).__init__()
         self._surface = surface
         self._density = density
         self._velocity = velocity
         self._viscosity = viscosity
 
-    cdef double surface(self, double x, double y) nogil:
+    cdef double surface(self, double t, double x, double y):  # nogil
         """Surface"""
         return self._surface
 
-    cdef double density(self, double x, double y, double z) nogil:
+    cdef double density(self, double t, double x, double y, double z):  # nogil
         """Density"""
         return self._density
 
-    cdef DTYPEv1 velocity(self, double x, double y, double z) nogil:
+    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):  # nogil
         """Velocity in global frame"""
         return self._velocity
 
-    cdef double viscosity(self, double x, double y, double z) nogil:
+    cdef double viscosity(self, double t, double x, double y, double z):  # nogil
         """Viscosity"""
         return self._viscosity
 
-    cpdef void set_velocity(self, double vx, double vy, double vz):
+    cpdef void set_velocity(self, double t, double vx, double vy, double vz):
         """Set velocity"""
         self._velocity[0] = vx
         self._velocity[1] = vy
         self._velocity[2] = vz
+
+
+cdef class WaterPropertiesCallback(WaterProperties):
+    """Water properties"""
+
+    cdef object _surface
+    cdef object _density
+    cdef object _viscosity
+    cdef object _velocity
+
+    def __init__(self, surface, density, velocity, viscosity):
+        super(WaterPropertiesCallback, self).__init__()
+        self._surface = surface
+        self._density = density
+        self._velocity = velocity
+        self._viscosity = viscosity
+
+    cdef double surface(self, double t, double x, double y):  # nogil
+        """Surface"""
+        return self._surface(t, x, y)
+
+    cdef double density(self, double t, double x, double y, double z):  # nogil
+        """Density"""
+        return self._density(t, x, y, z)
+
+    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):  # nogil
+        """Velocity in global frame"""
+        return self._velocity(t, x, y, z)
+
+    cdef double viscosity(self, double t, double x, double y, double z):  # nogil
+        """Viscosity"""
+        return self._viscosity(t, x, y, z)
 
 
 cdef class SwimmingHandler:
@@ -330,7 +387,7 @@ cdef class SwimmingHandler:
     cdef DTYPEv2 z4
     cdef DTYPEv3 links_coefficients
 
-    def __init__(self, data, animat_options, arena_options, units, physics):
+    def __init__(self, data, animat_options, arena_options, units, physics, water=None):
         super(SwimmingHandler, self).__init__()
         self.animat_options = animat_options
         self.links = data.sensors.links
@@ -342,12 +399,12 @@ cdef class SwimmingHandler:
         self.meters = float(units.meters)
         self.newtons = float(units.newtons)
         self.torques = float(units.torques)
-        self.water = WaterProperties(
+        self.water = WaterPropertiesConstant(
             surface=float(water_options.height),
             density=float(water_options.density),
             velocity=np.array(water_options.velocity, dtype=float),
             viscosity=float(water_options.viscosity),
-        )
+        ) if water is None else water
         self.z3 = np.zeros([7, 3])
         self.z4 = np.zeros([7, 4])
         links = [
@@ -386,7 +443,7 @@ cdef class SwimmingHandler:
         if self.sph:
             self.water._surface = 1e8
 
-    cpdef step(self, unsigned int iteration):
+    cpdef step(self, double time, unsigned int iteration):
         """Swimming step"""
         cdef unsigned int i
         cdef bint apply_force = 1
@@ -394,6 +451,7 @@ cdef class SwimmingHandler:
             for i in range(self.n_links):
                 if self.drag:
                     apply_force = drag_forces(
+                        time=time,
                         iteration=iteration,
                         data_links=self.links,
                         links_index=self.links_indices[i],
