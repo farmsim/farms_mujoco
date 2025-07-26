@@ -86,5 +86,6 @@ setup(
         'trimesh',
         'dm_control',
         'imageio',
+        'pywavefront'
     ],
 )
