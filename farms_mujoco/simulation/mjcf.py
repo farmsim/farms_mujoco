@@ -35,8 +35,9 @@ from farms_core.io.sdf import (
 )
 
 
-MIN_MASS = 0  # 1e-6
-MIN_INERTIA = 0  # 1e-12
+# Setting to 0 does not work properly for low inertias
+MIN_MASS = 1e-10
+MIN_INERTIA = 1e-15
 
 
 def get_prefix(animat_i):
@@ -628,7 +629,7 @@ def mjc_add_link(
 
     # Inertial
     inertial = None if link_name == 'world' else sdf_link.inertial
-    if inertial is not None:
+    if inertial is not None and inertial.mass > MIN_MASS:
 
         # Extract and validate inertia
         inertia_mat = np.diag([
@@ -647,6 +648,7 @@ def mjc_add_link(
             f'Eigen values <= 0 for link {link_name}'
             f'\nEigenvalues: {eigvals}'
             f'\nInertia:\n{inertia_mat}'
+            f'\nMass:\n{inertial.mass}'
         )
 
         # Rotate inertia tensor
@@ -682,14 +684,6 @@ def mjc_add_link(
             ],
         )
 
-    elif body is not mjcf_model.worldbody:
-        body.add(
-            'inertial',
-            pos=[0, 0, 0],
-            quat=[1, 0, 0, 0],
-            mass=1e-10,
-            diaginertia=[1e-12]*3,
-        )
 
     return body, joint
 
