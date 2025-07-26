@@ -997,6 +997,19 @@ def sdf2mjcf(
                     mjcf_map['actuators'][name].forcelimited = True
                     mjcf_map['actuators'][name].forcerange = torque_limits
         assert mjcf_map['actuators'], mjcf_map['actuators']
+        # Adhesions
+        if 'adhesions' in animat_options.control:
+            for adhesion_options in animat_options.control.adhesions:
+                link_name = adhesion_options.link_name
+                force = adhesion_options.force
+                name_adh = f'actuator_adhesion_{prefix}{link_name}'
+                mjcf_map['actuators'][name_adh] = mjcf_model.actuator.add(
+                    'adhesion',
+                    name=name_adh,
+                    body=f'{prefix}{link_name}',
+                    gain=1,
+                    ctrlrange=[val*units.newtons for val in [0.999*force, force]],
+                )
         # Muscles
         if use_muscles:
             # Add sites from muscle config file
@@ -1127,10 +1140,15 @@ def sdf2mjcf(
 
         if use_actuator_sensors:
             for actuator_name, actuator in mjcf_map['actuators'].items():
+                element = (
+                    actuator.body
+                    if actuator.tag == 'adhesion'
+                    else actuator.joint
+                )
                 mjcf_model.sensor.add(
                     'actuatorfrc',
                     # Adapted for muscles
-                    name=f'actuatorfrc_{actuator.tag}_{actuator.joint}',
+                    name=f'actuatorfrc_{actuator.tag}_{element}',
                     actuator=actuator_name,
                 )
         if use_muscle_sensors:
