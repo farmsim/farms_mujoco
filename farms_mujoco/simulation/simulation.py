@@ -13,7 +13,7 @@ from dm_control import viewer
 from dm_control.rl.control import Environment, PhysicsError
 
 from farms_core import pylog
-from farms_core.model.options import AnimatOptions, ArenaOptions
+from farms_core.experiment.options import ExperimentOptions
 from farms_core.simulation.options import SimulationOptions
 
 from .mjcf import setup_mjcf_xml, mjcf2str
@@ -40,15 +40,15 @@ class Simulation:
     def __init__(
             self,
             mjcf_model: mjcf.element.RootElement,
-            base_link: str,
-            simulation_options: SimulationOptions,
+            base_links: list[str],
+            experiment_options: ExperimentOptions,
             legacy_step: bool = False,
             **kwargs,
     ):
 
         super().__init__()
         self._mjcf_model: mjcf.element.RootElement = mjcf_model
-        self.options: SimulationOptions = simulation_options
+        self.options: SimulationOptions = experiment_options.simulation
         self.pause: bool = not self.options.play
         self.physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
         self.handle_exceptions = kwargs.pop('handle_exceptions', False)
@@ -71,12 +71,15 @@ class Simulation:
             dictionary=kwargs,
             keys=('control_timestep', 'n_sub_steps', 'flat_observation'),
         )
+        if 'n_sub_steps' not in env_kwargs:
+            env_kwargs['n_sub_steps'] = self.options.num_sub_steps
         self.task: ExperimentTask = ExperimentTask(
-            base_link=base_link,
+            experiment_options=experiment_options,
+            base_links=base_links,
             n_iterations=self.options.n_iterations,
             timestep=self.options.timestep,
             units=self.options.units,
-            substeps=self.options.num_sub_steps,
+            substeps=self.options.cb_sub_steps,
             **kwargs,
         )
 
@@ -96,16 +99,12 @@ class Simulation:
     @classmethod
     def from_sdf(
             cls,
-            simulation_options: SimulationOptions,
-            animat_options: AnimatOptions,
-            arena_options: ArenaOptions,
+            experiment_options: ExperimentOptions,
             **kwargs,
     ):
         """From SDF"""
-        mjcf_model, base_link, hfield = setup_mjcf_xml(
-            simulation_options=simulation_options,
-            animat_options=animat_options,
-            arena_options=arena_options,
+        mjcf_model, base_links, hfield = setup_mjcf_xml(
+            experiment_options=experiment_options,
             **extract_sub_dict(
                 dictionary=kwargs,
                 keys=(
@@ -116,9 +115,8 @@ class Simulation:
         )
         return cls(
             mjcf_model=mjcf_model,
-            base_link=base_link.name,
-            simulation_options=simulation_options,
-            animat_options=animat_options,
+            base_links=[base_link.name for base_link in base_links],
+            experiment_options=experiment_options,
             hfield=hfield,
             **kwargs,
         )
@@ -130,6 +128,12 @@ class Simulation:
             pylog.info(mjcf_xml_str)
         with open(path, 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)
+
+    def update_step_options(self):
+        """Update sub steps"""
+        self.task.cb_sub_steps = max(1, self.task.cb_sub_steps)
+        self._env._n_sub_steps = max(1, self._env._n_sub_steps)
+
 
     def run(self):
         """Run simulation"""
@@ -153,6 +157,7 @@ class Simulation:
             )
             try:
                 for _ in _iterator:
+                    self.update_step_options()
                     self._env.step(action=None)
             except PhysicsError as err:
                 pylog.error(traceback.format_exc())
@@ -171,7 +176,8 @@ class Simulation:
         try:
             for iteration in _iterator:
                 yield iteration
-                for _ in range(self.task.substeps):
+                self.update_step_options()
+                for _ in range(self.task.cb_sub_steps):
                     self._env.step(action=None)
         except PhysicsError as err:
             if verbose:
@@ -204,7 +210,7 @@ class Simulation:
             self.options.save(
                 os.path.join(log_path, 'simulation_options.yaml')
             )
-            self.task.animat_options.save(
+            self.task.experiment_options.animats[0].save(
                 os.path.join(log_path, 'animat_options.yaml')
             )
 

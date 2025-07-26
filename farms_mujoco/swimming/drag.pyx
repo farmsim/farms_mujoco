@@ -387,7 +387,7 @@ cdef class SwimmingHandler:
     cdef DTYPEv2 z4
     cdef DTYPEv3 links_coefficients
 
-    def __init__(self, data, animat_options, arena_options, units, physics, water=None):
+    def __init__(self, data, animat_options, arena_options, units, physics, water=None, prefix=''):
         super(SwimmingHandler, self).__init__()
         self.animat_options = animat_options
         self.links = data.sensors.links
@@ -415,7 +415,7 @@ cdef class SwimmingHandler:
         self.n_links = len(links)
         links_row = physics.named.model.body_mass.axes.row
         self.masses = np.array([
-            physics.model.body_mass[links_row.convert_key_item(link.name)]
+            physics.model.body_mass[links_row.convert_key_item(prefix+link.name)]
             for link in links
         ], dtype=float)/units.kilograms
         self.heights = np.array([
@@ -423,7 +423,7 @@ cdef class SwimmingHandler:
                 0.5*physics.model.geom_rbound[geom_i]
                 for geom_i in range(len(physics.model.geom_bodyid))
                 if links_row.names[physics.named.model.geom_bodyid[geom_i]]
-                == link.name
+                == prefix+link.name
             ][0]
             for link in links
         ], dtype=float)/self.meters

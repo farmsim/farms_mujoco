@@ -179,13 +179,12 @@ def get_sensor_maps(physics, verbose=True):
             )
 
         # External forces in world frame
-        # physics.data.xfrc_applied[:] = 0
         pylog.info(physics.named.data.xfrc_applied)
 
     return sensor_maps
 
 
-def get_physics2data_maps(physics, sensor_data, sensor_maps):
+def get_physics2data_maps(physics, sensor_data, sensor_maps, prefix=''):
     """Sensor to data maps"""
 
     # Names from data
@@ -196,34 +195,34 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
     # Links from physics
     xpos_row = physics.named.data.xpos.axes.row
     sensor_maps['xpos2data'] = np.array([
-        row2index(row=xpos_row, name=link_name)
+        row2index(row=xpos_row, name=prefix+link_name)
         for link_name in links_names
     ])
     xquat_row = physics.named.data.xquat.axes.row
     sensor_maps['xquat2data'] = np.array([
-        row2index(row=xquat_row, name=link_name)
+        row2index(row=xquat_row, name=prefix+link_name)
         for link_name in links_names
     ])
     xipos_row = physics.named.data.xipos.axes.row
     sensor_maps['xipos2data'] = np.array([
-        row2index(row=xipos_row, name=link_name)
+        row2index(row=xipos_row, name=prefix+link_name)
         for link_name in links_names
     ])
     cvel_row = physics.named.data.cvel.axes.row
     sensor_maps['cvel2data'] = np.array([
-        row2index(row=cvel_row, name=link_name)
+        row2index(row=cvel_row, name=prefix+link_name)
         for link_name in links_names
     ])
 
     # Joints from physics
     qpos_row = physics.named.data.qpos.axes.row
     sensor_maps['qpos2data'] = np.array([
-        row2index(row=qpos_row, name=joint_name, single=True)
+        row2index(row=qpos_row, name=prefix+joint_name, single=True)
         for joint_name in joints_names
     ])
     qvel_row = physics.named.data.qvel.axes.row
     sensor_maps['qvel2data'] = np.array([
-        row2index(row=qvel_row, name=joint_name, single=True)
+        row2index(row=qvel_row, name=prefix+joint_name, single=True)
         for joint_name in joints_names
     ])
 
@@ -232,12 +231,13 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         sensor_maps[f'{identifier}2data'] = np.array([
             sensor_maps[identifier]['indices'][
                 sensor_maps[identifier]['names'].index(
-                    f'{identifier}_{link_name}'
+                    f'{identifier}_{prefix}{link_name}'
                 )
             ]
             for link_name in links_names
         ]) if all(
-            f'{identifier}_{link_name}' in sensor_maps[identifier]['names']
+            f'{identifier}_{prefix}{link_name}'
+            in sensor_maps[identifier]['names']
             for link_name in links_names
         ) else []
     if len(sensor_maps['framequat2data']) > 0:
@@ -255,25 +255,26 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         sensor_maps[f'{identifier}2data'] = np.array([
             sensor_maps[identifier]['indices'][
                 sensor_maps[identifier]['names'].index(
-                    f'{identifier}_{joint_name}'
+                    f'{identifier}_{prefix}{joint_name}'
                 )
             ][0]
             for joint_name in joints_names
         ]) if all(
-            f'{identifier}_{joint_name}' in sensor_maps[identifier]['names']
+            f'{identifier}_{prefix}{joint_name}'
+            in sensor_maps[identifier]['names']
             for joint_name in joints_names
         ) else []
     forces_row = physics.named.data.sensordata.axes.row
     sensor_maps['force2data'] = np.array([
-        row2index(row=forces_row, name=f'force_{joint_name}')
+        row2index(row=forces_row, name=f'force_{prefix}{joint_name}')
         for joint_name in joints_names
-        if f"force_{joint_name}" in forces_row.names
+        if prefix+f"force_{joint_name}" in forces_row.names
     ])
     torques_row = physics.named.data.sensordata.axes.row
     sensor_maps['torque2data'] = np.array([
-        row2index(row=torques_row, name=f'torque_{joint_name}')
+        row2index(row=torques_row, name=f'torque_{prefix}{joint_name}')
         for joint_name in joints_names
-        if f"torque_{joint_name}" in torques_row.names
+        if prefix+f"torque_{joint_name}" in torques_row.names
     ])
 
     # Muscles - sensors
@@ -286,23 +287,24 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         sensor_maps[f'{identifier}2data'] = np.array([
             sensor_maps[identifier]['indices'][
                 sensor_maps[identifier]['names'].index(
-                    f'{identifier}_{muscle_name}'
+                    f'{identifier}_{prefix}{muscle_name}'
                 )
             ][0]
             for muscle_name in muscles_names
         ]) if all(
-            f'{identifier}_{muscle_name}' in sensor_maps[identifier]['names']
+            f'{identifier}_{prefix}{muscle_name}'
+            in sensor_maps[identifier]['names']
             for muscle_name in muscles_names
         ) else []
 
     tendonlen_row = physics.named.data.ten_length.axes.row
     sensor_maps['tendonpos2data'] = np.array([
-        row2index(row=tendonlen_row, name=f'{muscle_name}')
+        row2index(row=tendonlen_row, name=f'{prefix}{muscle_name}')
         for muscle_name in muscles_names
     ])
     tendonvel_row = physics.named.data.ten_velocity.axes.row
     sensor_maps['tendonvel2data'] = np.array([
-        row2index(row=tendonvel_row, name=f'{muscle_name}')
+        row2index(row=tendonvel_row, name=f'{prefix}{muscle_name}')
         for muscle_name in muscles_names
     ])
     # Muscle sensors
@@ -310,31 +312,31 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         [
             row2index(
                 row=physics.named.data.ctrl.axes.row,
-                name=f'{muscle_name}'
+                name=f'{prefix}{muscle_name}'
             ),
             row2index(
                 row=physics.named.data.act.axes.row,
-                name=f'{muscle_name}'
+                name=f'{prefix}{muscle_name}'
             ),
             row2index(
                 row=physics.named.data.actuator_length.axes.row,
-                name=f'{muscle_name}'
+                name=f'{prefix}{muscle_name}'
             ),
             row2index(
                 row=physics.named.data.actuator_velocity.axes.row,
-                name=f'{muscle_name}'
+                name=f'{prefix}{muscle_name}'
             ),
             row2index(
                 row=physics.named.data.actuator_force.axes.row,
-                name=f'{muscle_name}'
+                name=f'{prefix}{muscle_name}'
             ),
             row2index(
                 row=physics.named.model.actuator_gainprm.axes.row,
-                name=f'{muscle_name}'
+                name=f'{prefix}{muscle_name}'
             ),
             row2index(
                 row=physics.named.model.actuator_user.axes.row,
-                name=f'{muscle_name}'
+                name=f'{prefix}{muscle_name}'
             ),
         ]
         for muscle_name in muscles_names
@@ -357,7 +359,10 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         ]).ravel()
 
     # Contacts
-    contacts_pairs = sensor_data.contacts.names
+    contacts_pairs = [
+        (prefix+name1 if name1 else name1, prefix+name2 if name2 else name2)
+        for (name1, name2) in sensor_data.contacts.names
+    ]
     body_names = physics.named.model.body_pos.axes.row.names
     sensor_maps['geompair2data'] = {
         (geom_id, -1): contacts_pairs.index((body_names[body_id], ''))
@@ -377,18 +382,24 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
         assert not isinstance(pair, str) and len(pair) == 2, (
             f'Contact "{pair}" should be a pair of strings'
         )
-        assert pair_i in geompair2data_values, (
-            f'Missing pair: {pair} ({body_names=})'
-        )
+        if pair_i not in geompair2data_values:
+            pylog.warning(
+                f'WARNING: {pair=} was not found in collisions'
+                f'\n\nMissing pair: {pair=} ({body_names=})'
+                f'\n{pair_i=} is expected in {geompair2data_values=}'
+                f'\n{contacts_pairs=}'
+                f'\n{sensor_maps["geompair2data"]=}'
+                f'\n\nNOTE: {pair=} is potentially missing a collision'
+            )
 
     # External forces
     row = physics.named.data.xfrc_applied.axes.row
     sensor_maps['data2xfrc'] = np.array([
-        row2index(row=row, name=name, single=True)
+        row2index(row=row, name=prefix+name, single=True)
         for name in sensor_data.xfrc.names
     ])
     sensor_maps['datalinks2xfrc'] = np.array([
-        row2index(row=row, name=name, single=True)
+        row2index(row=row, name=prefix+name, single=True)
         for name in sensor_data.links.names
     ])
 
@@ -499,12 +510,13 @@ def physicsjointssensors2data(physics, iteration, data, sensor_maps, units):
 
 def physicsjoints2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
-    data.sensors.joints.array[iteration, :, sc.joint_position] = (
-        physics.data.qpos[sensor_maps['qpos2data']]
-    )
-    data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
-        physics.data.qvel[sensor_maps['qvel2data']]
-    )/units.angular_velocity
+    if len(sensor_maps['qpos2data']) > 0:
+        data.sensors.joints.array[iteration, :, sc.joint_position] = (
+            physics.data.qpos[sensor_maps['qpos2data']]
+        )
+        data.sensors.joints.array[iteration, :, sc.joint_velocity] = (
+            physics.data.qvel[sensor_maps['qvel2data']]
+        )/units.angular_velocity
 
 
 def physicsactuators2data(physics, iteration, data, sensor_maps, units):

@@ -19,8 +19,8 @@ class CameraCallback(TaskCallback):
             camera_id,
             timestep: float,
             n_iterations: int,
-            fps: float,
-            speed: float,
+            fps: float = 30,
+            speed: float = 1.0,
             **kwargs,
     ):
         super().__init__()

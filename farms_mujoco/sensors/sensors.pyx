@@ -154,8 +154,9 @@ cpdef cycontacts2data(
     cdef object data_ptr = physics.data.ptr
     cdef object contacts = physics.data.contact
     cdef DTYPEv1 norm_sum = np.zeros(data.array.shape[1], dtype=np.double)
-    cdef np.ndarray[double, ndim=1] forcetorque = np.empty(6, dtype=np.double)
-    for contact_i in range(len(contacts)):
+    cdef np.ndarray[double, ndim=1] forcetorque = np.zeros(6, dtype=np.double)
+    cdef unsigned int n_contacts = len(contacts)
+    for contact_i in range(n_contacts):
         # Extract body index
         contact = contacts[contact_i]
         geom1 = contact.geom1
