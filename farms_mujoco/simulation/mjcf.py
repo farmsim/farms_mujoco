@@ -762,6 +762,7 @@ def sdf2mjcf(
     if use_frc_trq_sensors:
         assert use_site, "Enable use_site option to use force-torque sensors"
     solref = kwargs.get('solref', None)
+    solimp = kwargs.get('solimp', None)
 
     # Position
     act_pos_ctrllimited = kwargs.pop('act_pos_ctrllimited', False)
