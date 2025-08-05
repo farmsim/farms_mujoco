@@ -343,11 +343,12 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps, prefix=''):
     ])
 
     # Actuator - sensors
+    # TODO FIXME actuator_moment is not a named axis anymore
     actuator_momentrow = physics.named.data.actuator_moment.axes.row
     actuator_momentcol = physics.named.data.actuator_moment.axes.col
-    actuator_moment_numrows = len(actuator_momentrow.names)
-    actuator_moment_numcols = len(actuator_momentcol.names)
-    for identifier in ['actuator_moment',]:
+    # actuator_moment_numrows = len(actuator_momentrow.names)
+    # actuator_moment_numcols = len(actuator_momentcol.names)
+    for identifier in []:  # 'actuator_moment',
         sensor_maps[f'{identifier}2data'] = np.concatenate([
             row2index(
                 actuator_momentrow, name=actuator_name
