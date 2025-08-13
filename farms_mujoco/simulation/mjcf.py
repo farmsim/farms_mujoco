@@ -784,7 +784,7 @@ def sdf2mjcf(
         if simulation_options is not None
         else SimulationUnitScaling()
     ))
-    texture_repeat = simulation_options.texture_repeat
+    texture_repeat = simulation_options.mujoco.texture_repeat
 
     if mjcf_model is None:
         mjcf_model = mjcf.RootElement()
@@ -1294,13 +1294,13 @@ def add_cameras(
         rot = np.zeros(3)
     rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
     if simulation_options is not None:
-        dist = simulation_options.video_distance
-        pitch = np.deg2rad(-90+simulation_options.video_pitch)
-        yaw = np.deg2rad(-simulation_options.video_yaw)
+        dist = simulation_options.video.distance
+        pitch = np.deg2rad(-90+simulation_options.video.pitch)
+        yaw = np.deg2rad(-simulation_options.video.yaw)
         sim_options_camera = [['trackcom', [
-            dist*np.sin(pitch)*np.sin(yaw) + simulation_options.video_offset[0],
-            dist*np.sin(pitch)*np.cos(yaw) + simulation_options.video_offset[1],
-            dist*np.cos(pitch) + simulation_options.video_offset[2],
+            dist*np.sin(pitch)*np.sin(yaw) + simulation_options.video.offset[0],
+            dist*np.sin(pitch)*np.cos(yaw) + simulation_options.video.offset[1],
+            dist*np.cos(pitch) + simulation_options.video.offset[2],
             -pitch, 0, -yaw,
         ]]]
     else:
@@ -1425,7 +1425,7 @@ def setup_mjcf_xml(
     mjcf_model.compiler.fusestatic = True
     mjcf_model.compiler.discardvisual = kwargs.pop(
         'discardvisual',
-        simulation_options.headless and not simulation_options.video
+        simulation_options.headless and not simulation_options.video.path
         if simulation_options is not None
         else False
     )
@@ -1445,7 +1445,7 @@ def setup_mjcf_xml(
     mjcf_model.statistic.extent = (
         100*units.meters
         if not simulation_options
-        else simulation_options.mujoco_extent
+        else simulation_options.mujoco.extent
     )
 
     # Visual
@@ -1478,19 +1478,19 @@ def setup_mjcf_xml(
     mjcf_model.visual.scale.framewidth = 0.01*scale
     mjcf_model.visual.scale.constraint = 0.01*scale
     mjcf_model.visual.scale.slidercrank = 0.01*scale
-    mjcf_model.visual.quality.shadowsize = simulation_options.shadow_size  # 1024
+    mjcf_model.visual.quality.shadowsize = simulation_options.mujoco.shadow_size
     mjcf_model.visual.quality.offsamples = 4
     mjcf_model.visual.quality.numslices = 28
     mjcf_model.visual.quality.numstacks = 16
     mjcf_model.visual.quality.numquads = 4
     glob = mjcf_model.visual.get_children('global')  # Global reserved in Python
     glob.offwidth = (
-        simulation_options.video_resolution[0]
+        simulation_options.video.resolution[0]
         if simulation_options is not None
         else 1280
     )
     glob.offheight = (
-        simulation_options.video_resolution[1]
+        simulation_options.video.resolution[1]
         if simulation_options is not None
         else 720
     )
@@ -1502,7 +1502,7 @@ def setup_mjcf_xml(
     mjcf_model.option.timestep = timestep
     mjcf_model.option.impratio = kwargs.pop(
         'impratio',
-        simulation_options.impratio
+        simulation_options.mujoco.impratio
         if simulation_options is not None
         else 1,
     )
@@ -1514,13 +1514,13 @@ def setup_mjcf_xml(
     )
     mjcf_model.option.cone = kwargs.pop(
         'cone',
-        simulation_options.cone
+        simulation_options.mujoco.cone
         if simulation_options is not None
         else 'pyramidal',
     )
     mjcf_model.option.solver = kwargs.pop(
         'solver',
-        simulation_options.solver
+        simulation_options.mujoco.solver
         if simulation_options is not None
         else 'Newton',
     )
@@ -1532,45 +1532,45 @@ def setup_mjcf_xml(
     )
     mjcf_model.option.integrator = kwargs.pop(
         'integrator',
-        simulation_options.integrator
+        simulation_options.mujoco.integrator
         if simulation_options is not None
         else 'Euler',
     )
     if mujoco.mj_version() >= 323:
         mjcf_model.option.ccd_iterations = kwargs.pop(
             'ccd_iterations',
-            simulation_options.ccd_iterations
+            simulation_options.mujoco.ccd_iterations
             if simulation_options is not None
             else 1000,
         )
         mjcf_model.option.ccd_tolerance = kwargs.pop(
             'ccd_tolerance ',
-            simulation_options.ccd_tolerance
+            simulation_options.mujoco.ccd_tolerance
             if simulation_options is not None
             else 1e-6,
         )
     else:
         mjcf_model.option.mpr_iterations = kwargs.pop(
             'mpr_iterations',
-            simulation_options.mpr_iterations
+            simulation_options.mujoco.mpr_iterations
             if simulation_options is not None
             else 1000,
         )
         mjcf_model.option.mpr_tolerance = kwargs.pop(
             'mpr_tolerance',
-            simulation_options.mpr_tolerance
+            simulation_options.mujoco.mpr_tolerance
             if simulation_options is not None
             else 1e-6,
         )
     mjcf_model.option.noslip_iterations = kwargs.pop(
         'noslip_iterations',
-        simulation_options.noslip_iterations
+        simulation_options.mujoco.noslip_iterations
         if simulation_options is not None
         else 0
     )
     mjcf_model.option.noslip_tolerance = kwargs.pop(
         'noslip_tolerance',
-        simulation_options.noslip_tolerance
+        simulation_options.mujoco.noslip_tolerance
         if simulation_options is not None
         else 1e-6,
     )
