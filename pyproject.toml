@@ -1,0 +1,62 @@
+[build-system]
+requires = [
+     "setuptools", "numpy <= 1.26.4", "Cython>=0.15.1"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+version = "0.1.0"
+name = "farms_mujoco"
+description = "FARMS package for running simulations with MuJoCo"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">= 3.11"
+dependencies = [
+    "numpy <= 1.26.4",
+    "matplotlib",
+    "cython",
+    "numpy",
+    "scipy",
+    "tqdm",
+    "trimesh",
+    "mujoco==3.2.2",
+    "dm_control==1.0.22",
+    "imageio",
+    "pywavefront"
+    # "farms_core @ git+https://github.com/farmsim/farms_core.git",
+]
+keywords = ["farms", "framework", "animals", "robot", " modeling", "simulation"]
+classifiers = [
+  "Development Status :: 3 - Beta",
+  # Indicate who your project is intended for
+  "Intended Audience :: Science/Research",
+  "ScieTopic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Artificial Life",
+  # Specify the Python versions you support here.
+  "Programming Language :: Python :: 3.11",
+]
+
+[project.urls]
+Homepage = "https://farmsim.dev"
+Documentation = "https://farmsim.dev"
+Repository = "https://github.com/farmsim/farms_mujoco.git"
+Issues = "https://github.com/farmsim/farms_mujoco/issues"
+Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+analysis = []
+
+[tool.setuptools.packages.find]
+# This is equivalent to find_packages() with no arguments
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+farms_mujoco = [
+   "*.pxd",
+   "sensors/*.pxd",
+   "swimming/*.pxd"
+]
