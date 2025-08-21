@@ -1,19 +1,12 @@
 #!/usr/bin/env python
 """Setup script"""
 
-from setuptools import setup, find_packages
-from setuptools.extension import Extension
-from setuptools import dist
-
-dist.Distribution().fetch_build_eggs(['numpy'])
-import numpy as np  # pylint: disable=wrong-import-position
-
-dist.Distribution().fetch_build_eggs(['Cython>=0.15.1'])
+import numpy as np
 from Cython.Build import cythonize  # pylint: disable=wrong-import-position
 from Cython.Compiler import Options  # pylint: disable=wrong-import-position
-
-dist.Distribution().fetch_build_eggs(['farms_core'])
 from farms_core import get_include_paths  # pylint: disable=wrong-import-position
+from setuptools import setup
+from setuptools.extension import Extension
 
 
 # Cython options
@@ -39,18 +32,6 @@ Options.closure_freelist_size = 8
 
 setup(
     name='farms_mujoco',
-    version='0.1',
-    author='farmsdev',
-    author_email='biorob-farms@groupes.epfl.ch',
-    description='FARMS package for running simulations with MuJoCo',
-    keywords='farms simulation mujoco',
-    packages=find_packages(),
-    package_dir={'farms_mujoco': 'farms_mujoco'},
-    package_data={'farms_mujoco': [
-        f'{folder}/*.pxd'
-        for folder in ['sensors', 'swimming']
-    ]},
-    include_package_data=True,
     include_dirs=[np.get_include()] + get_include_paths(),
     ext_modules=cythonize(
         [
@@ -77,15 +58,4 @@ setup(
         }
     ),
     zip_safe=False,
-    install_requires=[
-        'farms_core',
-        'cython',
-        'numpy',
-        'scipy',
-        'tqdm',
-        'trimesh',
-        'dm_control',
-        'imageio',
-        'pywavefront'
-    ],
 )
