@@ -23,8 +23,9 @@ dependencies = [
     "mujoco==3.2.2",
     "dm_control==1.0.22",
     "imageio",
-    "pywavefront"
-    # "farms_core @ git+https://github.com/farmsim/farms_core.git",
+    "pywavefront",
+    "farms_core",
+    "farms_sim",
 ]
 keywords = ["farms", "framework", "animals", "robot", " modeling", "simulation"]
 classifiers = [
@@ -53,6 +54,9 @@ analysis = []
 
 [tool.setuptools]
 include-package-data = true
+
+[tool.setuptools.package-dir]
+farms_mujoco = "farms_mujoco"
 
 [tool.setuptools.package-data]
 farms_mujoco = [
