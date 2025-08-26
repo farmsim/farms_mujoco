@@ -49,7 +49,7 @@ class Simulation:
         super().__init__()
         self._mjcf_model: mjcf.element.RootElement = mjcf_model
         self.options: SimulationOptions = experiment_options.simulation
-        self.pause: bool = not self.options.play
+        self.pause: bool = not self.options.runtime.play
         self.physics: mjcf.Physics = mjcf.Physics.from_mjcf_model(mjcf_model)
         self.handle_exceptions = kwargs.pop('handle_exceptions', False)
 
@@ -60,7 +60,7 @@ class Simulation:
         if 'MUJOCO_GL' not in os.environ:
             os.environ['MUJOCO_GL'] = (
                 'egl'
-                if self.options.headless
+                if self.options.runtime.headless
                 else 'glfw'  # 'osmesa'
             )
         pylog.debug(f'Using env variable : MUJOCO_GL={os.environ["MUJOCO_GL"]}')
@@ -72,21 +72,24 @@ class Simulation:
             keys=('control_timestep', 'n_sub_steps', 'flat_observation'),
         )
         if 'n_sub_steps' not in env_kwargs:
-            env_kwargs['n_sub_steps'] = self.options.num_sub_steps
+            env_kwargs['n_sub_steps'] = self.options.physics.num_sub_steps
         self.task: ExperimentTask = ExperimentTask(
             experiment_options=experiment_options,
             base_links=base_links,
-            n_iterations=self.options.n_iterations,
-            timestep=self.options.timestep,
+            n_iterations=self.options.runtime.n_iterations,
+            timestep=self.options.physics.timestep,
             units=self.options.units,
-            substeps=self.options.cb_sub_steps,
+            substeps=self.options.physics.cb_sub_steps,
             **kwargs,
         )
 
         self._env: Environment = Environment(
             physics=self.physics,
             task=self.task,
-            time_limit=self.options.n_iterations*self.options.timestep,
+            time_limit=(
+                self.options.runtime.n_iterations
+                *self.options.physics.timestep
+            ),
             legacy_step=legacy_step,
             **env_kwargs,
         )
@@ -137,12 +140,12 @@ class Simulation:
 
     def run(self):
         """Run simulation"""
-        if not self.options.headless:
+        if not self.options.runtime.headless:
             app = FarmsApplication()
             app.set_speed(multiplier=(
                 # pylint: disable=protected-access
                 viewer.util._MAX_TIME_MULTIPLIER
-                if self.options.fast
+                if self.options.runtime.fast
                 else 1
             ))
             self.task.set_app(app=app)
@@ -152,7 +155,7 @@ class Simulation:
         else:
             _iterator = (
                 tqdm(range(self.task.sim_iterations))
-                if self.options.show_progress
+                if self.options.runtime.show_progress
                 else range(self.task.sim_iterations)
             )
             try:
