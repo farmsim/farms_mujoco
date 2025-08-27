@@ -960,6 +960,11 @@ def sdf2mjcf(
                     if animat_options and motors_ctrl[joint_name].gains
                     else 0
                 ),
+                kv=(
+                    motors_ctrl[joint_name].gains[1]*units.angular_damping
+                    if animat_options and motors_ctrl[joint_name].gains
+                    else 0
+                ),
                 ctrllimited=act_pos_ctrllimited,
                 ctrlrange=act_pos_ctrlrange,
                 forcelimited=act_pos_forcelimited,
@@ -971,7 +976,7 @@ def sdf2mjcf(
                 name=name_vel,
                 joint=f'{prefix}{joint_name}',
                 kv=(
-                    motors_ctrl[joint_name].gains[1]*units.angular_damping
+                    motors_ctrl[joint_name].gains[2]*units.angular_damping
                     if animat_options and motors_ctrl[joint_name].gains
                     else 0
                 ),
