@@ -169,7 +169,8 @@ class ExperimentTask(Task):
         """Operations before physics step"""
 
         # Checks
-        assert self.iteration < self.n_iterations
+        if self.n_iterations > 0:
+            assert self.iteration < self.n_iterations
 
         # Sensors
         full_step = not self.sim_iteration % self.substeps
@@ -353,10 +354,10 @@ class ExperimentTask(Task):
         fullstep = not (self.sim_iteration + 1) % self.substeps
         if fullstep:
             self.iteration += 1
-        assert self.iteration <= self.n_iterations
-
+        if (self.n_iterations > 0):
+            assert self.iteration <= self.n_iterations
         # Simulation complete
-        if self.iteration == self.n_iterations:
+        if (self.n_iterations > 0) and (self.iteration == self.n_iterations):
             pylog.info('Simulation complete')
             if self._app is not None and not self._restart:
                 self._app.close()
@@ -402,7 +403,7 @@ class ExperimentTask(Task):
         for callback in self._callbacks:
             if callback.get_termination(task=self, physics=physics):
                 terminate = 1
-        if self.iteration >= self.n_iterations:
+        if (self.n_iterations > 0) and (self.iteration >= self.n_iterations):
             terminate = 1
         return terminate
 

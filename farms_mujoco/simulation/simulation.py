@@ -80,10 +80,15 @@ class Simulation:
             **kwargs,
         )
 
+        time_limit = (
+            float("inf")
+            if self.options.n_iterations < 0 else
+            self.options.n_iterations*self.options.timestep
+        )
         self._env: Environment = Environment(
             physics=self.physics,
             task=self.task,
-            time_limit=self.options.n_iterations*self.options.timestep,
+            time_limit= time_limit,
             legacy_step=legacy_step,
             **env_kwargs,
         )
