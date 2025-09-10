@@ -8,6 +8,7 @@ import matplotlib.animation as manimation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from farms_core import pylog
+from farms_core.experiment.options import ExperimentOptions
 from farms_mujoco.simulation.task import TaskCallback
 
 
@@ -37,6 +38,19 @@ class CameraCallback(TaskCallback):
         self.data = np.zeros(
             [n_iterations//(self.skips+1)+1, self.height, self.width, 3],
             dtype=np.uint8
+        )
+
+    @classmethod
+    def from_options(cls, experiment_options: ExperimentOptions):
+        """From options"""
+        sim_options = experiment_options.simulation
+        return cls(
+            camera_id=0,
+            timestep=sim_options.physics.timestep,
+            n_iterations=sim_options.runtime.n_iterations,
+            fps=sim_options.video.fps,
+            width=sim_options.video.resolution[0],
+            height=sim_options.video.resolution[1],
         )
 
     def initialize_episode(self, task, physics):

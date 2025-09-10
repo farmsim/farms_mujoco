@@ -1407,7 +1407,7 @@ def setup_mjcf_xml(
         mjcf_model, _ = sdf2mjcf(
             sdf=sdf_animat,
             mjcf_model=mjcf_model,
-            model_name=f'a{animat_i}_{animat_options.name}',
+            model_name=f'animat_{animat_i}',
             prefix=get_prefix(animat_i),
             fixed_base=animat_fixed_base,
             use_sensors=True,
