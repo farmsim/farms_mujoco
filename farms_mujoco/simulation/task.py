@@ -124,7 +124,8 @@ class ExperimentTask(Task):
             idx0 = physics.bind(hfield).adr
             size = nrow*ncol
             physics.model.hfield_data[idx0:idx0+size] = 2*(data.flatten()-0.5)
-            if physics.contexts:
+            if False and physics.contexts:
+                # FIXME This leads to mujoco.FatalError: gladLoadGL error
                 with physics.contexts.gl.make_current() as ctx:
                     ctx.call(
                         mjbindings.mjlib.mjr_uploadHField,
