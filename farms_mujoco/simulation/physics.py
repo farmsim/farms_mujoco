@@ -44,7 +44,7 @@ def joints_data(physics, sensor_maps):
                 ['jointvel', 1],
                 ['actuatorfrc_position', 1],
                 ['actuatorfrc_velocity', 1],
-                ['actuatorfrc_torque', 1],
+                ['actuatorfrc_motor', 1],
         ]
     ]
 
@@ -74,7 +74,7 @@ def get_sensor_maps(physics, verbose=True):
         'jointpos', 'jointvel', 'jointlimitfrc',
         'force', 'torque',
         # Joints control
-        'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_torque',
+        'actuatorfrc_position', 'actuatorfrc_velocity', 'actuatorfrc_motor',
         # Muscles
         'musclefrc', 'tendonpos', 'tendonvel',
         'musclefiberlen', 'musclefibervel',
@@ -139,7 +139,7 @@ def get_sensor_maps(physics, verbose=True):
                     ['velocities', 'jointvel'],
                     ['torques (position)', 'actuatorfrc_position'],
                     ['torques (velocity)', 'actuatorfrc_velocity'],
-                    ['torques (torque)', 'actuatorfrc_torque'],
+                    ['torques (motor)', 'actuatorfrc_motor'],
                     ['limits', 'jointlimitfrc'],
                     ['forces (total)', 'force'],
                     ['torques (total)', 'torque'],
@@ -250,7 +250,7 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps):
             'jointpos', 'jointvel', 'jointlimitfrc',
             'actuatorfrc_position',
             'actuatorfrc_velocity',
-            'actuatorfrc_torque',
+            'actuatorfrc_motor',
     ]:
         sensor_maps[f'{identifier}2data'] = np.array([
             sensor_maps[identifier]['indices'][
@@ -518,9 +518,9 @@ def physicsactuators2data(physics, iteration, data, sensor_maps, units):
         data.sensors.joints.array[iteration, :, sc.joint_torque] += (
             physics.data.sensordata[sensor_maps['actuatorfrc_velocity2data']]
         )*itorques
-    if len(sensor_maps['actuatorfrc_torque2data']) > 0:
+    if len(sensor_maps['actuatorfrc_motor2data']) > 0:
         data.sensors.joints.array[iteration, :, sc.joint_torque] += (
-            physics.data.sensordata[sensor_maps['actuatorfrc_torque2data']]
+            physics.data.sensordata[sensor_maps['actuatorfrc_motor2data']]
         )*itorques
 
 
