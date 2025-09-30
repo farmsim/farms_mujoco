@@ -4,6 +4,7 @@ from typing import List, Dict
 
 import numpy as np
 
+import mujoco
 from dm_control.rl.control import Task
 from dm_control.viewer.application import Application
 from dm_control.mjcf.physics import Physics
@@ -91,7 +92,7 @@ class ExperimentTask(Task):
         assert isinstance(app, Application)
         self._app = app
 
-    def initialize_episode(self, physics: Physics):
+    def initialize_episode(self, physics: Physics, viewer=None):
         """Sets the state of the environment at the start of each episode"""
 
         # Checks
@@ -133,6 +134,8 @@ class ExperimentTask(Task):
                         physics.contexts.mujoco.ptr,
                         physics.bind(hfield).element_id,
                     )
+            if viewer is not None:
+                viewer.update_hfield(physics.bind(hfield).element_id)
 
         # Maps, data and sensors
         self.initialize_maps(physics)
@@ -149,12 +152,22 @@ class ExperimentTask(Task):
         physics.reset(keyframe_id=0)
 
         if self._app is not None:
+            self.update_sensors(physics, links_only=True)
             cam = self._app._viewer.camera  # pylint: disable=protected-access
             links = self.data.animats[0].sensors.links
             cam.look_at(
                 position=links.urdf_position(iteration=0, link_i=0),
                 distance=3,
             )
+
+        if viewer is not None:
+            self.update_sensors(physics, links_only=True)
+            cam = viewer.cam  # pylint: disable=protected-access
+            links = self.data.animats[0].sensors.links
+            cam.lookat = links.com_position(iteration=0, link_i=0)
+            cam.distance = 2
+            cam.azimuth = 300
+            cam.elevation = -10
 
         # Callbacks
         for callback in self._callbacks:

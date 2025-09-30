@@ -1,6 +1,7 @@
 """Simulation"""
 
 import os
+import time
 import warnings
 import traceback
 from typing import List, Dict
@@ -8,8 +9,10 @@ from typing import List, Dict
 import numpy as np
 from tqdm import tqdm
 
+import mujoco
+import mujoco.viewer
 from dm_control import mjcf
-from dm_control import viewer
+from dm_control import viewer as dm_viewer
 from dm_control.rl.control import Environment, PhysicsError
 
 from farms_core import pylog
@@ -55,8 +58,8 @@ class Simulation:
 
         # Simulator configuration
         # pylint: disable=protected-access
-        viewer.util._MIN_TIME_MULTIPLIER = 2**-10
-        viewer.util._MAX_TIME_MULTIPLIER = 2**10
+        dm_viewer.util._MIN_TIME_MULTIPLIER = 2**-10
+        dm_viewer.util._MAX_TIME_MULTIPLIER = 2**10
         if 'MUJOCO_GL' not in os.environ:
             os.environ['MUJOCO_GL'] = (
                 'egl'
@@ -93,6 +96,11 @@ class Simulation:
             legacy_step=legacy_step,
             **env_kwargs,
         )
+
+        # User interface
+        self.viewer_paused = False
+        self.viwer_step_iteration = False
+        self.viewer_last_update = 0
 
     @property
     def iteration(self):
@@ -137,21 +145,88 @@ class Simulation:
         self.task.cb_sub_steps = max(1, self.task.cb_sub_steps)
         self._env._n_sub_steps = max(1, self._env._n_sub_steps)
 
+    def viewer_callback(self, keycode):
+        """UI callback"""
+        code = chr(keycode)
+        match code:
+            case ' ':
+                self.viewer_paused = not self.viewer_paused
+                pylog.debug(f'Toggling pause: {self.viewer_paused=}')
+            case 'ĉ':
+                pylog.debug('Up')
+            case 'Ć':
+                pylog.debug('Stepping single iteration')
+                self.viwer_step_iteration = True
+            case 'Ĉ':
+                pylog.debug('Down')
+            case 'ć':
+                pylog.debug('Left')
+            case _:
+                pylog.debug(f'Unhandled key: "{code}" ({keycode})')
 
     def run(self):
         """Run simulation"""
         if not self.options.runtime.headless:
-            app = FarmsApplication()
-            app.set_speed(multiplier=(
-                # pylint: disable=protected-access
-                viewer.util._MAX_TIME_MULTIPLIER
-                if self.options.runtime.fast
-                else 1
-            ))
-            self.task.set_app(app=app)
-            if not self.pause:
-                app.toggle_pause()
-            app.launch(environment_loader=self._env)
+            if self.options.mujoco.viewer == 'dm_control':
+                app = FarmsApplication()
+                app.set_speed(multiplier=(
+                    # pylint: disable=protected-access
+                    dm_viewer.util._MAX_TIME_MULTIPLIER
+                    if self.options.runtime.fast
+                    else 1
+                ))
+                self.task.set_app(app=app)
+                if not self.pause:
+                    app.toggle_pause()
+                app.launch(environment_loader=self._env)
+            else:
+                with mujoco.viewer.launch_passive(
+                        self.physics.model.ptr,
+                        self.physics.data.ptr,
+                        key_callback=self.viewer_callback,
+                ) as viewer:
+                    iteration = 0
+                    n_iterations = self.task.n_iterations
+                    while viewer.is_running() and iteration < n_iterations:
+
+                        # Time
+                        tic = time.time()
+
+                        # Start simulation
+                        if iteration == 0:
+                            self.task.initialize_episode(self.physics, viewer)
+                            viewer.opt.geomgroup[3] = 1
+
+                        # Skip if paused
+                        if self.viewer_paused and not self.viwer_step_iteration:
+                            if tic - self.viewer_last_update > 0.03:
+                                viewer.sync()
+                                self.viewer_last_update = tic
+                            continue
+
+                        # Update viewer
+                        viewer.sync()
+
+                        # Step
+                        self.update_step_options()
+                        self._env.step(action=None)
+                        iteration += 1
+
+                        # Pick up changes to the physics state, options from GUI
+                        # FIXME Does this apply perturbations?
+                        viewer.sync()
+                        self.viewer_last_update = time.time()
+
+                        # Rudimentary time keeping
+                        timestep = self.physics.model.opt.timestep
+                        wait_time = timestep - (time.time() - tic)
+                        if wait_time > 0:
+                            time.sleep(wait_time)
+
+                        # Single simulation step
+                        if self.viwer_step_iteration:
+                            self.viewer_paused = True
+                            self.viwer_step_iteration = False
         else:
             _iterator = (
                 tqdm(range(self.task.sim_iterations))
