@@ -187,6 +187,7 @@ class Simulation:
                 ) as viewer:
                     iteration = 0
                     n_iterations = self.task.n_iterations
+                    cb_sub_steps = self.task.cb_sub_steps
                     while viewer.is_running() and iteration < n_iterations:
 
                         # Time
@@ -209,7 +210,8 @@ class Simulation:
 
                         # Step
                         self.update_step_options()
-                        self._env.step(action=None)
+                        for _ in range(cb_sub_steps):
+                            self._env.step(action=None)
                         iteration += 1
 
                         # Pick up changes to the physics state, options from GUI
@@ -219,7 +221,7 @@ class Simulation:
 
                         # Rudimentary time keeping
                         timestep = self.physics.model.opt.timestep
-                        wait_time = timestep - (time.time() - tic)
+                        wait_time = cb_sub_steps*timestep - (time.time() - tic)
                         if wait_time > 0:
                             time.sleep(wait_time)
 
