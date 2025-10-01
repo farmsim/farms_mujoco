@@ -1703,6 +1703,7 @@ def setup_mjcf_xml(
     save_mjcf = kwargs.pop('save_mjcf', False)
     if save_mjcf:
         path = save_mjcf if isinstance(save_mjcf, str) else 'simulation_mjcf.xml'
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w+', encoding='utf-8') as xml_file:
             xml_file.write(mjcf_xml_str)
 
