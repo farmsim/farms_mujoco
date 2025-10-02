@@ -416,11 +416,11 @@ def mjc_add_link(
                         mjcf_model.asset.add(
                             'material',
                             name=f'{prefix}material_{mat_id}',
-                            texture=f'texture_{mat_id}',
+                            texture=f'{prefix}texture_{mat_id}',
                             specular='1.0',
                             shininess='1.0',
                         )
-                    geom_kwargs['material'] = f'material_{mat_id}'
+                    geom_kwargs['material'] = f'{prefix}material_{mat_id}'
 
             # Convexify
             mesh = tri.load_mesh(mesh_path)
