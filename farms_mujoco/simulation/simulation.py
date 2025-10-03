@@ -41,7 +41,7 @@ def real_time_handing(
     """Real-time handling"""
     tic_rt[1] = time.time()
     tic_rt[2] += timestep/rtl - (tic_rt[1] - tic_rt[0])
-    if tic_rt[2] > 1e-2:
+    if tic_rt[2] > 2e-2:
         time.sleep(tic_rt[2])
         tic_rt[2] = 0
     elif tic_rt[2] < 0:
@@ -117,9 +117,13 @@ class Simulation:
         self.viewer_quit = False
         self.viewer_paused = not self.options.runtime.play
         self.viwer_step_iteration = False
-        self.viewer_last_update = 0
-        self.viewer_speed = 2**8 if self.options.runtime.fast else 1.0
         self.viewer_tic_rt = np.zeros(3)
+        self.viewer_last_sync = 0
+        self.viewer_speed = (
+            2**8
+            if self.options.runtime.fast
+            else self.options.runtime.rtl
+        )
 
     @property
     def iteration(self):
@@ -234,19 +238,22 @@ class Simulation:
 
                         # Skip if paused
                         if self.viewer_paused and not self.viwer_step_iteration:
-                            if tic - self.viewer_last_update > 0.03:
+                            if tic - self.viewer_last_sync > 0.02:
                                 viewer.sync()
-                                self.viewer_last_update = tic
+                                self.viewer_last_sync = tic
                             continue
-
-                        # Update viewer
-                        viewer.sync()
 
                         # Step
                         self.update_step_options()
                         for _ in range(cb_sub_steps):
                             self._env.step(action=None)
                         iteration += 1
+
+                        # Pick up changes to the physics state, options from GUI
+                        # FIXME Does this apply perturbations?
+                        if tic - self.viewer_last_sync > 0.02:
+                            viewer.sync()
+                            self.viewer_last_sync = tic
 
                         # Camera
                         if not self.options.camera.free_camera:
@@ -255,17 +262,9 @@ class Simulation:
                                 link_i=0,
                             )
 
-                        # Pick up changes to the physics state, options from GUI
-                        # FIXME Does this apply perturbations?
-                        viewer.sync()
-                        self.viewer_last_update = time.time()
-
                         # Time keeping
-                        timestep = self.physics.model.opt.timestep
-                        wait_time = cb_sub_steps*timestep - (time.time() - tic)
-                        wait_time *= self.viewer_speed
                         real_time_handing(
-                            timestep=timestep,
+                            timestep=self.options.physics.timestep,
                             tic_rt=self.viewer_tic_rt,
                             rtl=self.viewer_speed,
                         )
