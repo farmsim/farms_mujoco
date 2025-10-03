@@ -33,6 +33,22 @@ def extract_sub_dict(dictionary: Dict, keys: List[str]) -> Dict:
     }
 
 
+def real_time_handing(
+        timestep: float,
+        tic_rt: list[float],
+        rtl: float = 1.0,
+):
+    """Real-time handling"""
+    tic_rt[1] = time.time()
+    tic_rt[2] += timestep/rtl - (tic_rt[1] - tic_rt[0])
+    if tic_rt[2] > 1e-2:
+        time.sleep(tic_rt[2])
+        tic_rt[2] = 0
+    elif tic_rt[2] < 0:
+        tic_rt[2] = 0
+    tic_rt[0] = time.time()
+
+
 class Simulation:
     """ Simulation
 
@@ -98,9 +114,12 @@ class Simulation:
         )
 
         # User interface
-        self.viewer_paused = False
+        self.viewer_quit = False
+        self.viewer_paused = not self.options.runtime.play
         self.viwer_step_iteration = False
         self.viewer_last_update = 0
+        self.viewer_speed = 2**8 if self.options.runtime.fast else 1.0
+        self.viewer_tic_rt = np.zeros(3)
 
     @property
     def iteration(self):
@@ -149,17 +168,26 @@ class Simulation:
         """UI callback"""
         code = chr(keycode)
         match code:
-            case ' ':
+            case ' ':  # Space
                 self.viewer_paused = not self.viewer_paused
                 pylog.debug(f'Toggling pause: {self.viewer_paused=}')
-            case 'ĉ':
+            case 'Q' | 'Ā':  # ESC
+                self.viewer_quit = True
+                pylog.debug('Quitting viewer')
+            case '=':
+                self.viewer_speed *= 2
+                pylog.debug(f'Simulation speed: {self.viewer_speed}')
+            case '-':
+                self.viewer_speed /= 2
+                pylog.debug(f'Simulation speed: {self.viewer_speed}')
+            case 'ĉ':  # Up
                 pylog.debug('Up')
-            case 'Ć':
+            case 'Ć':  # Right
                 pylog.debug('Stepping single iteration')
                 self.viwer_step_iteration = True
-            case 'Ĉ':
+            case 'Ĉ':  # Down
                 pylog.debug('Down')
-            case 'ć':
+            case 'ć':  # Left
                 pylog.debug('Left')
             case _:
                 pylog.debug(f'Unhandled key: "{code}" ({keycode})')
@@ -198,6 +226,10 @@ class Simulation:
                             self.task.initialize_episode(self.physics, viewer)
                             viewer.opt.geomgroup[3] = 1
 
+                        # Quit
+                        if self.viewer_quit:
+                            break
+
                         # Skip if paused
                         if self.viewer_paused and not self.viwer_step_iteration:
                             if tic - self.viewer_last_update > 0.03:
@@ -219,11 +251,15 @@ class Simulation:
                         viewer.sync()
                         self.viewer_last_update = time.time()
 
-                        # Rudimentary time keeping
+                        # Time keeping
                         timestep = self.physics.model.opt.timestep
                         wait_time = cb_sub_steps*timestep - (time.time() - tic)
-                        if wait_time > 0:
-                            time.sleep(wait_time)
+                        wait_time *= self.viewer_speed
+                        real_time_handing(
+                            timestep=timestep,
+                            tic_rt=self.viewer_tic_rt,
+                            rtl=self.viewer_speed,
+                        )
 
                         # Single simulation step
                         if self.viwer_step_iteration:
