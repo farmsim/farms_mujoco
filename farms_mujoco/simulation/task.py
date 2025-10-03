@@ -165,8 +165,8 @@ class ExperimentTask(Task):
             cam = viewer.cam  # pylint: disable=protected-access
             links = self.data.animats[0].sensors.links
             cam.lookat = links.com_position(iteration=0, link_i=0)
-            cam.distance = 2
-            cam.azimuth = 300
+            cam.distance = self.experiment_options.simulation.camera.zoom
+            cam.azimuth = 70
             cam.elevation = -10
 
         # Callbacks

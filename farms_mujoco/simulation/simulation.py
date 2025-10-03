@@ -216,6 +216,8 @@ class Simulation:
                     iteration = 0
                     n_iterations = self.task.n_iterations
                     cb_sub_steps = self.task.cb_sub_steps
+                    cam = viewer.cam
+                    links = self.task.data.animats[0].sensors.links
                     while viewer.is_running() and iteration < n_iterations:
 
                         # Time
@@ -245,6 +247,13 @@ class Simulation:
                         for _ in range(cb_sub_steps):
                             self._env.step(action=None)
                         iteration += 1
+
+                        # Camera
+                        if not self.options.camera.free_camera:
+                            cam.lookat = links.com_position(
+                                iteration=iteration-1,
+                                link_i=0,
+                            )
 
                         # Pick up changes to the physics state, options from GUI
                         # FIXME Does this apply perturbations?
