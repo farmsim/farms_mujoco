@@ -1,5 +1,7 @@
 """Camera"""
 
+import os
+import mujoco
 import numpy as np
 from tqdm import tqdm
 
@@ -35,6 +37,7 @@ class CameraCallback(TaskCallback):
         self.skips = kwargs.pop('skips', max(0, int(speed//(timestep*fps))-1))
         self.fps = 1/(self.timestep*(self.skips+1))
         self.sample = 0
+        self.viewer=kwargs.pop('viewer', 'MuJoCo')
         self.data = np.zeros(
             [n_iterations//(self.skips+1)+1, self.height, self.width, 3],
             dtype=np.uint8
@@ -51,6 +54,7 @@ class CameraCallback(TaskCallback):
             fps=sim_options.video.fps,
             width=sim_options.video.resolution[0],
             height=sim_options.video.resolution[1],
+            viewer=sim_options.mujoco.viewer,
         )
 
     def initialize_episode(self, task, physics):
@@ -68,11 +72,20 @@ class CameraCallback(TaskCallback):
             #     if not self.skips
             #     else task.iteration//(self.skips+1)
             # )
-            self.data[self.sample, :, :, :] = physics.render(
-                width=self.width,
-                height=self.height,
-                camera_id=self.camera_id,
-            )
+            if self.viewer == 'dm_control':
+                self.data[self.sample, :, :, :] = physics.render(
+                    width=self.width,
+                    height=self.height,
+                    camera_id=self.camera_id,
+                )
+            else:
+                renderer = mujoco.Renderer(
+                    physics.model.ptr,
+                    width=self.width,
+                    height=self.height,
+                )
+                renderer.update_scene(physics.data.ptr, camera=self.camera_id)
+                self.data[self.sample, :, :, :] = renderer.render()
             self.sample += 1
 
     def save(
@@ -115,6 +128,7 @@ class CameraCallback(TaskCallback):
         )
         fig_ax = plt.gca()
         ims = None
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with writer.saving(fig, filename, dpi=self.width/size):
             for frame in tqdm(data):
                 ims = render_matplotlib_image(fig_ax, frame, ims=ims)
