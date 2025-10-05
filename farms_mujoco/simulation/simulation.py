@@ -5,6 +5,7 @@ import time
 import warnings
 import traceback
 from typing import List, Dict
+from abc import ABC, abstractmethod
 
 import numpy as np
 from tqdm import tqdm
@@ -16,8 +17,14 @@ from dm_control import viewer as dm_viewer
 from dm_control.rl.control import Environment, PhysicsError
 
 from farms_core import pylog
+from farms_core.doc import ClassDoc, ChildDoc
 from farms_core.experiment.options import ExperimentOptions
-from farms_core.simulation.options import SimulationOptions
+from farms_core.extensions.extensions import import_item
+from farms_core.sensors.data import LinkSensorArray
+from farms_core.simulation.options import (
+    SimulationOptions,
+    ViewerExtensionOptions,
+)
 
 from .mjcf import setup_mjcf_xml, mjcf2str
 from .task import ExperimentTask
@@ -47,6 +54,202 @@ def real_time_handing(
     elif tic_rt[2] < 0:
         tic_rt[2] = 0
     tic_rt[0] = time.time()
+
+
+def create_sphere(viewer, **kwargs):
+    """Create sphere"""
+    scn = viewer.user_scn
+    geom = scn.geoms[scn.ngeom]
+    mujoco.mjv_initGeom(
+        geom,
+        mujoco.mjtGeom.mjGEOM_SPHERE,
+        kwargs.pop('size', [1.0, 0.0, 0.0]),  # Radius
+        kwargs.pop('pos', [0.0, 0.0, 0.0]),  # Pos
+        np.eye(3).ravel(),  # Matrix
+        kwargs.pop('rgba', [1.0, 1.0, 1.0, 1.0]),  # RGBA
+    )
+    scn.ngeom += 1
+    return geom
+
+
+def create_line(viewer, begin, end, **kwargs):
+    """Create sphere"""
+    scn = viewer.user_scn
+    geom = scn.geoms[scn.ngeom]
+    mujoco.mjv_initGeom(
+        geom,
+        mujoco.mjtGeom.mjGEOM_LINE,
+        [1.0, 1.0, 1.0],  # Size
+        begin,  # Pos
+        np.eye(3).ravel(),  # Matrix
+        kwargs.pop('rgba', [1.0, 0.3, 0.0, 0.7]),  # RGBA
+    )
+    mujoco.mjv_connector(
+        geom,
+        mujoco.mjtGeom.mjGEOM_LINE,
+        kwargs.pop('width', 5),  # Width
+        begin,
+        end,
+    )
+    scn.ngeom += 1
+    return geom
+
+
+class MuJoCoViewerExtension(ABC):
+    """MuJoCo viewer extension"""
+
+    def __init__(self, viewer):
+        super().__init__()
+        self.viewer = viewer
+
+    @abstractmethod
+    def iteration0(self, task):
+        """Iteration 0"""
+
+    @abstractmethod
+    def step(self, iteration: int, time: float, timestep: float):
+        """Step"""
+
+
+class CameraFollowerViewer(MuJoCoViewerExtension):
+    """Camera follower viewer"""
+
+    def __init__(self, viewer, animat_id=0, **kwargs):
+        super().__init__(viewer)
+        self.links: LinkSensorArray | None = None
+        self.animat_id = animat_id
+        self.angular_velocity = kwargs.pop('angular_velocity', 0)  # [deg/s]
+
+    def iteration0(self, task):
+        index = self.animat_id
+        self.links: LinkSensorArray = task.data.animats[index].sensors.links
+
+    def step(self, iteration: int, time: float, timestep: float):
+        del time
+        if self.links is not None:
+            self.viewer.cam.lookat = np.array(self.links.global_com_position(
+                iteration=iteration - 1,
+            ))
+            self.viewer.cam.azimuth += self.angular_velocity*timestep
+
+
+class CoMViewer(MuJoCoViewerExtension):
+    """CoM viewer"""
+
+    def __init__(self, viewer, **kwargs):
+        super().__init__(viewer)
+        self.sphere = create_sphere(
+            viewer,
+            size=kwargs.pop('size', [0.01, 0.0, 0.0]),
+            rgba=kwargs.pop('rgba', [1.0, 1.0, 1.0, 0.3]),
+        )
+        self.links: LinkSensorArray | None = None
+
+    @classmethod
+    def from_options(cls, config, viewer):
+        """From options"""
+        return cls(
+            viewer=viewer,
+            size=config['size'],
+            rgba=config['rgba'],
+        )
+
+    def iteration0(self, task):
+        self.links: LinkSensorArray = task.data.animats[0].sensors.links
+        mass = np.sum(self.links.masses)
+        if mass is not None:
+            radius = 0.2*((3*mass/1000)/np.pi)**(1/3)
+            self.sphere.size[:] = radius
+
+    def step(self, iteration: int, time: float, timestep: float):
+        del time, timestep
+        if self.links is not None:
+            self.sphere.pos = np.array(self.links.global_com_position(
+                iteration=iteration - 1,
+            ))
+
+
+class TrailCoMViewer(MuJoCoViewerExtension):
+    """CoM trail viewer"""
+
+    def __init__(self, viewer, **kwargs):
+        super().__init__(viewer)
+        self.pos_old = None
+        self.pos_new = None
+        self.width = kwargs.pop('width', 5)
+        self.rgba = kwargs.pop('rgba', [1.0, 0.3, 0.0, 0.7])
+        self.links: LinkSensorArray | None = None
+
+    @classmethod
+    def from_options(cls, config: ViewerExtensionOptions, viewer):
+        """From options"""
+        return cls(
+            viewer=viewer,
+            size=config['width'],
+            rgba=config['rgba'],
+        )
+
+    def iteration0(self, task):
+        self.links: LinkSensorArray = task.data.animats[0].sensors.links
+        self.pos_new = self.pos_old = self.links.global_com_position(0)
+
+    def step(self, iteration: int, time: float, timestep: float):
+        del time, timestep
+        if self.links is not None:
+            self.pos_new = self.links.global_com_position(iteration-1)
+            create_line(
+                self.viewer,
+                self.pos_old,
+                self.pos_new,
+                width=self.width,
+                rgba=self.rgba,
+            )
+            self.pos_old = self.pos_new
+
+
+class TrailLinkViewer(MuJoCoViewerExtension):
+    """Link trail viewer"""
+
+    def __init__(self, viewer, **kwargs):
+        super().__init__(viewer)
+        self.pos_old = None
+        self.pos_new = None
+        self.width = kwargs.pop('width', 5)
+        self.rgba = kwargs.pop('rgba', [1.0, 0.3, 0.0, 0.7])
+        self.link: str = kwargs.pop('link', '')
+        self.link_id: int = kwargs.pop('link_id', None)
+        self.links: LinkSensorArray | None = None
+
+    @classmethod
+    def from_options(cls, config: ViewerExtensionOptions, viewer):
+        """From options"""
+        return cls(
+            viewer=viewer,
+            size=config['width'],
+            rgba=config['rgba'],
+            link=config['link'],
+        )
+
+    def iteration0(self, task):
+        self.links: LinkSensorArray = task.data.animats[0].sensors.links
+        self.pos_new = self.pos_old = self.links.global_com_position(0)
+        assert self.link in self.links.names, (
+            f"{self.link=} not in {self.links.names=}"
+        )
+        self.link_id = self.links.names.index(self.link)
+
+    def step(self, iteration: int, time: float, timestep: float):
+        del time, timestep
+        if self.links is not None:
+            self.pos_new = self.links.com_position(iteration-1, self.link_id)
+            create_line(
+                self.viewer,
+                self.pos_old,
+                self.pos_new,
+                width=5,
+                rgba=self.rgba,
+            )
+            self.pos_old = self.pos_new
 
 
 class Simulation:
@@ -221,7 +424,29 @@ class Simulation:
                     n_iterations = self.task.n_iterations
                     cb_sub_steps = self.task.cb_sub_steps
                     cam = viewer.cam
-                    links = self.task.data.animats[0].sensors.links
+                    viewer_extentions_loaders = [
+                        import_item(extension['loader'])
+                        for extension in self.options.viewer_extensions
+                    ]
+                    viewer_extensions: list[MuJoCoViewerExtension] = [
+                        loader.from_options(extension['config'], viewer)
+                        for loader, extension in zip(
+                                viewer_extentions_loaders,
+                                self.options.viewer_extensions
+                        )
+                    ]
+                    if not self.options.camera.free_camera:
+                        viewer_extensions += [
+                            CameraFollowerViewer(
+                                viewer=viewer,
+                                animat_id=0,
+                                angular_velocity=(
+                                    20
+                                    if self.options.camera.rotating_camera
+                                    else 0
+                                ),
+                            )
+                        ]
                     while viewer.is_running() and iteration < n_iterations:
 
                         # Time
@@ -231,6 +456,8 @@ class Simulation:
                         if iteration == 0:
                             self.task.initialize_episode(self.physics, viewer)
                             viewer.opt.geomgroup[3] = 1
+                            for extension in viewer_extensions:
+                                extension.iteration0(self.task)
 
                         # Quit
                         if self.viewer_quit:
@@ -255,11 +482,12 @@ class Simulation:
                             viewer.sync()
                             self.viewer_last_sync = tic
 
-                        # Camera
-                        if not self.options.camera.free_camera:
-                            cam.lookat = links.com_position(
-                                iteration=iteration-1,
-                                link_i=0,
+                        # Viewer extensions
+                        for extension in viewer_extensions:
+                            extension.step(
+                                iteration,
+                                iteration*self.options.physics.timestep,
+                                self.options.physics.timestep,
                             )
 
                         # Time keeping

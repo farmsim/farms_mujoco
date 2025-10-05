@@ -161,13 +161,14 @@ class ExperimentTask(Task):
             )
 
         if viewer is not None:
+            sim_options = self.experiment_options.simulation
             self.update_sensors(physics, links_only=True)
             cam = viewer.cam  # pylint: disable=protected-access
             links = self.data.animats[0].sensors.links
             cam.lookat = links.com_position(iteration=0, link_i=0)
-            cam.distance = self.experiment_options.simulation.camera.zoom
+            cam.distance = sim_options.camera.zoom
             cam.azimuth = 70
-            cam.elevation = -10
+            cam.elevation = -90 if sim_options.camera.top_camera else -10
 
         # Callbacks
         for callback in self._callbacks:
