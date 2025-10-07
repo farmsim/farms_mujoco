@@ -410,7 +410,7 @@ cdef class SwimmingHandler:
         links = [
             link
             for link in self.animat_options.morphology.links
-            if link.swimming
+            if link.fluid_interaction
         ]
         self.n_links = len(links)
         links_row = physics.named.model.body_mass.axes.row
