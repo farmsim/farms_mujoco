@@ -862,10 +862,7 @@ def sdf2mjcf(
         n_pos = pos_index
         n_vel = vel_index
         # Check if base is fixed
-        special_base = (
-            animat_options.mujoco.get('fixed_base', False)
-            or animat_options.spawn.mode != SpawnMode.FREE
-        )
+        special_base = animat_options.spawn.mode != SpawnMode.FREE
         if special_base:
             base_nq = 0
             base_nv = 0
@@ -1002,7 +999,6 @@ def sdf2mjcf(
                 for name in [name_pos, name_vel, name_trq]:
                     mjcf_map['actuators'][name].forcelimited = True
                     mjcf_map['actuators'][name].forcerange = torque_limits
-        assert mjcf_map['actuators'], mjcf_map['actuators']
         # Adhesions
         if 'adhesions' in animat_options.control:
             for adhesion_options in animat_options.control.adhesions:
@@ -1394,13 +1390,10 @@ def setup_mjcf_xml(
 
     # Animat
     for animat_i, animat_options in enumerate(animats_options):
-        mujoco_kwargs = animat_options.mujoco if animat_options else {}
+        mujoco_kwargs = animat_options.get('mujoco', {})
         sdf_animat = ModelSDF.read(os.path.expandvars(animat_options.sdf))[0]
         animat_fixed_base = (
-            (
-                animat_options.mujoco.get('fixed_base', False)
-                or animat_options.spawn.mode == SpawnMode.FIXED
-            )
+            animat_options.spawn.mode == SpawnMode.FIXED
             if animat_options is not None
             else False
         )
