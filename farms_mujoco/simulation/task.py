@@ -4,7 +4,6 @@ from typing import List, Dict
 
 import numpy as np
 
-import mujoco
 from dm_control.rl.control import Task
 from dm_control.viewer.application import Application
 from dm_control.mjcf.physics import Physics
@@ -12,6 +11,9 @@ from dm_control.mujoco.wrapper import set_callback
 from dm_control.mujoco.index import UnnamedAxis
 
 from farms_core import pylog
+from farms_core.extensions.extensions import import_item
+from farms_core.simulation.extensions import TaskExtension
+from farms_core.model.extensions import AnimatExtension
 from farms_core.experiment.options import ExperimentOptions
 from farms_core.model.control import ControlType, AnimatController
 from farms_core.model.data import AnimatData
@@ -29,6 +31,9 @@ from .physics import (
     get_physics2data_maps,
     physics2data,
 )
+from ..sensors.camera import CameraRecordingExtension
+from .extensions import CameraFollowerViewer
+from .experiment import TaskData
 from .mjcf import get_prefix
 
 
@@ -37,7 +42,7 @@ def duration2nit(duration: float, timestep: float) -> int:
     return int(duration/timestep)
 
 
-class ExperimentTask(Task):
+class ExperimentTask(Task, TaskData):
     """FARMS experiment"""
 
     def __init__(
@@ -47,13 +52,12 @@ class ExperimentTask(Task):
             timestep: float,
             **kwargs,
     ):
-        super().__init__()
+        super().__init__(data=kwargs.pop('data', None))
         self._app: Application | None = None
-        self.iteration: int = 0
         self.timestep: float = timestep
         self.n_iterations: int = n_iterations
+        self.mjcf = kwargs.pop('mjcf', None)
         self.base_links: list[str] = base_links  # TODO: Unused?
-        self.data: ExperimentData = kwargs.pop('data', None)
         if self.data is not None and not isinstance(self.data, ExperimentData):
             raise TypeError(
                 'Data provided to ExperimentTask should be of type '
@@ -63,12 +67,15 @@ class ExperimentTask(Task):
         self.experiment_options: ExperimentOptions = kwargs.pop('experiment_options')
         n_animats = len(self.experiment_options.animats)
         self._restart: bool = kwargs.pop('restart', True)
-        self._callbacks: List[TaskCallback] = kwargs.pop('callbacks', [])
+        self.extensions: List[TaskExtension] = self.extract_extensions(
+            experiment_options=self.experiment_options,
+            experiment_data=self.data,
+        ) + kwargs.pop('extensions', [])
         self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
         self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         self.buffer_size = max(1, kwargs.pop('buffer_size', 1))
         self.cb_sub_steps = max(1, kwargs.pop('substeps', 1))
-        self.substeps_links = any(cb.substep for cb in self._callbacks)
+        self.substeps_links = any(cb.substep for cb in self.extensions)
         self.sim_iteration = 0
         self.sim_iterations = self.n_iterations*self.cb_sub_steps
         self.sim_timestep = self.timestep/self.cb_sub_steps
@@ -91,6 +98,62 @@ class ExperimentTask(Task):
         """Set application"""
         assert isinstance(app, Application)
         self._app = app
+
+    @staticmethod
+    def extract_extensions(experiment_options, experiment_data):
+        """Extract extensiosn from experiment options"""
+
+        # Simulation extensions
+        simulation_extentions_loaders = [
+            import_item(extension['loader'])
+            for extension in experiment_options.simulation.extensions
+        ]
+        sim_extensions: list[TaskExtension] = [
+            loader.from_options(
+                config=extension['config'],
+                experiment_options=experiment_options,
+            )
+            for loader, extension in zip(
+                    simulation_extentions_loaders,
+                    experiment_options.simulation.extensions
+            )
+        ]
+
+        # Animat extensions
+        animat_extensions: list[AnimatExtension] = [
+            import_item(extension.loader).from_options(
+                config=extension.config,
+                experiment_options=experiment_options,
+                animat_i=animat_i,
+                animat_data=animat_data,
+                animat_options=animat_options,
+            )
+            for animat_i, (animat_data, animat_options) in enumerate(zip(
+                    experiment_data.animats,
+                    experiment_options.animats,
+            ))
+            for extension in animat_options.extensions
+        ]
+
+        # Camera and video
+        if experiment_options.simulation.video.path:
+            sim_extensions += [
+                CameraRecordingExtension.from_options({}, experiment_options)
+            ]
+        if not experiment_options.simulation.camera.free_camera:
+            sim_extensions += [
+                CameraFollowerViewer(
+                    animat_id=0,
+                    angular_velocity=(
+                        20  # [deg/s]
+                        if experiment_options.simulation.camera.rotating_camera
+                        else 0
+                    ),
+                )
+            ]
+
+        return sim_extensions+animat_extensions # +viewer_extensions
+
 
     def initialize_episode(self, physics: Physics, viewer=None):
         """Sets the state of the environment at the start of each episode"""
@@ -170,9 +233,9 @@ class ExperimentTask(Task):
             cam.azimuth = 70
             cam.elevation = -90 if sim_options.camera.top_camera else -10
 
-        # Callbacks
-        for callback in self._callbacks:
-            callback.initialize_episode(task=self, physics=physics)
+        # Extensions
+        for extension in self.extensions:
+            extension.initialize_episode(task=self, physics=physics)
 
         # Mujoco callbacks for muscle
         if rt_muscle:
@@ -219,10 +282,10 @@ class ExperimentTask(Task):
         if full_step or self.substeps_links:
             self.update_sensors(physics=physics, links_only=not full_step)
 
-        # Callbacks
-        for callback in self._callbacks:
-            if full_step or callback.substep:
-                callback.before_step(task=self, action=action, physics=physics)
+        # Extensions
+        for extension in self.extensions:
+            if full_step or extension.substep:
+                extension.before_step(task=self, action=action, physics=physics)
 
         # Control
         if full_step and self._controllers:
@@ -480,44 +543,44 @@ class ExperimentTask(Task):
             else:
                 pylog.info('Simulation can be restarted')
 
-        # Callbacks
+        # Extensions
         if fullstep:
-            for callback in self._callbacks:
-                callback.after_step(task=self, physics=physics)
+            for extension in self.extensions:
+                extension.after_step(task=self, physics=physics)
 
     def action_spec(self, physics: Physics):
         """Action specifications"""
         specs = []
-        for callback in self._callbacks:
-            spec = callback.action_spec(task=self, physics=physics)
+        for extension in self.extensions:
+            spec = extension.action_spec(task=self, physics=physics)
             if spec is not None:
                 specs += spec
         return specs
 
     def step_spec(self, physics: Physics):
         """Timestep specifications"""
-        for callback in self._callbacks:
-            callback.step_spec(task=self, physics=physics)
+        for extension in self.extensions:
+            extension.step_spec(task=self, physics=physics)
 
     def get_observation(self, physics: Physics):
         """Environment observation"""
-        for callback in self._callbacks:
-            callback.get_observation(task=self, physics=physics)
+        for extension in self.extensions:
+            extension.get_observation(task=self, physics=physics)
 
     def get_reward(self, physics: Physics):
         """Reward"""
         reward = 0
-        for callback in self._callbacks:
-            callback_reward = callback.get_reward(task=self, physics=physics)
-            if callback_reward is not None:
-                reward += callback_reward
+        for extension in self.extensions:
+            extension_reward = extension.get_reward(task=self, physics=physics)
+            if extension_reward is not None:
+                reward += extension_reward
         return reward
 
     def get_termination(self, physics: Physics):
         """Return final discount if episode should end, else None"""
         terminate = None
-        for callback in self._callbacks:
-            if callback.get_termination(task=self, physics=physics):
+        for extension in self.extensions:
+            if extension.get_termination(task=self, physics=physics):
                 terminate = 1
         if self.iteration >= self.n_iterations:
             terminate = 1
@@ -525,39 +588,5 @@ class ExperimentTask(Task):
 
     def observation_spec(self, physics: Physics):
         """Observation specifications"""
-        for callback in self._callbacks:
-            callback.observation_spec(task=self, physics=physics)
-
-
-class TaskCallback:
-    """Task callback"""
-
-    def __init__(self, substep=False):
-        self.substep = substep
-
-    def initialize_episode(self, task: ExperimentTask, physics: Physics):
-        """Initialize episode"""
-
-    def before_step(self, task: ExperimentTask, action, physics: Physics):
-        """Before step"""
-
-    def after_step(self, task: ExperimentTask, physics: Physics):
-        """After step"""
-
-    def action_spec(self, task: ExperimentTask, physics: Physics):
-        """Action specifications"""
-
-    def step_spec(self, task: ExperimentTask, physics: Physics):
-        """Timestep specifications"""
-
-    def get_observation(self, task: ExperimentTask, physics: Physics):
-        """Environment observation"""
-
-    def get_reward(self, task: ExperimentTask, physics: Physics):
-        """Reward"""
-
-    def get_termination(self, task: ExperimentTask, physics: Physics):
-        """Return final discount if episode should end, else None"""
-
-    def observation_spec(self, task: ExperimentTask, physics: Physics):
-        """Observation specifications"""
+        for extension in self.extensions:
+            extension.observation_spec(task=self, physics=physics)

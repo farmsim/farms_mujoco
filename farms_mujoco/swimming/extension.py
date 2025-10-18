@@ -1,4 +1,4 @@
-"""Callbacks"""
+"""Extensions"""
 
 import os
 
@@ -9,10 +9,11 @@ from farms_core import pylog
 from farms_core.sensors.sensor_convention import sc
 from farms_core.model.data import AnimatData
 from farms_core.model.options import AnimatOptions, ArenaOptions
-from farms_mujoco.simulation.task import TaskCallback
+from farms_core.experiment.options import ExperimentOptions
+from farms_core.model.extensions import AnimatExtension
 from farms_mujoco.swimming.drag import SwimmingHandler
-from farms_mujoco.simulation.mjcf import ExperimentOptions, get_prefix
-from farms_mujoco.swimming.drag import WaterPropertiesCallback
+from farms_mujoco.simulation.mjcf import get_prefix
+from farms_mujoco.swimming.drag import WaterPropertiesExtension
 
 
 def water_velocity_from_maps(position, water_maps):
@@ -81,8 +82,8 @@ def maps_velocity_callback(water_maps):
     return velocity_callback
 
 
-class SwimmingCallback(TaskCallback):
-    """Swimming callback"""
+class SwimmingExtension(AnimatExtension):
+    """Swimming extension"""
 
     def __init__(
             self,
@@ -148,7 +149,7 @@ class SwimmingCallback(TaskCallback):
                 water_velocity,
             )
             wtr_options = arena_options.water
-            self._water_properties = WaterPropertiesCallback(
+            self._water_properties = WaterPropertiesExtension(
                 surface=maps_surface_callback(float(wtr_options.height)),
                 density=maps_density_callback(float(wtr_options.density)),
                 viscosity=maps_viscosity_callback(float(wtr_options.viscosity)),
@@ -158,19 +159,19 @@ class SwimmingCallback(TaskCallback):
     @classmethod
     def from_options(
             cls,
+            config: dict,
+            experiment_options: ExperimentOptions,
             animat_i: int,
             animat_data: AnimatData,
             animat_options: AnimatOptions,
-            experiment_options: ExperimentOptions,
-            config: dict,
     ):
         """From options"""
         water_properties = None
         return cls(
-            animat_i,
-            animat_data,
-            animat_options,
-            experiment_options.arenas[0],
+            animat_i=animat_i,
+            animat_data=animat_data,
+            animat_options=animat_options,
+            arena_options=experiment_options.arenas[0],
             water_properties=water_properties,
         )
 

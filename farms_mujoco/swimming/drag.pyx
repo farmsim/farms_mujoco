@@ -331,7 +331,7 @@ cdef class WaterPropertiesConstant(WaterProperties):
         self._velocity[2] = vz
 
 
-cdef class WaterPropertiesCallback(WaterProperties):
+cdef class WaterPropertiesExtension(WaterProperties):
     """Water properties"""
 
     cdef object _surface
@@ -340,7 +340,7 @@ cdef class WaterPropertiesCallback(WaterProperties):
     cdef object _velocity
 
     def __init__(self, surface, density, velocity, viscosity):
-        super(WaterPropertiesCallback, self).__init__()
+        super(WaterPropertiesExtension, self).__init__()
         self._surface = surface
         self._density = density
         self._velocity = velocity
