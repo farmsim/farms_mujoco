@@ -1,16 +1,19 @@
 """Extensions"""
 
 import os
+from dataclasses import dataclass
 
 import mujoco
 import numpy as np
 from dm_control.mjcf.physics import Physics
 
+from farms_core.doc import ExtensionDoc, ChildDoc
+from farms_core.options import Options
 from farms_core.sensors.data import LinkSensorArray
 from farms_core.simulation.extensions import TaskExtension
 from farms_core.experiment.options import ExperimentOptions
 
-from .experiment import TaskData
+from .task import ExperimentTask
 from .mjcf import mjcf2str
 
 
@@ -68,7 +71,8 @@ class MjcfSaver(TaskExtension):
             path=config.get('path', 'simulation_mjcf.xml'),
         )
 
-    def initialize_episode(self, task: TaskData, physics: Physics):
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialise episode"""
         del physics
         dir_path = os.path.dirname(self.path)
         if dir_path:
@@ -78,36 +82,98 @@ class MjcfSaver(TaskExtension):
             xml_file.write(mjcf_xml_str)
 
 
-class CameraFollowerViewer(TaskExtension):
+@dataclass
+class CameraFollowerOptions(Options):
+    """Camera follower viewer options"""
+
+    @classmethod
+    def doc(cls):
+        """Doc"""
+        return ExtensionDoc(
+            name="Camera follower options",
+            description="Describes the camera options.",
+            class_type=cls,
+            children=[
+                ChildDoc(
+                    name="distance",
+                    class_type=float,
+                    description="Camera zoom.",
+                ),
+                ChildDoc(
+                    name="free_camera",
+                    class_type=bool,
+                    description=(
+                        "Whether the camera should be free moving instead of"
+                        " following the animat."
+                    ),
+                ),
+                ChildDoc(
+                    name="top_camera",
+                    class_type=bool,
+                    description=(
+                        "Whether the camera should look at the animat from"
+                        " above."
+                    ),
+                ),
+                ChildDoc(
+                    name="rotating_camera",
+                    class_type=bool,
+                    description=(
+                        "Whether the camera should turn around the model."
+                    ),
+                ),
+            ],
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.animat_id = kwargs.pop('animat_id', 0)
+        self.azimuth = kwargs.pop('azimuth', 0)
+        self.distance = kwargs.pop('distance', 1)
+        self.elevation = kwargs.pop('elevation', 0)
+        self.angular_velocity = kwargs.pop('angular_velocity', 0)  # [deg/s]
+        assert not kwargs, kwargs
+
+
+class CameraFollower(TaskExtension):
     """Camera follower viewer"""
 
-    def __init__(self, animat_id=0, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
         self.links: LinkSensorArray | None = None
-        self.animat_id = animat_id
+        self.animat_id = kwargs.pop('animat_id', 0)
+        self.azimuth = kwargs.pop('azimuth', 0)
+        self.distance = kwargs.pop('distance', 1)
+        self.elevation = kwargs.pop('elevation', 0)
         self.angular_velocity = kwargs.pop('angular_velocity', 0)  # [deg/s]
         self.viewer = kwargs.pop('viewer', None)
+        self.last_step = 0
 
     @classmethod
     def from_options(cls, config: dict, experiment_options: ExperimentOptions):
+        """From options"""
         del experiment_options
-        return cls(
-            animat_id=config.get('animat_id', 0),
-            angular_velocity=config.get('angular_velocity', 0),
-        )
+        return cls(**CameraFollowerOptions(**config))
 
-    def initialize_episode(self, task: TaskData, physics: Physics):
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialise episode"""
+        del physics
         self.viewer = task.viewer
-        index = self.animat_id
-        self.links: LinkSensorArray = task.data.animats[index].sensors.links
+        if self.viewer:
+            self.viewer.cam.azimuth = self.azimuth
+            self.viewer.cam.distance = self.distance
+            self.viewer.cam.elevation = self.elevation
+            self.links = task.data.animats[self.animat_id].sensors.links
 
-    def after_step(self, task: TaskData, physics: Physics):
+    def after_step(self, task: ExperimentTask, physics: Physics):
+        """After step"""
         if self.viewer and self.links is not None:
-            timestep = physics.timestep()
+            now = physics.time()
+            time_diff, self.last_step = now - self.last_step, now
+            self.viewer.cam.azimuth += self.angular_velocity*time_diff
             self.viewer.cam.lookat = np.array(self.links.global_com_position(
                 iteration=task.iteration-1,
             ))
-            self.viewer.cam.azimuth += self.angular_velocity*timestep
 
 
 class CoMViewer(TaskExtension):
@@ -132,7 +198,8 @@ class CoMViewer(TaskExtension):
             rgba=config['rgba'],
         )
 
-    def initialize_episode(self, task: TaskData, physics: Physics):
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialise episode"""
         self.viewer = task.viewer
         index = self.animat_id
         self.links: LinkSensorArray = task.data.animats[index].sensors.links
@@ -147,7 +214,7 @@ class CoMViewer(TaskExtension):
                 radius = 0.2*((3*mass/1000)/np.pi)**(1/3)
                 self.sphere.size[:] = radius
 
-    def after_step(self, task: TaskData, physics: Physics):
+    def after_step(self, task: ExperimentTask, physics: Physics):
         del physics
         if self.sphere and self.links is not None:
             self.sphere.pos = np.array(self.links.global_com_position(
@@ -179,13 +246,14 @@ class TrailCoMViewer(TaskExtension):
             rgba=config['rgba'],
         )
 
-    def initialize_episode(self, task: TaskData, physics: Physics):
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialise episode"""
         self.viewer = task.viewer
         index = self.animat_id
         self.links: LinkSensorArray = task.data.animats[index].sensors.links
         self.pos_new = self.pos_old = self.links.global_com_position(0)
 
-    def after_step(self, task: TaskData, physics: Physics):
+    def after_step(self, task: ExperimentTask, physics: Physics):
         del physics
         iteration = task.iteration-1
         if (
@@ -231,7 +299,8 @@ class TrailLinkViewer(TaskExtension):
             link=config['link'],
         )
 
-    def initialize_episode(self, task: TaskData, physics: Physics):
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialise episode"""
         del physics
         self.viewer = task.viewer
         index = self.animat_id
@@ -245,7 +314,7 @@ class TrailLinkViewer(TaskExtension):
             link_i=self.link_id,
         )
 
-    def after_step(self, task: TaskData, physics: Physics):
+    def after_step(self, task: ExperimentTask, physics: Physics):
         del physics
         iteration = task.iteration-1
         if (

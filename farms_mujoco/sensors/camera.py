@@ -121,6 +121,7 @@ class CameraRecordingOptions(Options):
         self.distance: float = kwargs.pop('distance', 2)
         self.angular_velocity = kwargs.pop('angular_velocity', 0)
         self.geomgroups: list[int] = kwargs.pop('geomgroups', [1, 1, 0, 1, 0, 0])
+        assert not kwargs, kwargs
 
 
 class CameraRecording(TaskExtension):
@@ -184,12 +185,11 @@ class CameraRecording(TaskExtension):
     def from_options(cls, config: dict, experiment_options: ExperimentOptions):
         """From options"""
         sim_options = experiment_options.simulation
-        config = CameraRecordingOptions(**config)
         return cls(
             timestep=sim_options.physics.timestep,
             n_iterations=sim_options.runtime.n_iterations,
             viewer=sim_options.mujoco.viewer,
-            **config,
+            **CameraRecordingOptions(**config),
         )
 
     def initialize_episode(self, task, physics):

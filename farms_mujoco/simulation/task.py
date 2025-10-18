@@ -31,8 +31,6 @@ from .physics import (
     get_physics2data_maps,
     physics2data,
 )
-from .extensions import CameraFollowerViewer
-from .experiment import TaskData
 from .mjcf import get_prefix
 
 
@@ -41,7 +39,7 @@ def duration2nit(duration: float, timestep: float) -> int:
     return int(duration/timestep)
 
 
-class ExperimentTask(Task, TaskData):
+class ExperimentTask(Task):
     """FARMS experiment"""
 
     def __init__(
@@ -51,7 +49,10 @@ class ExperimentTask(Task, TaskData):
             timestep: float,
             **kwargs,
     ):
-        super().__init__(data=kwargs.pop('data', None))
+        super().__init__()
+        self.iteration: int = 0
+        self.data: ExperimentData = kwargs.pop('data', None)
+        self.viewer = kwargs.pop('viewer', None)
         self._app: Application | None = None
         self.timestep: float = timestep
         self.n_iterations: int = n_iterations
@@ -134,20 +135,7 @@ class ExperimentTask(Task, TaskData):
             for extension in animat_options.extensions
         ]
 
-        # Camera and video
-        if not experiment_options.simulation.camera.free_camera:
-            sim_extensions += [
-                CameraFollowerViewer(
-                    animat_id=0,
-                    angular_velocity=(
-                        20  # [deg/s]
-                        if experiment_options.simulation.camera.rotating_camera
-                        else 0
-                    ),
-                )
-            ]
-
-        return sim_extensions+animat_extensions # +viewer_extensions
+        return sim_extensions + animat_extensions
 
 
     def initialize_episode(self, physics: Physics, viewer=None):
@@ -219,14 +207,12 @@ class ExperimentTask(Task, TaskData):
             )
 
         if viewer is not None:
-            sim_options = self.experiment_options.simulation
             self.update_sensors(physics, links_only=True)
-            cam = viewer.cam  # pylint: disable=protected-access
+            cam = viewer.cam
             links = self.data.animats[0].sensors.links
             cam.lookat = links.com_position(iteration=0, link_i=0)
-            cam.distance = sim_options.camera.zoom
             cam.azimuth = 70
-            cam.elevation = -90 if sim_options.camera.top_camera else -10
+            cam.elevation = -10
 
         # Extensions
         for extension in self.extensions:
