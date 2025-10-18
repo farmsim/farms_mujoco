@@ -182,7 +182,7 @@ class Simulation:
             case ' ':  # Space
                 self.viewer_paused = not self.viewer_paused
                 pylog.debug(f'Toggling pause: {self.viewer_paused=}')
-            case 'Q' | 'Ā':  # ESC
+            case 'Q':  # ESC
                 self.viewer_quit = True
                 pylog.debug('Quitting viewer')
             case '=':

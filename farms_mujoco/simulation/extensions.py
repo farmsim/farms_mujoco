@@ -93,7 +93,7 @@ class CameraFollowerViewer(TaskExtension):
         del experiment_options
         return cls(
             animat_id=config.get('animat_id', 0),
-            angular_velocity=config.get('angular_velocity', 20),
+            angular_velocity=config.get('angular_velocity', 0),
         )
 
     def initialize_episode(self, task: TaskData, physics: Physics):

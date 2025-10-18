@@ -31,7 +31,6 @@ from .physics import (
     get_physics2data_maps,
     physics2data,
 )
-from ..sensors.camera import CameraRecordingExtension
 from .extensions import CameraFollowerViewer
 from .experiment import TaskData
 from .mjcf import get_prefix
@@ -136,10 +135,6 @@ class ExperimentTask(Task, TaskData):
         ]
 
         # Camera and video
-        if experiment_options.simulation.video.path:
-            sim_extensions += [
-                CameraRecordingExtension.from_options({}, experiment_options)
-            ]
         if not experiment_options.simulation.camera.free_camera:
             sim_extensions += [
                 CameraFollowerViewer(

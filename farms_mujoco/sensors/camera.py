@@ -11,6 +11,8 @@ import matplotlib.animation as manimation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from farms_core import pylog
+from farms_core.doc import ChildDoc, ExtensionDoc
+from farms_core.options import Options
 from farms_core.experiment.options import ExperimentOptions
 from farms_core.simulation.extensions import TaskExtension
 
@@ -23,12 +25,109 @@ class VideoWriterOptions:
     writer: str
 
 
-class CameraRecordingExtension(TaskExtension):
+class CameraRecordingOptions(Options):
+    """Camera recording options"""
+
+    @classmethod
+    def doc(cls):
+        """Doc"""
+        return ExtensionDoc(
+            name="Video recording options",
+            description="Describes the video recording options.",
+            class_type=cls,
+            children=[
+                ChildDoc(
+                    name="path",
+                    class_type=str,
+                    description=(
+                        "Path to where the video should be saved. Empty string"
+                        " to disable recording."
+                    ),
+                ),
+                ChildDoc(
+                    name="fps",
+                    class_type=float,
+                    description="Video framerate.",
+                ),
+                ChildDoc(
+                    name="speed",
+                    class_type=float,
+                    description=(
+                        "Speed factor at which the video should be played."
+                    ),
+                ),
+                ChildDoc(
+                    name="resolution",
+                    class_type="list[int]",
+                    description="Video resolution (e.g. [1280, 720]).",
+                ),
+                ChildDoc(
+                    name="animat_id",
+                    class_type=int,
+                    description=(
+                        "Either the animat index or null for fixed camera."
+                    ),
+                ),
+                ChildDoc(
+                    name="offset",
+                    class_type=float,
+                    description=(
+                        "Video position offset with respect to origin"
+                        " or animat (depending on animat_id)."
+                    ),
+                ),
+                ChildDoc(
+                    name="azimuth",
+                    class_type=float,
+                    description="Video yaw angle in degrees.",
+                ),
+                ChildDoc(
+                    name="elevation",
+                    class_type=float,
+                    description="Video elevation angle in degrees.",
+                ),
+                ChildDoc(
+                    name="distance",
+                    class_type=float,
+                    description="Camera distance from animat.",
+                ),
+                ChildDoc(
+                    name="angular_velocity",
+                    class_type=float,
+                    description=(
+                        "Angular velocity at which camera rotates around focus"
+                        " point in [deg/s]"
+                    ),
+                ),
+                ChildDoc(
+                    name="motion_filter",
+                    class_type=float,
+                    description="Video motion filter.",
+                ),
+            ],
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.path: str = kwargs.pop('path')
+        self.fps: float = kwargs.pop('fps', 30)
+        self.speed: float = kwargs.pop('speed', 1.0)
+        self.resolution: list[int] = kwargs.pop('resolution', [1280, 720])
+        self.camera: None | int = kwargs.pop('camera', None)
+        self.animat_id: int = kwargs.pop('animat_id', 0)
+        self.offset: float = kwargs.pop('offset', [0, 0, 0])
+        self.azimuth: float = kwargs.pop('azimuth', 0)
+        self.elevation: float = kwargs.pop('elevation', -15)
+        self.distance: float = kwargs.pop('distance', 2)
+        self.angular_velocity = kwargs.pop('angular_velocity', 0)
+        self.geomgroups: list[int] = kwargs.pop('geomgroups', [1, 1, 0, 1, 0, 0])
+
+
+class CameraRecording(TaskExtension):
     """Camera recording extension"""
 
     def __init__(
             self,
-            camera_id,
             timestep: float,
             n_iterations: int,
             fps: float = 30,
@@ -37,22 +136,31 @@ class CameraRecordingExtension(TaskExtension):
     ):
         super().__init__()
         self.renderer = None
-        self.camera_id = camera_id
+        self.last_capture = 0
         self.speed = speed
         self.timestep = timestep / speed
         self.n_iterations = n_iterations
+        self.camera = kwargs.pop('camera', None)
+        self.offset: float = kwargs.pop('offset', [0, 0, 0])
+        self.animat_id = kwargs.pop('animat_id', 0)
+        self.distance = kwargs.pop('distance', 2)
+        self.elevation = kwargs.pop('elevation', -15)
+        self.azimuth = kwargs.pop('azimuth', 0)
+        self.angular_velocity = kwargs.pop('angular_velocity', 0)  # [deg/s]
+        self.geomgroups = kwargs.pop('geomgroups', [1, 1, 0, 1, 0, 0])
         self.motion_filter = kwargs.pop('motion_filter', 10*timestep)
-        self.width = kwargs.pop('width', 640)
-        self.height = kwargs.pop('height', 480)
-        self.skips = kwargs.pop('skips', max(0, int(speed//(timestep*fps))-1))
+        self.width, self.height = kwargs.pop('resolution', [640, 480])
+        self.skips = kwargs.pop('skips', max(0, int(speed/(timestep*fps))-1))
         self.fps = 1/(self.timestep*(self.skips+1))
         self.sample = 0
         self.viewer: str = kwargs.pop('viewer', 'MuJoCo')
+        self.links = None
+        self.render_options = None
         self.data = np.zeros(
             [n_iterations//(self.skips+1)+1, self.height, self.width, 3],
             dtype=np.uint8
         )
-        video_path, video_extension = os.path.splitext(kwargs.pop('video_path'))
+        video_path, video_extension = os.path.splitext(kwargs.pop('path'))
         match video_extension:
             case 'mp4':
                 writer = 'ffmpeg'
@@ -75,40 +183,64 @@ class CameraRecordingExtension(TaskExtension):
     @classmethod
     def from_options(cls, config: dict, experiment_options: ExperimentOptions):
         """From options"""
-        del config
         sim_options = experiment_options.simulation
+        config = CameraRecordingOptions(**config)
         return cls(
-            camera_id=0,
             timestep=sim_options.physics.timestep,
             n_iterations=sim_options.runtime.n_iterations,
             viewer=sim_options.mujoco.viewer,
-            fps=sim_options.video.fps,
-            width=sim_options.video.resolution[0],
-            height=sim_options.video.resolution[1],
-            video_path=sim_options.video.path,
+            **config,
         )
 
     def initialize_episode(self, task, physics):
         """Initialize episode"""
-        del task
+        del physics
         self.data = np.zeros(
             [self.n_iterations//(self.skips+1)+1, self.height, self.width, 3],
             dtype=np.uint8,
         )
         if self.viewer != 'dm_control':
+            if self.animat_id is not None:
+                self.links = task.data.animats[self.animat_id].sensors.links
             self.render_options = mujoco.MjvOption()
             mujoco.mjv_defaultOption(self.render_options)
-            self.render_options.geomgroup[:4] = [1, 1, 0, 1]
+            self.render_options.geomgroup = self.geomgroups
+            if self.camera is None:
+                self.camera = mujoco.MjvCamera()
+                self.camera.type      = mujoco.mjtCamera.mjCAMERA_FREE
+                self.camera.lookat[:] = np.array(self.offset)
+                if self.links is not None:
+                    self.camera.lookat[:] += np.array(
+                        self.links.global_com_position(iteration=0),
+                    )
+                self.camera.distance = self.distance
+                self.camera.azimuth = self.azimuth
+                self.camera.elevation = self.elevation
 
     def before_step(self, task, action, physics):
+        """Before step"""
+        del action
         if not task.iteration % (self.skips+1):
             if self.viewer == 'dm_control':
                 self.data[self.sample, :, :, :] = physics.render(
                     width=self.width,
                     height=self.height,
-                    camera_id=self.camera_id,
+                    camera_id=self.camera,
                 )
             else:
+                now = physics.time()
+                timediff = now - self.last_capture
+                self.last_capture = now
+                self.camera.azimuth += self.angular_velocity*timediff
+                self.camera.lookat[:] = np.array(self.offset)
+                if self.links is not None:
+                    self.camera.lookat[:] += np.array(
+                        self.links.global_com_position(
+                            iteration=task.iteration-1,
+                        ),
+                    )
+                self.camera.distance  = self.distance
+                self.camera.elevation = self.elevation
                 with mujoco.Renderer(
                         physics.model.ptr,
                         width=self.width,
@@ -116,13 +248,14 @@ class CameraRecordingExtension(TaskExtension):
                 ) as renderer:
                     renderer.update_scene(
                         physics.data.ptr,
-                        camera=self.camera_id,
+                        camera=self.camera,
                         scene_option=self.render_options,
                     )
                     renderer.render(out=self.data[self.sample, :, :, :])
             self.sample += 1
 
     def end_episode(self, task, physics):
+        """End episode"""
         del physics
         self.save(
             filename=f'{self.video.path}{self.video.file_extension}',
@@ -157,11 +290,11 @@ class CameraRecordingExtension(TaskExtension):
             iteration//(self.skips+1) if iteration is not None else self.sample,
             self.sample,
         )
-        metadata = dict(
-            title='FARMS simulation',
-            artist='FARMS',
-            comment='FARMS simulation'
-        )
+        metadata = {
+            'title': 'FARMS simulation',
+            'artist': 'FARMS',
+            'comment': 'FARMS simulation',
+        }
         writer = ffmpegwriter(fps=self.fps, metadata=metadata)
         size = 10
         fig = plt.figure(

@@ -1294,19 +1294,7 @@ def add_cameras(
     if rot is None:
         rot = np.zeros(3)
     rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
-    if simulation_options is not None:
-        dist = simulation_options.video.distance
-        pitch = np.deg2rad(-90+simulation_options.video.pitch)
-        yaw = np.deg2rad(-simulation_options.video.yaw)
-        sim_options_camera = [['trackcom', [
-            dist*np.sin(pitch)*np.sin(yaw) + simulation_options.video.offset[0],
-            dist*np.sin(pitch)*np.cos(yaw) + simulation_options.video.offset[1],
-            dist*np.cos(pitch) + simulation_options.video.offset[2],
-            -pitch, 0, -yaw,
-        ]]]
-    else:
-        sim_options_camera = []
-    for i, (mode, pose) in enumerate(sim_options_camera + [
+    for i, (mode, pose) in enumerate([
             ['trackcom', [0.0, 0.0, dist, 0.0, 0.0, 0.0]],
             ['trackcom', [0.0, -dist, 0.2*dist, 0.4*np.pi, 0.0, 0.0]],
             ['trackcom', [-dist, 0.0, 0.2*dist, 0.4*np.pi, 0, -0.5*np.pi]],
@@ -1424,7 +1412,6 @@ def setup_mjcf_xml(
     mjcf_model.compiler.discardvisual = kwargs.pop(
         'discardvisual',
         simulation_options.runtime.headless
-        and not simulation_options.video.path
         if simulation_options is not None
         else False
     )
@@ -1483,16 +1470,8 @@ def setup_mjcf_xml(
     mjcf_model.visual.quality.numstacks = 16
     mjcf_model.visual.quality.numquads = 4
     glob = mjcf_model.visual.get_children('global')  # Global reserved in Python
-    glob.offwidth = (
-        simulation_options.video.resolution[0]
-        if simulation_options is not None
-        else 1280
-    )
-    glob.offheight = (
-        simulation_options.video.resolution[1]
-        if simulation_options is not None
-        else 720
-    )
+    glob.offwidth = 1280
+    glob.offheight = 720
 
     # Simulation options
     mjcf_model.size.nkey = 1
