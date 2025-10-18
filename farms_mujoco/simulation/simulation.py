@@ -17,10 +17,10 @@ from dm_control import viewer as dm_viewer
 from dm_control.rl.control import Environment, PhysicsError
 
 from farms_core import pylog
-from farms_core.doc import ClassDoc, ChildDoc
 from farms_core.experiment.options import ExperimentOptions
 from farms_core.extensions.extensions import import_item
 from farms_core.sensors.data import LinkSensorArray
+from farms_core.simulation.extensions import SimulationExtension
 from farms_core.simulation.options import (
     SimulationOptions,
     ViewerExtensionOptions,
@@ -106,8 +106,14 @@ class MuJoCoViewerExtension(ABC):
     def iteration0(self, task):
         """Iteration 0"""
 
+    def pre_step(self, iteration: int, time: float, timestep: float):
+        """Step"""
+
     @abstractmethod
-    def step(self, iteration: int, time: float, timestep: float):
+    def post_step(self, iteration: int, time: float, timestep: float):
+        """Step"""
+
+    def end(self, iteration: int, time: float, timestep: float):
         """Step"""
 
 
@@ -124,11 +130,11 @@ class CameraFollowerViewer(MuJoCoViewerExtension):
         index = self.animat_id
         self.links: LinkSensorArray = task.data.animats[index].sensors.links
 
-    def step(self, iteration: int, time: float, timestep: float):
+    def post_step(self, iteration: int, time: float, timestep: float):
         del time
         if self.links is not None:
             self.viewer.cam.lookat = np.array(self.links.global_com_position(
-                iteration=iteration - 1,
+                iteration=iteration,
             ))
             self.viewer.cam.azimuth += self.angular_velocity*timestep
 
@@ -161,11 +167,11 @@ class CoMViewer(MuJoCoViewerExtension):
             radius = 0.2*((3*mass/1000)/np.pi)**(1/3)
             self.sphere.size[:] = radius
 
-    def step(self, iteration: int, time: float, timestep: float):
+    def post_step(self, iteration: int, time: float, timestep: float):
         del time, timestep
         if self.links is not None:
             self.sphere.pos = np.array(self.links.global_com_position(
-                iteration=iteration - 1,
+                iteration=iteration,
             ))
 
 
@@ -193,10 +199,10 @@ class TrailCoMViewer(MuJoCoViewerExtension):
         self.links: LinkSensorArray = task.data.animats[0].sensors.links
         self.pos_new = self.pos_old = self.links.global_com_position(0)
 
-    def step(self, iteration: int, time: float, timestep: float):
+    def post_step(self, iteration: int, time: float, timestep: float):
         del time, timestep
         if self.links is not None:
-            self.pos_new = self.links.global_com_position(iteration-1)
+            self.pos_new = self.links.global_com_position(iteration)
             create_line(
                 self.viewer,
                 self.pos_old,
@@ -238,10 +244,10 @@ class TrailLinkViewer(MuJoCoViewerExtension):
         )
         self.link_id = self.links.names.index(self.link)
 
-    def step(self, iteration: int, time: float, timestep: float):
+    def post_step(self, iteration: int, time: float, timestep: float):
         del time, timestep
         if self.links is not None:
-            self.pos_new = self.links.com_position(iteration-1, self.link_id)
+            self.pos_new = self.links.com_position(iteration, self.link_id)
             create_line(
                 self.viewer,
                 self.pos_old,
@@ -253,7 +259,7 @@ class TrailLinkViewer(MuJoCoViewerExtension):
 
 
 class Simulation:
-    """ Simulation
+    """Simulation
 
     Note: Set legacy_step to False to use conventional full mj_step to update the physics with dm_control.
     It will otherwise result in incorrect computations of contact forces.
@@ -371,6 +377,104 @@ class Simulation:
         self.task.cb_sub_steps = max(1, self.task.cb_sub_steps)
         self._env._n_sub_steps = max(1, self._env._n_sub_steps)
 
+    def load_extensions(self, viewer=None):
+        """Load extensions"""
+
+        # Simulation extensions
+        simulation_extentions_loaders = [
+            import_item(extension['loader'])
+            for extension in self.options.extensions
+        ]
+        sim_extensions: list[SimulationExtension] = [
+            loader.from_options(
+                config=extension['config'],
+                experiment_options=self.task.experiment_options,
+            )
+            for loader, extension in zip(
+                    simulation_extentions_loaders,
+                    self.options.extensions
+            )
+        ]
+
+        if viewer is None:
+            return sim_extensions, []
+
+        # Viewer extensions
+        viewer_extentions_loaders = [
+            import_item(extension['loader'])
+            for extension in self.options.viewer_extensions
+        ]
+        viewer_extensions: list[MuJoCoViewerExtension] = [
+            loader.from_options(extension['config'], viewer)
+            for loader, extension in zip(
+                    viewer_extentions_loaders,
+                    self.options.viewer_extensions
+            )
+        ]
+
+        return sim_extensions, viewer_extensions
+
+    def init_extensions(self, sim_extensions, viewer_extensions):
+        """Init extensions"""
+        for extension in sim_extensions:
+            extension.iteration0(self.task)
+        for extension in viewer_extensions:
+            extension.iteration0(self.task)
+
+    def pre_step_extensions(self, iteration, sim_extensions, viewer_extensions):
+        """Extensions pre-step"""
+        # Simulation extensions
+        for extension in sim_extensions:
+            extension.pre_step(
+                iteration,
+                iteration*self.options.physics.timestep,
+                self.options.physics.timestep,
+            )
+
+        # Viewer extensions
+        for extension in viewer_extensions:
+            extension.pre_step(
+                iteration,
+                iteration*self.options.physics.timestep,
+                self.options.physics.timestep,
+            )
+
+    def post_step_extensions(self, iteration, sim_extensions, viewer_extensions):
+        """Extensions post-step"""
+        # Simulation extensions
+        for extension in sim_extensions:
+            extension.post_step(
+                iteration,
+                iteration*self.options.physics.timestep,
+                self.options.physics.timestep,
+            )
+
+        # Viewer extensions
+        for extension in viewer_extensions:
+            extension.post_step(
+                iteration,
+                iteration*self.options.physics.timestep,
+                self.options.physics.timestep,
+            )
+
+    def end_extensions(self, iteration, sim_extensions, viewer_extensions):
+        """End extensions"""
+        # Simulation extensions end
+        for extension in sim_extensions:
+            extension.end(
+                iteration,
+                iteration*self.options.physics.timestep,
+                self.options.physics.timestep,
+            )
+
+        # Viewer extensions end
+        for extension in viewer_extensions:
+            extension.end(
+                iteration,
+                iteration*self.options.physics.timestep,
+                self.options.physics.timestep,
+            )
+
     def viewer_callback(self, keycode):
         """UI callback"""
         code = chr(keycode)
@@ -423,18 +527,10 @@ class Simulation:
                     iteration = 0
                     n_iterations = self.task.n_iterations
                     cb_sub_steps = self.task.cb_sub_steps
-                    cam = viewer.cam
-                    viewer_extentions_loaders = [
-                        import_item(extension['loader'])
-                        for extension in self.options.viewer_extensions
-                    ]
-                    viewer_extensions: list[MuJoCoViewerExtension] = [
-                        loader.from_options(extension['config'], viewer)
-                        for loader, extension in zip(
-                                viewer_extentions_loaders,
-                                self.options.viewer_extensions
-                        )
-                    ]
+
+                    # Load extensions
+                    sim_extensions, viewer_extensions = self.load_extensions()
+
                     if not self.options.camera.free_camera:
                         viewer_extensions += [
                             CameraFollowerViewer(
@@ -456,8 +552,10 @@ class Simulation:
                         if iteration == 0:
                             self.task.initialize_episode(self.physics, viewer)
                             viewer.opt.geomgroup[3] = 1
-                            for extension in viewer_extensions:
-                                extension.iteration0(self.task)
+                            self.init_extensions(
+                                sim_extensions,
+                                viewer_extensions,
+                            )
 
                         # Quit
                         if self.viewer_quit:
@@ -470,25 +568,33 @@ class Simulation:
                                 self.viewer_last_sync = tic
                             continue
 
+                        # Extensions pre-step
+                        self.pre_step_extensions(
+                            iteration=iteration,
+                            sim_extensions=sim_extensions,
+                            viewer_extensions=viewer_extensions,
+                        )
+
                         # Step
                         self.update_step_options()
                         for _ in range(cb_sub_steps):
                             self._env.step(action=None)
-                        iteration += 1
 
                         # Pick up changes to the physics state, options from GUI
                         # FIXME Does this apply perturbations?
-                        if tic - self.viewer_last_sync > 0.02:
+                        if tic - self.viewer_last_sync > 0.02:  # 50 fps
                             viewer.sync()
                             self.viewer_last_sync = tic
 
-                        # Viewer extensions
-                        for extension in viewer_extensions:
-                            extension.step(
-                                iteration,
-                                iteration*self.options.physics.timestep,
-                                self.options.physics.timestep,
-                            )
+                        # Extensions post-step
+                        self.post_step_extensions(
+                            iteration=iteration,
+                            sim_extensions=sim_extensions,
+                            viewer_extensions=viewer_extensions,
+                        )
+
+                        # Iteration complete
+                        iteration += 1
 
                         # Time keeping
                         real_time_handing(
@@ -497,20 +603,39 @@ class Simulation:
                             rtl=self.viewer_speed,
                         )
 
-                        # Single simulation step
+                        # Handle single simulation step
                         if self.viwer_step_iteration:
                             self.viewer_paused = True
                             self.viwer_step_iteration = False
+
+                    # Extensions end
+                    self.end_extensions(
+                        iteration=iteration,
+                        sim_extensions=sim_extensions,
+                        viewer_extensions=viewer_extensions,
+                    )
         else:
             _iterator = (
-                tqdm(range(self.task.sim_iterations))
+                tqdm(range(self.task.n_iterations))
                 if self.options.runtime.show_progress
-                else range(self.task.sim_iterations)
+                else range(self.task.n_iterations)
             )
             try:
-                for _ in _iterator:
+                sim_extensions, _ = self.load_extensions()
+                for iteration in _iterator:
                     self.update_step_options()
-                    self._env.step(action=None)
+                    if iteration == 0:
+                        self.init_extensions(sim_extensions, [])
+                    self.pre_step_extensions(iteration, sim_extensions, [])
+                    for _ in range(self.task.cb_sub_steps):
+                        self._env.step(action=None)
+                    self.post_step_extensions(iteration, sim_extensions, [])
+                    iteration += 1
+                self.end_extensions(
+                    iteration=self.task.sim_iterations,
+                    sim_extensions=sim_extensions,
+                    viewer_extensions=[],
+                )
             except PhysicsError as err:
                 pylog.error(traceback.format_exc())
                 if self.handle_exceptions:
@@ -526,11 +651,22 @@ class Simulation:
             else range(self.task.n_iterations)
         )
         try:
+            sim_extensions, _ = self.load_extensions()
             for iteration in _iterator:
                 yield iteration
                 self.update_step_options()
+                if iteration == 0:
+                    self.init_extensions(sim_extensions, [])
+                self.pre_step_extensions(iteration, sim_extensions, [])
                 for _ in range(self.task.cb_sub_steps):
                     self._env.step(action=None)
+                self.post_step_extensions(iteration, sim_extensions, [])
+                iteration += 1
+            self.end_extensions(
+                iteration=self.task.sim_iterations,
+                sim_extensions=sim_extensions,
+                viewer_extensions=[],
+            )
         except PhysicsError as err:
             if verbose:
                 pylog.error(traceback.format_exc())
@@ -544,6 +680,8 @@ class Simulation:
             **kwargs,
     ):
         """Postprocessing after simulation"""
+
+        raise DeprecationWarning
 
         # Times
         times = np.arange(
