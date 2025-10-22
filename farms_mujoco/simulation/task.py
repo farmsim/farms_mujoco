@@ -63,7 +63,6 @@ class ExperimentTask(Task):
                 'Data provided to ExperimentTask should be of type '
                 f'ExperimentData, got {type(self.data)=} instead.'
             )
-        self._controllers: list[AnimatController] = kwargs.pop('controllers', [])
         self.experiment_options: ExperimentOptions = kwargs.pop('experiment_options')
         n_animats = len(self.experiment_options.animats)
         self._restart: bool = kwargs.pop('restart', True)
@@ -191,6 +190,11 @@ class ExperimentTask(Task):
         self.initialize_sensors(physics)
 
         # Control
+        self._controllers: list[AnimatController] = [
+            extension
+            for extension in self.extensions
+            if isinstance(extension, AnimatController)
+        ]
         if self._controllers:
             self.initialize_control(physics)
 
