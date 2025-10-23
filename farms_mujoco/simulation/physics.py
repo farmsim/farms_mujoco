@@ -510,6 +510,8 @@ def physicsjoints2data(physics, iteration, data, sensor_maps, units):
 def physicsactuators2data(physics, iteration, data, sensor_maps, units):
     """Sensors data collection"""
     itorques = 1./units.torques
+    # For cumulative addition reset the iteration data to zero avoid summing over again!
+    data.sensors.joints.array[iteration, :, sc.joint_torque] = 0.0
     if len(sensor_maps['actuatorfrc_position2data']) > 0:
         data.sensors.joints.array[iteration, :, sc.joint_torque] += (
             physics.data.sensordata[sensor_maps['actuatorfrc_position2data']]
