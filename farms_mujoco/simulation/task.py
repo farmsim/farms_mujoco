@@ -427,11 +427,7 @@ class ExperimentTask(Task):
         current_time = physics.time()
         index = self.iteration % self.buffer_size
         for controller in self._controllers:
-            controller.step(
-                iteration=index,
-                time=current_time,
-                timestep=self.timestep,
-            )
+            controller.before_step(self, None, physics)
             if controller.joints_names[ControlType.POSITION]:
                 self.step_joints_control_position(physics, current_time)
             if controller.joints_names[ControlType.TORQUE]:
