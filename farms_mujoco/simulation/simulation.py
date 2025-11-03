@@ -237,7 +237,7 @@ class Simulation:
                         # Start simulation
                         if iteration == 0:
                             self.task.initialize_episode(self.physics, viewer)
-                            viewer.opt.geomgroup[3] = 1
+                            viewer.opt.geomgroup = [0, 1, 0, 1, 0, 0]
 
                         # Quit
                         if self.viewer_quit:
