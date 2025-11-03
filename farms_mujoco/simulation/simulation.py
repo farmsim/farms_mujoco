@@ -35,12 +35,13 @@ def real_time_handing(
         timestep: float,
         tic_rt: list[float],
         rtl: float = 1.0,
+        max_sleep: float = 1.0,
 ):
     """Real-time handling"""
     tic_rt[1] = time.time()
     tic_rt[2] += timestep/rtl - (tic_rt[1] - tic_rt[0])
     if tic_rt[2] > 2e-2:
-        time.sleep(tic_rt[2])
+        time.sleep(min(tic_rt[2], max_sleep))
         tic_rt[2] = 0
     elif tic_rt[2] < 0:
         tic_rt[2] = 0
