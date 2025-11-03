@@ -151,7 +151,7 @@ def mjc_add_link(
     sdf_joint = kwargs.pop('sdf_joint', None)
     directory = kwargs.pop('directory', '')
     spawn_mode = kwargs.pop('spawn_mode', None)
-    all_collisions = kwargs.pop('all_collisions', False)
+    conaffinity = kwargs.pop('conaffinity', 2**31-1)
     concave = kwargs.pop('concave', False)
     overwrite = kwargs.pop('overwrite', False)
     solref = kwargs.pop('solref', None)
@@ -347,7 +347,7 @@ def mjc_add_link(
             collision_kwargs['friction'] = friction
             collision_kwargs['margin'] = 0
             collision_kwargs['contype'] = 1  # World collisions
-            collision_kwargs['conaffinity'] = all_collisions
+            collision_kwargs['conaffinity'] = conaffinity
             collision_kwargs['condim'] = 3
             collision_kwargs['group'] = 2
             if solref is not None:
@@ -1351,7 +1351,7 @@ def setup_mjcf_xml(
         concave=False,
         simulation_options=simulation_options,
         friction=[0, 0, 0],
-        all_collisions=True,
+        conaffinity=2*31-1,
     )
     if 'hfield' in info:
         hfield = info['hfield']
@@ -1370,6 +1370,7 @@ def setup_mjcf_xml(
             concave=False,
             simulation_options=simulation_options,
             friction=[0, 0, 0],
+            conaffinity=0,
         )
         water = mjcf_model.worldbody.body[-1]
         water.pos = [0, 0, arena_options.water.height*units.meters]
@@ -1398,6 +1399,7 @@ def setup_mjcf_xml(
             use_actuators=True,
             animat_options=animat_options,
             simulation_options=simulation_options,
+            conaffinity=2*31-1,
             **mujoco_kwargs,
         )
 
