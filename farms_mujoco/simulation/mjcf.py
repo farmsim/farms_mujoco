@@ -1425,9 +1425,9 @@ def setup_mjcf_xml(
         if not simulation_options
         else simulation_options.mujoco.visual_scale
     )
-    mjcf_model.statistic.meansize = 0
-    mjcf_model.statistic.meanmass = 0
-    mjcf_model.statistic.meaninertia = 0
+    mjcf_model.statistic.meansize = 1
+    mjcf_model.statistic.meanmass = 1
+    mjcf_model.statistic.meaninertia = 1
     mjcf_model.statistic.extent = (
         100*units.meters
         if not simulation_options
