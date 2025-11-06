@@ -366,7 +366,7 @@ def mjc_add_link(
 
             # Mesh path
             mesh_path = os.path.join(directory, element.geometry.uri)
-            assert os.path.isfile(mesh_path)
+            assert os.path.isfile(mesh_path), f"{mesh_path} does not exist"
 
             # Convert to STL if mesh in other format
             path, extension = os.path.splitext(mesh_path)
@@ -374,12 +374,13 @@ def mjc_add_link(
                     extension not in ('.stl', '.obj')
                     or obj_use_composite and extension == '.obj'
             ):
-                if extension in ('.obj',):
-                    extension = '.obj'
-                    new_path = f'{path}_composite.obj'
-                else:
-                    extension = '.stl'
-                    new_path = f'{path}.stl'
+                match extension:
+                    case '.obj':
+                        extension = '.obj'
+                        new_path = f'{path}_composite.obj'
+                    case _:
+                        extension = '.stl'
+                        new_path = f'{path}_composite.stl'
                 if overwrite or not os.path.isfile(new_path):
                     mesh = tri.load_mesh(mesh_path)
                     if isinstance(mesh, tri.Scene):
@@ -388,17 +389,37 @@ def mjc_add_link(
                             for g in mesh.geometry.values()
                         ))
                     if not mesh.convex_hull.vertices.any():
+                        pylog.warning(f'SKIP: {mesh_path} has no vertices')
                         continue
+                    dir_path = os.path.dirname(path)
+                    mesh_name = os.path.basename(path)
+                    mesh.visual.material.name = f"{mesh_name}_composite"
+                    mat_name = mesh.visual.material.name
+                    mat_path = os.path.join(dir_path, f"{mat_name}.png")
+                    assert not os.path.isfile(mat_path) or overwrite, (
+                        f"{mat_path} exists, either overwrite or change name"
+                    )
+                    if os.path.isfile(os.path.join(dir_path, f"{mat_name}.png")):
+                        mesh.visual.material.name = f"{mat_name}"
                     mesh.export(
                         new_path,
+                        header="FARMS composite mesh",
+                        mtl_name=f"{mesh_name}_composite.mtl",
+                        include_normals=True,
                         include_color=True,
                         include_texture=True,
+                        write_texture=True,
+                        resolver=tri.resolvers.FilePathResolver(dir_path),
                     )
                 mesh_path = new_path
 
             # Wavefront textures
             if extension == '.obj':
-                wavefront = pwf.Wavefront(mesh_path)
+                try:
+                    wavefront = pwf.Wavefront(mesh_path)
+                except pwf.exceptions.PywavefrontException as err:
+                    pylog.error("Error loading %s", mesh_path)
+                    raise err
                 for mat_id, mat in wavefront.materials.items():
                     if mat.texture is None:
                         continue
