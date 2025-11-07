@@ -393,23 +393,25 @@ def mjc_add_link(
                         continue
                     dir_path = os.path.dirname(path)
                     mesh_name = os.path.basename(path)
-                    mesh.visual.material.name = f"{mesh_name}_composite"
-                    mat_name = mesh.visual.material.name
-                    mat_path = os.path.join(dir_path, f"{mat_name}.png")
-                    assert not os.path.isfile(mat_path) or overwrite, (
-                        f"{mat_path} exists, either overwrite or change name"
-                    )
-                    if os.path.isfile(os.path.join(dir_path, f"{mat_name}.png")):
-                        mesh.visual.material.name = f"{mat_name}"
+                    if hasattr(mesh.visual, 'material'):
+                        mesh.visual.material.name = f"{mesh_name}_composite"
+                        mat_name = mesh.visual.material.name
+                        mat_path = os.path.join(dir_path, f"{mat_name}.png")
+                        assert not os.path.isfile(mat_path) or overwrite, (
+                            f"{mat_path} exists, either overwrite or change name"
+                        )
+                    mesh_kwargs = {}
+                    if extension == '.obj':
+                        mesh_kwargs['header'] = "FARMS composite mesh",
+                        mesh_kwargs['mtl_name'] = f"{mesh_name}_composite.mtl",
+                        mesh_kwargs['include_normals'] = True
+                        mesh_kwargs['include_color'] = True
+                        mesh_kwargs['include_texture'] = True
+                        mesh_kwargs['write_texture'] = True
                     mesh.export(
                         new_path,
-                        header="FARMS composite mesh",
-                        mtl_name=f"{mesh_name}_composite.mtl",
-                        include_normals=True,
-                        include_color=True,
-                        include_texture=True,
-                        write_texture=True,
                         resolver=tri.resolvers.FilePathResolver(dir_path),
+                        **mesh_kwargs,
                     )
                 mesh_path = new_path
 
