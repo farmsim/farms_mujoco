@@ -393,14 +393,13 @@ def mjc_add_link(
                         continue
                     dir_path = os.path.dirname(path)
                     mesh_name = os.path.basename(path)
-                    mesh.visual.material.name = f"{mesh_name}_composite"
-                    mat_name = mesh.visual.material.name
-                    mat_path = os.path.join(dir_path, f"{mat_name}.png")
-                    assert not os.path.isfile(mat_path) or overwrite, (
-                        f"{mat_path} exists, either overwrite or change name"
-                    )
-                    if os.path.isfile(os.path.join(dir_path, f"{mat_name}.png")):
-                        mesh.visual.material.name = f"{mat_name}"
+                    if hasattr(mesh.visual, 'material'):
+                        mesh.visual.material.name = f"{mesh_name}_composite"
+                        mat_name = mesh.visual.material.name
+                        mat_path = os.path.join(dir_path, f"{mat_name}.png")
+                        assert not os.path.isfile(mat_path) or overwrite, (
+                            f"{mat_path} exists, either overwrite or change name"
+                        )
                     mesh.export(
                         new_path,
                         header="FARMS composite mesh",
