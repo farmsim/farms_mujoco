@@ -151,7 +151,8 @@ def mjc_add_link(
     sdf_joint = kwargs.pop('sdf_joint', None)
     directory = kwargs.pop('directory', '')
     spawn_mode = kwargs.pop('spawn_mode', None)
-    all_collisions = kwargs.pop('all_collisions', False)
+    contype = kwargs.pop('contype', 1)
+    conaffinity = kwargs.pop('conaffinity', 2**31-1)
     concave = kwargs.pop('concave', False)
     overwrite = kwargs.pop('overwrite', False)
     solref = kwargs.pop('solref', None)
@@ -340,14 +341,14 @@ def mjc_add_link(
                     rgba=element.color,
                 )
                 visual_kwargs['material'] = f'{prefix}material_{element.name}'
-            visual_kwargs['conaffinity'] = 0  # No self-collisions
-            visual_kwargs['contype'] = 0  # No world collisions
+            visual_kwargs['conaffinity'] = 0  # No collisions
+            visual_kwargs['contype'] = 0  # No collisions
             visual_kwargs['group'] = 1
         elif isinstance(element, Collision):
             collision_kwargs['friction'] = friction
             collision_kwargs['margin'] = 0
-            collision_kwargs['contype'] = 1  # World collisions
-            collision_kwargs['conaffinity'] = all_collisions
+            collision_kwargs['contype'] = contype
+            collision_kwargs['conaffinity'] = conaffinity
             collision_kwargs['condim'] = 3
             collision_kwargs['group'] = 2
             if solref is not None:
@@ -366,7 +367,7 @@ def mjc_add_link(
 
             # Mesh path
             mesh_path = os.path.join(directory, element.geometry.uri)
-            assert os.path.isfile(mesh_path)
+            assert os.path.isfile(mesh_path), f"{mesh_path} does not exist"
 
             # Convert to STL if mesh in other format
             path, extension = os.path.splitext(mesh_path)
@@ -374,12 +375,13 @@ def mjc_add_link(
                     extension not in ('.stl', '.obj')
                     or obj_use_composite and extension == '.obj'
             ):
-                if extension in ('.obj',):
-                    extension = '.obj'
-                    new_path = f'{path}_composite.obj'
-                else:
-                    extension = '.stl'
-                    new_path = f'{path}.stl'
+                match extension:
+                    case '.obj':
+                        extension = '.obj'
+                        new_path = f'{path}_composite.obj'
+                    case _:
+                        extension = '.stl'
+                        new_path = f'{path}_composite.stl'
                 if overwrite or not os.path.isfile(new_path):
                     mesh = tri.load_mesh(mesh_path)
                     if isinstance(mesh, tri.Scene):
@@ -388,17 +390,39 @@ def mjc_add_link(
                             for g in mesh.geometry.values()
                         ))
                     if not mesh.convex_hull.vertices.any():
+                        pylog.warning(f'SKIP: {mesh_path} has no vertices')
                         continue
+                    dir_path = os.path.dirname(path)
+                    mesh_name = os.path.basename(path)
+                    if hasattr(mesh.visual, 'material'):
+                        mesh.visual.material.name = f"{mesh_name}_composite"
+                        mat_name = mesh.visual.material.name
+                        mat_path = os.path.join(dir_path, f"{mat_name}.png")
+                        assert not os.path.isfile(mat_path) or overwrite, (
+                            f"{mat_path} exists, either overwrite or change name"
+                        )
+                    mesh_kwargs = {}
+                    if extension == '.obj':
+                        mesh_kwargs['header'] = "FARMS composite mesh",
+                        mesh_kwargs['mtl_name'] = f"{mesh_name}_composite.mtl",
+                        mesh_kwargs['include_normals'] = True
+                        mesh_kwargs['include_color'] = True
+                        mesh_kwargs['include_texture'] = True
+                        mesh_kwargs['write_texture'] = True
                     mesh.export(
                         new_path,
-                        include_color=True,
-                        include_texture=True,
+                        resolver=tri.resolvers.FilePathResolver(dir_path),
+                        **mesh_kwargs,
                     )
                 mesh_path = new_path
 
             # Wavefront textures
             if extension == '.obj':
-                wavefront = pwf.Wavefront(mesh_path)
+                try:
+                    wavefront = pwf.Wavefront(mesh_path)
+                except pwf.exceptions.PywavefrontException as err:
+                    pylog.error("Error loading %s", mesh_path)
+                    raise err
                 for mat_id, mat in wavefront.materials.items():
                     if mat.texture is None:
                         continue
@@ -1276,7 +1300,7 @@ def add_lights(
         castshadow=str(True).lower(),
         directional=str(False).lower(),
         attenuation=[1.0, 0.0, 0.0],
-        cutoff=45,
+        cutoff=1000,
         exponent=1.0,
         ambient=[0.0, 0.0, 0.0],
         diffuse=[0.7, 0.7, 0.7],
@@ -1351,7 +1375,8 @@ def setup_mjcf_xml(
         concave=False,
         simulation_options=simulation_options,
         friction=[0, 0, 0],
-        all_collisions=True,
+        contype=1,
+        conaffinity=2*31-1,
     )
     if 'hfield' in info:
         hfield = info['hfield']
@@ -1370,6 +1395,8 @@ def setup_mjcf_xml(
             concave=False,
             simulation_options=simulation_options,
             friction=[0, 0, 0],
+            contype=0,
+            conaffinity=0,
         )
         water = mjcf_model.worldbody.body[-1]
         water.pos = [0, 0, arena_options.water.height*units.meters]
@@ -1398,6 +1425,8 @@ def setup_mjcf_xml(
             use_actuators=True,
             animat_options=animat_options,
             simulation_options=simulation_options,
+            contype=2**(animat_i+1),
+            conaffinity=2*31-1,
             **mujoco_kwargs,
         )
 
@@ -1420,9 +1449,9 @@ def setup_mjcf_xml(
         if not simulation_options
         else simulation_options.mujoco.visual_scale
     )
-    mjcf_model.statistic.meansize = 0
-    mjcf_model.statistic.meanmass = 0
-    mjcf_model.statistic.meaninertia = 0
+    mjcf_model.statistic.meansize = 1
+    mjcf_model.statistic.meanmass = 1
+    mjcf_model.statistic.meaninertia = 1
     mjcf_model.statistic.extent = (
         100*units.meters
         if not simulation_options

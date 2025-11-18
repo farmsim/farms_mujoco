@@ -35,12 +35,13 @@ def real_time_handing(
         timestep: float,
         tic_rt: list[float],
         rtl: float = 1.0,
+        max_sleep: float = 1.0,
 ):
     """Real-time handling"""
     tic_rt[1] = time.time()
     tic_rt[2] += timestep/rtl - (tic_rt[1] - tic_rt[0])
     if tic_rt[2] > 2e-2:
-        time.sleep(tic_rt[2])
+        time.sleep(min(tic_rt[2], max_sleep))
         tic_rt[2] = 0
     elif tic_rt[2] < 0:
         tic_rt[2] = 0
@@ -235,9 +236,9 @@ class Simulation:
                         tic = time.time()
 
                         # Start simulation
-                        if iteration == 0:
+                        if iteration == 0 and not self.task.initialized:
                             self.task.initialize_episode(self.physics, viewer)
-                            viewer.opt.geomgroup[3] = 1
+                            viewer.opt.geomgroup = [0, 1, 0, 1, 0, 0]
 
                         # Quit
                         if self.viewer_quit:
@@ -252,6 +253,7 @@ class Simulation:
 
                         # Step
                         self.update_step_options()
+                        self._env.task.initialized = False
                         for _ in range(cb_sub_steps):
                             self._env.step(action=None)
 

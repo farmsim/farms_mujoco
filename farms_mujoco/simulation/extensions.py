@@ -17,20 +17,38 @@ from .task import ExperimentTask
 from .mjcf import mjcf2str
 
 
-def create_sphere(viewer, **kwargs):
-    """Create sphere"""
+def create_primitive(viewer, primitive, **kwargs):
+    """Create primitive"""
     scn = viewer.user_scn
     geom = scn.geoms[scn.ngeom]
     mujoco.mjv_initGeom(
         geom,
-        mujoco.mjtGeom.mjGEOM_SPHERE,
-        kwargs.pop('size', [1.0, 0.0, 0.0]),  # Radius
+        primitive,
+        kwargs.pop('size', [1.0, 1.0, 1.0]),
         kwargs.pop('pos', [0.0, 0.0, 0.0]),  # Pos
         np.eye(3).ravel(),  # Matrix
         kwargs.pop('rgba', [1.0, 1.0, 1.0, 1.0]),  # RGBA
     )
     scn.ngeom += 1
     return geom
+
+
+def create_sphere(viewer, **kwargs):
+    """Create sphere"""
+    return create_primitive(
+        viewer,
+        mujoco.mjtGeom.mjGEOM_SPHERE,
+        **kwargs,
+    )
+
+
+def create_cylinder(viewer, **kwargs):
+    """Create cylinder"""
+    return create_primitive(
+        viewer,
+        mujoco.mjtGeom.mjGEOM_CYLINDER,
+        **kwargs,
+    )
 
 
 def create_line(viewer, begin, end, **kwargs):
