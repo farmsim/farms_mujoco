@@ -236,7 +236,7 @@ class Simulation:
                         tic = time.time()
 
                         # Start simulation
-                        if iteration == 0:
+                        if iteration == 0 and not self.task.initialized:
                             self.task.initialize_episode(self.physics, viewer)
                             viewer.opt.geomgroup = [0, 1, 0, 1, 0, 0]
 
@@ -253,6 +253,7 @@ class Simulation:
 
                         # Step
                         self.update_step_options()
+                        self._env.task.initialized = False
                         for _ in range(cb_sub_steps):
                             self._env.step(action=None)
 
