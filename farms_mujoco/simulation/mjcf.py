@@ -151,6 +151,7 @@ def mjc_add_link(
     sdf_joint = kwargs.pop('sdf_joint', None)
     directory = kwargs.pop('directory', '')
     spawn_mode = kwargs.pop('spawn_mode', None)
+    contype = kwargs.pop('contype', 1)
     conaffinity = kwargs.pop('conaffinity', 2**31-1)
     concave = kwargs.pop('concave', False)
     overwrite = kwargs.pop('overwrite', False)
@@ -340,13 +341,13 @@ def mjc_add_link(
                     rgba=element.color,
                 )
                 visual_kwargs['material'] = f'{prefix}material_{element.name}'
-            visual_kwargs['conaffinity'] = 0  # No self-collisions
-            visual_kwargs['contype'] = 0  # No world collisions
+            visual_kwargs['conaffinity'] = 0  # No collisions
+            visual_kwargs['contype'] = 0  # No collisions
             visual_kwargs['group'] = 1
         elif isinstance(element, Collision):
             collision_kwargs['friction'] = friction
             collision_kwargs['margin'] = 0
-            collision_kwargs['contype'] = 1  # World collisions
+            collision_kwargs['contype'] = contype
             collision_kwargs['conaffinity'] = conaffinity
             collision_kwargs['condim'] = 3
             collision_kwargs['group'] = 2
@@ -1374,6 +1375,7 @@ def setup_mjcf_xml(
         concave=False,
         simulation_options=simulation_options,
         friction=[0, 0, 0],
+        contype=1,
         conaffinity=2*31-1,
     )
     if 'hfield' in info:
@@ -1393,6 +1395,7 @@ def setup_mjcf_xml(
             concave=False,
             simulation_options=simulation_options,
             friction=[0, 0, 0],
+            contype=0,
             conaffinity=0,
         )
         water = mjcf_model.worldbody.body[-1]
@@ -1422,6 +1425,7 @@ def setup_mjcf_xml(
             use_actuators=True,
             animat_options=animat_options,
             simulation_options=simulation_options,
+            contype=2**(animat_i+1),
             conaffinity=2*31-1,
             **mujoco_kwargs,
         )
