@@ -1409,12 +1409,7 @@ def setup_mjcf_xml(
     mjcf_model.compiler.balanceinertia = False
     mjcf_model.compiler.inertiafromgeom = False
     mjcf_model.compiler.fusestatic = True
-    mjcf_model.compiler.discardvisual = kwargs.pop(
-        'discardvisual',
-        simulation_options.runtime.headless
-        if simulation_options is not None
-        else False
-    )
+    mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
     # Disable lengthrange computation for muscles
     mjcf_model.compiler.lengthrange.mode = "none"
     mjcf_model.compiler.lengthrange.useexisting = True

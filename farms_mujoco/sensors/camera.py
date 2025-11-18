@@ -120,7 +120,7 @@ class CameraRecordingOptions(Options):
         self.elevation: float = kwargs.pop('elevation', -15)
         self.distance: float = kwargs.pop('distance', 2)
         self.angular_velocity = kwargs.pop('angular_velocity', 0)
-        self.geomgroups: list[int] = kwargs.pop('geomgroups', [1, 1, 0, 1, 0, 0])
+        self.geomgroups: list[int] = kwargs.pop('geomgroups', [0, 1, 0, 1, 0, 0])
         assert not kwargs, kwargs
 
 
