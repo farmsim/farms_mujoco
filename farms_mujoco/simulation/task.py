@@ -143,7 +143,8 @@ class ExperimentTask(Task):
 
         # Checks
         pylog.debug("Initializing episode")
-        assert not self.initialized, 'Simulation was already initialized'
+        if self.initialized:
+            pylog.warning('Simulation was already initialized')
         if self._restart:
             assert self._app is not None, (
                 'Simulation can not be restarted without application interface'
