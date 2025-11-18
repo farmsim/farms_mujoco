@@ -1299,7 +1299,7 @@ def add_lights(
         castshadow=str(True).lower(),
         directional=str(False).lower(),
         attenuation=[1.0, 0.0, 0.0],
-        cutoff=45,
+        cutoff=1000,
         exponent=1.0,
         ambient=[0.0, 0.0, 0.0],
         diffuse=[0.7, 0.7, 0.7],
