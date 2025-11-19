@@ -272,8 +272,13 @@ class Simulation:
                         iteration += 1
 
                         # Time keeping
+                        timestep = (
+                            self.physics.timestep()
+                            *self.task.cb_sub_steps
+                            *self._env._n_sub_steps
+                        )
                         real_time_handing(
-                            timestep=self.physics.timestep(),
+                            timestep=timestep,
                             tic_rt=self.viewer_tic_rt,
                             rtl=self.viewer_speed,
                         )
