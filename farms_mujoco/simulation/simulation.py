@@ -235,6 +235,12 @@ class Simulation:
                         # Time
                         tic = time.time()
 
+                        # Reinitialise iterations
+                        start = self.physics.time() < 1e-6*self.physics.timestep()
+                        if start and iteration > 0:
+                            iteration = 0
+                            self.task.initialized = False
+
                         # Start simulation
                         if iteration == 0 and not self.task.initialized:
                             self.task.initialize_episode(self.physics, viewer)
@@ -253,7 +259,6 @@ class Simulation:
 
                         # Step
                         self.update_step_options()
-                        self._env.task.initialized = False
                         for _ in range(cb_sub_steps):
                             self._env.step(action=None)
 
@@ -268,7 +273,7 @@ class Simulation:
 
                         # Time keeping
                         real_time_handing(
-                            timestep=self.options.physics.timestep,
+                            timestep=self.physics.timestep(),
                             tic_rt=self.viewer_tic_rt,
                             rtl=self.viewer_speed,
                         )

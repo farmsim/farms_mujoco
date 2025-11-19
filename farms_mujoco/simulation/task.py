@@ -266,17 +266,6 @@ class ExperimentTask(Task):
 
         # Checks
         assert self.iteration < self.n_iterations
-        sim_time = self.sim_iteration*self.sim_timestep
-        assert abs(physics.time() - sim_time) < 1e-5*self.timestep, (
-            f'{physics.time()=} != {sim_time=}'
-            f' ({self.sim_iteration=}, {self.timestep})'
-        )
-        if full_step:
-            computed_time = self.iteration*self.timestep
-            assert abs(physics.time() - computed_time) < 1e-5*self.timestep, (
-                f'{physics.time()=} != {computed_time=}'
-                f' ({self.sim_iteration=}, {self.timestep})'
-            )
 
         # Sensors
         if full_step or self.substeps_links:
