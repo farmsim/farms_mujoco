@@ -1299,7 +1299,7 @@ def add_lights(
         castshadow=str(True).lower(),
         directional=str(False).lower(),
         attenuation=[1.0, 0.0, 0.0],
-        cutoff=45,
+        cutoff=1000,
         exponent=1.0,
         ambient=[0.0, 0.0, 0.0],
         diffuse=[0.7, 0.7, 0.7],
@@ -1437,12 +1437,7 @@ def setup_mjcf_xml(
     mjcf_model.compiler.balanceinertia = False
     mjcf_model.compiler.inertiafromgeom = False
     mjcf_model.compiler.fusestatic = True
-    mjcf_model.compiler.discardvisual = kwargs.pop(
-        'discardvisual',
-        simulation_options.runtime.headless
-        if simulation_options is not None
-        else False
-    )
+    mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
     # Disable lengthrange computation for muscles
     mjcf_model.compiler.lengthrange.mode = "none"
     mjcf_model.compiler.lengthrange.useexisting = True

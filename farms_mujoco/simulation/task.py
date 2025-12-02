@@ -84,6 +84,7 @@ class ExperimentTask(Task):
             'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
             'muscles': {},
         } for _ in range(n_animats)]
+        self.initialized = False
         assert not kwargs, kwargs
 
     def __del__(self):
@@ -141,10 +142,18 @@ class ExperimentTask(Task):
         """Sets the state of the environment at the start of each episode"""
 
         # Checks
+        pylog.debug("Initializing episode")
+        if self.initialized:
+            pylog.warning('Simulation was already initialized')
         if self._restart:
             assert self._app is not None, (
                 'Simulation can not be restarted without application interface'
             )
+
+        # Viewer
+        if viewer is not None:
+            scn = viewer.user_scn
+            scn.ngeom = 0
 
         # Links masses
         links_row = physics.named.model.body_mass.axes.row
@@ -227,6 +236,9 @@ class ExperimentTask(Task):
             set_callback("mjcb_act_gain", rt_muscle.mjcb_muscle_gain)
             set_callback("mjcb_act_bias", rt_muscle.mjcb_muscle_bias)
 
+        # Initialization complete
+        self.initialized = True
+
     def update_sensors(self, physics: Physics, links_only=False):
         """Update sensors"""
         index = self.iteration % self.buffer_size
@@ -247,21 +259,13 @@ class ExperimentTask(Task):
 
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
+        if physics.time() < 1e-6*self.sim_timestep:
+            self.initialize_episode(physics, self.viewer)  # Reset
+
         full_step = not self.sim_iteration % self.cb_sub_steps
 
         # Checks
         assert self.iteration < self.n_iterations
-        sim_time = self.sim_iteration*self.sim_timestep
-        assert abs(physics.time() - sim_time) < 1e-5*self.timestep, (
-            f'{physics.time()=} != {sim_time=}'
-            f' ({self.sim_iteration=}, {self.timestep})'
-        )
-        if full_step:
-            computed_time = self.iteration*self.timestep
-            assert abs(physics.time() - computed_time) < 1e-5*self.timestep, (
-                f'{physics.time()=} != {computed_time=}'
-                f' ({self.sim_iteration=}, {self.timestep})'
-            )
 
         # Sensors
         if full_step or self.substeps_links:
