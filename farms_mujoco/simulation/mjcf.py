@@ -278,9 +278,8 @@ def mjc_add_link(
             joint = body.add(
                 'joint',
                 name=f'{prefix}{sdf_joint.name}',
-                axis=sdf_joint.axis.xyz,
+                axis=euler2mat(sdf_joint.pose[3:]) @ sdf_joint.axis.xyz,
                 pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
-                # euler=sdf_joint.pose[3:],  # Euler not supported in joint
                 type='hinge',
                 damping=0,
                 stiffness=0,
