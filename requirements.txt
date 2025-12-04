@@ -5,5 +5,6 @@ scipy
 tqdm
 trimesh
 pywavefront
-dm_control
+mujoco==3.2.2
+dm_control==1.0.22
 imageio
