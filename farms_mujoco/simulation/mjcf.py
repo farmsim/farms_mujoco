@@ -884,7 +884,8 @@ def sdf2mjcf(
                     muscle['max_force']*units.newtons,
                     muscle['optimal_fiber']*units.meters,
                     muscle['tendon_slack']*units.meters,
-                    muscle['max_velocity']*units.velocity, # vmax
+                    # vmax (lopt/s) -> (m/s)
+                    (muscle['max_velocity']*muscle['optimal_fiber'])*units.velocity,
                     np.deg2rad(muscle['pennation_angle']),
                 ]
                 mjcf_map['muscles'][muscle_name] = mjcf_model.actuator.add(
