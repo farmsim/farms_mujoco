@@ -403,11 +403,12 @@ def mjc_add_link(
                     mesh_kwargs = {}
                     if extension == '.obj':
                         mesh_kwargs['header'] = "FARMS composite mesh",
-                        mesh_kwargs['mtl_name'] = f"{mesh_name}_composite.mtl",
+                        mesh_kwargs['mtl_name'] = f"{mesh_name}_composite.mtl"
                         mesh_kwargs['include_normals'] = True
                         mesh_kwargs['include_color'] = True
                         mesh_kwargs['include_texture'] = True
                         mesh_kwargs['write_texture'] = True
+                    pylog.info('Exporting and loading %s', path)
                     mesh.export(
                         new_path,
                         resolver=tri.resolvers.FilePathResolver(dir_path),
