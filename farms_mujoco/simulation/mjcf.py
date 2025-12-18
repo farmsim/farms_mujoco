@@ -36,7 +36,7 @@ from farms_core.io.sdf import (
 
 
 # Setting to 0 does not work properly for low inertias
-MIN_MASS = 1e-10
+MIN_MASS = 1e-15
 MIN_INERTIA = 1e-15
 
 
