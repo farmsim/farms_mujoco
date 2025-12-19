@@ -267,8 +267,8 @@ cdef void cymusclesensor2data(
     cdata[iteration, index, MUSCLE_FIBER_LENGTH] = l_ce_norm
     cdata[iteration, index, MUSCLE_FIBER_VELOCITY] = v_ce_norm
     # forces
-    # cdata[iteration, index, MUSCLE_FORCE_LENGTH] = rt.c_force_length(l_ce_norm)
-    # cdata[iteration, index, MUSCLE_FORCE_VELOCITY] = rt.c_force_velocity(v_ce_norm)
+    cdata[iteration, index, MUSCLE_FORCE_LENGTH] = rt.c_force_length(l_ce_norm)
+    cdata[iteration, index, MUSCLE_FORCE_VELOCITY] = rt.c_force_velocity(v_ce_norm)
     cdata[iteration, index, MUSCLE_ACTIVE_FORCE] = rt.c_active_force(
         l_ce_norm, v_ce_norm, alpha
     )
