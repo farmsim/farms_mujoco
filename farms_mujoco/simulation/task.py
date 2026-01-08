@@ -204,6 +204,11 @@ class ExperimentTask(Task):
             for extension in self.extensions
             if isinstance(extension, AnimatController)
         ]
+        self._extensions_non_controllers: list[TaskExtension] = [
+            extension
+            for extension in self.extensions
+            if not isinstance(extension, AnimatController)
+        ]
         if self._controllers:
             self.initialize_control(physics)
 
@@ -272,7 +277,7 @@ class ExperimentTask(Task):
             self.update_sensors(physics=physics, links_only=not full_step)
 
         # Extensions
-        for extension in self.extensions:
+        for extension in self._extensions_non_controllers:
             if full_step or extension.substep:
                 extension.before_step(task=self, action=action, physics=physics)
 
