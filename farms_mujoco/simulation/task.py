@@ -435,12 +435,12 @@ class ExperimentTask(Task):
         """Step control"""
         current_time = physics.time()
         index = self.iteration % self.buffer_size
-        for controller in self._controllers:
+        for animat_i, controller in enumerate(self._controllers):
             controller.before_step(self, None, physics)
             if controller.joints_names[ControlType.POSITION]:
-                self.step_joints_control_position(physics, current_time)
+                self.step_joints_control_position(animat_i, controller, physics, current_time)
             if controller.joints_names[ControlType.TORQUE]:
-                self.step_joints_control_torque(physics, current_time)
+                self.step_joints_control_torque(animat_i, controller, physics, current_time)
             if controller.muscles_names:
                 muscles_excitations = controller.excitations(
                     iteration=index,
@@ -449,71 +449,70 @@ class ExperimentTask(Task):
                 )
                 physics.data.ctrl[self.maps['ctrl']['mus']] = muscles_excitations
 
-    def step_joints_control_position(self, physics: Physics, time: float):
+    def step_joints_control_position(self, animat_i: int, controller: AnimatController, physics: Physics, time: float):
         """Step position control"""
         index = self.iteration % self.buffer_size
-        for animat_i, controller in enumerate(self._controllers):
-            joints_positions = controller.positions(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            physics.data.ctrl[self.maps[animat_i]['ctrl']['pos']] = [
-                joints_positions[joint]
-                for joint in controller.joints_names[ControlType.POSITION]
-            ]
+        joints_positions = controller.positions(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        physics.data.ctrl[self.maps[animat_i]['ctrl']['pos']] = [
+            joints_positions[joint]
+            for joint in controller.joints_names[ControlType.POSITION]
+        ]
 
-    def step_joints_control_torque(self, physics: Physics, time: float):
+    def step_joints_control_torque(self, animat_i: int, controller: AnimatController, physics: Physics, time: float):
         """Step torque control"""
         index = self.iteration % self.buffer_size
         torques = self.units.torques
-        for animat_i, controller in enumerate(self._controllers):
 
-            prefix = get_prefix(animat_i)
+        prefix = get_prefix(animat_i)
 
-            # Joints torques
-            joints_torques = controller.torques(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            physics.data.ctrl[self.maps[animat_i]['ctrl']['trq']] = [
-                joints_torques[joint]*torques
-                for joint in controller.joints_names[ControlType.TORQUE]
-            ]
+        # Joints torques
+        joints_torques = controller.torques(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        physics.data.ctrl[self.maps[animat_i]['ctrl']['trq']] = [
+            joints_torques[joint]*torques
+            for joint in controller.joints_names[ControlType.TORQUE]
+        ]
 
-            # Spring reference
-            qpos_spring = physics.model.qpos_spring
-            springref_map = self.maps[animat_i]['ctrl']['springref']
-            springrefs = controller.springrefs(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            for joint, value in springrefs.items():
-                qpos_spring[springref_map[prefix+joint]] = value
+        # Spring reference
+        qpos_spring = physics.model.qpos_spring
+        springref_map = self.maps[animat_i]['ctrl']['springref']
+        springrefs = controller.springrefs(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in springrefs.items():
+            qpos_spring[springref_map[prefix+joint]] = value
 
-            # Spring coefs
-            jnt_stiffness = physics.model.jnt_stiffness
-            jnt_stiffness_map = self.maps[animat_i]['ctrl']['jnt_stiffness']
-            springcoefs = controller.springcoefs(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            for joint, value in springcoefs.items():
-                jnt_stiffness[jnt_stiffness_map[prefix+joint]] = value
+        # Spring coefs
+        jnt_stiffness = physics.model.jnt_stiffness
+        jnt_stiffness_map = self.maps[animat_i]['ctrl']['jnt_stiffness']
 
-            # Dampings
-            dof_damping = physics.model.dof_damping
-            dof_damping_map = self.maps[animat_i]['ctrl']['dof_damping']
-            dampingcoefs = controller.dampingcoefs(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            for joint, value in dampingcoefs.items():
-                dof_damping[dof_damping_map[prefix+joint]] = value
+        springcoefs = controller.springcoefs(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in springcoefs.items():
+            jnt_stiffness[jnt_stiffness_map[prefix+joint]] = value
+
+        # Dampings
+        dof_damping = physics.model.dof_damping
+        dof_damping_map = self.maps[animat_i]['ctrl']['dof_damping']
+        dampingcoefs = controller.dampingcoefs(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in dampingcoefs.items():
+            dof_damping[dof_damping_map[prefix+joint]] = value
 
     def after_step(self, physics: Physics):
         """Operations after physics step"""
