@@ -435,12 +435,12 @@ class ExperimentTask(Task):
         """Step control"""
         current_time = physics.time()
         index = self.iteration % self.buffer_size
-        for animat_i, controller in enumerate(self._controllers):
+        for controller in self._controllers:
             controller.before_step(self, None, physics)
             if controller.joints_names[ControlType.POSITION]:
-                self.step_joints_control_position(animat_i, controller, physics, current_time)
+                self.step_joints_control_position(controller, physics, current_time)
             if controller.joints_names[ControlType.TORQUE]:
-                self.step_joints_control_torque(animat_i, controller, physics, current_time)
+                self.step_joints_control_torque(controller, physics, current_time)
             if controller.muscles_names:
                 muscles_excitations = controller.excitations(
                     iteration=index,
@@ -449,8 +449,9 @@ class ExperimentTask(Task):
                 )
                 physics.data.ctrl[self.maps['ctrl']['mus']] = muscles_excitations
 
-    def step_joints_control_position(self, animat_i: int, controller: AnimatController, physics: Physics, time: float):
+    def step_joints_control_position(self, controller: AnimatController, physics: Physics, time: float):
         """Step position control"""
+        animat_i = controller.animat_i
         index = self.iteration % self.buffer_size
         joints_positions = controller.positions(
             iteration=index,
@@ -462,10 +463,11 @@ class ExperimentTask(Task):
             for joint in controller.joints_names[ControlType.POSITION]
         ]
 
-    def step_joints_control_torque(self, animat_i: int, controller: AnimatController, physics: Physics, time: float):
+    def step_joints_control_torque(self, controller: AnimatController, physics: Physics, time: float):
         """Step torque control"""
         index = self.iteration % self.buffer_size
         torques = self.units.torques
+        animat_i = controller.animat_i
 
         prefix = get_prefix(animat_i)
 
