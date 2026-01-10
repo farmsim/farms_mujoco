@@ -1610,11 +1610,23 @@ def setup_mjcf_xml(
             assert mjcf_link, f'Link {link.name} not found'
             for geom in mjcf_link.geom:
                 if geom.contype:
-                    assert len(link.friction) == 3, len(geom.friction)
+                    assert len(link.friction) == 3, len(link.friction)
                     assert len(geom.friction) == 3, len(geom.friction)
                     geom.friction = link.friction
                     geom.fluidshape = None
                     geom.fluidcoef = [0, 0, 0, 0, 0]
+                    if link.solref is not None:
+                        assert len(link.solref) == 2, len(link.solref)
+                        geom.solref = link.solref
+                        if all(sol < 0 for sol in geom.solref):
+                            geom.solref[0] *= units.newtons/units.meters
+                            geom.solref[1] *= units.newtons/units.velocity
+                        else:
+                            geom.solref[0] *= units.seconds
+                    if link.solimp is not None:
+                        assert len(link.solimp) == 5, len(link.solimp)
+                        geom.solimp = link.solimp
+                        geom.solimp[2] /= units.meters
 
         # Joints
         for joint_options in animat_options.morphology.joints:
