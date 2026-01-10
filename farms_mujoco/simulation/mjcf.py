@@ -164,6 +164,9 @@ def mjc_add_link(
     # NOTE: obj_use_composite seems to be needed for Wavefront meshes which are
     # not watertight or have disconnected parts.
     texture_repeat = kwargs.pop('texture_repeat', 1)
+    tracked_links = kwargs.pop('tracked_links', [])
+    joint_stack = kwargs.pop('joint_stack', [])
+    transform_stack = kwargs.pop('transform_stack', {'pos': np.zeros(3), 'quat': np.array([1,0,0,0])})
     assert not kwargs, kwargs
 
     # Links (bodies)
@@ -174,14 +177,30 @@ def mjc_add_link(
         parent_pose=None if sdf_parent is None else sdf_parent.pose,
         child_pose=sdf_link.pose,
     )
-    body = mjcf_model.worldbody if link_name == 'world' else mjc_parent.add(
-        'body',
-        name=f'{prefix}{link_name}',
-        pos=[pos*units.meters for pos in link_local_pos],
-        quat=euler2mjcquat(link_local_euler),
-    )
-    mjcf_map['links'][f'{prefix}{link_name}'] = body
-
+    is_real_link = (spawn_mode in [SpawnMode.FREE, SpawnMode.FIXED] or sdf_link.inertial or link_name in tracked_links)
+        
+    link_pos = np.array([pos*units.meters for pos in link_local_pos])
+    link_quat = euler2mjcquat(link_local_euler)
+    if is_real_link:
+        if not np.allclose(transform_stack['pos'], np.zeros(3)):
+            link_pos = transform_stack['pos']
+        if not np.allclose(transform_stack['quat'], np.array([1,0,0,0])):
+            link_quat = transform_stack['quat']
+        body = mjcf_model.worldbody if link_name == 'world' else mjc_parent.add(
+            'body',
+            name=f'{prefix}{link_name}',
+            pos=link_pos,
+            quat=link_quat,
+        )
+        mjcf_map['links'][f'{prefix}{link_name}'] = body
+        transform_stack = {'pos': np.zeros(3), 'quat': np.array([1,0,0,0])}
+    else:
+        body = mjc_parent
+        if not np.allclose(link_pos, np.zeros(3)):
+            transform_stack['pos'] = link_pos
+        if not np.allclose(link_quat, np.array([1,0,0,0])):
+            transform_stack['quat'] = link_quat
+        
     # Intitialise joint to None
     joint = None
 
@@ -274,38 +293,69 @@ def mjc_add_link(
 
     # Joint from parent
     if spawn_mode is None and sdf_joint is not None:
-        if sdf_joint.type in ('revolute', 'continuous'):
-            joint = body.add(
-                'joint',
-                name=f'{prefix}{sdf_joint.name}',
-                axis=euler2mat(sdf_joint.pose[3:]) @ sdf_joint.axis.xyz,
-                pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
-                type='hinge',
-                damping=0,
-                stiffness=0,
-                springref=0,
-                frictionloss=0,
-                limited=bool(sdf_joint.axis.limits),
-                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0],
-            )
-            mjcf_map['joints'][f'{prefix}{sdf_joint.name}'] = joint
-        elif sdf_joint.type in ('prismatic',):
-            joint = body.add(
-                'joint',
-                name=f'{prefix}{sdf_joint.name}',
-                axis=sdf_joint.axis.xyz,
-                pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
-                # euler=sdf_joint.pose[3:],  # Euler not supported in joint
-                type='slide',
-                damping=0,
-                stiffness=0,
-                springref=0,
-                frictionloss=0,
-                limited=bool(sdf_joint.axis.limits),
-                range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0],
-            )
-            mjcf_map['joints'][f'{prefix}{sdf_joint.name}'] = joint
-
+        if is_real_link:
+            if sdf_joint.type in ('revolute', 'continuous'):
+                #add joints from stack
+                for joint_data in joint_stack:
+                    joint = body.add('joint', **joint_data)
+                    mjcf_map['joints'][joint_data['name']] = joint
+                joint_stack.clear()
+                #add current joint
+                joint = body.add(
+                    'joint',
+                    name=f'{prefix}{sdf_joint.name}',
+                    axis=euler2mat(sdf_joint.pose[3:]) @ sdf_joint.axis.xyz,
+                    pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
+                    type='hinge',
+                    damping=0,
+                    stiffness=0,
+                    springref=0,
+                    frictionloss=0,
+                    limited=bool(sdf_joint.axis.limits),
+                    range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0],
+                )
+                mjcf_map['joints'][f'{prefix}{sdf_joint.name}'] = joint
+            elif sdf_joint.type in ('prismatic',):
+                joint = body.add(
+                    'joint',
+                    name=f'{prefix}{sdf_joint.name}',
+                    axis=sdf_joint.axis.xyz,
+                    pos=[pos*units.meters for pos in sdf_joint.pose[:3]],
+                    # euler=sdf_joint.pose[3:],  # Euler not supported in joint
+                    type='slide',
+                    damping=0,
+                    stiffness=0,
+                    springref=0,
+                    frictionloss=0,
+                    limited=bool(sdf_joint.axis.limits),
+                    range=sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0],
+                )
+                mjcf_map['joints'][f'{prefix}{sdf_joint.name}'] = joint
+        else:
+            if sdf_joint.type in ('revolute', 'continuous'):
+                joint_data = {'name': f'{prefix}{sdf_joint.name}',
+                                'axis': euler2mat(sdf_joint.pose[3:]) @ sdf_joint.axis.xyz,
+                                'pos': [pos*units.meters for pos in sdf_joint.pose[:3]],
+                                'type':'hinge',
+                                'damping':0,
+                                'stiffness':0,
+                                'springref':0,
+                                'frictionloss':0,
+                                'limited':bool(sdf_joint.axis.limits),
+                                'range':sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]}
+            elif sdf_joint.type in ('prismatic',):
+                joint_data = {'name': f'{prefix}{sdf_joint.name}',
+                                'axis': sdf_joint.axis.xyz,
+                                'pos': [pos*units.meters for pos in sdf_joint.pose[:3]],
+                                # euler=sdf_joint.pose[3:],  # Euler not supported in joint
+                                'type':'slide',
+                                'damping':0,
+                                'stiffness':0,
+                                'springref':0,
+                                'frictionloss':0,
+                                'limited':bool(sdf_joint.axis.limits),
+                                'range':sdf_joint.axis.limits[:2] if sdf_joint.axis.limits else [0.0, 0.0]}
+            joint_stack.append(joint_data)
     # Site
     if use_site:
         site = body.add(
@@ -709,7 +759,7 @@ def mjc_add_link(
         )
 
 
-    return body, joint
+    return body, joint, joint_stack, transform_stack
 
 
 def add_link_recursive(
@@ -726,17 +776,23 @@ def add_link_recursive(
     sdf_joint = kwargs.pop('sdf_joint', None)
     spawn_mode = kwargs.pop('spawn_mode', None)
     prefix = kwargs.get('prefix', '')
-    mjc_parent = kwargs.pop(
-        'mjc_parent',
-        (
-            mjcf_map['links'].get(prefix+sdf_parent.name)
-            if sdf_parent is not None
-            else None
-        )
-    )
+    joint_stack = kwargs.pop('joint_stack', [])
+    transform_stack = kwargs.pop('transform_stack', {'pos': np.zeros(3), 'quat': np.array([1,0,0,0])})
+    tracked_links = kwargs.pop('tracked_links', [])
+    mjc_parent = kwargs.pop('mjc_parent',None)
+    
+    if sdf_parent is not None:
+        mjc_parent = mjcf_map['links'].get(prefix+sdf_parent.name)
+        if mjc_parent is None:
+            sdf_parent_recursive = sdf_parent
+            while mjc_parent is None: #link doesn't exist in mjcf map => virtual link => find first real link parent
+                sdf_parent_recursive = sdf.get_parent(link=sdf_parent_recursive)
+                if sdf_parent_recursive is None:
+                    break
+                mjc_parent = mjcf_map['links'].get(prefix+sdf_parent_recursive.name)
 
     # Add link
-    mjc_add_link(
+    _,_,joint_stack,transform_stack = mjc_add_link(
         mjcf_model=mjcf_model,
         mjcf_map=mjcf_map,
         sdf_link=sdf_link,
@@ -745,6 +801,9 @@ def add_link_recursive(
         directory=sdf.directory,
         spawn_mode=spawn_mode,
         mjc_parent=mjc_parent,
+        tracked_links=tracked_links,
+        joint_stack=joint_stack,
+        transform_stack=transform_stack,
         **kwargs,
     )
 
@@ -758,6 +817,9 @@ def add_link_recursive(
             sdf_parent=sdf_link,
             sdf_joint=sdf.get_parent_joint(link=child),
             spawn_mode=spawn_mode,
+            joint_stack=joint_stack,
+            transform_stack=transform_stack,
+            tracked_links=tracked_links,
             **kwargs
         )
 
@@ -853,6 +915,8 @@ def sdf2mjcf(
         **kwargs,
     )
 
+    # force to construct tracked links in mjcf regardless of real or virtual links
+    tracked_links = animat_options.control.sensors.links if animat_options is not None else []
     # Add trees from roots
     for root in roots:
         add_link_recursive(
@@ -868,6 +932,7 @@ def sdf2mjcf(
             units=units,
             texture_repeat=texture_repeat,
             prefix=prefix,
+            tracked_links=tracked_links,
             **kwargs,
         )
 
