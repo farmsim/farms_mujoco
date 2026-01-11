@@ -434,6 +434,8 @@ class ExperimentTask(Task):
             controller.before_step(self, None, physics)
             if controller.joints_names[ControlType.POSITION]:
                 self.step_joints_control_position(physics, current_time)
+            if controller.joints_names[ControlType.VELOCITY] and hasattr(controller, 'kinematics_v'): #velocity control and kinematics_v given
+                self.step_joints_control_velocity(physics, current_time)
             if controller.joints_names[ControlType.TORQUE]:
                 self.step_joints_control_torque(physics, current_time)
             if controller.muscles_names:
@@ -456,6 +458,20 @@ class ExperimentTask(Task):
             physics.data.ctrl[self.maps[animat_i]['ctrl']['pos']] = [
                 joints_positions[joint]
                 for joint in controller.joints_names[ControlType.POSITION]
+            ]
+
+    def step_joints_control_velocity(self, physics: Physics, time: float):
+        """Step velocity control"""
+        index = self.iteration % self.buffer_size
+        for animat_i, controller in enumerate(self._controllers):
+            joints_velocities = controller.velocities(
+                iteration=index,
+                time=time,
+                timestep=self.timestep,
+            )
+            physics.data.ctrl[self.maps[animat_i]['ctrl']['vel']] = [
+                joints_velocities[joint]
+                for joint in controller.joints_names[ControlType.VELOCITY]
             ]
 
     def step_joints_control_torque(self, physics: Physics, time: float):
