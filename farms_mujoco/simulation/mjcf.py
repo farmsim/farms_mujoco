@@ -344,6 +344,7 @@ def mjc_add_link(
             visual_kwargs['contype'] = 0  # No collisions
             visual_kwargs['group'] = 1
         elif isinstance(element, Collision):
+            friction[1] *= units.meters #scale effective contact patch
             collision_kwargs['friction'] = friction
             collision_kwargs['margin'] = 0
             collision_kwargs['contype'] = contype
