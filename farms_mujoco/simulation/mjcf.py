@@ -348,7 +348,7 @@ def mjc_add_link(
             collision_kwargs['margin'] = 0
             collision_kwargs['contype'] = contype
             collision_kwargs['conaffinity'] = conaffinity
-            collision_kwargs['condim'] = 3
+            collision_kwargs['condim'] = 4
             collision_kwargs['group'] = 2
             if solref is not None:
                 scaled_solref = solref.copy()
@@ -1204,7 +1204,7 @@ def sdf2mjcf(
                         name=f'contact_pair_{prefix}{pair_i}_{col1_i}_{col2_i}',
                         geom1=f'{prefix}{col1_name}',
                         geom2=f'{prefix}{col2_name}',
-                        condim=3,
+                        condim=4,
                         friction=[0]*5,
                         **pair_options,
                     )
