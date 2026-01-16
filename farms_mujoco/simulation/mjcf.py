@@ -344,12 +344,12 @@ def mjc_add_link(
             visual_kwargs['contype'] = 0  # No collisions
             visual_kwargs['group'] = 1
         elif isinstance(element, Collision):
-            friction[1] *= units.meters #scale effective contact patch
             collision_kwargs['friction'] = friction
+            collision_kwargs['friction'][1] *= units.meters  # Scale effective contact patch
             collision_kwargs['margin'] = 0
             collision_kwargs['contype'] = contype
             collision_kwargs['conaffinity'] = conaffinity
-            collision_kwargs['condim'] = 4
+            collision_kwargs['condim'] = 6
             collision_kwargs['group'] = 2
             if solref is not None:
                 scaled_solref = solref.copy()
@@ -1205,7 +1205,7 @@ def sdf2mjcf(
                         name=f'contact_pair_{prefix}{pair_i}_{col1_i}_{col2_i}',
                         geom1=f'{prefix}{col1_name}',
                         geom2=f'{prefix}{col2_name}',
-                        condim=4,
+                        condim=6,
                         friction=[0]*5,
                         **pair_options,
                     )
