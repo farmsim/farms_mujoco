@@ -1628,7 +1628,7 @@ def setup_mjcf_xml(
                 namespace='joint',
                 identifier=f'{prefix}{joint_options.name}',
             )
-            joint.springref += joint_options.springref
+            joint.springref = joint_options.springref
             joint.stiffness += joint_options.stiffness*units.angular_stiffness
             joint.damping += joint_options.damping*units.angular_damping
             if _solreflimit := joint_options.extras.get('solreflimit'):
