@@ -284,6 +284,12 @@ class ExperimentTask(Task):
                             physics=physics,
                             time=current_time,
                         )
+                    if extension.joints_names[ControlType.VELOCITY]:
+                        self.step_joints_control_velocity(
+                            controller=extension,
+                            physics=physics,
+                            time=current_time
+                        )
                     if extension.joints_names[ControlType.TORQUE]:
                         self.step_joints_control_torque(
                             controller=extension,
@@ -296,7 +302,7 @@ class ExperimentTask(Task):
                             time=current_time,
                             timestep=self.timestep
                         )
-                        muscle_indices = self.maps[animat_i]['ctrl']['mus']
+                        muscle_indices = self.maps[extension.animat_i]['ctrl']['mus']
                         physics.data.ctrl[muscle_indices] = muscles_excitations
 
     def initialize_maps(self, physics: Physics):
@@ -463,6 +469,26 @@ class ExperimentTask(Task):
             for joint in controller.joints_names[ControlType.POSITION]
         ]
 
+    def step_joints_control_velocity(
+            self,
+            controller: AnimatController,
+            physics: Physics,
+            time: float,
+    ):
+        """Step velocity control"""
+        index = self.iteration % self.buffer_size
+        animat_i = controller.animat_i
+        angular_velocity = self.units.angular_velocity
+        joints_velocities = controller.velocities(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        physics.data.ctrl[self.maps[animat_i]['ctrl']['vel']] = [
+            joints_velocities[joint]*angular_velocity
+            for joint in controller.joints_names[ControlType.VELOCITY]
+        ]
+
     def step_joints_control_torque(
             self,
             controller: AnimatController,
@@ -471,8 +497,8 @@ class ExperimentTask(Task):
     ):
         """Step torque control"""
         index = self.iteration % self.buffer_size
-        torques = self.units.torques
         animat_i = controller.animat_i
+        torques = self.units.torques
         prefix = get_prefix(animat_i)
 
         # Joints torques
