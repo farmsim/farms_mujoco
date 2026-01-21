@@ -1225,6 +1225,12 @@ def mjcf2str(
         for mesh in mjcf_xml.find('asset').findall('mesh'):
             mjcf_mesh = mjcf_model.find('mesh', mesh.attrib['name'])
             mesh.attrib['file'] = mjcf_mesh.file.prefix + mjcf_mesh.file.extension
+            
+        for texture in mjcf_xml.find('asset').findall('texture'): 
+            if 'file' not in texture.attrib:
+                continue
+            mjcf_texture = mjcf_model.find('texture', texture.attrib['name'])
+            texture.attrib['file'] = mjcf_texture.file.prefix + mjcf_texture.file.extension
     # Convert to string
     xml_str = ET.tostring(
         mjcf_xml,
@@ -1623,6 +1629,7 @@ def setup_mjcf_xml(
                 namespace='joint',
                 identifier=f'{prefix}{joint_options.name}',
             )
+            joint.springref = joint_options.springref
             joint.stiffness += joint_options.stiffness*units.angular_stiffness
             joint.damping += joint_options.damping*units.angular_damping
             if _solreflimit := joint_options.extras.get('solreflimit'):
