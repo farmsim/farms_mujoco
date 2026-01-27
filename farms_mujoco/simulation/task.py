@@ -198,7 +198,7 @@ class ExperimentTask(Task):
             self.initialize_data()
         self.initialize_sensors(physics)
 
-        # Controllers
+        # Control
         self._controllers: list[AnimatController] = [
             extension
             for extension in self.extensions
@@ -371,36 +371,25 @@ class ExperimentTask(Task):
                     ('torque', ControlType.TORQUE),
             ]:
                 for joint in controller.joints_names[control_type]:
+                    actuator = f'actuator_{control_name}_{prefix}{joint}'
                     assert (
-                        f'actuator_{control_name}_{prefix}{joint}'
-                        in
-                        ctrl_names
+                        actuator in ctrl_names
                     ), (
-                        f'Actuator for {joint} not in {ctrl_names}'
+                        f'{actuator=} for {joint=} not in {ctrl_names}'
                     )
 
             # Joints maps
-            self.maps[controller.animat_i]['ctrl']['pos'] = [
-                np.argwhere(
-                    ctrl_names
-                    == f'actuator_position_{prefix}{joint}'
-                )[0, 0]
-                for joint in controller.joints_names[ControlType.POSITION]
-            ]
-            self.maps[controller.animat_i]['ctrl']['vel'] = [
-                np.argwhere(
-                    ctrl_names
-                    == f'actuator_velocity_{prefix}{joint}'
-                )[0, 0]
-                for joint in controller.joints_names[ControlType.VELOCITY]
-            ]
-            self.maps[controller.animat_i]['ctrl']['trq'] = [
-                np.argwhere(
-                    ctrl_names
-                    == f'actuator_torque_{prefix}{joint}'
-                )[0, 0]
-                for joint in controller.joints_names[ControlType.TORQUE]
-            ]
+            for key, actuator, control_type in [
+                    ('pos', 'position', ControlType.POSITION),
+                    ('vel', 'velocity', ControlType.VELOCITY),
+                    ('trq', 'torque', ControlType.TORQUE),
+            ]:
+                self.maps[controller.animat_i]['ctrl'][key] = {
+                    f'{prefix}{joint}': np.argwhere(
+                        ctrl_names == f'actuator_{actuator}_{prefix}{joint}'
+                    )[0, 0]
+                    for joint in controller.joints_names[control_type]
+                }
             self.maps[controller.animat_i]['ctrl']['mus'] = [
                 np.argwhere(ctrl_names == f'{prefix}{name}')[0, 0]
                 for name in controller.muscles_names
@@ -459,15 +448,17 @@ class ExperimentTask(Task):
     ):
         """Step position control"""
         index = self.iteration % self.buffer_size
+        animat_i = controller.animat_i
+        prefix = get_prefix(animat_i)
+        ctrl = physics.data.ctrl
+        ctrl_pos_map = self.maps[animat_i]['ctrl']['pos']
         joints_positions = controller.positions(
             iteration=index,
             time=time,
             timestep=self.timestep,
         )
-        physics.data.ctrl[self.maps[controller.animat_i]['ctrl']['pos']] = [
-            joints_positions[joint]
-            for joint in controller.joints_names[ControlType.POSITION]
-        ]
+        for joint, value in joints_positions.items():
+            ctrl[ctrl_pos_map[prefix+joint]] = value  # Radians
 
     def step_joints_control_velocity(
             self,
@@ -478,16 +469,17 @@ class ExperimentTask(Task):
         """Step velocity control"""
         index = self.iteration % self.buffer_size
         animat_i = controller.animat_i
+        prefix = get_prefix(animat_i)
         angular_velocity = self.units.angular_velocity
+        ctrl = physics.data.ctrl
+        ctrl_vel_map = self.maps[animat_i]['ctrl']['vel']
         joints_velocities = controller.velocities(
             iteration=index,
             time=time,
             timestep=self.timestep,
         )
-        physics.data.ctrl[self.maps[animat_i]['ctrl']['vel']] = [
-            joints_velocities[joint]*angular_velocity
-            for joint in controller.joints_names[ControlType.VELOCITY]
-        ]
+        for joint, value in joints_velocities.items():
+            ctrl[ctrl_vel_map[prefix+joint]] = value*angular_velocity
 
     def step_joints_control_torque(
             self,
@@ -498,19 +490,21 @@ class ExperimentTask(Task):
         """Step torque control"""
         index = self.iteration % self.buffer_size
         animat_i = controller.animat_i
-        torques = self.units.torques
         prefix = get_prefix(animat_i)
+        torques = self.units.torques
+        ang_stiffness = self.units.angular_stiffness
+        ang_damping = self.units.angular_damping
 
         # Joints torques
+        ctrl = physics.data.ctrl
+        ctrl_trq_map = self.maps[animat_i]['ctrl']['trq']
         joints_torques = controller.torques(
             iteration=index,
             time=time,
             timestep=self.timestep,
         )
-        physics.data.ctrl[self.maps[animat_i]['ctrl']['trq']] = [
-            joints_torques[joint]*torques
-            for joint in controller.joints_names[ControlType.TORQUE]
-        ]
+        for joint, value in joints_torques.items():
+            ctrl[ctrl_trq_map[prefix+joint]] = value*torques
 
         # Spring reference
         qpos_spring = physics.model.qpos_spring
@@ -521,7 +515,7 @@ class ExperimentTask(Task):
             timestep=self.timestep,
         )
         for joint, value in springrefs.items():
-            qpos_spring[springref_map[prefix+joint]] = value
+            qpos_spring[springref_map[prefix+joint]] = value  # Radians
 
         # Spring coefs
         jnt_stiffness = physics.model.jnt_stiffness
@@ -532,9 +526,9 @@ class ExperimentTask(Task):
             timestep=self.timestep,
         )
         for joint, value in springcoefs.items():
-            jnt_stiffness[jnt_stiffness_map[prefix+joint]] = value
+            jnt_stiffness[jnt_stiffness_map[prefix+joint]] = value*ang_stiffness
 
-        # Dampings
+        # Dampings coefs
         dof_damping = physics.model.dof_damping
         dof_damping_map = self.maps[animat_i]['ctrl']['dof_damping']
         dampingcoefs = controller.dampingcoefs(
@@ -543,7 +537,7 @@ class ExperimentTask(Task):
             timestep=self.timestep,
         )
         for joint, value in dampingcoefs.items():
-            dof_damping[dof_damping_map[prefix+joint]] = value
+            dof_damping[dof_damping_map[prefix+joint]] = value*ang_damping
 
     def after_step(self, physics: Physics):
         """Operations after physics step"""
