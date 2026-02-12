@@ -305,8 +305,7 @@ class CameraRecording(TaskExtension):
                 [sample+1, self.height, self.width, 4],
                 dtype=np.uint8
             )
-            data[:, :, :, :3] = self.data
-            data = self.data[:sample]
+            data[:, :, :, :3] = self.data[:sample+1]
         else:
             data = self.data
         pylog.debug(
