@@ -144,7 +144,14 @@ class ExperimentTask(Task):
         # Checks
         pylog.debug("Initializing episode")
         if self.initialized:
-            pylog.warning('Simulation was already initialized')
+            pylog.warning(
+                'Simulation was already initialized,'
+                ' skipping full episode intialization and setting iteration=0'
+                ' (set task.initialized=False for full initalization)'
+            )
+            self.iteration = 0
+            self.sim_iteration = 0
+            return
         if self._restart:
             assert self._app is not None, (
                 'Simulation can not be restarted without application interface'
@@ -260,6 +267,10 @@ class ExperimentTask(Task):
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
         if physics.time()/self.units.seconds < 1e-6*self.sim_timestep:
+            pylog.debug(
+                'Initializing episode due to initial time (%s [s])',
+                physics.time()/self.units.seconds,
+            )
             self.initialize_episode(physics, self.viewer)  # Reset
 
         full_step = not self.sim_iteration % self.cb_sub_steps
@@ -595,9 +606,11 @@ class ExperimentTask(Task):
         terminate = None
         for extension in self.extensions:
             if extension.get_termination(task=self, physics=physics):
+                pylog.debug(f'Termination activated (Reason: {extension})')
                 terminate = 1
         if self.iteration >= self.n_iterations:
             terminate = 1
+            pylog.debug('Termination activated (Reason: Final iteration)')
         return terminate
 
     def observation_spec(self, physics: Physics):
