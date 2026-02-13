@@ -39,10 +39,14 @@ def real_time_handing(
 ):
     """Real-time handling"""
     tic_rt[1] = time.time()
-    tic_rt[2] += timestep/rtl - (tic_rt[1] - tic_rt[0])
+    remainder = timestep/rtl - (tic_rt[1] - tic_rt[0])
+    if remainder > 2e-1:
+        pylog.debug('Slow rendering: ~%s fps', 1/(remainder))
+    tic_rt[2] += remainder
     if tic_rt[2] > 2e-2:
-        time.sleep(min(tic_rt[2], max_sleep))
-        tic_rt[2] = 0
+        sleep_time = min(tic_rt[2], max_sleep)
+        time.sleep(sleep_time)
+        tic_rt[2] = sleep_time - (time.time() - tic_rt[1])
     elif tic_rt[2] < 0:
         tic_rt[2] = 0
     tic_rt[0] = time.time()
@@ -186,10 +190,10 @@ class Simulation:
             case 'Q':  # ESC
                 self.viewer_quit = True
                 pylog.debug('Quitting viewer')
-            case '=':
+            case '+' | '=' | '.' | 'Ŏ':
                 self.viewer_speed *= 2
                 pylog.debug(f'Simulation speed: {self.viewer_speed}')
-            case '-':
+            case '-' | '/' | ',' | 'ō':
                 self.viewer_speed /= 2
                 pylog.debug(f'Simulation speed: {self.viewer_speed}')
             case 'ĉ':  # Up
