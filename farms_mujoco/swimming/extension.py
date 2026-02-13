@@ -189,9 +189,10 @@ class SwimmingExtension(AnimatExtension):
 
     def before_step(self, task, action, physics):
         """Step hydrodynamics"""
+        del action
 
         # Compute fluid forces
-        self._handler.step(physics.time(), task.iteration)
+        self._handler.step(physics.time()/task.units.seconds, task.iteration)
 
         # Set fluid forces in physics engine
         indices = task.maps[self.animat_i]['sensors']['data2xfrc']

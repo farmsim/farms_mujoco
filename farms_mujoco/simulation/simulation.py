@@ -114,7 +114,7 @@ class Simulation:
             task=self.task,
             time_limit=(
                 self.options.runtime.n_iterations
-                *self.options.physics.timestep
+                *self.options.physics.timestep*self.options.units.seconds
             ),
             legacy_step=legacy_step,
             **env_kwargs,
@@ -232,6 +232,7 @@ class Simulation:
                     iteration = 0
                     n_iterations = self.task.n_iterations
                     cb_sub_steps = self.task.cb_sub_steps
+                    seconds = self.options.units.seconds
                     self.task.viewer = viewer
 
                     while viewer.is_running() and iteration < n_iterations:
@@ -240,7 +241,9 @@ class Simulation:
                         tic = time.time()
 
                         # Reinitialise iterations
-                        start = self.physics.time() < 1e-6*self.physics.timestep()
+                        physics_time = self.physics.time()/seconds
+                        physics_timestep = self.physics.timestep()/seconds
+                        start = physics_time < 1e-6*physics_timestep
                         if start and iteration > 0:
                             iteration = 0
                             self.task.initialized = False
@@ -277,7 +280,7 @@ class Simulation:
 
                         # Time keeping
                         timestep = (
-                            self.physics.timestep()
+                            self.physics.timestep()/seconds
                             *self.task.cb_sub_steps
                             *self._env._n_sub_steps
                         )
@@ -293,6 +296,7 @@ class Simulation:
                             self.viwer_step_iteration = False
 
                     # Extensions end
+                    pylog.debug('Ending extensions')
                     self.end_extensions()
         else:
             _iterator = (

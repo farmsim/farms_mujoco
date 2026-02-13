@@ -1512,7 +1512,7 @@ def setup_mjcf_xml(
     mjcf_model.size.nkey = 1
     mjcf_model.size.njmax = 2**12  # 4096
     mjcf_model.size.nconmax = 2**12  # 4096
-    mjcf_model.option.timestep = timestep
+    mjcf_model.option.timestep = timestep*units.seconds
     mjcf_model.option.impratio = kwargs.pop(
         'impratio',
         simulation_options.mujoco.impratio

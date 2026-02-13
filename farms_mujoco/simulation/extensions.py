@@ -192,10 +192,10 @@ class CameraFollower(TaskExtension):
     def after_step(self, task: ExperimentTask, physics: Physics):
         """After step"""
         if self.viewer and self.links is not None:
-            now = physics.time()
+            now = physics.time()/task.units.seconds
             time_diff, self.last_step = now - self.last_step, now
             self.viewer.cam.azimuth += self.angular_velocity*time_diff
-            self.motion_filter = min(1, 10*physics.timestep())
+            self.motion_filter = min(1, 10*physics.timestep()/task.units.seconds)
             self.viewer.cam.lookat = self.motion_filter*np.array(
                 self.links.global_com_position(iteration=task.iteration-1)
             )*self.units.meters + (1-self.motion_filter)*self.viewer.cam.lookat

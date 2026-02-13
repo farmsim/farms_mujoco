@@ -248,7 +248,7 @@ class CameraRecording(TaskExtension):
                     camera_id=self.camera,
                 )
             else:
-                now = physics.time()
+                now = physics.time()/task.units.seconds
                 timediff = now - self.last_capture
                 self.last_capture = now
                 self.camera.azimuth += self.angular_velocity*timediff

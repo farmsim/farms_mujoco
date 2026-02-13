@@ -242,7 +242,7 @@ class ExperimentTask(Task):
     def update_sensors(self, physics: Physics, links_only=False):
         """Update sensors"""
         index = self.iteration % self.buffer_size
-        self.data.times[index] = physics.time()
+        self.data.times[index] = physics.time()/self.units.seconds
         sim_data = self.data.simulation
         sim_data.ncon[index] = physics.data.ncon
         sim_data.niter[index] = physics.data.solver_niter[0]
@@ -259,7 +259,7 @@ class ExperimentTask(Task):
 
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
-        if physics.time() < 1e-6*self.sim_timestep:
+        if physics.time()/self.units.seconds < 1e-6*self.sim_timestep:
             self.initialize_episode(physics, self.viewer)  # Reset
 
         full_step = not self.sim_iteration % self.cb_sub_steps
@@ -272,7 +272,7 @@ class ExperimentTask(Task):
             self.update_sensors(physics=physics, links_only=not full_step)
 
         # Extensions
-        current_time = physics.time()
+        current_time = physics.time()/self.units.seconds
         index = self.iteration % self.buffer_size
         for extension in self.extensions:
             if full_step or extension.substep:
