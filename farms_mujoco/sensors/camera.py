@@ -222,7 +222,7 @@ class CameraRecording(TaskExtension):
             self.render_options.geomgroup = self.geomgroups
             if self.camera is None:
                 self.camera = mujoco.MjvCamera()
-                self.camera.type      = mujoco.mjtCamera.mjCAMERA_FREE
+                self.camera.type = mujoco.mjtCamera.mjCAMERA_FREE
                 self.camera.lookat[:] = np.array(self.offset)
                 if self.links is not None:
                     self.camera.lookat[:] += np.array(
