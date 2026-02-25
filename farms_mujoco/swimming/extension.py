@@ -131,8 +131,8 @@ class SwimmingExtension(AnimatExtension):
             self.water_maps = {
                 'pos_min': np.array(water_velocity[6:8]),
                 'pos_max': np.array(water_velocity[8:10]),
-                'vel_x': -vels[0],
-                'vel_y': +vels[1],
+                'vel_x': +vels[0],
+                'vel_y': -vels[1],
             }
             pylog.debug(
                 "Water velocities loaded: %s"
