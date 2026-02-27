@@ -12,6 +12,7 @@ from farms_core.options import Options
 from farms_core.sensors.data import LinkSensorArray
 from farms_core.simulation.extensions import TaskExtension
 from farms_core.experiment.options import ExperimentOptions
+from farms_core.units import SimulationUnitScaling
 
 from .task import ExperimentTask
 from .mjcf import mjcf2str
@@ -150,6 +151,7 @@ class CameraFollowerOptions(Options):
         self.distance = kwargs.pop('distance', 1)
         self.elevation = kwargs.pop('elevation', 0)
         self.angular_velocity = kwargs.pop('angular_velocity', 0)  # [deg/s]
+        self.units = kwargs.pop('units', SimulationUnitScaling())
         assert not kwargs, kwargs
 
 
@@ -165,13 +167,17 @@ class CameraFollower(TaskExtension):
         self.elevation = kwargs.pop('elevation', 0)
         self.angular_velocity = kwargs.pop('angular_velocity', 0)  # [deg/s]
         self.viewer = kwargs.pop('viewer', None)
+        self.units = kwargs.pop('units', SimulationUnitScaling())
         self.last_step = 0
 
     @classmethod
     def from_options(cls, config: dict, experiment_options: ExperimentOptions):
         """From options"""
-        del experiment_options
-        return cls(**CameraFollowerOptions(**config))
+        return cls(**CameraFollowerOptions(
+            # timestep=experiment_options.simulation.phxsics.timestep,
+            units=experiment_options.simulation.units,
+            **config,
+        ))
 
     def initialize_episode(self, task: ExperimentTask, physics: Physics):
         """Initialise episode"""
@@ -179,19 +185,20 @@ class CameraFollower(TaskExtension):
         self.viewer = task.viewer
         if self.viewer:
             self.viewer.cam.azimuth = self.azimuth
-            self.viewer.cam.distance = self.distance
+            self.viewer.cam.distance = self.distance*self.units.meters
             self.viewer.cam.elevation = self.elevation
             self.links = task.data.animats[self.animat_id].sensors.links
 
     def after_step(self, task: ExperimentTask, physics: Physics):
         """After step"""
         if self.viewer and self.links is not None:
-            now = physics.time()
+            now = physics.time()/task.units.seconds
             time_diff, self.last_step = now - self.last_step, now
             self.viewer.cam.azimuth += self.angular_velocity*time_diff
-            self.viewer.cam.lookat = np.array(self.links.global_com_position(
-                iteration=task.iteration-1,
-            ))
+            self.motion_filter = min(1, 10*physics.timestep()/task.units.seconds)
+            self.viewer.cam.lookat = self.motion_filter*np.array(
+                self.links.global_com_position(iteration=task.iteration-1)
+            )*self.units.meters + (1-self.motion_filter)*self.viewer.cam.lookat
 
 
 class CoMViewer(TaskExtension):

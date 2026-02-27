@@ -39,10 +39,14 @@ def real_time_handing(
 ):
     """Real-time handling"""
     tic_rt[1] = time.time()
-    tic_rt[2] += timestep/rtl - (tic_rt[1] - tic_rt[0])
+    remainder = timestep/rtl - (tic_rt[1] - tic_rt[0])
+    if remainder > 2e-1:
+        pylog.debug('Slow rendering: ~%s fps', 1/(remainder))
+    tic_rt[2] += remainder
     if tic_rt[2] > 2e-2:
-        time.sleep(min(tic_rt[2], max_sleep))
-        tic_rt[2] = 0
+        sleep_time = min(tic_rt[2], max_sleep)
+        time.sleep(sleep_time)
+        tic_rt[2] = sleep_time - (time.time() - tic_rt[1])
     elif tic_rt[2] < 0:
         tic_rt[2] = 0
     tic_rt[0] = time.time()
@@ -107,8 +111,11 @@ class Simulation:
 
         time_limit = (
             float("inf")
-            if self.options.runtime.n_iterations < 0 else
-            self.options.runtime.n_iterations*self.options.physics.timestep
+            if self.options.runtime.n_iterations < 0 else (
+                    self.options.runtime.n_iterations
+                    *self.options.physics.timestep
+                    *self.options.units.seconds
+            )
         )
         self._env: Environment = Environment(
             physics=self.physics,
@@ -188,10 +195,10 @@ class Simulation:
             case 'Q':  # ESC
                 self.viewer_quit = True
                 pylog.debug('Quitting viewer')
-            case '=':
+            case '+' | '=' | '.' | 'Ŏ':
                 self.viewer_speed *= 2
                 pylog.debug(f'Simulation speed: {self.viewer_speed}')
-            case '-':
+            case '-' | '/' | ',' | 'ō':
                 self.viewer_speed /= 2
                 pylog.debug(f'Simulation speed: {self.viewer_speed}')
             case 'ĉ':  # Up
@@ -230,6 +237,7 @@ class Simulation:
                     iteration = 0
                     n_iterations = self.task.n_iterations
                     cb_sub_steps = self.task.cb_sub_steps
+                    seconds = self.options.units.seconds
                     self.task.viewer = viewer
 
                     while viewer.is_running() and iteration < n_iterations:
@@ -238,7 +246,9 @@ class Simulation:
                         tic = time.time()
 
                         # Reinitialise iterations
-                        start = self.physics.time() < 1e-6*self.physics.timestep()
+                        physics_time = self.physics.time()/seconds
+                        physics_timestep = self.physics.timestep()/seconds
+                        start = physics_time < 1e-6*physics_timestep
                         if start and iteration > 0:
                             iteration = 0
                             self.task.initialized = False
@@ -275,7 +285,7 @@ class Simulation:
 
                         # Time keeping
                         timestep = (
-                            self.physics.timestep()
+                            self.physics.timestep()/seconds
                             *self.task.cb_sub_steps
                             *self._env._n_sub_steps
                         )
@@ -291,6 +301,7 @@ class Simulation:
                             self.viwer_step_iteration = False
 
                     # Extensions end
+                    pylog.debug('Ending extensions')
                     self.end_extensions()
         else:
             _iterator = (

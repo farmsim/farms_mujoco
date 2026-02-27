@@ -16,13 +16,12 @@ from .simulation.extensions import create_cylinder
 class Targets2Reach(AnimatExtension):
     """Drive control"""
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config, links):
         super().__init__()
         self.config = config
-        self.cylinders = []
-        self.animat_id = kwargs.pop('animat_id', 0)
-        self.links: LinkSensorArray | None = None
+        self.links: LinkSensorArray = links
         self.viewer = None
+        self.cylinders = []
         self.azimuth = 0
         self.distance = 0
         self.elevation = 0
@@ -38,15 +37,15 @@ class Targets2Reach(AnimatExtension):
             animat_options: AnimatOptions,
     ):
         """From options"""
+        del animat_i, experiment_options, animat_options
         return cls(
             config=config,
-            animat_id=animat_i,
+            links=animat_data.sensors.links,
         )
 
     def initialize_episode(self, task: ExperimentTask, physics: Physics):
         """Initialize episode"""
         del physics
-        self.links = task.data.animats[self.animat_id].sensors.links
         self.viewer = task.viewer
         if self.viewer is not None:
             self.azimuth = self.viewer.cam.azimuth

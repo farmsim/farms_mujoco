@@ -37,7 +37,7 @@ from farms_core.io.sdf import (
 
 
 # Setting to 0 does not work properly for low inertias
-MIN_MASS = 1e-10
+MIN_MASS = 1e-15
 MIN_INERTIA = 1e-15
 
 
@@ -345,11 +345,16 @@ def mjc_add_link(
             visual_kwargs['contype'] = 0  # No collisions
             visual_kwargs['group'] = 1
         elif isinstance(element, Collision):
-            collision_kwargs['friction'] = friction
+            collision_kwargs['friction'] = [
+                value*units.meters  # Scale effective contact patch
+                if i == 1
+                else value
+                for i, value in enumerate(friction)
+            ]
             collision_kwargs['margin'] = 0
             collision_kwargs['contype'] = contype
             collision_kwargs['conaffinity'] = conaffinity
-            collision_kwargs['condim'] = 3
+            collision_kwargs['condim'] = 6
             collision_kwargs['group'] = 2
             if solref is not None:
                 scaled_solref = solref.copy()
@@ -1209,7 +1214,7 @@ def sdf2mjcf(
                         name=f'contact_pair_{prefix}{pair_i}_{col1_i}_{col2_i}',
                         geom1=f'{prefix}{col1_name}',
                         geom2=f'{prefix}{col2_name}',
-                        condim=3,
+                        condim=6,
                         friction=[0]*5,
                         **pair_options,
                     )
@@ -1229,6 +1234,12 @@ def mjcf2str(
         for mesh in mjcf_xml.find('asset').findall('mesh'):
             mjcf_mesh = mjcf_model.find('mesh', mesh.attrib['name'])
             mesh.attrib['file'] = mjcf_mesh.file.prefix + mjcf_mesh.file.extension
+            
+        for texture in mjcf_xml.find('asset').findall('texture'): 
+            if 'file' not in texture.attrib:
+                continue
+            mjcf_texture = mjcf_model.find('texture', texture.attrib['name'])
+            texture.attrib['file'] = mjcf_texture.file.prefix + mjcf_texture.file.extension
     # Convert to string
     xml_str = ET.tostring(
         mjcf_xml,
@@ -1507,7 +1518,7 @@ def setup_mjcf_xml(
     mjcf_model.size.nkey = 1
     mjcf_model.size.njmax = 2**12  # 4096
     mjcf_model.size.nconmax = 2**12  # 4096
-    mjcf_model.option.timestep = timestep
+    mjcf_model.option.timestep = timestep*units.seconds
     mjcf_model.option.impratio = kwargs.pop(
         'impratio',
         simulation_options.mujoco.impratio
@@ -1628,6 +1639,7 @@ def setup_mjcf_xml(
                 namespace='joint',
                 identifier=f'{prefix}{joint_options.name}',
             )
+            joint.springref = joint_options.springref
             joint.stiffness += joint_options.stiffness*units.angular_stiffness
             joint.damping += joint_options.damping*units.angular_damping
             if _solreflimit := joint_options.extras.get('solreflimit'):

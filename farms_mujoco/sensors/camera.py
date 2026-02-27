@@ -9,6 +9,11 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+try:
+    import cv2
+    USE_CV2 = True
+except ImportError:
+    USE_CV2 = False
 
 from farms_core import pylog
 from farms_core.doc import ChildDoc, ExtensionDoc
@@ -161,6 +166,7 @@ class CameraRecording(TaskExtension):
             [n_iterations//(self.skips+1)+1, self.height, self.width, 3],
             dtype=np.uint8
         )
+        self.out = None
         video_path, video_extension = os.path.splitext(kwargs.pop('path'))
         match video_extension:
             case 'mp4':
@@ -169,9 +175,11 @@ class CameraRecording(TaskExtension):
                 writer = 'html'
             case _:
                 pylog.warning(
-                    'Unknown write for "%s", trying with ffmpeg'
-                    ' (other options include %s)',
+                    'Unknown write for "%s", trying with ffmpeg',
                     video_extension,
+                )
+                pylog.warning(
+                    'Options for Matplotlib include %s',
                     manimation.writers.list()
                 )
                 writer = 'ffmpeg'
@@ -194,11 +202,18 @@ class CameraRecording(TaskExtension):
 
     def initialize_episode(self, task, physics):
         """Initialize episode"""
-        del physics
+        self.sample = 0
         self.data = np.zeros(
             [self.n_iterations//(self.skips+1)+1, self.height, self.width, 3],
             dtype=np.uint8,
         )
+        if USE_CV2:
+            self.out = cv2.VideoWriter(
+                f'{self.video.path}{self.video.file_extension}',
+                cv2.VideoWriter_fourcc(*'mp4v'),  # X264
+                self.fps,
+                (self.width, self.height),
+            )
         if self.viewer != 'dm_control':
             if self.animat_id is not None:
                 self.links = task.data.animats[self.animat_id].sensors.links
@@ -207,7 +222,7 @@ class CameraRecording(TaskExtension):
             self.render_options.geomgroup = self.geomgroups
             if self.camera is None:
                 self.camera = mujoco.MjvCamera()
-                self.camera.type      = mujoco.mjtCamera.mjCAMERA_FREE
+                self.camera.type = mujoco.mjtCamera.mjCAMERA_FREE
                 self.camera.lookat[:] = np.array(self.offset)
                 if self.links is not None:
                     self.camera.lookat[:] += np.array(
@@ -216,6 +231,11 @@ class CameraRecording(TaskExtension):
                 self.camera.distance = self.distance
                 self.camera.azimuth = self.azimuth
                 self.camera.elevation = self.elevation
+                self.renderer = mujoco.Renderer(
+                    physics.model.ptr,
+                    width=self.width,
+                    height=self.height,
+                )
 
     def before_step(self, task, action, physics):
         """Before step"""
@@ -228,7 +248,7 @@ class CameraRecording(TaskExtension):
                     camera_id=self.camera,
                 )
             else:
-                now = physics.time()
+                now = physics.time()/task.units.seconds
                 timediff = now - self.last_capture
                 self.last_capture = now
                 self.camera.azimuth += self.angular_velocity*timediff
@@ -241,22 +261,23 @@ class CameraRecording(TaskExtension):
                     )
                 self.camera.distance  = self.distance
                 self.camera.elevation = self.elevation
-                with mujoco.Renderer(
-                        physics.model.ptr,
-                        width=self.width,
-                        height=self.height,
-                ) as renderer:
-                    renderer.update_scene(
+                if self.renderer is not None:
+                    self.renderer.update_scene(
                         physics.data.ptr,
                         camera=self.camera,
                         scene_option=self.render_options,
                     )
-                    renderer.render(out=self.data[self.sample, :, :, :])
+                    self.renderer.render(out=self.data[self.sample, :, :, :])
+            if self.out is not None:
+                self.out.write(self.data[self.sample, :, :, :][:, :, [2, 1, 0]])
             self.sample += 1
 
     def end_episode(self, task, physics):
         """End episode"""
         del physics
+        if self.renderer is not None:
+            self.renderer.close()
+            self.renderer = None
         self.save(
             filename=f'{self.video.path}{self.video.file_extension}',
             iteration=task.iteration,
@@ -274,12 +295,19 @@ class CameraRecording(TaskExtension):
             assert iteration//(self.skips+1) <= self.sample, (
                 f'{iteration//(self.skips+1)} !<= {self.sample}'
             )
-        data = (
-            self.data[:iteration//(self.skips+1)]
+        sample = (
+            iteration//(self.skips+1)
             if iteration is not None
-            else self.data[:self.sample]
+            else self.sample
         )
-        ffmpegwriter = manimation.writers[writer]
+        if USE_CV2:
+            data = np.zeros(
+                [sample+1, self.height, self.width, 4],
+                dtype=np.uint8
+            )
+            data[:, :, :, :3] = self.data[:sample+1]
+        else:
+            data = self.data
         pylog.debug(
             'Recording video to %s with %s (fps=%s, speed=%s, skips=%s, frame=%s/%s)',
             filename,
@@ -290,27 +318,34 @@ class CameraRecording(TaskExtension):
             iteration//(self.skips+1) if iteration is not None else self.sample,
             self.sample,
         )
-        metadata = {
-            'title': 'FARMS simulation',
-            'artist': 'FARMS',
-            'comment': 'FARMS simulation',
-        }
-        writer = ffmpegwriter(fps=self.fps, metadata=metadata)
-        size = 10
-        fig = plt.figure(
-            'Recording',
-            figsize=(size, size*self.height/self.width)
-        )
-        fig_ax = plt.gca()
-        ims = None
-        dirname = os.path.dirname(filename)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
-        with writer.saving(fig, filename, dpi=self.width/size):
-            for frame in tqdm(data):
-                ims = render_matplotlib_image(fig_ax, frame, ims=ims)
-                writer.grab_frame()
-        plt.close(fig)
+        if self.out is not None:
+            self.out.release()
+            path = f'{self.video.path}{self.video.file_extension}'
+            pylog.info(f"Video saved to {path}")
+        else:
+            metadata = {
+                'title': 'FARMS simulation',
+                'artist': 'FARMS',
+                'comment': 'FARMS simulation',
+            }
+            ffmpegwriter = manimation.writers[writer]
+            writer = ffmpegwriter(fps=self.fps, metadata=metadata)
+            size = 10
+            fig = plt.figure(
+                'Recording',
+                figsize=(size, size*self.height/self.width)
+            )
+            fig_ax = plt.gca()
+            dirname = os.path.dirname(filename)
+            if dirname:
+                os.makedirs(dirname, exist_ok=True)
+            pylog.info(f"Saving video to {filename}")
+            with writer.saving(fig, filename, dpi=self.width/size):
+                ims = None
+                for frame in tqdm(data):
+                    ims = render_matplotlib_image(fig_ax, frame, ims=ims)
+                    writer.grab_frame()
+            plt.close(fig)
 
 
 def render_matplotlib_image(fig_ax, img, ims=None, cbar_label='', clim=None):

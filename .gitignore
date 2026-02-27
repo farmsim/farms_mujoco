@@ -34,3 +34,4 @@ scripts/*test*
 *.hdf5
 *.log
 *.dot
+*.egg-info/*

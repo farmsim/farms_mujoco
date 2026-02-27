@@ -131,8 +131,8 @@ class SwimmingExtension(AnimatExtension):
             self.water_maps = {
                 'pos_min': np.array(water_velocity[6:8]),
                 'pos_max': np.array(water_velocity[8:10]),
-                'vel_x': -vels[0],
-                'vel_y': +vels[1],
+                'vel_x': +vels[0],
+                'vel_y': -vels[1],
             }
             pylog.debug(
                 "Water velocities loaded: %s"
@@ -189,9 +189,10 @@ class SwimmingExtension(AnimatExtension):
 
     def before_step(self, task, action, physics):
         """Step hydrodynamics"""
+        del action
 
         # Compute fluid forces
-        self._handler.step(physics.time(), task.iteration)
+        self._handler.step(physics.time()/task.units.seconds, task.iteration)
 
         # Set fluid forces in physics engine
         indices = task.maps[self.animat_i]['sensors']['data2xfrc']

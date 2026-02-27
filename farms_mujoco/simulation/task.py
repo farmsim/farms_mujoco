@@ -144,7 +144,14 @@ class ExperimentTask(Task):
         # Checks
         pylog.debug("Initializing episode")
         if self.initialized:
-            pylog.warning('Simulation was already initialized')
+            pylog.warning(
+                'Simulation was already initialized,'
+                ' skipping full episode intialization and setting iteration=0'
+                ' (set task.initialized=False for full initalization)'
+            )
+            self.iteration = 0
+            self.sim_iteration = 0
+            return
         if self._restart:
             assert self._app is not None, (
                 'Simulation can not be restarted without application interface'
@@ -242,7 +249,7 @@ class ExperimentTask(Task):
     def update_sensors(self, physics: Physics, links_only=False):
         """Update sensors"""
         index = self.iteration % self.buffer_size
-        self.data.times[index] = physics.time()
+        self.data.times[index] = physics.time()/self.units.seconds
         sim_data = self.data.simulation
         sim_data.ncon[index] = physics.data.ncon
         sim_data.niter[index] = physics.data.solver_niter[0]
@@ -259,7 +266,11 @@ class ExperimentTask(Task):
 
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
-        if physics.time() < 1e-6*self.sim_timestep:
+        if physics.time()/self.units.seconds < 1e-6*self.sim_timestep:
+            pylog.debug(
+                'Initializing episode due to initial time (%s [s])',
+                physics.time()/self.units.seconds,
+            )
             self.initialize_episode(physics, self.viewer)  # Reset
 
         full_step = not self.sim_iteration % self.cb_sub_steps
@@ -273,13 +284,38 @@ class ExperimentTask(Task):
             self.update_sensors(physics=physics, links_only=not full_step)
 
         # Extensions
+        current_time = physics.time()/self.units.seconds
+        index = self.iteration % self.buffer_size
         for extension in self.extensions:
             if full_step or extension.substep:
                 extension.before_step(task=self, action=action, physics=physics)
-
-        # Control
-        if full_step and self._controllers:
-            self.step_control(physics)
+                if isinstance(extension, AnimatController):
+                    if extension.joints_names[ControlType.POSITION]:
+                        self.step_joints_control_position(
+                            controller=extension,
+                            physics=physics,
+                            time=current_time,
+                        )
+                    if extension.joints_names[ControlType.VELOCITY]:
+                        self.step_joints_control_velocity(
+                            controller=extension,
+                            physics=physics,
+                            time=current_time
+                        )
+                    if extension.joints_names[ControlType.TORQUE]:
+                        self.step_joints_control_torque(
+                            controller=extension,
+                            physics=physics,
+                            time=current_time,
+                        )
+                    if extension.muscles_names:
+                        muscles_excitations = extension.excitations(
+                            iteration=index,
+                            time=current_time,
+                            timestep=self.timestep
+                        )
+                        muscle_indices = self.maps[extension.animat_i]['ctrl']['mus']
+                        physics.data.ctrl[muscle_indices] = muscles_excitations
 
     def initialize_maps(self, physics: Physics):
         """Initialise data"""
@@ -334,66 +370,55 @@ class ExperimentTask(Task):
         """Initialise controller"""
 
         if isinstance(physics.named.data.ctrl.axes.row, UnnamedAxis):
-            for animat_i, controller in enumerate(self._controllers):
-                self.maps[animat_i]['ctrl'] = None
+            for controller in self._controllers:
+                self.maps[controller.animat_i]['ctrl'] = None
             return
 
         ctrl_names = np.array(physics.named.data.ctrl.axes.row.names)
-        for animat_i, controller in enumerate(self._controllers):
-            prefix = get_prefix(animat_i)
+        for controller in self._controllers:
+            prefix = get_prefix(controller.animat_i)
             for control_name, control_type in [
                     ('position', ControlType.POSITION),
                     ('velocity', ControlType.VELOCITY),
                     ('torque', ControlType.TORQUE),
             ]:
                 for joint in controller.joints_names[control_type]:
+                    actuator = f'actuator_{control_name}_{prefix}{joint}'
                     assert (
-                        f'actuator_{control_name}_{prefix}{joint}'
-                        in
-                        ctrl_names
+                        actuator in ctrl_names
                     ), (
-                        f'Actuator for {joint} not in {ctrl_names}'
+                        f'{actuator=} for {joint=} not in {ctrl_names}'
                     )
 
             # Joints maps
-            self.maps[animat_i]['ctrl']['pos'] = [
-                np.argwhere(
-                    ctrl_names
-                    == f'actuator_position_{prefix}{joint}'
-                )[0, 0]
-                for joint in controller.joints_names[ControlType.POSITION]
-            ]
-            self.maps[animat_i]['ctrl']['vel'] = [
-                np.argwhere(
-                    ctrl_names
-                    == f'actuator_velocity_{prefix}{joint}'
-                )[0, 0]
-                for joint in controller.joints_names[ControlType.VELOCITY]
-            ]
-            self.maps[animat_i]['ctrl']['trq'] = [
-                np.argwhere(
-                    ctrl_names
-                    == f'actuator_torque_{prefix}{joint}'
-                )[0, 0]
-                for joint in controller.joints_names[ControlType.TORQUE]
-            ]
-            self.maps[animat_i]['ctrl']['mus'] = [
+            for key, actuator, control_type in [
+                    ('pos', 'position', ControlType.POSITION),
+                    ('vel', 'velocity', ControlType.VELOCITY),
+                    ('trq', 'torque', ControlType.TORQUE),
+            ]:
+                self.maps[controller.animat_i]['ctrl'][key] = {
+                    f'{prefix}{joint}': np.argwhere(
+                        ctrl_names == f'actuator_{actuator}_{prefix}{joint}'
+                    )[0, 0]
+                    for joint in controller.joints_names[control_type]
+                }
+            self.maps[controller.animat_i]['ctrl']['mus'] = [
                 np.argwhere(ctrl_names == f'{prefix}{name}')[0, 0]
                 for name in controller.muscles_names
             ]
             # Filter only actuated joints
             qpos_spring = physics.named.model.qpos_spring
-            self.maps[animat_i]['ctrl']['springref'] = {
+            self.maps[controller.animat_i]['ctrl']['springref'] = {
                 joint: qpos_spring.axes.row.convert_key_item(joint)
                 for joint_i, joint in enumerate(qpos_spring.axes.row.names)
             }
             jnt_stiffness = physics.named.model.jnt_stiffness
-            self.maps[animat_i]['ctrl']['jnt_stiffness'] = {
+            self.maps[controller.animat_i]['ctrl']['jnt_stiffness'] = {
                 joint: jnt_stiffness.axes.row.convert_key_item(joint)
                 for joint_i, joint in enumerate(jnt_stiffness.axes.row.names)
             }
             dof_damping = physics.named.model.dof_damping
-            self.maps[animat_i]['ctrl']['dof_damping'] = {
+            self.maps[controller.animat_i]['ctrl']['dof_damping'] = {
                 joint: dof_damping.axes.row.convert_key_item(joint)
                 for joint_i, joint in enumerate(dof_damping.axes.row.names)
             }
@@ -427,89 +452,104 @@ class ExperimentTask(Task):
                                 jntname2actid[prefix+jnt_name][act_type]
                             ] = [0, 0]
 
-    def step_control(self, physics: Physics):
-        """Step control"""
-        current_time = physics.time()
-        index = self.iteration % self.buffer_size
-        for controller in self._controllers:
-            controller.before_step(self, None, physics)
-            if controller.joints_names[ControlType.POSITION]:
-                self.step_joints_control_position(physics, current_time)
-            if controller.joints_names[ControlType.TORQUE]:
-                self.step_joints_control_torque(physics, current_time)
-            if controller.muscles_names:
-                muscles_excitations = controller.excitations(
-                    iteration=index,
-                    time=current_time,
-                    timestep=self.timestep
-                )
-                physics.data.ctrl[self.maps['ctrl']['mus']] = muscles_excitations
-
-    def step_joints_control_position(self, physics: Physics, time: float):
+    def step_joints_control_position(
+            self,
+            controller: AnimatController,
+            physics: Physics,
+            time: float,
+    ):
         """Step position control"""
         index = self.iteration % self.buffer_size
-        for animat_i, controller in enumerate(self._controllers):
-            joints_positions = controller.positions(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            physics.data.ctrl[self.maps[animat_i]['ctrl']['pos']] = [
-                joints_positions[joint]
-                for joint in controller.joints_names[ControlType.POSITION]
-            ]
+        animat_i = controller.animat_i
+        prefix = get_prefix(animat_i)
+        ctrl = physics.data.ctrl
+        ctrl_pos_map = self.maps[animat_i]['ctrl']['pos']
+        joints_positions = controller.positions(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in joints_positions.items():
+            ctrl[ctrl_pos_map[prefix+joint]] = value  # Radians
 
-    def step_joints_control_torque(self, physics: Physics, time: float):
+    def step_joints_control_velocity(
+            self,
+            controller: AnimatController,
+            physics: Physics,
+            time: float,
+    ):
+        """Step velocity control"""
+        index = self.iteration % self.buffer_size
+        animat_i = controller.animat_i
+        prefix = get_prefix(animat_i)
+        angular_velocity = self.units.angular_velocity
+        ctrl = physics.data.ctrl
+        ctrl_vel_map = self.maps[animat_i]['ctrl']['vel']
+        joints_velocities = controller.velocities(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in joints_velocities.items():
+            ctrl[ctrl_vel_map[prefix+joint]] = value*angular_velocity
+
+    def step_joints_control_torque(
+            self,
+            controller: AnimatController,
+            physics: Physics,
+            time: float,
+    ):
         """Step torque control"""
         index = self.iteration % self.buffer_size
+        animat_i = controller.animat_i
+        prefix = get_prefix(animat_i)
         torques = self.units.torques
-        for animat_i, controller in enumerate(self._controllers):
+        ang_stiffness = self.units.angular_stiffness
+        ang_damping = self.units.angular_damping
 
-            prefix = get_prefix(animat_i)
+        # Joints torques
+        ctrl = physics.data.ctrl
+        ctrl_trq_map = self.maps[animat_i]['ctrl']['trq']
+        joints_torques = controller.torques(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in joints_torques.items():
+            ctrl[ctrl_trq_map[prefix+joint]] = value*torques
 
-            # Joints torques
-            joints_torques = controller.torques(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            physics.data.ctrl[self.maps[animat_i]['ctrl']['trq']] = [
-                joints_torques[joint]*torques
-                for joint in controller.joints_names[ControlType.TORQUE]
-            ]
+        # Spring reference
+        qpos_spring = physics.model.qpos_spring
+        springref_map = self.maps[animat_i]['ctrl']['springref']
+        springrefs = controller.springrefs(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in springrefs.items():
+            qpos_spring[springref_map[prefix+joint]] = value  # Radians
 
-            # Spring reference
-            qpos_spring = physics.model.qpos_spring
-            springref_map = self.maps[animat_i]['ctrl']['springref']
-            springrefs = controller.springrefs(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            for joint, value in springrefs.items():
-                qpos_spring[springref_map[prefix+joint]] = value
+        # Spring coefs
+        jnt_stiffness = physics.model.jnt_stiffness
+        jnt_stiffness_map = self.maps[animat_i]['ctrl']['jnt_stiffness']
+        springcoefs = controller.springcoefs(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in springcoefs.items():
+            jnt_stiffness[jnt_stiffness_map[prefix+joint]] = value*ang_stiffness
 
-            # Spring coefs
-            jnt_stiffness = physics.model.jnt_stiffness
-            jnt_stiffness_map = self.maps[animat_i]['ctrl']['jnt_stiffness']
-            springcoefs = controller.springcoefs(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            for joint, value in springcoefs.items():
-                jnt_stiffness[jnt_stiffness_map[prefix+joint]] = value
-
-            # Dampings
-            dof_damping = physics.model.dof_damping
-            dof_damping_map = self.maps[animat_i]['ctrl']['dof_damping']
-            dampingcoefs = controller.dampingcoefs(
-                iteration=index,
-                time=time,
-                timestep=self.timestep,
-            )
-            for joint, value in dampingcoefs.items():
-                dof_damping[dof_damping_map[prefix+joint]] = value
+        # Dampings coefs
+        dof_damping = physics.model.dof_damping
+        dof_damping_map = self.maps[animat_i]['ctrl']['dof_damping']
+        dampingcoefs = controller.dampingcoefs(
+            iteration=index,
+            time=time,
+            timestep=self.timestep,
+        )
+        for joint, value in dampingcoefs.items():
+            dof_damping[dof_damping_map[prefix+joint]] = value*ang_damping
 
     def after_step(self, physics: Physics):
         """Operations after physics step"""
@@ -567,9 +607,11 @@ class ExperimentTask(Task):
         terminate = None
         for extension in self.extensions:
             if extension.get_termination(task=self, physics=physics):
+                pylog.debug(f'Termination activated (Reason: {extension})')
                 terminate = 1
         if (self.n_iterations > 0) and (self.iteration >= self.n_iterations):
             terminate = 1
+            pylog.debug('Termination activated (Reason: Final iteration)')
         return terminate
 
     def observation_spec(self, physics: Physics):
