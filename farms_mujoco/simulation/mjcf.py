@@ -195,6 +195,9 @@ def mjc_add_link(
                 SpawnMode.ROTX
                 | SpawnMode.ROTY
                 | SpawnMode.ROTZ
+                | SpawnMode.NOROTX
+                | SpawnMode.NOROTY
+                | SpawnMode.NOROTZ
                 | SpawnMode.SAGITTAL
                 | SpawnMode.CORONAL
                 | SpawnMode.TRANSVERSE
@@ -215,6 +218,15 @@ def mjc_add_link(
                     case SpawnMode.ROTZ:
                         types = ['hinge']
                         axes = [[0, 0, 1]]
+                    case SpawnMode.NOROTX:
+                        types = ['slide', 'slide', 'slide', 'hinge', 'hinge']
+                        axes  = [[1,0,0], [0,1,0], [0,0,1], [0,1,0], [0,0,1]]
+                    case SpawnMode.NOROTY:
+                        types = ['slide', 'slide', 'slide', 'hinge', 'hinge']
+                        axes  = [[1,0,0], [0,1,0], [0,0,1], [1,0,0], [0,0,1]]
+                    case SpawnMode.NOROTZ:
+                        types = ['slide', 'slide', 'slide', 'hinge', 'hinge']
+                        axes  = [[1,0,0], [0,1,0], [0,0,1], [1,0,0], [0,1,0]]
                     case SpawnMode.SAGITTAL:
                         types = ['slide', 'slide', 'hinge']
                         axes = [[1, 0, 0], [0, 0, 1], [0, 1, 0]]
@@ -1229,8 +1241,8 @@ def mjcf2str(
         for mesh in mjcf_xml.find('asset').findall('mesh'):
             mjcf_mesh = mjcf_model.find('mesh', mesh.attrib['name'])
             mesh.attrib['file'] = mjcf_mesh.file.prefix + mjcf_mesh.file.extension
-            
-        for texture in mjcf_xml.find('asset').findall('texture'): 
+
+        for texture in mjcf_xml.find('asset').findall('texture'):
             if 'file' not in texture.attrib:
                 continue
             mjcf_texture = mjcf_model.find('texture', texture.attrib['name'])
