@@ -1296,26 +1296,28 @@ def add_particles(mjcf_model: mjcf.RootElement):
 def add_lights(
         link: mjcf.RootElement,
         rot: NDARRAY_3 | None = None,
+        units=SimulationUnitScaling(),
 ):
     """Add lights"""
     if rot is None:
         rot = np.zeros(3)
     rot_inv = Rotation.from_euler(angles=rot, seq='xyz').inv()
+    mtr = units.meters
     link.add(
         'light',
         name='light_animat',
         mode='trackcom',  # 'targetbody'
         active=str(True).lower(),
-        pos=rot_inv.as_matrix() @ [-1, 1, 3],
+        pos=rot_inv.as_matrix() @ [-10, 10, 30],  # *mtr
         dir=rot_inv.as_matrix() @ [1.0, -1.0, -3.0],
         castshadow=str(True).lower(),
         directional=str(False).lower(),
         attenuation=[1.0, 0.0, 0.0],
-        cutoff=1000,
-        exponent=1.0,
-        ambient=[0.0, 0.0, 0.0],
-        diffuse=[0.7, 0.7, 0.7],
-        specular=[0.3, 0.3, 0.3],
+        cutoff=100,  # *mtr
+        exponent=0.1,
+        ambient=[0.3, 0.3, 0.3],
+        diffuse=[0.5, 0.5, 0.5],
+        specular=[0.7, 0.7, 0.7],
     )
 
 
@@ -1692,7 +1694,11 @@ def setup_mjcf_xml(
     if base_link[0] is not None:
 
         # Light and shadows
-        add_lights(link=base_link[0], rot=animats_options[0].spawn.pose[3:])
+        add_lights(
+            link=base_link[0],
+            rot=animats_options[0].spawn.pose[3:],
+            units=units,
+        )
 
         # Add cameras
         add_cameras(

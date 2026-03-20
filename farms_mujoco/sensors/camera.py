@@ -258,7 +258,7 @@ class CameraRecording(TaskExtension):
                         self.links.global_com_position(
                             iteration=task.iteration-1,
                         ),
-                    )
+                    )*task.units.meters
                 self.camera.distance  = self.distance
                 self.camera.elevation = self.elevation
                 if self.renderer is not None:
