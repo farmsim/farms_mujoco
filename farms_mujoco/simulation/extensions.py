@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import mujoco
 import numpy as np
+from scipy.spatial.transform import Rotation
 from dm_control.mjcf.physics import Physics
 
 from farms_core.doc import ExtensionDoc, ChildDoc
@@ -73,6 +74,15 @@ def create_line(viewer, begin, end, **kwargs):
     )
     scn.ngeom += 1
     return geom
+
+
+def create_arrow(viewer, **kwargs):
+    """Create arrow"""
+    return create_primitive(
+        viewer,
+        mujoco.mjtGeom.mjGEOM_ARROW,
+        **kwargs,
+    )
 
 
 class MjcfSaver(TaskExtension):
@@ -359,3 +369,62 @@ class TrailLinkViewer(TaskExtension):
                 rgba=self.rgba,
             )
             self.pos_old = self.pos_new
+
+
+class ArrowViewer(TaskExtension):
+    """CoM viewer"""
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.arrow = None
+        self.animat_id = kwargs.pop('animat_id', 0)
+        self.links: LinkSensorArray | None = None
+        self.size = kwargs.pop('size', [0.03, 0.03, 0.3])
+        self.rgba = kwargs.pop('rgba', [1.0, 1.0, 1.0, 0.3])
+        self.viewer = kwargs.pop('viewer', None)
+        self.offset = kwargs.pop('offset', None)
+        self.orientation = 0
+
+    @classmethod
+    def from_options(cls, config: dict, experiment_options: ExperimentOptions):
+        """From options"""
+        del experiment_options
+        return cls(
+            animat_id=config.get('animat_id', 0),
+            size=config.get('size', None),
+            offset=config.get('offset', None),
+            rgba=config['rgba'],
+        )
+
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialise episode"""
+        self.viewer = task.viewer
+        index = self.animat_id
+        self.links: LinkSensorArray = task.data.animats[index].sensors.links
+        mass = np.sum(self.links.masses)
+        if self.viewer:
+            if self.size is None:
+                if mass is not None:
+                    radius = 0.2*((3*mass/1000)/np.pi)**(1/3)
+                    self.size = [0.5*radius, 0.5*radius, 20*radius]
+                    self.offset = 5*radius
+                else:
+                    self.size = [0.03, 0.03, 0.3]
+                    self.offset = 0.5
+            self.arrow = create_arrow(
+                self.viewer,
+                size=self.size,
+                rgba=self.rgba,
+            )
+            self.arrow.size = self.size
+
+    def after_step(self, task: ExperimentTask, physics: Physics):
+        time = physics.time()/task.units.seconds
+        if self.arrow and self.links is not None:
+            self.arrow.pos = np.array(self.links.global_com_position(
+                iteration=task.iteration-1,
+            )) + np.array([0, 0, self.offset])
+            self.arrow.mat = Rotation.from_euler(
+                seq='xyz',
+                angles=[0.5*np.pi, 0, 0.2*np.pi*time],
+            ).as_matrix()
