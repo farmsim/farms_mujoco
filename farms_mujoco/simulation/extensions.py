@@ -24,12 +24,12 @@ def create_primitive(viewer, primitive, **kwargs):
     scn = viewer.user_scn
     geom = scn.geoms[scn.ngeom]
     mujoco.mjv_initGeom(
-        geom,
-        primitive,
-        kwargs.pop('size', [1.0, 1.0, 1.0]),
-        kwargs.pop('pos', [0.0, 0.0, 0.0]),  # Pos
-        np.eye(3).ravel(),  # Matrix
-        kwargs.pop('rgba', [1.0, 1.0, 1.0, 1.0]),  # RGBA
+        geom=geom,
+        type=primitive,
+        size=kwargs.pop('size', [1.0, 1.0, 1.0]),
+        pos=kwargs.pop('pos', [0.0, 0.0, 0.0]),  # Pos
+        mat=kwargs.pop('mat', np.eye(3).ravel()),  # Matrix
+        rgba=kwargs.pop('rgba', [1.0, 1.0, 1.0, 1.0]),  # RGBA
     )
     scn.ngeom += 1
     return geom
@@ -58,19 +58,19 @@ def create_line(viewer, begin, end, **kwargs):
     scn = viewer.user_scn
     geom = scn.geoms[scn.ngeom]
     mujoco.mjv_initGeom(
-        geom,
-        mujoco.mjtGeom.mjGEOM_LINE,
-        [1.0, 1.0, 1.0],  # Size
-        begin,  # Pos
-        np.eye(3).ravel(),  # Matrix
-        kwargs.pop('rgba', [1.0, 0.3, 0.0, 0.7]),  # RGBA
+        geom=geom,
+        type=mujoco.mjtGeom.mjGEOM_LINE,
+        size=[1.0, 1.0, 1.0],  # Size
+        pos=begin,  # Pos
+        mat=np.eye(3).ravel(),  # Matrix
+        rgba=kwargs.pop('rgba', [1.0, 0.3, 0.0, 0.7]),  # RGBA
     )
     mujoco.mjv_connector(
-        geom,
-        mujoco.mjtGeom.mjGEOM_LINE,
-        kwargs.pop('width', 5),  # Width
-        begin,
-        end,
+        geom=geom,
+        type=mujoco.mjtGeom.mjGEOM_LINE,
+        width=kwargs.pop('width', 5),  # Width
+        from_=begin,
+        to=end,
     )
     scn.ngeom += 1
     return geom
