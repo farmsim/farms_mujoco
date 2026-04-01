@@ -1050,7 +1050,7 @@ def sdf2mjcf(
             # Add sites from muscle config file
             for muscle in animat_options.control.hill_muscles:
                 # Add tendon
-                tendon_name = f'{muscle.name}'
+                tendon_name = f'{prefix}{muscle.name}'
                 mjcf_map['tendons'][tendon_name] = mjcf_model.tendon.add(
                     "spatial",
                     name=tendon_name,
@@ -1059,7 +1059,7 @@ def sdf2mjcf(
                     rgba=[0.0, 0.0, 1.0, 1],
                 )
                 # Add actuator
-                muscle_name = f'{muscle.name}'
+                muscle_name = f'{prefix}{muscle.name}'
                 prms = [
                     muscle['max_force']*units.newtons,
                     muscle['optimal_fiber']*units.meters,
@@ -1113,8 +1113,8 @@ def sdf2mjcf(
                     body_name = waypoint[0]
                     position = [pos*units.meters for pos in waypoint[1]]
                     # Add sites
-                    body = mjcf_model.worldbody.find('body', body_name)
-                    site_name = f'{muscle_name}_P{pindex}'
+                    body = mjcf_model.worldbody.find('body', f'{prefix}{body_name}')
+                    site_name = f'{prefix}{muscle_name}_P{pindex}'
                     body.add(
                         'site',
                         name=site_name,
