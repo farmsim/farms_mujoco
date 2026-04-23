@@ -1071,7 +1071,7 @@ def sdf2mjcf(
                 mjcf_map['muscles'][muscle_name] = mjcf_model.actuator.add(
                     "general",
                     name=muscle_name,
-                    group=ControlType.MUSCLE,
+                    group=0,
                     tendon=tendon_name,
                     lengthrange=[
                         muscle['lmtu_min']*units.meters,
