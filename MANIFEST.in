@@ -1,3 +1,1 @@
-include MANIFEST.in *.txt
-include requirements.txt
-recursive-include farms_bullet/experiments *.obj
+recursive-include farms_core *.pyx *.pxd
