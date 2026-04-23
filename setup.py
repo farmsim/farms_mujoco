@@ -35,18 +35,6 @@ Options.closure_freelist_size = 8
 
 setup(
     name='farms_mujoco',
-    version='0.1',
-    author='farmsdev',
-    author_email='biorob-farms@groupes.epfl.ch',
-    description='FARMS package for running simulations with MuJoCo',
-    keywords='farms simulation mujoco',
-    packages=find_packages(),
-    package_dir={'farms_mujoco': 'farms_mujoco'},
-    package_data={'farms_mujoco': [
-        f'{folder}/*.pxd'
-        for folder in ['sensors', 'swimming']
-    ]},
-    include_package_data=True,
     include_dirs=[np.get_include()] + get_include_paths(),
     ext_modules=cythonize(
         [
@@ -73,15 +61,4 @@ setup(
         }
     ),
     zip_safe=False,
-    install_requires=[
-        'farms_core',
-        'cython',
-        'numpy',
-        'scipy',
-        'tqdm',
-        'trimesh',
-        'dm_control',
-        'imageio',
-        'pywavefront'
-    ],
 )

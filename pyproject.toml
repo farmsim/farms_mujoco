@@ -1,3 +1,55 @@
 [build-system]
-requires = ["setuptools>=64", "wheel", "Cython", "numpy"]
+requires = ["setuptools>=68.0", "wheel", "Cython>=3.0", "numpy", "farms_core",]
 build-backend = "setuptools.build_meta"
+
+[project]
+version = "0.1.0"
+name = "farms_mujoco"
+description='FARMS package for running simulations with MuJoCo',
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">= 3.11"
+dependencies = [
+    'scipy',
+    'tqdm',
+    'trimesh',
+    'mujoco',
+    'dm_control',
+    'imageio',
+    'pywavefront'
+]
+keywords = ["farms", "framework", "animals", "robot", "modeling", "simulation"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  # Indicate who your project is intended for
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Artificial Life",
+  # Specify the Python versions you support here.
+  "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+Homepage = "https://farmsim.dev"
+Documentation = "https://farmsim.dev"
+Repository = "https://github.com/farmsim/farms_mujoco.git"
+Issues = "https://github.com/farmsim/farms_mujoco/issues"
+Changelog = "https://github.com/farmsim/farms_mujoco/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+# This is equivalent to find_packages() with no arguments
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+farms_mujoco = "farms_mujoco"
+
+[tool.setuptools.package-data]
+farms_mujoco = [
+    "*.pxd",
+    "sensors/*.pxd",
+    "swimming/*.pxd",
+]
