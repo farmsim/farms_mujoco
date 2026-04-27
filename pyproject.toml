@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel", "Cython>=3.0", "numpy", "farms_core",]
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "0.1.0"
+version = "0.1.1"
 name = "farms_mujoco"
 description='FARMS package for running simulations with MuJoCo'
 readme = "README.md"
