@@ -1,1 +1,1 @@
-recursive-include farms_core *.pyx *.pxd
+recursive-include farms_mujoco *.pyx *.pxd
