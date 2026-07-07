@@ -273,7 +273,10 @@ class ExperimentTask(Task):
             )
             self.initialize_episode(physics, self.viewer)  # Reset
 
-        full_step = not self.sim_iteration % self.cb_sub_steps
+        full_step = (
+            not self.sim_iteration  # First iteration
+            or not (self.sim_iteration+1) % self.cb_sub_steps  # First substep
+        )
 
         # Checks
         assert self.iteration < self.n_iterations
