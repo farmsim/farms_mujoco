@@ -160,7 +160,7 @@ def mjc_add_link(
     friction = kwargs.pop('friction', [0, 0, 0])
     use_site = kwargs.pop('use_site', False)
     units = kwargs.pop('units', SimulationUnitScaling())
-    obj_use_composite = kwargs.pop('obj_use_composite', True)
+    obj_use_composite = kwargs.pop('obj_use_composite', False)
     # NOTE: obj_use_composite seems to be needed for Wavefront meshes which are
     # not watertight or have disconnected parts.
     texture_repeat = kwargs.pop('texture_repeat', 1)
