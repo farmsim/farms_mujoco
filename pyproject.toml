@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel", "Cython>=3.0", "numpy", "farms_core",]
 build-backend = "setuptools.build_meta"
 
 [project]
-version = "0.1.4"
+version = "0.1.5"
 name = "farms_mujoco"
 description='FARMS package for running simulations with MuJoCo'
 readme = "README.md"
@@ -14,10 +14,12 @@ dependencies = [
     'scipy',
     'tqdm',
     'trimesh',
-    'mujoco<=3.8.1',
+    'mujoco',
     'dm_control',
     'imageio',
-    'pywavefront'
+    'pywavefront',
+    # Only installs automatically on Python 3.12 or lower
+    "dm_control; python_version < '3.13'"
 ]
 keywords = ["farms", "framework", "animals", "robot", "modeling", "simulation"]
 classifiers = [
