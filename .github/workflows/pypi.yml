@@ -21,6 +21,9 @@ jobs:
           python-version: "3.x"
       - run: pip install cibuildwheel
       - run: cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_ENVIRONMENT: "PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
+          CIBW_TEST_ENVIRONMENT: "PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
       - uses: actions/upload-artifact@v5
         with:
           name: wheels-${{ matrix.os }}
@@ -34,6 +37,9 @@ jobs:
           persist-credentials: false
       - run: pip install build
       - run: python -m build --sdist
+        env:
+          PIP_INDEX_URL: https://test.pypi.org/simple/
+          PIP_EXTRA_INDEX_URL: https://pypi.org/simple/
       - uses: actions/upload-artifact@v5
         with:
           name: sdist
