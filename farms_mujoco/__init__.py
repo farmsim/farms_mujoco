@@ -1,3 +1,7 @@
 """FARMS_MUJOCO"""
 
-__version__ = "0.1.3"
+
+from importlib import metadata
+
+
+__version__: str = metadata.version("farms_mujoco")
