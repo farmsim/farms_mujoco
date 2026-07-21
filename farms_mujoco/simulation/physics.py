@@ -1,5 +1,4 @@
 """Physics"""
-from Cython.Compiler.Options import embed
 
 import numpy as np
 
