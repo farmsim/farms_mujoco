@@ -1,0 +1,70 @@
+name: Build and Publish to PyPI
+
+on:
+  push:
+    branches: [merge_v0.2]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-15-intel,] # windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - run: pip install cibuildwheel
+      - run: cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_ENVIRONMENT: "PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
+          CIBW_TEST_ENVIRONMENT: "PIP_INDEX_URL=https://test.pypi.org/simple/ PIP_EXTRA_INDEX_URL=https://pypi.org/simple/"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  build_sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - run: pip install build
+      - run: python -m build --sdist
+        env:
+          PIP_INDEX_URL: https://test.pypi.org/simple/
+          PIP_EXTRA_INDEX_URL: https://pypi.org/simple/
+      - uses: actions/upload-artifact@v5
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish_to_testpypi:
+    name: >-
+      Publish Python 🐍 distribution 📦 to TestPyPI
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment:
+      name: pypi
+      # url: https://pypi.org/p/farms-mujoco # For PyPI
+      url: https://test.pypi.org/p/farms-mujoco # For TestPyPI
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download all the dists
+        uses: actions/download-artifact@v6
+        with:
+          path: dist/
+          merge-multiple: true
+      - name: Publish distribution 📦 to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/

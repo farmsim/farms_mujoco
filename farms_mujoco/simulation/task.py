@@ -279,7 +279,8 @@ class ExperimentTask(Task):
         )
 
         # Checks
-        assert self.iteration < self.n_iterations
+        if self.n_iterations > 0:
+            assert self.iteration < self.n_iterations
 
         # Sensors
         if full_step or self.substeps_links:
@@ -561,10 +562,10 @@ class ExperimentTask(Task):
         fullstep = not (self.sim_iteration + 1) % self.cb_sub_steps
         if fullstep:
             self.iteration += 1
-        assert self.iteration <= self.n_iterations
-
+        if (self.n_iterations > 0):
+            assert self.iteration <= self.n_iterations
         # Simulation complete
-        if self.iteration == self.n_iterations:
+        if (self.n_iterations > 0) and (self.iteration == self.n_iterations):
             pylog.info('Simulation complete')
             if self._app is not None and not self._restart:
                 self._app.close()
@@ -611,7 +612,7 @@ class ExperimentTask(Task):
             if extension.get_termination(task=self, physics=physics):
                 pylog.debug(f'Termination activated (Reason: {extension})')
                 terminate = 1
-        if self.iteration >= self.n_iterations:
+        if (self.n_iterations > 0) and (self.iteration >= self.n_iterations):
             terminate = 1
             pylog.debug('Termination activated (Reason: Final iteration)')
         return terminate

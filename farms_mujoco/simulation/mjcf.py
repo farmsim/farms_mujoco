@@ -17,6 +17,7 @@ from dm_control import mjcf
 
 from farms_core import pylog
 from farms_core.experiment.options import ExperimentOptions
+from farms_core.model.control import ControlType
 from farms_core.units import SimulationUnitScaling
 from farms_core.simulation.options import SimulationOptions
 from farms_core.model.options import SpawnMode
@@ -995,6 +996,7 @@ def sdf2mjcf(
                 ctrlrange=act_pos_ctrlrange,
                 forcelimited=act_pos_forcelimited,
                 forcerange=[val*units.torques for val in act_pos_forcerange],
+                group=ControlType.POSITION,
             )
             name_vel = f'actuator_velocity_{prefix}{joint_name}'
             mjcf_map['actuators'][name_vel] = mjcf_model.actuator.add(
@@ -1010,12 +1012,14 @@ def sdf2mjcf(
                 ctrlrange=[val*units.angular_velocity for val in act_vel_ctrlrange],
                 forcelimited=act_vel_forcelimited,
                 forcerange=[val*units.torques for val in act_vel_forcerange],
+                group=ControlType.VELOCITY,
             )
             name_trq = f'actuator_torque_{prefix}{joint_name}'
             mjcf_map['actuators'][name_trq] = mjcf_model.actuator.add(
                 'motor',
                 name=name_trq,
                 joint=f'{prefix}{joint_name}',
+                group=ControlType.TORQUE,
             )
             if (
                     animat_options is not None
@@ -1046,27 +1050,28 @@ def sdf2mjcf(
             # Add sites from muscle config file
             for muscle in animat_options.control.hill_muscles:
                 # Add tendon
-                tendon_name = f'{muscle.name}'
+                tendon_name = f'{prefix}{muscle.name}'
                 mjcf_map['tendons'][tendon_name] = mjcf_model.tendon.add(
                     "spatial",
                     name=tendon_name,
-                    group=1,
+                    group=0,
                     width=1e-3,
                     rgba=[0.0, 0.0, 1.0, 1],
                 )
                 # Add actuator
-                muscle_name = f'{muscle.name}'
+                muscle_name = f'{prefix}{muscle.name}'
                 prms = [
                     muscle['max_force']*units.newtons,
                     muscle['optimal_fiber']*units.meters,
                     muscle['tendon_slack']*units.meters,
-                    muscle['max_velocity']*units.velocity, # vmax
+                    # vmax (lopt/s) -> (m/s)
+                    (muscle['max_velocity']*muscle['optimal_fiber'])*units.velocity,
                     np.deg2rad(muscle['pennation_angle']),
                 ]
                 mjcf_map['muscles'][muscle_name] = mjcf_model.actuator.add(
                     "general",
                     name=muscle_name,
-                    group=1, # To make sure they are always visible,
+                    group=0,
                     tendon=tendon_name,
                     lengthrange=[
                         muscle['lmtu_min']*units.meters,
@@ -1108,13 +1113,13 @@ def sdf2mjcf(
                     body_name = waypoint[0]
                     position = [pos*units.meters for pos in waypoint[1]]
                     # Add sites
-                    body = mjcf_model.worldbody.find('body', body_name)
-                    site_name = f'{muscle_name}_P{pindex}'
+                    body = mjcf_model.worldbody.find('body', f'{prefix}{body_name}')
+                    site_name = f'{prefix}{muscle_name}_P{pindex}'
                     body.add(
                         'site',
                         name=site_name,
                         pos=position,
-                        group=1,
+                        group=ControlType.MUSCLE,
                         size=[5e-4*units.meters]*3,
                         rgba=[0.0, 1, 0, 0.5]
                     )
@@ -1335,6 +1340,7 @@ def add_cameras(
             ['trackcom', [0.0, 0.0, dist, 0.0, 0.0, 0.0]],
             ['trackcom', [0.0, -dist, 0.2*dist, 0.4*np.pi, 0.0, 0.0]],
             ['trackcom', [-dist, 0.0, 0.2*dist, 0.4*np.pi, 0, -0.5*np.pi]],
+            ['fixed', [-dist, 0.0, 0.2*dist, 0.4*np.pi, 0, -0.5*np.pi]],
             # ['targetbodycom', [dist, 0.0, 0.2*dist, 0, 0, 0]],
     ]):
         link.add(
