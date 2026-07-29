@@ -200,6 +200,27 @@ class CameraRecording(TaskExtension):
             **CameraRecordingOptions(**config),
         )
 
+    @staticmethod
+    def _build_video_writer(output_path, fps, frame_size):
+        """Return a VideoWriter preferring H.264 for broad compatibility."""
+        preferred_codecs = ['avc1', 'H264', 'X264', 'mp4v']
+        for codec in preferred_codecs:
+            fourcc = cv2.VideoWriter_fourcc(*codec)
+            writer = cv2.VideoWriter(output_path, fourcc, fps, frame_size)
+            if writer.isOpened():
+                pylog.info('Using %s codec for video export', codec)
+                return writer
+            writer.release()
+        pylog.warning(
+            'No compatible H.264 codec found, falling back to mp4v',
+        )
+        return cv2.VideoWriter(
+            output_path,
+            cv2.VideoWriter_fourcc(*'mp4v'),
+            fps,
+            frame_size,
+        )
+
     def initialize_episode(self, task, physics):
         """Initialize episode"""
         self.sample = 0
@@ -208,9 +229,8 @@ class CameraRecording(TaskExtension):
             dtype=np.uint8,
         )
         if USE_CV2:
-            self.out = cv2.VideoWriter(
+            self.out = self._build_video_writer(
                 f'{self.video.path}{self.video.file_extension}',
-                cv2.VideoWriter_fourcc(*'mp4v'),  # X264
                 self.fps,
                 (self.width, self.height),
             )
