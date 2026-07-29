@@ -110,6 +110,7 @@ cdef void compute_torque(
 
 cdef void compute_buoyancy(
     double density,
+    double water_density,
     double height,
     double position,
     DTYPEv1 global2urdf,
@@ -124,6 +125,7 @@ cdef void compute_buoyancy(
     """Compute buoyancy
 
     :param density: Density of the link
+    :param water_density: Density of the surrounding fluid
     :param height: Height of the link
     :param position: Z position of the CoM in global frame
     :param global2urdf: Global to URDF frame transform
@@ -139,7 +141,7 @@ cdef void compute_buoyancy(
     if mass > 0 and position - height < surface:
         tmp[0] = 0
         tmp[1] = 0
-        tmp[2] = -1000*mass*gravity/density*min(
+        tmp[2] = -water_density*mass*gravity/density*min(
             ( surface + height - position ) / (2 * height),
             1,
         )
@@ -221,6 +223,7 @@ cpdef bint drag_forces(
     if use_buoyancy:
         compute_buoyancy(
             density=density,
+            water_density=water.density(time, pos_x, pos_y, pos_z),
             height=height,
             position=pos_z,
             global2urdf=global2urdf,
