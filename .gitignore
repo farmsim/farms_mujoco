@@ -35,3 +35,4 @@ scripts/*test*
 *.log
 *.dot
 *.egg-info/*
+*.pyd
