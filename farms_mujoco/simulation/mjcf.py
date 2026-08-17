@@ -46,6 +46,19 @@ def get_prefix(animat_i):
     return f'a{animat_i}_'
 
 
+def resolve_path(path, local_path):
+    """Resolve path"""
+    if os.path.isfile(path):
+        return path
+    paths = [path]
+    if local_path is not None:
+        new_path = os.path.join(os.path.dirname(local_path), path)
+        paths.append(new_path)
+        if os.path.isfile(new_path):
+            return new_path
+    raise FileNotFoundError(f"Could not find any file: {paths}")
+
+
 def quat2mjcquat(quat: NDARRAY_4) -> NDARRAY_4:
     """Quaternion to MuJoCo quaternion"""
     quat_type = np.array if isinstance(quat, np.ndarray) else type(quat)
@@ -1386,8 +1399,12 @@ def setup_mjcf_xml(
     )
 
     # Arena
+    arena_path = resolve_path(
+        os.path.expandvars(arena_options.sdf),
+        experiment_options.path,
+    )
     mjcf_model, info = sdf2mjcf(
-        sdf=ModelSDF.read(filename=os.path.expandvars(arena_options.sdf))[0],
+        sdf=ModelSDF.read(filename=arena_path)[0],
         mjcf_model=mjcf_model,
         model_name='arena',
         fixed_base=True,
@@ -1406,8 +1423,12 @@ def setup_mjcf_xml(
     if arena_options.ground_height is not None:
         arena_base_link.pos[2] += arena_options.ground_height*units.meters
     if arena_options.water.height is not None:
+        water_path = resolve_path(
+            os.path.expandvars(arena_options.water.sdf),
+            experiment_options.path,
+        )
         mjcf_model, info = sdf2mjcf(
-            sdf=ModelSDF.read(arena_options.water.sdf)[0],
+            sdf=ModelSDF.read(water_path)[0],
             mjcf_model=mjcf_model,
             model_name='water',
             fixed_base=True,
@@ -1425,7 +1446,11 @@ def setup_mjcf_xml(
     # Animat
     for animat_i, animat_options in enumerate(animats_options):
         mujoco_kwargs = animat_options.get('mujoco', {})
-        sdf_animat = ModelSDF.read(os.path.expandvars(animat_options.sdf))[0]
+        animat_path = resolve_path(
+            os.path.expandvars(animat_options.sdf),
+            experiment_options.path,
+        )
+        sdf_animat = ModelSDF.read(animat_path)[0]
         animat_fixed_base = (
             animat_options.spawn.mode == SpawnMode.FIXED
             if animat_options is not None
@@ -1608,7 +1633,11 @@ def setup_mjcf_xml(
         prefix=get_prefix(animat_i)
 
         # Spawn
-        sdf_animat = ModelSDF.read(os.path.expandvars(animat_options.sdf))[0]
+        animat_path = resolve_path(
+            os.path.expandvars(animat_options.sdf),
+            experiment_options.path,
+        )
+        sdf_animat = ModelSDF.read(animat_path)[0]
         animat_spawn = animat_options.spawn
         base_link[animat_i] = mjcf_model.find(
             namespace='body',
