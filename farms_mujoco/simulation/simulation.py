@@ -109,18 +109,15 @@ class Simulation:
             **kwargs,
         )
 
-        time_limit = (
+        self.time_limit = (
             float("inf")
-            if self.options.runtime.n_iterations < 0 else (
-                    self.options.runtime.n_iterations
-                    *self.options.physics.timestep
-                    *self.options.units.seconds
-            )
+            if self.options.runtime.n_iterations < 0
+            else self.options.runtime.n_iterations*self.options.physics.timestep
         )
         self._env: Environment = Environment(
             physics=self.physics,
             task=self.task,
-            time_limit=time_limit,
+            time_limit=self.time_limit*self.options.units.seconds,
             legacy_step=legacy_step,
             **env_kwargs,
         )
@@ -235,12 +232,17 @@ class Simulation:
                         key_callback=self.viewer_callback,
                 ) as viewer:
                     iteration = 0
+                    physics_time = 0
                     n_iterations = self.task.n_iterations
                     cb_sub_steps = self.task.cb_sub_steps
                     seconds = self.options.units.seconds
                     self.task.viewer = viewer
 
-                    while viewer.is_running() and iteration < n_iterations:
+                    while (
+                            viewer.is_running()
+                            and iteration < n_iterations
+                            and physics_time <= self.time_limit
+                    ):
 
                         # Time
                         tic = time.time()
@@ -303,6 +305,8 @@ class Simulation:
                     # Extensions end
                     pylog.debug('Ending extensions')
                     self.end_extensions()
+            final_time = self.physics.time() if self.physics else 0.0
+            self.cleanup()
         else:
             _iterator = (
                 tqdm(range(self.task.n_iterations))
@@ -310,18 +314,27 @@ class Simulation:
                 else range(self.task.n_iterations)
             )
             try:
+                iseconds = 1/self.options.units.seconds
                 for iteration in _iterator:
                     self.update_step_options()
                     for _ in range(self.task.cb_sub_steps):
                         self._env.step(action=None)
                     iteration += 1
+                    physics_time = self.physics.time()*iseconds
+                    if physics_time > self.time_limit:
+                        break
                 self.end_extensions()
             except PhysicsError as err:
                 pylog.error(traceback.format_exc())
-                if self.handle_exceptions:
-                    return
-                raise err
-        pylog.info('Closing simulation')
+                final_time = self.physics.time() if self.physics else 0.0
+                self.cleanup()
+                if not self.handle_exceptions:
+                    raise err
+                pylog.info('Closing simulation (t=%s)', final_time)
+                return
+            final_time = self.physics.time() if self.physics else 0.0
+            self.cleanup()
+        pylog.info('Closing simulation (t=%s)', final_time)
 
     def iterator(self, show_progress: bool = True, verbose: bool = True):
         """Run simulation"""
@@ -338,10 +351,45 @@ class Simulation:
                     self._env.step(action=None)
                 iteration += 1
             self.end_extensions()
+            self.cleanup()
         except PhysicsError as err:
             if verbose:
                 pylog.error(traceback.format_exc())
+            self.cleanup()
             raise err
+
+    def cleanup(self):
+        """Clean up MuJoCo resources to prevent memory leaks."""
+        try:
+            if self.physics is not None:
+                self.physics = None
+
+            if self.task is not None:
+                # Close mujoco.viewer if active
+                if self.task.viewer is not None:
+                    try:
+                        close = getattr(self.task.viewer, 'close', None)
+                        if close and callable(close):
+                            close()
+                    except Exception as e:
+                        pylog.debug(f"Error closing viewer: {e}")
+                    self.task.viewer = None
+
+                # Close dm_control application if active
+                if self.task._app is not None:
+                    try:
+                        close = getattr(self.task._app, 'close', None)
+                        if close and callable(close):
+                            close()
+                    except Exception as e:
+                        pylog.debug(f"Error closing application: {e}")
+                    self.task._app = None
+
+                self.task = None
+
+            pylog.debug("MuJoCo simulation resources cleaned up")
+        except Exception as e:
+            pylog.warning(f"Failed to clean up MuJoCo simulation resources: {e}")
 
     def postprocess(
             self,
