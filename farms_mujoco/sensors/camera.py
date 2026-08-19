@@ -169,9 +169,9 @@ class CameraRecording(TaskExtension):
         self.out = None
         video_path, video_extension = os.path.splitext(kwargs.pop('path'))
         match video_extension:
-            case 'mp4':
+            case '.mp4':
                 writer = 'ffmpeg'
-            case 'html':
+            case '.html':
                 writer = 'html'
             case _:
                 pylog.warning(
@@ -229,8 +229,12 @@ class CameraRecording(TaskExtension):
             dtype=np.uint8,
         )
         if USE_CV2:
+            video_path = f'{self.video.path}{self.video.file_extension}'
+            dirname = os.path.dirname(video_path)
+            if dirname:
+                os.makedirs(dirname, exist_ok=True)
             self.out = self._build_video_writer(
-                f'{self.video.path}{self.video.file_extension}',
+                video_path,
                 self.fps,
                 (self.width, self.height),
             )
@@ -247,7 +251,7 @@ class CameraRecording(TaskExtension):
                 if self.links is not None:
                     self.camera.lookat[:] += np.array(
                         self.links.global_com_position(iteration=0),
-                    )
+                    )*task.units.meters
                 self.camera.distance = self.distance
                 self.camera.azimuth = self.azimuth
                 self.camera.elevation = self.elevation
@@ -287,6 +291,13 @@ class CameraRecording(TaskExtension):
                         camera=self.camera,
                         scene_option=self.render_options,
                     )
+                    # Render extension geoms (trails, CoM spheres, etc.)
+                    for extension in task.extensions:
+                        if not getattr(extension, 'show_on_camera', True):
+                            continue
+                        render_scene = getattr(extension, 'render_scene', None)
+                        if render_scene is not None:
+                            render_scene(self.renderer.scene)
                     self.renderer.render(out=self.data[self.sample, :, :, :])
             if self.out is not None:
                 self.out.write(self.data[self.sample, :, :, :][:, :, [2, 1, 0]])
