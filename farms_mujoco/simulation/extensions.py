@@ -555,5 +555,5 @@ class ArrowViewer(AnimatViewerExtension):
             )*self.units.meters
             self.arrow.mat = Rotation.from_euler(
                 seq='xyz',
-                angles=[0.5*np.pi, 0, 0.2*np.pi*time],
+                angles=[0, 0.5*np.pi, 0.2*np.pi*time],
             ).as_matrix()
