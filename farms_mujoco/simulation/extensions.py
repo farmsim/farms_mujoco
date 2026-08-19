@@ -35,6 +35,7 @@ def create_primitive(scn, primitive, **kwargs):
         pos=kwargs.pop('pos', [0.0, 0.0, 0.0]),  # Pos
         mat=kwargs.pop('mat', np.eye(3).ravel()),  # Matrix
         rgba=kwargs.pop('rgba', [1.0, 1.0, 1.0, 1.0]),  # RGBA
+        **kwargs,
     )
     scn.ngeom += 1
     return geom
