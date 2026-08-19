@@ -74,8 +74,10 @@ class ExperimentTask(Task):
         self.cb_sub_steps = max(1, kwargs.pop('substeps', 1))
         self.substeps_links = any(cb.substep for cb in self.extensions)
         self.sim_iteration = 0
-        self.sim_iterations = self.n_iterations*self.cb_sub_steps
-        self.sim_timestep = self.timestep/self.cb_sub_steps
+        sim_options: SimulationOptions = self.experiment_options.simulation
+        dt_mult: int = self.cb_sub_steps*max(1, sim_options.physics.num_sub_steps)
+        self.physics_iterations: int = self.n_iterations*dt_mult
+        self.physics_timestep: float = self.timestep/dt_mult
         self.maps: list[dict] = [{
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'geoms': {},
@@ -264,7 +266,7 @@ class ExperimentTask(Task):
 
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
-        if physics.time()/self.units.seconds < 1e-6*self.sim_timestep:
+        if physics.time()/self.units.seconds < 1e-6*self.physics_timestep:
             pylog.debug(
                 'Initializing episode due to initial time (%s [s])',
                 physics.time()/self.units.seconds,
