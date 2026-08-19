@@ -1,23 +1,21 @@
 """Task"""
 
-from typing import List, Dict
-
 import numpy as np
-
+from dm_control.mjcf.physics import Physics
+from dm_control.mujoco import wrapper
+from dm_control.mujoco.index import UnnamedAxis
 from dm_control.rl.control import Task
 from dm_control.viewer.application import Application
-from dm_control.mjcf.physics import Physics
-from dm_control.mujoco.wrapper import set_callback
-from dm_control.mujoco.index import UnnamedAxis
 
 from farms_core import pylog
-from farms_core.extensions.extensions import import_item
-from farms_core.simulation.extensions import TaskExtension
-from farms_core.model.extensions import AnimatExtension
-from farms_core.experiment.options import ExperimentOptions
-from farms_core.model.control import ControlType, AnimatController
-from farms_core.model.data import AnimatData
 from farms_core.experiment.data import ExperimentData
+from farms_core.experiment.options import ExperimentOptions
+from farms_core.extensions.extensions import import_item
+from farms_core.model.control import AnimatController, ControlType
+from farms_core.model.data import AnimatData
+from farms_core.model.extensions import AnimatExtension
+from farms_core.simulation.extensions import TaskExtension
+from farms_core.simulation.options import SimulationOptions
 from farms_core.units import SimulationUnitScaling as SimulationUnits
 
 try:
@@ -26,12 +24,12 @@ except:
     rt_muscle = None
     pylog.warning("farms_muscle not installed!")
 
+from .mjcf import get_prefix
 from .physics import (
-    get_sensor_maps,
     get_physics2data_maps,
+    get_sensor_maps,
     physics2data,
 )
-from .mjcf import get_prefix
 
 
 def duration2nit(duration: float, timestep: float) -> int:
@@ -66,11 +64,11 @@ class ExperimentTask(Task):
         self.experiment_options: ExperimentOptions = kwargs.pop('experiment_options')
         n_animats = len(self.experiment_options.animats)
         self._restart: bool = kwargs.pop('restart', True)
-        self.extensions: List[TaskExtension] = self.extract_extensions(
+        self.extensions: list[TaskExtension] = self.extract_extensions(
             experiment_options=self.experiment_options,
             experiment_data=self.data,
         ) + kwargs.pop('extensions', [])
-        self._extras: Dict = {'hfield': kwargs.pop('hfield', None)}
+        self._extras: dict = {'hfield': kwargs.pop('hfield', None)}
         self.units: SimulationUnits = kwargs.pop('units', SimulationUnits())
         self.buffer_size = max(1, kwargs.pop('buffer_size', 1))
         self.cb_sub_steps = max(1, kwargs.pop('substeps', 1))
@@ -78,7 +76,7 @@ class ExperimentTask(Task):
         self.sim_iteration = 0
         self.sim_iterations = self.n_iterations*self.cb_sub_steps
         self.sim_timestep = self.timestep/self.cb_sub_steps
-        self.maps: list[Dict] = [{
+        self.maps: list[dict] = [{
             'sensors': {}, 'ctrl': {},
             'xpos': {}, 'qpos': {}, 'geoms': {},
             'links': {}, 'joints': {}, 'contacts': {}, 'xfrc': {},
@@ -91,8 +89,8 @@ class ExperimentTask(Task):
         """ Destructor """
         # It is necessary to remove the callbacks to avoid crashes in
         # mujoco reruns
-        set_callback("mjcb_act_gain", None)
-        set_callback("mjcb_act_bias", None)
+        wrapper.set_callback("mjcb_act_gain", None)
+        wrapper.set_callback("mjcb_act_bias", None)
 
     def set_app(self, app: Application):
         """Set application"""
@@ -240,8 +238,8 @@ class ExperimentTask(Task):
 
         # Mujoco callbacks for muscle
         if rt_muscle:
-            set_callback("mjcb_act_gain", rt_muscle.mjcb_muscle_gain)
-            set_callback("mjcb_act_bias", rt_muscle.mjcb_muscle_bias)
+            wrapper.set_callback("mjcb_act_gain", rt_muscle.mjcb_muscle_gain)
+            wrapper.set_callback("mjcb_act_bias", rt_muscle.mjcb_muscle_bias)
 
         # Initialization complete
         self.initialized = True
