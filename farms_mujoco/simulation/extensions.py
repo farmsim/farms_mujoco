@@ -512,6 +512,8 @@ class ArrowViewer(AnimatViewerExtension):
         self.viewer = kwargs.pop('viewer', None)
         self.offset = kwargs.pop('offset', None)
         self.orientation = 0
+        self.pos: np.ndarray | None = None
+        self.mat: np.ndarray | None = None
 
     @classmethod
     def from_options(cls, config: dict, experiment_options: ExperimentOptions):
@@ -524,20 +526,50 @@ class ArrowViewer(AnimatViewerExtension):
             rgba=config['rgba'],
         )
 
+    def render(self, scene, pos, mat):
+        """Add an arrow geom to the scene at the given pose.
+
+        ``pos`` and ``mat`` are in SI units (meters / rotation matrix);
+        converted to MuJoCo units here.  Works with either a ``viewer``
+        (accessing ``viewer.user_scn``) or a raw ``MjvScene``.
+        """
+        size_mujoco = [s*self.units.meters for s in self.size]
+        return create_arrow(
+            scene,
+            size=size_mujoco,
+            pos=[p*self.units.meters for p in pos],
+            mat=mat.ravel(),
+            rgba=self.rgba,
+        )
+
+    def render_scene(self, scene):
+        """Render the arrow onto a scene.
+
+        Called after ``mjv_updateScene`` clears the scene, before
+        ``mjr_render``.
+        """
+        if self.pos is not None and self.mat is not None:
+            self.render(scene, self.pos, self.mat)
+
     def initialize_episode(self, task: ExperimentTask, physics: Physics):
         """Initialise episode"""
         self.units = task.units
         self.viewer = task.viewer
         self.bind_links(task)
+        if self.size is None:
+            radius = self.com_radius()
+            if radius is not None:
+                self.size = [0.5*radius, 0.5*radius, 20*radius]
+                self.offset = 5*radius
+            else:
+                self.size = [0.03, 0.03, 0.3]
+                self.offset = 0.5
+        self.pos = self.com_position(0) + np.array([0, 0, self.offset])
+        self.mat = Rotation.from_euler(
+            seq='xyz',
+            angles=[0, 0.5*np.pi, 0],
+        ).as_matrix()
         if self.viewer:
-            if self.size is None:
-                radius = self.com_radius()
-                if radius is not None:
-                    self.size = [0.5*radius, 0.5*radius, 20*radius]
-                    self.offset = 5*radius
-                else:
-                    self.size = [0.03, 0.03, 0.3]
-                    self.offset = 0.5
             size_mujoco = [s*self.units.meters for s in self.size]
             self.arrow = create_arrow(
                 self.viewer.user_scn,
@@ -548,12 +580,15 @@ class ArrowViewer(AnimatViewerExtension):
 
     def after_step(self, task: ExperimentTask, physics: Physics):
         time = physics.time()/task.units.seconds
-        if self.arrow and self.links is not None:
-            self.arrow.pos = (
+        if self.links is not None:
+            self.pos = (
                 self.com_position(iteration=task.iteration-1)
                 + np.array([0, 0, self.offset])
-            )*self.units.meters
-            self.arrow.mat = Rotation.from_euler(
+            )
+            self.mat = Rotation.from_euler(
                 seq='xyz',
                 angles=[0, 0.5*np.pi, 0.2*np.pi*time],
             ).as_matrix()
+            if self.arrow:
+                self.arrow.pos = self.pos*self.units.meters
+                self.arrow.mat = self.mat
