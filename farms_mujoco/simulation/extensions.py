@@ -591,3 +591,528 @@ class ArrowViewer(AnimatViewerExtension):
             if self.arrow:
                 self.arrow.pos = self.pos*self.units.meters
                 self.arrow.mat = self.mat
+
+
+@dataclass
+class SnakeGameOptions(Options):
+    """Snake-game options"""
+
+    @classmethod
+    def doc(cls):
+        """Doc"""
+        return ExtensionDoc(
+            name="Snake game options",
+            description=(
+                "Describes the options for the snake-like foraging game."
+                " Good-food spheres appear at random locations; when the"
+                " animat approaches one it is consumed, the score"
+                " increases, energy recharges, and a new food spawns."
+                " Bad-food (poison) spheres deplete energy and score."
+                " Food expires after a time limit.  Energy drains"
+                " continuously; when it reaches zero the game resets."
+            ),
+            class_type=cls,
+            children=[
+                ChildDoc(
+                    name="animat_id",
+                    class_type=int,
+                    description="Index of the animat playing the game.",
+                ),
+                ChildDoc(
+                    name="radius",
+                    class_type=float,
+                    description="Radius of food spheres [m].",
+                ),
+                ChildDoc(
+                    name="catch_distance",
+                    class_type=float,
+                    description=(
+                        "Distance [m] at which the animat is considered"
+                        " to have reached a food item."
+                    ),
+                ),
+                ChildDoc(
+                    name="spawn_radius",
+                    class_type=float,
+                    description=(
+                        "Max radius [m] of the disc within which food"
+                        " spheres spawn (around the animat)."
+                    ),
+                ),
+                ChildDoc(
+                    name="min_spawn_radius",
+                    class_type=float,
+                    description=(
+                        "Min radius [m] from the animat at which food"
+                        " can spawn (spawn-area exclusion)."
+                    ),
+                ),
+                ChildDoc(
+                    name="spawn_height",
+                    class_type=float,
+                    description=(
+                        "Fixed height [m] at which food spheres spawn."
+                    ),
+                ),
+                ChildDoc(
+                    name="n_food",
+                    class_type=int,
+                    description=(
+                        "Number of good-food spheres active at once."
+                    ),
+                ),
+                ChildDoc(
+                    name="n_bad_food",
+                    class_type=int,
+                    description=(
+                        "Number of bad-food (poison) spheres active at"
+                        " once."
+                    ),
+                ),
+                ChildDoc(
+                    name="food_rgba",
+                    class_type="list[float]",
+                    description="RGBA colour of good-food spheres.",
+                ),
+                ChildDoc(
+                    name="bad_food_rgba",
+                    class_type="list[float]",
+                    description="RGBA colour of bad-food spheres.",
+                ),
+                ChildDoc(
+                    name="food_lifetime",
+                    class_type=float,
+                    description=(
+                        "Minimum lifespan of each food item [s]."
+                        " The food shrinks over its lifetime and"
+                        " disappears when it expires, respawning"
+                        " elsewhere.  Each item gets a random"
+                        " lifetime between ``food_lifetime`` and"
+                        " ``food_lifetime_max``.  Zero or negative"
+                        " means food never expires."
+                    ),
+                ),
+                ChildDoc(
+                    name="food_lifetime_max",
+                    class_type=float,
+                    description=(
+                        "Maximum lifespan of each food item [s]."
+                        " Each item gets a random lifetime between"
+                        " ``food_lifetime`` and ``food_lifetime_max``."
+                        " If equal to ``food_lifetime``, the lifetime"
+                        " is fixed."
+                    ),
+                ),
+                ChildDoc(
+                    name="energy_init",
+                    class_type=float,
+                    description="Initial energy level.",
+                ),
+                ChildDoc(
+                    name="energy_max",
+                    class_type=float,
+                    description=(
+                        "Maximum energy level (cap on recharge)."
+                    ),
+                ),
+                ChildDoc(
+                    name="energy_drain",
+                    class_type=float,
+                    description=(
+                        "Energy drained per simulated second"
+                        " [energy/s].  Default gives ~20 s to grab"
+                        " food before energy runs out."
+                    ),
+                ),
+                ChildDoc(
+                    name="energy_recharge",
+                    class_type=float,
+                    description=(
+                        "Energy restored per good-food consumed."
+                    ),
+                ),
+                ChildDoc(
+                    name="energy_bad",
+                    class_type=float,
+                    description="Energy lost per bad-food touched.",
+                ),
+                ChildDoc(
+                    name="show_on_camera",
+                    class_type=bool,
+                    description=(
+                        "Whether food spheres should be rendered on"
+                        " the camera recording."
+                    ),
+                ),
+                ChildDoc(
+                    name="max_score",
+                    class_type=int,
+                    description=(
+                        "Score at which the game is won.  Zero or"
+                        " negative means endless mode."
+                    ),
+                ),
+                ChildDoc(
+                    name="display_dt",
+                    class_type=float,
+                    description=(
+                        "Minimum interval [s] between viewer text"
+                        " overlay updates.  Throttling avoids"
+                        " contention on the MuJoCo render lock."
+                    ),
+                ),
+            ],
+        )
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.animat_id = kwargs.pop('animat_id', 0)
+        self.radius = kwargs.pop('radius', 0.05)
+        self.catch_distance = kwargs.pop('catch_distance', 0.2)
+        self.spawn_radius = kwargs.pop('spawn_radius', 2.0)
+        self.min_spawn_radius = kwargs.pop('min_spawn_radius', 0.3)
+        self.spawn_height = kwargs.pop('spawn_height', 0.5)
+        self.n_food = kwargs.pop('n_food', 1)
+        self.n_bad_food = kwargs.pop('n_bad_food', 0)
+        self.food_rgba = kwargs.pop('food_rgba', [0.2, 0.8, 0.2, 0.8])
+        self.bad_food_rgba = kwargs.pop(
+            'bad_food_rgba', [0.8, 0.2, 0.2, 0.8],
+        )
+        self.food_lifetime = kwargs.pop('food_lifetime', 10.0)
+        self.food_lifetime_max = kwargs.pop('food_lifetime_max', 20.0)
+        self.energy_init = kwargs.pop('energy_init', 100.0)
+        self.energy_max = kwargs.pop('energy_max', 100.0)
+        self.energy_drain = kwargs.pop('energy_drain', 5.0)
+        self.energy_recharge = kwargs.pop('energy_recharge', 20.0)
+        self.energy_bad = kwargs.pop('energy_bad', 30.0)
+        self.show_on_camera = kwargs.pop('show_on_camera', True)
+        self.max_score = kwargs.pop('max_score', 0)
+        self.display_dt = kwargs.pop('display_dt', 0.05)
+        assert not kwargs, kwargs
+
+
+@dataclass
+class _FoodItem:
+    """A single food sphere in the snake game."""
+    pos: np.ndarray
+    is_bad: bool
+    spawn_time: float
+    rgba: list[float]
+    lifetime: float = 0.0  # per-item lifetime [s]; 0 means never expires
+    geom: object = None  # viewer.user_scn geom reference (or None)
+
+
+class SnakeGame(AnimatViewerExtension):
+    """Snake-like foraging game with energy and difficulty scaling.
+
+    Good-food spheres spawn at random locations within ``spawn_radius``
+    (but not closer than ``min_spawn_radius``) of the animat's centre
+    of mass.  When the animat's CoM comes within ``catch_distance`` of a
+    food item, it is consumed: the score increases, energy is
+    recharged, and a new food item spawns elsewhere.
+
+    Bad-food (poison) spheres deplete energy and score on contact.
+
+    Each food item has a lifespan; if not consumed in time it expires
+    and respawns elsewhere.  The lifespan shortens as the score grows.
+
+    Energy drains continuously; when it reaches zero the game resets
+    (score back to zero, energy restored, all food respawned).
+
+    The score and energy are displayed as an overlay in the MuJoCo
+    viewer (top-left corner) and are also available programmatically
+    via ``self.score`` and ``self.energy``.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.radius = kwargs.pop('radius', 0.05)
+        self.catch_distance = kwargs.pop('catch_distance', 0.2)
+        self.spawn_radius = kwargs.pop('spawn_radius', 2.0)
+        self.min_spawn_radius = kwargs.pop('min_spawn_radius', 0.3)
+        self.spawn_height = kwargs.pop('spawn_height', 0.5)
+        self.n_food = kwargs.pop('n_food', 1)
+        self.n_bad_food = kwargs.pop('n_bad_food', 0)
+        self.food_rgba = kwargs.pop('food_rgba', [0.2, 0.8, 0.2, 0.8])
+        self.bad_food_rgba = kwargs.pop(
+            'bad_food_rgba', [0.8, 0.2, 0.2, 0.8],
+        )
+        self.food_lifetime = kwargs.pop('food_lifetime', 10.0)
+        self.food_lifetime_max = kwargs.pop('food_lifetime_max', 20.0)
+        self.energy_init = kwargs.pop('energy_init', 100.0)
+        self.energy_max = kwargs.pop('energy_max', 100.0)
+        self.energy_drain = kwargs.pop('energy_drain', 5.0)
+        self.energy_recharge = kwargs.pop('energy_recharge', 20.0)
+        self.energy_bad = kwargs.pop('energy_bad', 30.0)
+        self.max_score = kwargs.pop('max_score', 0)
+        self.viewer = kwargs.pop('viewer', None)
+        self.score = 0
+        self.energy = self.energy_init
+        self.foods: list[_FoodItem] = []
+        self._rng = np.random.default_rng()
+        # Throttle viewer text overlay updates to avoid contention on
+        # the MuJoCo render lock (set_texts is expensive when called
+        # every physics sub-step).
+        self._display_dt = kwargs.pop('display_dt', 0.05)
+        self._last_display_time = -1.0
+
+    @classmethod
+    def from_options(
+        cls, config: dict, experiment_options: ExperimentOptions,
+    ):
+        """From options"""
+        del experiment_options
+        return cls(**SnakeGameOptions(**config))
+
+    # -- food spawning --------------------------------------------------
+
+    def _roll_lifetime(self) -> float:
+        """Return a random lifetime for a new food item [s].
+
+        Uniformly sampled between ``food_lifetime`` and
+        ``food_lifetime_max``, then shortened by score.  Returns 0
+        when lifetimes are disabled (``food_lifetime <= 0``).
+        """
+        if self.food_lifetime <= 0:
+            return 0.0
+        lo = self.food_lifetime
+        hi = max(lo, self.food_lifetime_max)
+        base = self._rng.uniform(lo, hi) if hi > lo else lo
+        return max(1.0, base - 0.5*self.score)
+
+    def _food_scale(self, food: _FoodItem, sim_time: float) -> float:
+        """Return the visual scale of a food item based on its age.
+
+        Food starts at full size (1.0) and shrinks linearly to 0 as it
+        approaches its expiry time.  Food with no lifetime (``<= 0``)
+        always returns 1.0.
+        """
+        lifetime = food.lifetime
+        if lifetime <= 0:
+            return 1.0
+        age = sim_time - food.spawn_time
+        if age >= lifetime:
+            return 0.0
+        return max(0.0, 1.0 - age / lifetime)
+
+    def _current_min_spawn(self) -> float:
+        """Return current min spawn radius, growing with score."""
+        return self.min_spawn_radius + 0.02*self.score
+
+    def _spawn_pos(self, com: np.ndarray) -> np.ndarray:
+        """Pick a random position near ``com`` respecting exclusion.
+
+        ``com`` is in SI units (meters).  The position is placed on an
+        annulus between ``_current_min_spawn()`` and ``spawn_radius``
+        at the configured ``spawn_height``.
+        """
+        min_r = self._current_min_spawn()
+        max_r = max(self.spawn_radius, min_r + 0.01)
+        angle = self._rng.uniform(0, 2*np.pi)
+        radius = self._rng.uniform(min_r, max_r)
+        return com + np.array([
+            radius*np.cos(angle),
+            radius*np.sin(angle),
+            self.spawn_height - com[2],
+        ])
+
+    def _make_food(self, com: np.ndarray, sim_time: float, is_bad: bool):
+        """Create and register a new food item."""
+        rgba = self.bad_food_rgba if is_bad else self.food_rgba
+        food = _FoodItem(
+            pos=self._spawn_pos(com),
+            is_bad=is_bad,
+            spawn_time=sim_time,
+            rgba=list(rgba),
+            lifetime=self._roll_lifetime(),
+        )
+        self.foods.append(food)
+        self._draw_food_viewer(food)
+
+    def _respawn_food(self, idx: int, com: np.ndarray, sim_time: float):
+        """Replace food at ``idx`` with a fresh spawn of same type."""
+        food = self.foods[idx]
+        food.pos = self._spawn_pos(com)
+        food.spawn_time = sim_time
+        food.lifetime = self._roll_lifetime()
+        self._update_food_viewer(food, sim_time)
+
+    def _init_foods(self, com: np.ndarray, sim_time: float):
+        """(Re)spawn all food items.
+
+        On the first call (from ``initialize_episode``) the viewer
+        scene is fresh, so geoms are created.  On subsequent calls
+        (game-over reset) existing geoms are reused — only their
+        positions are updated — to avoid orphaned geoms accumulating
+        in ``viewer.user_scn``.
+        """
+        n_total = self.n_food + self.n_bad_food
+        if len(self.foods) == n_total:
+            # Reuse existing food items and their viewer geoms
+            for i, food in enumerate(self.foods):
+                food.is_bad = i >= self.n_food
+                food.rgba = list(
+                    self.bad_food_rgba if food.is_bad else self.food_rgba
+                )
+                food.pos = self._spawn_pos(com)
+                food.spawn_time = sim_time
+                food.lifetime = self._roll_lifetime()
+                self._update_food_viewer(food, sim_time)
+        else:
+            self.foods.clear()
+            for _ in range(self.n_food):
+                self._make_food(com, sim_time, is_bad=False)
+            for _ in range(self.n_bad_food):
+                self._make_food(com, sim_time, is_bad=True)
+
+    # -- rendering ------------------------------------------------------
+
+    def render_food(self, scene, food: _FoodItem, scale: float = 1.0):
+        """Add a single food sphere geom to ``scene``.
+
+        ``scale`` shrinks the sphere radius (1.0 = full size).
+        """
+        radius = self.radius * scale * self.units.meters
+        return create_sphere(
+            scene,
+            size=[radius, 0, 0],
+            pos=[p*self.units.meters for p in food.pos],
+            rgba=food.rgba,
+        )
+
+    def render_scene(self, scene):
+        """Render all food spheres onto a scene.
+
+        Called after ``mjv_updateScene`` clears the scene, before
+        ``mjr_render``.
+        """
+        sim_time = getattr(self, '_last_sim_time', 0.0)
+        for food in self.foods:
+            self.render_food(scene, food, self._food_scale(food, sim_time))
+
+    def _viewer_scn(self):
+        """Return the viewer ``user_scn`` if available, else ``None``."""
+        viewer = self.viewer
+        if viewer is None:
+            return None
+        return getattr(viewer, 'user_scn', None)
+
+    def _draw_food_viewer(self, food: _FoodItem):
+        """Create a persistent geom for ``food`` on the viewer scene.
+
+        Stores the returned geom reference on ``food.geom`` so it can
+        be updated in-place when the food moves.
+        """
+        scn = self._viewer_scn()
+        if scn is None:
+            return
+        food.geom = self.render_food(scn, food)
+
+    def _update_food_viewer(self, food: _FoodItem, sim_time: float = 0.0):
+        """Update an existing food geom's position, size, and colour.
+
+        The sphere shrinks linearly toward zero as the food approaches
+        its expiry time.  Colour is refreshed so type changes (good ↔
+        bad) are visible after a game reset.
+        """
+        if food.geom is None:
+            return
+        scale = self._food_scale(food, sim_time)
+        radius = self.radius * scale * self.units.meters
+        food.geom.pos = [p * self.units.meters for p in food.pos]
+        food.geom.size[:3] = radius
+        food.geom.rgba = food.rgba
+
+    def _update_display(self, task, sim_time: float = 0.0, force: bool = False):
+        """Push the score + energy overlay to the viewer (if any).
+
+        ``set_texts`` acquires the MuJoCo render lock and is expensive
+        when called every physics sub-step.  Throttle it to at most
+        once per ``_display_dt`` seconds of simulation time, unless
+        ``force`` is set (e.g. on game reset or initialisation).
+        """
+        if not force and sim_time - self._last_display_time < self._display_dt:
+            return
+        self._last_display_time = sim_time
+        viewer = getattr(task, 'viewer', None) or self.viewer
+        if viewer is None:
+            return
+        set_texts = getattr(viewer, 'set_texts', None)
+        if set_texts is None:
+            return
+        if self.max_score > 0:
+            score_str = f"Score {self.score}/{self.max_score}"
+        else:
+            score_str = f"Score {self.score}"
+        set_texts([(
+            mujoco.mjtFontScale.mjFONTSCALE_150,
+            mujoco.mjtGridPos.mjGRID_TOPLEFT,
+            "Snake",
+            f"{score_str}  Energy {self.energy:.0f}",
+        )])
+
+    # -- game lifecycle -------------------------------------------------
+
+    def initialize_episode(self, task: ExperimentTask, physics: Physics):
+        """Initialise episode"""
+        del physics
+        self.units = task.units
+        self.viewer = task.viewer
+        self.bind_links(task)
+        self.score = 0
+        self.energy = self.energy_init
+        self.foods.clear()  # discard stale geoms (user_scn was reset)
+        com = self.com_position(0)
+        self._init_foods(com, 0.0)
+        self._last_sim_time = 0.0
+        self._last_display_time = -1.0
+        self._update_display(task, sim_time=0.0, force=True)
+
+    def after_step(self, task: ExperimentTask, physics: Physics):
+        """After step"""
+        if self.links is None:
+            return
+        sim_time = physics.time() / task.units.seconds
+        dt = task.units.seconds * physics.timestep()
+        com = self.com_position(task.iteration - 1)
+
+        # Continuous energy drain
+        self.energy -= self.energy_drain * dt
+        if self.energy <= 0:
+            # Game over -> reset
+            self.score = 0
+            self.energy = self.energy_init
+            self._init_foods(com, sim_time)
+            self._update_display(task, sim_time=sim_time, force=True)
+            return
+
+        # Check each food for consumption or expiry
+        for idx in range(len(self.foods)):
+            food = self.foods[idx]
+            dist = np.linalg.norm(food.pos[:2] - com[:2])
+            if dist < self.catch_distance:
+                if food.is_bad:
+                    self.score = max(0, self.score - 1)
+                    self.energy -= self.energy_bad
+                else:
+                    self.score += 1
+                    self.energy = min(
+                        self.energy_max,
+                        self.energy + self.energy_recharge,
+                    )
+                    # Grow the play area slightly
+                    self.spawn_radius *= 1.05
+                self._respawn_food(idx, com, sim_time)
+            else:
+                lifetime = food.lifetime
+                if lifetime > 0 and sim_time - food.spawn_time > lifetime:
+                    self._respawn_food(idx, com, sim_time)
+
+        # Update food geom sizes (shrink toward expiry)
+        self._last_sim_time = sim_time
+        for food in self.foods:
+            self._update_food_viewer(food, sim_time)
+
+        # Clamp energy
+        self.energy = max(0.0, min(self.energy_max, self.energy))
+        self._update_display(task, sim_time=sim_time)
