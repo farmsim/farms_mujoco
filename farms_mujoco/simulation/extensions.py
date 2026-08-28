@@ -153,7 +153,7 @@ class AnimatViewerExtension(TaskExtension):
 
 
 class MjcfSaver(TaskExtension):
-    """CoM viewer"""
+    """MJCF model saver"""
 
     def __init__(self, path):
         super().__init__()
@@ -191,31 +191,30 @@ class CameraFollowerOptions(Options):
             class_type=cls,
             children=[
                 ChildDoc(
+                    name="animat_id",
+                    class_type=int,
+                    description="Index of the animat to follow.",
+                ),
+                ChildDoc(
                     name="distance",
                     class_type=float,
-                    description="Camera zoom.",
+                    description="Camera distance [m].",
                 ),
                 ChildDoc(
-                    name="free_camera",
-                    class_type=bool,
-                    description=(
-                        "Whether the camera should be free moving instead of"
-                        " following the animat."
-                    ),
+                    name="azimuth",
+                    class_type=float,
+                    description="Camera azimuth [deg].",
                 ),
                 ChildDoc(
-                    name="top_camera",
-                    class_type=bool,
-                    description=(
-                        "Whether the camera should look at the animat from"
-                        " above."
-                    ),
+                    name="elevation",
+                    class_type=float,
+                    description="Camera elevation [deg].",
                 ),
                 ChildDoc(
-                    name="rotating_camera",
-                    class_type=bool,
+                    name="angular_velocity",
+                    class_type=float,
                     description=(
-                        "Whether the camera should turn around the model."
+                        "Camera azimuth rotation speed [deg/s]."
                     ),
                 ),
             ],
@@ -495,7 +494,7 @@ class TrailLinkViewer(AnimatViewerExtension):
                 self.viewer.user_scn,
                 self.pos_old*self.units.meters,
                 self.pos_new*self.units.meters,
-                width=5,
+                width=self.width,
                 rgba=self.rgba,
             )
             self.pos_old = self.pos_new
