@@ -40,6 +40,67 @@ from farms_core.io.sdf import (
 MIN_MASS = 1e-15
 MIN_INERTIA = 1e-15
 
+# Mesh loading caches — avoid reloading the same mesh file when
+# multiple animats share the same model (e.g. schooling).
+_TRIMESH_CACHE: dict[str, tri.Trimesh] = {}
+_WAVEFRONT_CACHE: dict[str, pwf.Wavefront] = {}
+
+
+def load_trimesh(mesh_path: str, headless: bool = False) -> tri.Trimesh:
+    """Load a trimesh with caching
+
+    When headless is True, textures are not loaded (geometry only).
+
+    """
+    if mesh_path not in _TRIMESH_CACHE:
+        if headless:
+            from trimesh.exchange.obj import load_obj
+            with open(mesh_path, 'rb') as f:
+                result = load_obj(f)
+            if isinstance(result, dict):
+                # load_obj returns a dict with 'geometry' key
+                geometries = result.get('geometry', {})
+                if isinstance(geometries, dict):
+                    meshes = [tri.Trimesh(**g) if isinstance(g, dict) else g
+                              for g in geometries.values()]
+                else:
+                    meshes = [geometries]
+                _TRIMESH_CACHE[mesh_path] = (
+                    tri.util.concatenate(meshes) if len(meshes) > 1
+                    else meshes[0] if meshes
+                    else tri.Trimesh()
+                )
+            elif isinstance(result, tri.Scene):
+                meshes = [
+                    tri.Trimesh(vertices=g.vertices, faces=g.faces)
+                    for g in result.geometry.values()
+                ]
+                _TRIMESH_CACHE[mesh_path] = (
+                    tri.util.concatenate(meshes) if len(meshes) > 1
+                    else meshes[0] if meshes
+                    else tri.Trimesh()
+                )
+            elif isinstance(result, tri.Trimesh):
+                _TRIMESH_CACHE[mesh_path] = result
+            else:
+                _TRIMESH_CACHE[mesh_path] = tri.load_mesh(mesh_path)
+        else:
+            _TRIMESH_CACHE[mesh_path] = tri.load_mesh(mesh_path)
+    return _TRIMESH_CACHE[mesh_path]
+
+
+def load_wavefront(mesh_path: str) -> pwf.Wavefront:
+    """Load a wavefront OBJ with caching"""
+    if mesh_path not in _WAVEFRONT_CACHE:
+        _WAVEFRONT_CACHE[mesh_path] = pwf.Wavefront(mesh_path)
+    return _WAVEFRONT_CACHE[mesh_path]
+
+
+def clear_mesh_cache():
+    """Clear the mesh loading caches"""
+    _TRIMESH_CACHE.clear()
+    _WAVEFRONT_CACHE.clear()
+
 
 def get_prefix(animat_i):
     """Get animat prefix"""
@@ -178,6 +239,7 @@ def mjc_add_link(
     # NOTE: obj_use_composite seems to be needed for Wavefront meshes which are
     # not watertight or have disconnected parts.
     texture_repeat = kwargs.pop('texture_repeat', 1)
+    headless = kwargs.pop('headless', False)
     assert not kwargs, kwargs
 
     # Links (bodies)
@@ -401,7 +463,7 @@ def mjc_add_link(
                         extension = '.stl'
                         new_path = f'{path}_composite.stl'
                 if overwrite or not os.path.isfile(new_path):
-                    mesh = tri.load_mesh(mesh_path)
+                    mesh = load_trimesh(mesh_path, headless=headless)
                     if isinstance(mesh, tri.Scene):
                         mesh = tri.util.concatenate(tuple(
                             tri.Trimesh(vertices=g.vertices, faces=g.faces)
@@ -420,8 +482,8 @@ def mjc_add_link(
                             f"{mat_path} exists, either overwrite or change name"
                         )
                     mesh_kwargs = {}
-                    if extension == '.obj':
-                        mesh_kwargs['header'] = "FARMS composite mesh",
+                    if extension == '.obj' and not headless:
+                        mesh_kwargs['header'] = "FARMS composite mesh"
                         mesh_kwargs['mtl_name'] = f"{mesh_name}_composite.mtl"
                         mesh_kwargs['include_normals'] = True
                         mesh_kwargs['include_color'] = True
@@ -436,9 +498,9 @@ def mjc_add_link(
                 mesh_path = new_path
 
             # Wavefront textures
-            if extension == '.obj':
+            if extension == '.obj' and not headless:
                 try:
-                    wavefront = pwf.Wavefront(mesh_path)
+                    wavefront = load_wavefront(mesh_path)
                 except pwf.exceptions.PywavefrontException as err:
                     pylog.error("Error loading %s", mesh_path)
                     raise err
@@ -466,7 +528,7 @@ def mjc_add_link(
                     geom_kwargs['material'] = f'{prefix}material_{mat_id}'
 
             # Convexify
-            mesh = tri.load_mesh(mesh_path)
+            mesh = load_trimesh(mesh_path, headless=headless)
             if (
                     isinstance(element, Collision)
                     and concave
@@ -745,6 +807,7 @@ def add_link_recursive(
     sdf_joint = kwargs.pop('sdf_joint', None)
     spawn_mode = kwargs.pop('spawn_mode', None)
     prefix = kwargs.get('prefix', '')
+    headless = kwargs.pop('headless', False)
     mjc_parent = kwargs.pop(
         'mjc_parent',
         (
@@ -764,6 +827,7 @@ def add_link_recursive(
         directory=sdf.directory,
         spawn_mode=spawn_mode,
         mjc_parent=mjc_parent,
+        headless=headless,
         **kwargs,
     )
 
@@ -777,6 +841,7 @@ def add_link_recursive(
             sdf_parent=sdf_link,
             sdf_joint=sdf.get_parent_joint(link=child),
             spawn_mode=spawn_mode,
+            headless=headless,
             **kwargs
         )
 
@@ -828,6 +893,7 @@ def sdf2mjcf(
         else SimulationUnitScaling()
     ))
     texture_repeat = simulation_options.mujoco.texture_repeat
+    headless = kwargs.pop('headless', False)
 
     if mjcf_model is None:
         mjcf_model = mjcf.RootElement()
@@ -869,6 +935,7 @@ def sdf2mjcf(
         spawn_mode=spawn_mode,
         mjc_parent=None,
         prefix=prefix,
+        headless=headless,
         **kwargs,
     )
 
@@ -887,6 +954,7 @@ def sdf2mjcf(
             units=units,
             texture_repeat=texture_repeat,
             prefix=prefix,
+            headless=headless,
             **kwargs,
         )
 
@@ -1383,6 +1451,12 @@ def setup_mjcf_xml(
     animats_options = experiment_options.animats
     arena_options = experiment_options.arenas[0]
 
+    # Skip texture loading in headless mode
+    headless = kwargs.pop(
+        'headless',
+        simulation_options.runtime.headless if simulation_options else False,
+    )
+
     units = kwargs.pop(
         'units',
         simulation_options.units
@@ -1413,6 +1487,7 @@ def setup_mjcf_xml(
         friction=[0, 0, 0],
         contype=1,
         conaffinity=2*31-1,
+        headless=headless,
     )
     if 'hfield' in info:
         hfield = info['hfield']
@@ -1437,6 +1512,7 @@ def setup_mjcf_xml(
             friction=[0, 0, 0],
             contype=0,
             conaffinity=0,
+            headless=headless,
         )
         water = mjcf_model.worldbody.body[-1]
         water.pos = [0, 0, arena_options.water.height*units.meters]
@@ -1471,6 +1547,7 @@ def setup_mjcf_xml(
             simulation_options=simulation_options,
             contype=2**(animat_i+1),
             conaffinity=2*31-1,
+            headless=headless,
             **mujoco_kwargs,
         )
 
@@ -1482,7 +1559,7 @@ def setup_mjcf_xml(
     mjcf_model.compiler.balanceinertia = False
     mjcf_model.compiler.inertiafromgeom = False
     mjcf_model.compiler.fusestatic = True
-    mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', False)
+    mjcf_model.compiler.discardvisual = kwargs.pop('discardvisual', headless)
     # Disable lengthrange computation for muscles
     mjcf_model.compiler.lengthrange.mode = "none"
     mjcf_model.compiler.lengthrange.useexisting = True
