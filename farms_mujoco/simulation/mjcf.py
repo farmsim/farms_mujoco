@@ -1486,7 +1486,7 @@ def setup_mjcf_xml(
         simulation_options=simulation_options,
         friction=[0, 0, 0],
         contype=1,
-        conaffinity=2*31-1,
+        conaffinity=2**31-1,
         headless=headless,
     )
     if 'hfield' in info:
@@ -1545,8 +1545,8 @@ def setup_mjcf_xml(
             use_actuators=True,
             animat_options=animat_options,
             simulation_options=simulation_options,
-            contype=2**(animat_i+1),
-            conaffinity=2*31-1,
+            contype=2**((animat_i % 30) + 1),
+            conaffinity=2**31-1 - 2**((animat_i % 30) + 1),  # all bits except own
             headless=headless,
             **mujoco_kwargs,
         )
