@@ -207,13 +207,11 @@ class SwimmingExtension(AnimatExtension):
                 sc.xfrc_force_x:sc.xfrc_torque_z+1,
             ]
         )
-        for force_i, (rotation_mat, force_local) in enumerate(zip(
-                physics.data.xmat[indices],
-                physics.data.xfrc_applied[indices],
-        )):
-            physics.data.xfrc_applied[indices[force_i]] = (
-                rotation_mat.reshape([3, 3])  # Local to global frame
-                @ force_local.reshape([3, 2], order='F')
-            ).flatten(order='F')
+        # Rotate forces from local to global frame (vectorised batch)
+        mats = physics.data.xmat[indices].reshape(-1, 3, 3)
+        forces = physics.data.xfrc_applied[indices].reshape(-1, 3, 2, order='F')
+        physics.data.xfrc_applied[indices, :] = (
+            np.matmul(mats, forces).reshape(-1, 6, order='F')
+        )
         physics.data.xfrc_applied[indices, :3] *= task.units.newtons
         physics.data.xfrc_applied[indices, 3:] *= task.units.torques
