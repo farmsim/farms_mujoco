@@ -69,23 +69,54 @@ cdef void compute_force(
     DTYPEv1 coefficients,
     DTYPEv1 buoyancy,
     double viscosity,
+    double mass,
+    double dt,
 ):
     """Compute force and torque
+
+    Semi-implicit (predictor-corrector) drag: predicts the
+    end-of-step velocity and computes the drag force from the
+    predicted velocity rather than the current velocity. This
+    stabilises the quadratic drag (F = -c*v*|v|) for large
+    timesteps, because high velocities produce drag forces that
+    reduce the velocity rather than amplify it.
 
     :param force: Returned force applied to the link in URDF frame
     :param link_velocity: Link linear velocity in URDF frame
     :param coefficients: Drag coefficients
     :param buoyancy: Buoyancy force
     :param viscosity: Fluid viscosity
+    :param mass: Link mass
+    :param dt: Timestep
 
     """
     cdef unsigned int i
+    cdef double v, f_other, a, b, c_coef, v_new, force_drag
     for i in range(3):
-        force[i] = link_velocity[i]*link_velocity[i]
-        if link_velocity[i] < 0:
-            force[i] *= -1
-        force[i] *= viscosity*coefficients[i]
-        force[i] += buoyancy[i]
+        v = link_velocity[i]
+        f_other = buoyancy[i]
+        c_coef = viscosity * coefficients[i]
+        if mass > 0 and dt > 0 and c_coef > 0:
+            # Implicit (backward Euler) solution for quadratic drag:
+            #   m*(v_new - v)/dt = -c*v_new*|v_new| + f_other
+            # Solve per axis (drag is decoupled in URDF frame):
+            #   c*v_new² + (m/dt)*v_new - (m/dt*v + f_other) = 0  (v_new > 0)
+            #   c*v_new² - (m/dt)*v_new + (m/dt*v + f_other) = 0  (v_new < 0)
+            # Closed form (stable root):
+            a = mass / dt
+            b = a * v + f_other
+            # Solve: c_coef*v_new*|v_new| + a*v_new = b
+            # If b >= 0, v_new >= 0: c_coef*v_new² + a*v_new - b = 0
+            # If b < 0, v_new < 0: c_coef*v_new² - a*v_new + b = 0  (substitute u=-v_new)
+            if b >= 0:
+                v_new = (-a + (a*a + 4*c_coef*b)**0.5) / (2*c_coef)
+            else:
+                v_new = -((-a + (a*a - 4*c_coef*b)**0.5) / (2*c_coef))
+            # Force that produces this velocity change
+            force[i] = mass * (v_new - v) / dt
+        else:
+            # Fallback: explicit (original behaviour)
+            force[i] = c_coef * v * abs(v) + f_other
 
 
 cdef void compute_torque(
@@ -120,7 +151,7 @@ cdef void compute_buoyancy(
     DTYPEv1 buoyancy,
     DTYPEv1 quat_c,
     DTYPEv1 tmp4,
-    DTYPEv1 tmp,
+    DTYPEv1 force_global,
 ):
     """Compute buoyancy
 
@@ -134,18 +165,23 @@ cdef void compute_buoyancy(
     :param gravity: Gravity Z component in global frame
     :param buoyancy: Returned buoyancy force in URDF frame
     :param quat_c: Temporary conjugate quaternion
-    :param tmp4: Temporary quaternion
-    :param tmp: Temporary quaternion
+    :param tmp4: Temporary quaternion (4D)
+    :param force_global: Force in global frame
 
     """
     if mass > 0 and position - height < surface:
-        tmp[0] = 0
-        tmp[1] = 0
-        tmp[2] = -water_density*mass*gravity/density*min(
+        force_global[0] = 0
+        force_global[1] = 0
+        # tmp[2] = -1000*mass*gravity/density*min(
+        #     max(surface-position-height, 0)/(2*height),
+        #     #   ( surface + height - position ) / (2 * height),
+        #     1,
+        # )
+        force_global[2] = -water_density*mass*gravity/density*min(
             ( surface + height - position ) / (2 * height),
             1,
         )
-        quat_rot(tmp, global2urdf, quat_c, tmp4, buoyancy)
+        quat_rot(force_global, global2urdf, quat_c, tmp4, buoyancy)
     else:
         for i in range(3):
             buoyancy[i] = 0
@@ -167,6 +203,7 @@ cpdef bint drag_forces(
         double density,
         double gravity,
         bint use_buoyancy,
+        double dt=0.0,
 ):
     """Drag swimming
 
@@ -233,7 +270,7 @@ cpdef bint drag_forces(
             buoyancy=buoyancy,
             quat_c=quat_c,
             tmp4=tmp4,
-            tmp=tmp,
+            force_global=tmp,
         )
 
     # Add fluid velocity
@@ -255,6 +292,8 @@ cpdef bint drag_forces(
         coefficients=coefficients[0],
         buoyancy=buoyancy,
         viscosity=water.viscosity(time, pos_x, pos_y, pos_z),
+        mass=mass,
+        dt=dt,
     )
     compute_torque(
         torque=torque,
@@ -279,19 +318,19 @@ cdef class WaterProperties:
     def __init__(self):
         super(WaterProperties, self).__init__()
 
-    cdef double surface(self, double t, double x, double y):  # nogil
+    cdef double surface(self, double t, double x, double y):
         """Surface"""
         return 0
 
-    cdef double density(self, double t, double x, double y, double z):  # nogil
+    cdef double density(self, double t, double x, double y, double z):
         """Density"""
         return 1000
 
-    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):  # nogil
+    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):
         """Velocity in global frame"""
         return np.array([0, 0, 0])
 
-    cdef double viscosity(self, double t, double x, double y, double z):  # nogil
+    cdef double viscosity(self, double t, double x, double y, double z):
         """Viscosity"""
         return 1.0
 
@@ -327,7 +366,7 @@ cdef class WaterPropertiesConstant(WaterProperties):
         """Viscosity"""
         return self._viscosity
 
-    cpdef void set_velocity(self, double t, double vx, double vy, double vz):
+    cpdef void set_velocity(self, double vx, double vy, double vz):
         """Set velocity"""
         self._velocity[0] = vx
         self._velocity[1] = vy
@@ -349,19 +388,19 @@ cdef class WaterPropertiesExtension(WaterProperties):
         self._velocity = velocity
         self._viscosity = viscosity
 
-    cdef double surface(self, double t, double x, double y):  # nogil
+    cdef double surface(self, double t, double x, double y):
         """Surface"""
         return self._surface(t, x, y)
 
-    cdef double density(self, double t, double x, double y, double z):  # nogil
+    cdef double density(self, double t, double x, double y, double z):
         """Density"""
         return self._density(t, x, y, z)
 
-    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):  # nogil
+    cdef DTYPEv1 velocity(self, double t, double x, double y, double z):
         """Velocity in global frame"""
         return self._velocity(t, x, y, z)
 
-    cdef double viscosity(self, double t, double x, double y, double z):  # nogil
+    cdef double viscosity(self, double t, double x, double y, double z):
         """Viscosity"""
         return self._viscosity(t, x, y, z)
 
@@ -446,7 +485,7 @@ cdef class SwimmingHandler:
         if self.sph:
             self.water._surface = 1e8
 
-    cpdef step(self, double time, unsigned int iteration):
+    cpdef step(self, double time, unsigned int iteration, double dt=0.0):
         """Swimming step"""
         cdef unsigned int i
         cdef bint apply_force = 1
@@ -469,6 +508,7 @@ cdef class SwimmingHandler:
                         density=self.densities[i],
                         gravity=-9.81,
                         use_buoyancy=self.buoyancy,
+                        dt=dt,
                     )
 
     cpdef set_frame(self, int frame):

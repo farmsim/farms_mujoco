@@ -193,7 +193,11 @@ class SwimmingExtension(AnimatExtension):
 
         # Compute fluid forces
         buff_iter = task.iteration % task.buffer_size # handle rolling buffer
-        self._handler.step(physics.time()/task.units.seconds, buff_iter)
+        self._handler.step(
+            physics.time()/task.units.seconds,
+            buff_iter,
+            task.physics_timestep,
+        )
 
         # Set fluid forces in physics engine
         indices = task.maps[self.animat_i]['sensors']['data2xfrc']
