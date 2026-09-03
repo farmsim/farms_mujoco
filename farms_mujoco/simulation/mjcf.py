@@ -54,35 +54,41 @@ def load_trimesh(mesh_path: str, headless: bool = False) -> tri.Trimesh:
     """
     if mesh_path not in _TRIMESH_CACHE:
         if headless:
-            from trimesh.exchange.obj import load_obj
-            with open(mesh_path, 'rb') as f:
-                result = load_obj(f)
-            if isinstance(result, dict):
-                # load_obj returns a dict with 'geometry' key
-                geometries = result.get('geometry', {})
-                if isinstance(geometries, dict):
-                    meshes = [tri.Trimesh(**g) if isinstance(g, dict) else g
-                              for g in geometries.values()]
+            _, ext = os.path.splitext(mesh_path)
+            if ext.lower() == '.obj':
+                from trimesh.exchange.obj import load_obj
+                with open(mesh_path, 'rb') as f:
+                    result = load_obj(f)
+                if isinstance(result, dict):
+                    # load_obj returns a dict with 'geometry' key
+                    geometries = result.get('geometry', {})
+                    if isinstance(geometries, dict):
+                        meshes = [tri.Trimesh(**g) if isinstance(g, dict) else g
+                                  for g in geometries.values()]
+                    else:
+                        meshes = [geometries]
+                    _TRIMESH_CACHE[mesh_path] = (
+                        tri.util.concatenate(meshes) if len(meshes) > 1
+                        else meshes[0] if meshes
+                        else tri.Trimesh()
+                    )
+                elif isinstance(result, tri.Scene):
+                    meshes = [
+                        tri.Trimesh(vertices=g.vertices, faces=g.faces)
+                        for g in result.geometry.values()
+                    ]
+                    _TRIMESH_CACHE[mesh_path] = (
+                        tri.util.concatenate(meshes) if len(meshes) > 1
+                        else meshes[0] if meshes
+                        else tri.Trimesh()
+                    )
+                elif isinstance(result, tri.Trimesh):
+                    _TRIMESH_CACHE[mesh_path] = result
                 else:
-                    meshes = [geometries]
-                _TRIMESH_CACHE[mesh_path] = (
-                    tri.util.concatenate(meshes) if len(meshes) > 1
-                    else meshes[0] if meshes
-                    else tri.Trimesh()
-                )
-            elif isinstance(result, tri.Scene):
-                meshes = [
-                    tri.Trimesh(vertices=g.vertices, faces=g.faces)
-                    for g in result.geometry.values()
-                ]
-                _TRIMESH_CACHE[mesh_path] = (
-                    tri.util.concatenate(meshes) if len(meshes) > 1
-                    else meshes[0] if meshes
-                    else tri.Trimesh()
-                )
-            elif isinstance(result, tri.Trimesh):
-                _TRIMESH_CACHE[mesh_path] = result
+                    _TRIMESH_CACHE[mesh_path] = tri.load_mesh(mesh_path)
             else:
+                # Non-OBJ meshes (STL, PLY, GLTF, etc.): use the format-
+                # agnostic loader which auto-detects the mesh format.
                 _TRIMESH_CACHE[mesh_path] = tri.load_mesh(mesh_path)
         else:
             _TRIMESH_CACHE[mesh_path] = tri.load_mesh(mesh_path)
