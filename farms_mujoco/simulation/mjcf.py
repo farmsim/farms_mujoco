@@ -287,43 +287,7 @@ def mjc_add_link(
                 | SpawnMode.CORONAL3
                 | SpawnMode.TRANSVERSE3
             ):
-                match spawn_mode:
-                    case SpawnMode.ROTX:
-                        types = ['hinge']
-                        axes = [[1, 0, 0]]
-                    case SpawnMode.ROTY:
-                        types = ['hinge']
-                        axes = [[0, 1, 0]]
-                    case SpawnMode.ROTZ:
-                        types = ['hinge']
-                        axes = [[0, 0, 1]]
-                    case SpawnMode.SAGITTAL:
-                        types = ['slide', 'slide', 'hinge']
-                        axes = [[1, 0, 0], [0, 0, 1], [0, 1, 0]]
-                    case SpawnMode.CORONAL:
-                        types = ['slide', 'slide', 'hinge']
-                        axes = [[0, 1, 0], [0, 0, 1], [1, 0, 0]]
-                    case SpawnMode.TRANSVERSE:
-                        types = ['slide', 'slide', 'hinge']
-                        axes = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-                    case SpawnMode.SAGITTAL0:
-                        types = ['slide', 'slide']
-                        axes = [[1, 0, 0],  [0, 0, 1]]
-                    case SpawnMode.CORONAL0:
-                        types = ['slide',  'slide']
-                        axes = [[0, 1, 0],  [0, 0, 1]]
-                    case SpawnMode.TRANSVERSE0:
-                        types = ['slide',  'slide']
-                        axes = [[1, 0, 0],  [0, 1, 0]]
-                    case SpawnMode.SAGITTAL3:
-                        types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
-                        axes = [[1,0,0], [0,0,1], [1,0,0], [0,1,0], [0,0,1]]
-                    case SpawnMode.CORONAL3:
-                        types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
-                        axes = [[0,1,0], [0,0,1], [1,0,0], [0,1,0], [0,0,1]]
-                    case SpawnMode.TRANSVERSE3:
-                        types = ['slide', 'slide', 'hinge', 'hinge', 'hinge']
-                        axes = [[1,0,0], [0,1,0], [1,0,0], [0,1,0], [0,0,1]]
+                types, axes = SpawnMode.info(spawn_mode)
                 for i, (joint_type, axis) in enumerate(zip(types, axes)):
                     if i > 0:
                         body_name = f'{prefix}root{i}_b_{link_name}'
@@ -1027,6 +991,26 @@ def sdf2mjcf(
                 ang_vel*units.angular_velocity
                 for ang_vel in animat_options.spawn.velocity[3:6]
             ]
+        else:
+            types, axes = SpawnMode.info(animat_options.spawn.mode)
+            vel_lin = units.velocity
+            vel_ang = units.angular_velocity
+            for i, (joint_type, axis) in enumerate(zip(types, axes)):
+                match (joint_type, axis):
+                    case ('hinge', [1, 0, 0]):
+                        qvel[i] = animat_options.spawn.velocity[0]*vel_lin
+                    case ('hinge', [0, 1, 0]):
+                        qvel[i] = animat_options.spawn.velocity[1]*vel_lin
+                    case ('hinge', [0, 0, 1]):
+                        qvel[i] = animat_options.spawn.velocity[2]*vel_lin
+                    case ('slide', [1, 0, 0]):
+                        qvel[i] = animat_options.spawn.velocity[3]*vel_ang
+                    case ('slide', [0, 1, 0]):
+                        qvel[i] = animat_options.spawn.velocity[4]*vel_ang
+                    case ('slide', [0, 0, 1]):
+                        qvel[i] = animat_options.spawn.velocity[5]*vel_ang
+        pylog.debug(joint_name_index_pos)
+        pylog.debug(joint_name_index_vel)
         mjcf_model.keyframe.add(
             "key",
             name="initial",
