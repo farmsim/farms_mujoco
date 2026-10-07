@@ -113,6 +113,36 @@ def get_prefix(animat_i):
     return f'a{animat_i}_'
 
 
+def scale_solref(solref, units):
+    """Scale solref from real-world to simulation units.
+
+    Positive (timeconst, dampratio): timeconst is a time [s] → multiply.
+    Direct (−stiffness, −damping): stiffness [1/s²], damping [1/s] → divide
+    (MuJoCo's aref is acceleration-based: ar = −b·(Jv) − k·r, so b [1/s],
+    k [1/s²] — inverse-time quantities scale by 1/units.secondsⁿ).
+    """
+    scaled = solref.copy()
+    if all(sol < 0 for sol in scaled):
+        scaled[0] /= units.seconds**2  # stiffness  [1/s²]: inverse-time² → divide
+        scaled[1] /= units.seconds     # damping    [1/s]:  inverse-time  → divide
+    else:
+        scaled[0] *= units.seconds     # timeconst  [s]:   time → multiply
+    return scaled
+
+
+def scale_solimp(solimp, units):
+    """Scale solimp from real-world to simulation units.
+
+    Only index 2 (width) is a length [m]; all others are dimensionless.
+    """
+    return [
+        value*units.meters
+        if i == 2
+        else value
+        for i, value in enumerate(solimp)
+    ]
+
+
 def resolve_path(path, local_path):
     """Resolve path"""
     if os.path.isfile(path):
@@ -410,20 +440,9 @@ def mjc_add_link(
             collision_kwargs['condim'] = 6
             collision_kwargs['group'] = 2
             if solref is not None:
-                scaled_solref = solref.copy()
-                if all(sol < 0 for sol in scaled_solref):
-                    scaled_solref[0] *= units.newtons/units.meters
-                    scaled_solref[1] *= units.newtons/units.velocity
-                else:
-                    scaled_solref[0] *= units.seconds
-                collision_kwargs['solref'] = scaled_solref
+                collision_kwargs['solref'] = scale_solref(solref, units)
             if solimp is not None:
-                collision_kwargs['solimp'] = [
-                    value*units.meters
-                    if i == 2
-                    else value
-                    for i, value in enumerate(solimp)
-                ]
+                collision_kwargs['solimp'] = scale_solimp(solimp, units)
 
         # Mesh
         if isinstance(element.geometry, Mesh):
@@ -1332,14 +1351,9 @@ def sdf2mjcf(
         }
         pair_options = {}
         if solref is not None:
-            pair_options['solref'] = solref
+            pair_options['solref'] = scale_solref(solref, units)
         if solimp is not None:
-            pair_options['solimp'] = [
-                value*units.meters
-                if i == 2
-                else value
-                for i, value in enumerate(solimp)
-            ]
+            pair_options['solimp'] = scale_solimp(solimp, units)
         for pair_i, (link1, link2) in enumerate(
                 animat_options.morphology.self_collisions
         ):
@@ -1809,14 +1823,9 @@ def setup_mjcf_xml(
             joint.stiffness += joint_options.stiffness*units.angular_stiffness
             joint.damping += joint_options.damping*units.angular_damping
             if _solreflimit := joint_options.extras.get('solreflimit'):
-                if all(sol < 0 for sol in _solreflimit):
-                    _solreflimit[0] *= units.newtons/units.meters
-                    _solreflimit[1] *= units.newtons/units.velocity
-                else:
-                    _solreflimit[0] *= units.seconds
-                joint.solreflimit = joint_options.extras['solreflimit']
+                joint.solreflimit = scale_solref(_solreflimit, units)
             if _solimplimit := joint_options.extras.get('solimplimit'):
-                joint.solimplimit = _solimplimit
+                joint.solimplimit = scale_solimp(_solimplimit, units)
             if _margin := joint_options.extras.get('margin'):
                 joint.margin = _margin # radians
 
