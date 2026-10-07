@@ -82,6 +82,8 @@ def get_sensor_maps(physics, verbose=True):
         'muscleIa', 'muscleII', 'muscleIb',
         # Contacts
         'touch',
+        # Rays
+        'rangefinder',
     ]
     sensor_maps = {
         sensor: {
@@ -404,6 +406,24 @@ def get_physics2data_maps(physics, sensor_data, sensor_maps, prefix=''):
         for name in sensor_data.links.names
     ])
 
+    # Rays
+    rays_names = getattr(sensor_data, 'rays', None)
+    if rays_names is not None and rays_names.names:
+        sensor_maps['rangefinder2data'] = np.array([
+            sensor_maps['rangefinder']['indices'][
+                sensor_maps['rangefinder']['names'].index(
+                    f'rangefinder_{prefix}{ray_name}'
+                )
+            ][0]
+            for ray_name in rays_names.names
+        ]) if all(
+            f'rangefinder_{prefix}{ray_name}'
+            in sensor_maps['rangefinder']['names']
+            for ray_name in rays_names.names
+        ) else []
+    else:
+        sensor_maps['rangefinder2data'] = []
+
 
 def physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units):
     """ Sensor data collection for muscles """
@@ -539,6 +559,17 @@ def physicsactuators2data(physics, iteration, data, sensor_maps, units):
         )*itorques
 
 
+def physicsrays2data(physics, iteration, data, sensor_maps, units):
+    """Ray sensors data collection"""
+    if len(sensor_maps['rangefinder2data']) > 0:
+        data.sensors.rays.array[
+            iteration, :,
+            sc.ray_distance,
+        ] = (
+            physics.data.sensordata[sensor_maps['rangefinder2data']]
+        )/units.meters
+
+
 def physics2data(physics, iteration, data, maps, units, links_only=False):
     """Sensors data collection"""
     sensor_maps = maps['sensors']
@@ -558,3 +589,4 @@ def physics2data(physics, iteration, data, maps, units, links_only=False):
         )
         if data.sensors.muscles.names:
             physics_muscles_sensors2data(physics, iteration, data, sensor_maps, units)
+        physicsrays2data(physics, iteration, data, sensor_maps, units)

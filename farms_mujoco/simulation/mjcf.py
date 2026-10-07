@@ -380,12 +380,20 @@ def mjc_add_link(
         }
         if isinstance(element, Visual):
             if element.color is not None:
+                # Material alpha=0 makes the geom invisible to rangefinder
+                # sensors (MuJoCo excludes geoms whose material rgba has
+                # alpha=0 from ray tests).  The geom's own rgba is set to
+                # the original color so the visualizer still renders it.
+                color = list(element.color)
+                mat_color = color.copy()
+                mat_color[3] = 0.0  # alpha=0 for ray exclusion
                 mjcf_model.asset.add(  # Add material to assets
                     'material',
                     name=f'{prefix}material_{element.name}',
-                    rgba=element.color,
+                    rgba=mat_color,
                 )
                 visual_kwargs['material'] = f'{prefix}material_{element.name}'
+                visual_kwargs['rgba'] = color  # visible in visualizer
             visual_kwargs['conaffinity'] = 0  # No collisions
             visual_kwargs['contype'] = 0  # No collisions
             visual_kwargs['group'] = 1
@@ -837,6 +845,7 @@ def sdf2mjcf(
     use_actuators = kwargs.pop('use_actuators', False)
     use_muscles = kwargs.pop('use_muscles', False)
     use_muscle_sensors = kwargs.pop('use_muscle_sensors', bool(use_muscles))
+    use_ray_sensors = kwargs.pop('use_ray_sensors', True)
     if use_frc_trq_sensors:
         assert use_site, "Enable use_site option to use force-torque sensors"
     solref = kwargs.get('solref', None)
@@ -1266,6 +1275,50 @@ def sdf2mjcf(
                     actuator=muscle_name,
                 )
 
+        # Ray sensors (rangefinder)
+        if use_ray_sensors and animat_options is not None:
+            rays = getattr(animat_options.control.sensors, 'rays', [])
+            for ray in rays:
+                # Support both string names and RaySensorOptions/dicts
+                if isinstance(ray, dict):
+                    ray_name = ray['name']
+                    link_name = ray['link_name']
+                    ray_pos = ray.get('pos', [0, 0, 0])
+                    ray_quat = ray.get('quat', [1, 0, 0, 0])
+                    ray_cutoff = ray.get('cutoff', None)
+                else:
+                    ray_name = ray
+                    link_name = ray
+                    ray_pos = [0, 0, 0]
+                    ray_quat = [1, 0, 0, 0]
+                    ray_cutoff = None
+                ray_body = mjcf_map['links'].get(f'{prefix}{link_name}')
+                if ray_body is None:
+                    pylog.warning(
+                        f'Ray sensor: link "{prefix}{link_name}" not found in'
+                        f' mjcf_map, skipping ({mjcf_map["links"]=})'
+                    )
+                    continue
+                ray_site = ray_body.add(
+                    'site',
+                    name=f'site_ray_{prefix}{ray_name}',
+                    pos=[p*units.meters for p in ray_pos],
+                    quat=ray_quat,
+                    size=[1e-3*units.meters]*3,
+                    group=4,
+                )
+                mjcf_map['sites'][ray_site.name] = ray_site
+                rangefinder_kwargs = {
+                    'name': f'rangefinder_{prefix}{ray_name}',
+                    'site': ray_site.name,
+                }
+                if ray_cutoff is not None:
+                    rangefinder_kwargs['cutoff'] = ray_cutoff * units.meters
+                mjcf_model.sensor.add(
+                    'rangefinder',
+                    **rangefinder_kwargs,
+                )
+
     # Contacts
     if animat_options is not None:
         collision_map = {
@@ -1533,6 +1586,9 @@ def setup_mjcf_xml(
             use_link_vel_sensors=True,
             use_joint_sensors=False,
             use_actuators=True,
+            use_ray_sensors=bool(
+                getattr(animat_options.control.sensors, 'rays', [])
+            ),
             animat_options=animat_options,
             simulation_options=simulation_options,
             contype=2**((animat_i % 30) + 1),
