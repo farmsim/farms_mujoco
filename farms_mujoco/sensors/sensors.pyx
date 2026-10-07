@@ -156,6 +156,9 @@ cpdef cycontacts2data(
     cdef DTYPEv1 norm_sum = np.zeros(data.array.shape[1], dtype=np.double)
     cdef np.ndarray[double, ndim=1] forcetorque = np.zeros(6, dtype=np.double)
     cdef unsigned int n_contacts = len(contacts)
+    # Zero the buffer row before accumulating (contacts use +=,
+    # so stale data from a previous buffer cycle would corrupt results)
+    cdata[iteration, :, :] = 0
     for contact_i in range(n_contacts):
         # Extract body index
         contact = contacts[contact_i]
