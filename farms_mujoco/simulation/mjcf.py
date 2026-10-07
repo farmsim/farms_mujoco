@@ -418,7 +418,12 @@ def mjc_add_link(
                     scaled_solref[0] *= units.seconds
                 collision_kwargs['solref'] = scaled_solref
             if solimp is not None:
-                collision_kwargs['solimp'] = solimp
+                collision_kwargs['solimp'] = [
+                    value*units.meters
+                    if i == 2
+                    else value
+                    for i, value in enumerate(solimp)
+                ]
 
         # Mesh
         if isinstance(element.geometry, Mesh):
@@ -1328,6 +1333,13 @@ def sdf2mjcf(
         pair_options = {}
         if solref is not None:
             pair_options['solref'] = solref
+        if solimp is not None:
+            pair_options['solimp'] = [
+                value*units.meters
+                if i == 2
+                else value
+                for i, value in enumerate(solimp)
+            ]
         for pair_i, (link1, link2) in enumerate(
                 animat_options.morphology.self_collisions
         ):
