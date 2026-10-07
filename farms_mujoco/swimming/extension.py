@@ -94,8 +94,7 @@ class SwimmingExtension(AnimatExtension):
             substep=True,
             water_properties=None,
     ):
-        super().__init__(substep=substep)
-        self.animat_i = animat_i
+        super().__init__(animat_i=animat_i, substep=substep)
         self.animat_data = animat_data
         self.animat_options = animat_options
         self.arena_options = arena_options
