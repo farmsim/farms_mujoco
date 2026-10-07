@@ -61,6 +61,36 @@ where:
 - `g` — gravitational acceleration
 - `submersion_fraction = clamp((surface + height - z) / (2*height), 0, 1)`
 
+### Center of Buoyancy
+
+By default, fluid forces are computed at the link origin (which
+corresponds to the center of mass for uniformly dense links). For links
+with non-uniform density distribution (e.g. a robot with a heavy belly
+and light top), the center of buoyancy (CoB) is offset from the CoM.
+
+The CoB offset can be specified per-link via the `buoyancy_center`
+option (in the URDF frame):
+
+```yaml
+morphology:
+  links:
+  - name: link_0
+    buoyancy_center: [0.0, 0.0, 0.005]  # 5mm above link origin
+```
+
+When a CoB offset is specified:
+- **Buoyancy** is computed using the submersion depth at the CoB
+  position, and the buoyancy force produces a **righting torque**
+  `r × F` that keeps the body upright (like a keel on a boat).
+- **Drag** is computed using the velocity at the CoB
+  (`v_CoB = v_CoM + ω × r`), and the drag force also produces a
+  torque from the moment arm.
+- **Angular drag** remains unchanged (pure torque, independent of
+  application point).
+
+If `buoyancy_center` is not specified, it defaults to `[0, 0, 0]`
+(link origin), preserving the original behavior.
+
 ### Water Properties
 
 The fluid environment is described by a `WaterProperties` object:
@@ -113,6 +143,7 @@ morphology:
   - name: link_0
     fluid_interaction: true          # Enable drag/buoyancy for this link
     density: 1000.0                   # Link density (for buoyancy)
+    buoyancy_center: [0.0, 0.0, 0.005]  # CoB offset from link origin (optional)
     drag_coefficients:
     - - -0.001                        # Linear drag x (force)
       - -0.1                          # Linear drag y

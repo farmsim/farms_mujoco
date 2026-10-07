@@ -204,6 +204,7 @@ cpdef bint drag_forces(
         double gravity,
         bint use_buoyancy,
         double dt=0.0,
+        DTYPEv1 buoyancy_center=None,
 ):
     """Drag swimming
 
@@ -225,6 +226,7 @@ cpdef bint drag_forces(
     :param density: Link density
     :param gravity: Gravity value
     :param use_buoyancy: Flag for using buoyancy computation
+    :param buoyancy_center: Offset of CoB from link origin in URDF frame
     """
     cdef unsigned int i
     cdef double pos_x = data_links.array[iteration, links_index, 0]
@@ -239,6 +241,25 @@ cpdef bint drag_forces(
     cdef DTYPEv1 urdf2global=z4[0], com2global=z4[1]
     cdef DTYPEv1 global2urdf=z4[2], urdf2com=z4[3], com2urdf=z4[4]
     cdef DTYPEv1 quat_c=z4[5], tmp4=z4[6]
+
+    # Buoyancy center offset (default [0, 0, 0] = link origin)
+    cdef double r_x = 0.0, r_y = 0.0, r_z = 0.0
+    if buoyancy_center is not None:
+        r_x = buoyancy_center[0]
+        r_y = buoyancy_center[1]
+        r_z = buoyancy_center[2]
+    cdef bint has_cob_offset = (r_x != 0.0 or r_y != 0.0 or r_z != 0.0)
+
+    # Compute CoB position in global frame for submersion depth
+    cdef double cob_z = pos_z
+    if has_cob_offset:
+        # Rotate offset to global frame
+        quat_rot(buoyancy_center, urdf2global, quat_c, tmp4, tmp)
+        cob_z = pos_z + tmp[2]
+
+    # Check if CoB is above surface
+    if cob_z - height > surface:
+        return 0
 
     # Swimming information
     link_swimming_info(
@@ -256,13 +277,25 @@ cpdef bint drag_forces(
         tmp4=tmp4,
     )
 
-    # Buoyancy forces
+    # If CoB offset, adjust velocity to CoB: v_CoB = v_CoM + ω × r
+    if has_cob_offset:
+        link_lin_velocity[0] += (
+            link_ang_velocity[1] * r_z - link_ang_velocity[2] * r_y
+        )
+        link_lin_velocity[1] += (
+            link_ang_velocity[2] * r_x - link_ang_velocity[0] * r_z
+        )
+        link_lin_velocity[2] += (
+            link_ang_velocity[0] * r_y - link_ang_velocity[1] * r_x
+        )
+
+    # Buoyancy forces (using CoB position for submersion depth)
     if use_buoyancy:
         compute_buoyancy(
             density=density,
-            water_density=water.density(time, pos_x, pos_y, pos_z),
+            water_density=water.density(time, pos_x, pos_y, cob_z),
             height=height,
-            position=pos_z,
+            position=cob_z,
             global2urdf=global2urdf,
             mass=mass,
             surface=surface,
@@ -275,7 +308,7 @@ cpdef bint drag_forces(
 
     # Add fluid velocity
     quat_rot(
-        vector=water.velocity(time, pos_x, pos_y, pos_z),
+        vector=water.velocity(time, pos_x, pos_y, cob_z),
         quat=global2urdf,
         quat_c=quat_c,
         tmp4=tmp4,
@@ -291,7 +324,7 @@ cpdef bint drag_forces(
         link_velocity=link_lin_velocity,
         coefficients=coefficients[0],
         buoyancy=buoyancy,
-        viscosity=water.viscosity(time, pos_x, pos_y, pos_z),
+        viscosity=water.viscosity(time, pos_x, pos_y, cob_z),
         mass=mass,
         dt=dt,
     )
@@ -300,6 +333,19 @@ cpdef bint drag_forces(
         link_ang_velocity=link_ang_velocity,
         coefficients=coefficients[1],
     )
+
+    # Add moment arm torque from forces applied at CoB: τ = r × F
+    if has_cob_offset:
+        # buoyancy force is in URDF frame (compute_buoyancy already rotated)
+        # force (drag) is also in URDF frame
+        # r × F_drag
+        torque[0] += r_y * force[2] - r_z * force[1]
+        torque[1] += r_z * force[0] - r_x * force[2]
+        torque[2] += r_x * force[1] - r_y * force[0]
+        # r × F_buoyancy
+        torque[0] += r_y * buoyancy[2] - r_z * buoyancy[1]
+        torque[1] += r_z * buoyancy[0] - r_x * buoyancy[2]
+        torque[2] += r_x * buoyancy[1] - r_y * buoyancy[0]
 
     # Drag forces in inertial frame
     quat_rot(force, urdf2com, quat_c, tmp4, force)
@@ -425,6 +471,7 @@ cdef class SwimmingHandler:
     cdef DTYPEv1 masses
     cdef DTYPEv1 heights
     cdef DTYPEv1 densities
+    cdef DTYPEv2 buoyancy_centers
     cdef DTYPEv2 z3
     cdef DTYPEv2 z4
     cdef DTYPEv3 links_coefficients
@@ -460,16 +507,30 @@ cdef class SwimmingHandler:
             physics.model.body_mass[links_row.convert_key_item(prefix+link.name)]
             for link in links
         ], dtype=float)/units.kilograms
-        self.heights = np.array([
-            [
-                0.5*physics.model.geom_rbound[geom_i]
+        link_heights = []
+        for link in links:
+            matching_heights = [
+                0.75*physics.model.geom_rbound[geom_i]
                 for geom_i in range(len(physics.model.geom_bodyid))
                 if links_row.names[physics.named.model.geom_bodyid[geom_i]]
                 == prefix+link.name
-            ][0]
-            for link in links
-        ], dtype=float)/self.meters
+            ]
+            if not matching_heights:
+                raise ValueError(
+                    f'No geom found for link "{prefix+link.name}" '
+                    f'when computing swimming height. This can happen '
+                    f'when running in headless mode with discardvisual=True '
+                    f'and the link only has visual geoms (no collision geoms). '
+                    f'Either add a collision geom to this link or set '
+                    f'fluid_interaction=false for it.'
+                )
+            link_heights.append(matching_heights[0])
+        self.heights = np.array(link_heights, dtype=float)/self.meters
         self.densities = np.array([link.density for link in links])
+        self.buoyancy_centers = np.array([
+            np.array(getattr(link, 'buoyancy_center', [0.0, 0.0, 0.0]))
+            for link in links
+        ], dtype=float)
         self.xfrc_indices = np.array([
             self.xfrc.names.index(link.name)
             for link in links
@@ -509,6 +570,7 @@ cdef class SwimmingHandler:
                         gravity=-9.81,
                         use_buoyancy=self.buoyancy,
                         dt=dt,
+                        buoyancy_center=self.buoyancy_centers[i],
                     )
 
     cpdef set_frame(self, int frame):
