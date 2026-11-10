@@ -61,7 +61,7 @@ def row2index(row, name, single=False):
     return identifier
 
 
-def get_sensor_maps(physics, verbose=True):
+def get_sensor_maps(physics, verbose=False):
     """Sensors information"""
     sensors_row = physics.named.data.sensordata.axes.row
     sensors_names = sensors_row.names
