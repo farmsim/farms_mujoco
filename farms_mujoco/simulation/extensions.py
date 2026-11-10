@@ -136,7 +136,13 @@ class AnimatViewerExtension(TaskExtension):
         self.links = task.data.animats[self.animat_id].sensors.links
 
     def com_position(self, iteration: int) -> np.ndarray:
-        """Return the global CoM position at the given iteration."""
+        """Return the global CoM position at the given iteration.
+
+        Uses modular indexing so the method is safe to call with
+        iterations larger than the buffer size (interactive mode).
+        """
+        if self.links is not None and self.links.array is not None:
+            iteration = iteration % self.links.array.shape[0]
         return np.array(
             self.links.global_com_position(iteration=iteration)
         )
@@ -268,29 +274,46 @@ class CameraFollower(AnimatViewerExtension):
         return self.viewer.cam if self.viewer else None
 
     def update_camera_lookat(self, cam, task, physics, units):
-        """Smoothly interpolate camera lookat toward the animat CoM.
+        """Update camera azimuth to follow direction of movement.
 
-        Core math shared between ``CameraFollower`` and
-        ``ViewportCameraFollower``.  ``cam`` is the MjvCamera to update;
-        ``units`` is the unit scaling to use.
+        Body position tracking is handled by MuJoCo's built-in
+        ``trackbodyid`` mechanism: the viewer thread reads the body
+        position directly from the physics state each frame.  This
+        avoids the thread-synchronisation mismatch between manual
+        ``lookat`` updates (in ``after_step``) and the viewer's
+        internal render thread, which caused ghosting.
+
+        Azimuth is controlled by the gamepad extension (auto-follow
+        + manual). The CameraFollower only handles position tracking
+        and optional auto-rotate (angular_velocity from config).
         """
         now = physics.time()/units.seconds
         time_diff, self.last_step = now - self.last_step, now
-        cam.azimuth += self.angular_velocity*time_diff
-        motion_filter = min(1, 10*physics.timestep()/units.seconds)
-        cam.lookat = motion_filter*self.com_position(
-            iteration=task.iteration - 1,
-        )*units.meters + (1 - motion_filter)*cam.lookat
+        if abs(self.angular_velocity) > 1e-6:
+            cam.azimuth += self.angular_velocity*time_diff
 
     def initialize_episode(self, task: ExperimentTask, physics: Physics):
-        """Initialise episode"""
-        del physics
+        """Initialise episode — set up MuJoCo body tracking."""
         self.units = task.units
         self.viewer = task.viewer
         self.last_step = 0
         self.bind_links(task)
         cam = self.get_camera()
         if cam is not None:
+            # Use MuJoCo's built-in body tracking: the viewer thread
+            # reads the body position directly from physics state,
+            # eliminating the ghosting caused by manual lookat updates
+            # being out of sync with the viewer's render thread.
+            prefix = f'a{self.animat_id}_'
+            body_name = f'{prefix}base_link'
+            try:
+                body_id = physics.model.body(body_name).id
+                cam.type = mujoco.mjtCamera.mjCAMERA_TRACKING
+                cam.trackbodyid = body_id
+            except (KeyError, AttributeError):
+                # Fallback: manual lookat if body not found
+                cam.type = mujoco.mjtCamera.mjCAMERA_FREE
+                cam.lookat = self.com_position(iteration=0) * self.units.meters
             cam.azimuth = self.azimuth
             cam.distance = self.distance*self.units.meters
             cam.elevation = self.elevation
@@ -387,7 +410,7 @@ class TrailCoMViewer(AnimatViewerExtension):
         del experiment_options
         return cls(
             animat_id=config.get('animat_id', 0),
-            size=config['width'],
+            width=config['width'],
             rgba=config['rgba'],
         )
 
