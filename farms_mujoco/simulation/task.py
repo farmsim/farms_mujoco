@@ -264,6 +264,34 @@ class ExperimentTask(Task):
                 links_only=links_only,
             )
 
+    def apply_xfrc(self, physics: Physics):
+        """Apply the accumulated local-frame xfrc forces to MuJoCo.
+
+        Extensions add their local force/torque contributions to
+        ``data.sensors.xfrc.array`` during ``before_step``. This single
+        pass converts the accumulated row to the world frame, scales it,
+        and assigns it to ``physics.data.xfrc_applied``. Because the
+        application happens after all extensions, their order does not
+        matter.
+        """
+        index = self.iteration % self.buffer_size
+        for animat_i, animat_data in enumerate(self.data.animats):
+            indices = self.maps[animat_i]['sensors'].get('data2xfrc')
+            if indices is None or len(indices) == 0:
+                continue
+            local = animat_data.sensors.xfrc.array[index, :, :]
+            assert len(indices) == len(local), (
+                f'xfrc map/data mismatch: {len(indices)=} vs {len(local)=}'
+            )
+            mats = np.asarray(
+                physics.data.xmat[indices],
+            ).reshape(-1, 3, 3)
+            forces = np.asarray(local).reshape(-1, 3, 2, order='F')
+            world = np.matmul(mats, forces).reshape(-1, 6, order='F')
+            world[:, :3] *= self.units.newtons
+            world[:, 3:] *= self.units.torques
+            physics.data.xfrc_applied[indices, :] = world
+
     def before_step(self, action, physics: Physics):
         """Operations before physics step"""
         if physics.time()/self.units.seconds < 1e-6*self.physics_timestep:
@@ -319,6 +347,9 @@ class ExperimentTask(Task):
                         )
                         muscle_indices = self.maps[extension.animat_i]['ctrl']['mus']
                         physics.data.ctrl[muscle_indices] = muscles_excitations
+
+        # Apply the accumulated external forces after all extensions.
+        self.apply_xfrc(physics)
 
     def initialize_maps(self, physics: Physics):
         """Initialise data"""

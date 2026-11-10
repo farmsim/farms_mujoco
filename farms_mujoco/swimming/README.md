@@ -5,11 +5,11 @@ simulation framework. It computes **quadratic drag** and **buoyancy** forces
 on each link of an articulated body and applies them as external forces
 to the MuJoCo physics engine.
 
-The drag model uses an **implicit (backward Euler) formulation** for the
-velocity-dependent drag forces, which provides unconditional stability for
-large timesteps. This allows simulation timesteps to be increased without
-the numerical instability that would otherwise arise from the explicit
-treatment of quadratic drag.
+Both linear and angular drag use an **implicit (backward Euler)**
+formulation, which provides unconditional stability for large timesteps.
+Linear drag is solved per link mass and angular drag per link inertia,
+allowing larger simulation timesteps without the instability of an
+explicit treatment of quadratic drag.
 
 ## Physics Model
 
@@ -23,7 +23,9 @@ F_drag = -c * v_rel * |v_rel|
 ```
 
 where:
-- `c = viscosity * drag_coefficient` — the drag coefficient (per axis)
+- `c = viscosity * |drag_coefficient|` — the positive drag magnitude
+  (per axis). FARMS configs store the coefficient itself as a negative
+  number; the solver normalises it.
 - `v_rel = v_link - v_fluid` — the relative velocity of the link with
   respect to the surrounding fluid, expressed in the link's URDF frame
 
@@ -42,8 +44,11 @@ Angular drag is similarly quadratic in angular velocity:
 τ_i = -c_i * ω_i * |ω_i|
 ```
 
-The torque is computed in the link's CoM frame using angular velocity and
-torque drag coefficients.
+with `c_i = |angular_drag_coefficient_i|` (configs store negative
+values). It is solved semi-implicitly per axis using the link's
+body-frame inertia, with the same submerged fraction as the linear drag.
+The constant moment-arm torque from a CoB offset is included in the
+implicit solve.
 
 ### Buoyancy
 
@@ -60,6 +65,9 @@ where:
 - `m` — link mass
 - `g` — gravitational acceleration
 - `submersion_fraction = clamp((surface + height - z) / (2*height), 0, 1)`
+
+The same `submersion_fraction`, evaluated at the link CoM, scales both
+drag components and the buoyancy magnitude.
 
 ### Center of Buoyancy
 
@@ -79,17 +87,32 @@ morphology:
 ```
 
 When a CoB offset is specified:
-- **Buoyancy** is computed using the submersion depth at the CoB
-  position, and the buoyancy force produces a **righting torque**
+- **Buoyancy magnitude** still uses the link's submerged fraction; the
+  CoB offset moves the line of action, producing a **righting torque**
   `r × F` that keeps the body upright (like a keel on a boat).
 - **Drag** is computed using the velocity at the CoB
   (`v_CoB = v_CoM + ω × r`), and the drag force also produces a
   torque from the moment arm.
-- **Angular drag** remains unchanged (pure torque, independent of
-  application point).
+- **Water density and velocity** are sampled at the CoB position, so
+  spatially varying water properties follow the offset.
+- **Angular drag** scales with the same submerged fraction and is
+  solved semi-implicitly using the link inertia; the CoB offset does
+  not change its application point.
 
 If `buoyancy_center` is not specified, it defaults to `[0, 0, 0]`
 (link origin), preserving the original behavior.
+
+### Force Application
+
+All force extensions add their local-frame contribution to the shared
+`sensors.xfrc` row. The task clears that row during sensor collection and
+applies the accumulated force/torque to MuJoCo once, after every extension
+has run. Extension order therefore does not matter, and a perturbation from
+another extension is never overwritten by swimming.
+
+Every force extension must be `substep=True`: the row is cleared on every
+physics step, so a control-rate extension would have its contribution
+dropped between control steps.
 
 ### Water Properties
 
@@ -106,6 +129,10 @@ Two implementations are provided:
   (e.g. flow maps from PNG images)
 
 ## Choosing Drag Coefficients
+
+All `drag_coefficients` values in FARMS configs are **negative**; the
+solver uses their magnitude. A positive value is anti-damping and triggers
+a warning when the swimming handler is constructed.
 
 The drag coefficient per axis is `c_i = viscosity * |coefficient_i|`. For
 physical realism, it should match the hydrodynamic drag on the link:
@@ -135,7 +162,9 @@ anguilliform swimming.
 
 ## Configuration
 
-Drag is configured per-link in the animat's SDF/options:
+Drag is configured per-link in the animat's SDF/options. Both the linear
+and angular blocks use non-positive values; the solver normalises them
+internally.
 
 ```yaml
 morphology:

@@ -573,6 +573,10 @@ def physicsrays2data(physics, iteration, data, sensor_maps, units):
 def physics2data(physics, iteration, data, maps, units, links_only=False):
     """Sensors data collection"""
     sensor_maps = maps['sensors']
+    # External forces are accumulated by extensions after this point.
+    # Start every physics step from a clean row so a rolling-buffer slot
+    # cannot retain a previous-cycle force.
+    data.sensors.xfrc.array[iteration, :, :] = 0.0
     physicslinks2data(physics, iteration, data, sensor_maps, units)
     physicslinksvelsensors2data(physics, iteration, data, sensor_maps, units)
     if not links_only:

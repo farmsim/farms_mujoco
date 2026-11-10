@@ -6,7 +6,6 @@ import numpy as np
 from imageio import imread
 
 from farms_core import pylog
-from farms_core.sensors.sensor_convention import sc
 from farms_core.model.data import AnimatData
 from farms_core.model.options import AnimatOptions, ArenaOptions
 from farms_core.experiment.options import ExperimentOptions
@@ -190,27 +189,12 @@ class SwimmingExtension(AnimatExtension):
         """Step hydrodynamics"""
         del action
 
-        # Compute fluid forces
+        # Compute fluid forces. They are accumulated into the shared
+        # xfrc row and applied to MuJoCo by ExperimentTask after all
+        # extensions have run.
         buff_iter = task.iteration % task.buffer_size # handle rolling buffer
         self._handler.step(
             physics.time()/task.units.seconds,
             buff_iter,
             task.physics_timestep,
         )
-
-        # Set fluid forces in physics engine
-        indices = task.maps[self.animat_i]['sensors']['data2xfrc']
-        physics.data.xfrc_applied[indices, :] = (
-            self.animat_data.sensors.xfrc.array[
-                buff_iter, :,
-                sc.xfrc_force_x:sc.xfrc_torque_z+1,
-            ]
-        )
-        # Rotate forces from local to global frame (vectorised batch)
-        mats = physics.data.xmat[indices].reshape(-1, 3, 3)
-        forces = physics.data.xfrc_applied[indices].reshape(-1, 3, 2, order='F')
-        physics.data.xfrc_applied[indices, :] = (
-            np.matmul(mats, forces).reshape(-1, 6, order='F')
-        )
-        physics.data.xfrc_applied[indices, :3] *= task.units.newtons
-        physics.data.xfrc_applied[indices, 3:] *= task.units.torques
